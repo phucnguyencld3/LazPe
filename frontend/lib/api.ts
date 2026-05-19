@@ -35,8 +35,30 @@ export async function getProducts(
       return null;
     }
 
-    const result: ApiResponse<PaginatedResponse<Product>> = await response.json();
-    return result.success ? result.data : null;
+    const result: ApiResponse<any> = await response.json();
+    if (result.success && result.data) {
+      const data = result.data;
+      const productsList = data.products || data.items || [];
+      return {
+        items: productsList.map((item: any) => ({
+          id: item.productID ?? item.productId ?? item.id,
+          name: item.productName ?? item.name,
+          description: item.description ?? "",
+          price: item.price ?? 0,
+          discountPrice: item.minEffectivePrice ?? (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined),
+          image: item.imageUrl ?? item.image ?? "",
+          categoryId: item.categoryID ?? item.categoryId,
+          categoryName: item.categoryName,
+          inStock: item.status !== false && (item.totalStock ?? item.stock ?? 0) > 0,
+          quantity: item.totalStock ?? item.stock ?? 0,
+        })),
+        totalItems: data.totalItems ?? 0,
+        totalPages: data.totalPages ?? 0,
+        currentPage: data.currentPage ?? 1,
+        pageSize: data.pageSize ?? 12,
+      };
+    }
+    return null;
   } catch (error) {
     console.error("Error fetching products:", error);
     return null;
@@ -57,8 +79,23 @@ export async function getProductDetail(id: number): Promise<Product | null> {
       return null;
     }
 
-    const result: ApiResponse<Product> = await response.json();
-    return result.success ? result.data : null;
+    const result: ApiResponse<any> = await response.json();
+    if (result.success && result.data) {
+      const item = result.data;
+      return {
+        id: item.productID ?? item.productId ?? item.id,
+        name: item.productName ?? item.name,
+        description: item.description ?? "",
+        price: item.price ?? 0,
+        discountPrice: item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined,
+        image: item.imageUrl ?? item.image ?? "",
+        categoryId: item.categoryID ?? item.categoryId,
+        categoryName: item.category?.categoryName,
+        inStock: item.status !== false && (item.stock ?? 0) > 0,
+        quantity: item.stock ?? 0,
+      };
+    }
+    return null;
   } catch (error) {
     console.error("Error fetching product detail:", error);
     return null;
@@ -79,8 +116,16 @@ export async function getCategories(): Promise<Category[] | null> {
       return null;
     }
 
-    const result: ApiResponse<Category[]> = await response.json();
-    return result.success ? result.data : null;
+    const result: ApiResponse<any[]> = await response.json();
+    if (result.success && result.data) {
+      return result.data.map((item: any) => ({
+        id: item.categoryID ?? item.categoryId ?? item.id,
+        name: item.categoryName ?? item.name,
+        description: item.description ?? "",
+        image: item.image ?? "",
+      }));
+    }
+    return null;
   } catch (error) {
     console.error("Error fetching categories:", error);
     return null;

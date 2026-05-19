@@ -59,15 +59,18 @@ export default function LoginPage() {
         {/* Left Side: Visual/Branding */}
         <div className="hidden md:flex md:w-1/2 bg-primary-container relative flex-col justify-center items-center p-20 text-center">
           <div className="absolute inset-0 opacity-40">
-            {/* Tạm ẩn hình ảnh theo yêu cầu */}
-             <div className="w-full h-full bg-primary/20"></div>
+            <img 
+              alt="LazPe Kids" 
+              className="w-full h-full object-cover" 
+              src="/login-page-img/Login-img-001.png"
+            />
           </div>
           <div className="relative z-10 space-y-6">
             <h1 className="font-headline-md text-5xl font-bold text-on-primary-container leading-[56px] tracking-[-0.02em]">
               Chào mừng trở lại!
             </h1>
-            <p className="font-body-md text-lg text-on-primary-container/80 px-12">
-              Tiếp tục hành trình khám phá thế giới diệu kỳ cùng bé yêu của bạn tại TinyTrove.
+            <p className="font-body-md text-lg text-on-primary-container font-medium px-12">
+              Tiếp tục hành trình khám phá thế giới diệu kỳ cùng bé yêu của bạn tại LazPe.
             </p>
           </div>
           
@@ -141,7 +144,7 @@ export default function LoginPage() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-14 bg-primary text-white font-semibold text-xl rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
+                className="w-full h-14 bg-primary text-on-primary font-headline-md rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
               >
                 {loading ? "Đang xử lý..." : "Đăng nhập"}
                 {!loading && <span className="material-symbols-outlined">arrow_forward</span>}
@@ -167,10 +170,10 @@ export default function LoginPage() {
           {/* Social Proof / Footer inside card */}
           <div className="mt-20 flex justify-center gap-12">
             <button className="p-6 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
-              <div className="w-6 h-6 bg-gray-300 rounded-full" title="Google"></div>
+              <img alt="Google" className="w-6 h-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-Y_bpawEZwQ_1quHszPtLK_TJUWkc36jcScJCfI5xMV1EfUAHwjuQbdjhs96DksoRjtmNalPjJPSUjkFjCZNsN2ZoUGUF_Jv0HlkTWXIgi4d0GBEfdxFikp_UaQb_aZKG2nNZb1VcxBmMB41BU1UkGjllV_jAJGxmWNr_TURD7gJoGagWO7etGsaOi--8QErYYkAHRo9Lhpw1HUnoPP4l2-R5KlaeF39CWSg8Xxe2LA5PwYkYPu5dtBg9pRjTXJAyprHgufcnqOnp" />
             </button>
             <button className="p-6 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
-               <div className="w-6 h-6 bg-blue-600 rounded-full" title="Facebook"></div>
+              <img alt="Facebook" className="w-6 h-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUGmQ4Wc7m1zyg2hFUHGSmepByqTAVfek9d6OZQg8s0CgrCaAhdgSv9Z7mZ89m-Q9kWJDCRCDsDEqZx42xG7cJsU_Hxxc-V18HPCgTVgdPrLVcDr_5it3Xcq0W5Hya-0T-KDnanrQa8cpYgZX2RZvndB6m6V-DaQq1v4VV3DvA_2LsOpmuWDQXfhb6G3mJ_D99OovmKrhxmT6B9ZclJ1mA819aExRGFsLZYOWFpL_K8eotdNFsqBfHxd4jeLISdvyTeUvC_fZ_FFpU" />
             </button>
           </div>
         </div>

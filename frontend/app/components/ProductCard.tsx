@@ -47,63 +47,77 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Info */}
-        <div className="p-4 space-y-2">
-          {/* Category */}
-          {product.categoryName && (
-            <p className="text-xs text-slate-500 uppercase tracking-wider">
-              {product.categoryName}
-            </p>
-          )}
-
-          {/* Product Name */}
-          <h3 className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-rose-600 transition-colors line-clamp-2">
-            {product.name}
-          </h3>
-
-          {/* Rating */}
-          {product.rating !== undefined && product.ratingCount !== undefined && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={14}
-                    className={
-                      i < Math.round(product.rating!)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-slate-300"
-                    }
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-slate-500">({product.ratingCount})</span>
+        <div className="p-4 flex flex-col justify-between h-[180px]">
+          {/* Top Section */}
+          <div className="space-y-1">
+            {/* Category */}
+            <div className="text-xs text-slate-500 uppercase tracking-wider h-4 overflow-hidden truncate">
+              {product.categoryName || "\u00a0"}
             </div>
-          )}
 
-          {/* Price */}
-          <div className="flex items-center gap-2 pt-1">
-            {product.discountPrice && product.discountPrice < product.price ? (
-              <>
-                <span className="text-lg font-bold text-rose-600">
-                  ₫{product.discountPrice.toLocaleString("vi-VN")}
-                </span>
-                <span className="text-sm text-slate-400 line-through">
-                  ₫{product.price.toLocaleString("vi-VN")}
-                </span>
-              </>
-            ) : (
-              <span className="text-lg font-bold text-slate-900">
-                ₫{product.price.toLocaleString("vi-VN")}
-              </span>
-            )}
+            {/* Product Name */}
+            <h3 className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-rose-600 transition-colors line-clamp-2 h-10 overflow-hidden">
+              {product.name}
+            </h3>
+
+            {/* Rating */}
+            <div className="h-5 flex items-center">
+              {product.rating !== undefined && product.ratingCount !== undefined ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={12}
+                        className={
+                          i < Math.round(product.rating!)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-slate-300"
+                        }
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-slate-500">({product.ratingCount})</span>
+                </div>
+              ) : (
+                <div className="text-[10px] text-slate-400">Chưa có đánh giá</div>
+              )}
+            </div>
           </div>
 
-          {/* Stock Indicator */}
-          {product.inStock && product.quantity !== undefined && product.quantity > 0 && (
-            <p className="text-xs text-green-600 font-medium">
-              Còn {product.quantity} sản phẩm
-            </p>
-          )}
+          {/* Bottom Section */}
+          <div className="space-y-1">
+            {/* Price */}
+            <div className="flex items-center gap-2">
+              {product.discountPrice && product.discountPrice < product.price ? (
+                <>
+                  <span className="text-base font-bold text-rose-600">
+                    ₫{product.discountPrice.toLocaleString("vi-VN")}
+                  </span>
+                  <span className="text-xs text-slate-400 line-through">
+                    ₫{product.price.toLocaleString("vi-VN")}
+                  </span>
+                </>
+              ) : (
+                <span className="text-base font-bold text-slate-900">
+                  ₫{product.price.toLocaleString("vi-VN")}
+                </span>
+              )}
+            </div>
+
+            {/* Stock Indicator */}
+            <div className="h-4 flex items-center">
+              {product.inStock && product.quantity !== undefined && product.quantity > 0 ? (
+                <p className="text-[11px] text-green-600 font-medium">
+                  Còn {product.quantity} sản phẩm
+                </p>
+              ) : (
+                <p className="text-[11px] text-rose-500 font-medium">
+                  {!product.inStock ? "Hết hàng" : "\u00a0"}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </Link>
