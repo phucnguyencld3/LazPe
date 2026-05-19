@@ -51,6 +51,8 @@ export async function getProducts(
           categoryName: item.categoryName,
           inStock: item.status !== false && (item.totalStock ?? item.stock ?? 0) > 0,
           quantity: item.totalStock ?? item.stock ?? 0,
+          rating: item.rating,
+          ratingCount: item.ratingCount,
         })),
         totalItems: data.totalItems ?? 0,
         totalPages: data.totalPages ?? 0,
@@ -93,6 +95,10 @@ export async function getProductDetail(id: number): Promise<Product | null> {
         categoryName: item.category?.categoryName,
         inStock: item.status !== false && (item.stock ?? 0) > 0,
         quantity: item.stock ?? 0,
+        rating: item.rating,
+        ratingCount: item.ratingCount,
+        variants: item.variants ?? [],
+        productOptions: item.productOptions ?? [],
       };
     }
     return null;

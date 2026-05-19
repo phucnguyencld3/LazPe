@@ -26,23 +26,30 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
+          {/* Bestseller Badge */}
+          {product.rating && product.rating >= 4.4 && (
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm z-10">
+              Bán chạy
+            </div>
+          )}
+
           {/* Discount Badge */}
           {product.discountPrice && product.discountPrice < product.price && (
-            <div className="absolute top-3 right-3 bg-rose-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+            <div className={`absolute ${product.rating && product.rating >= 4.4 ? 'top-12' : 'top-3'} left-3 bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm z-10`}>
               -{Math.round(((product.price - product.discountPrice) / product.price) * 100)}%
             </div>
           )}
 
           {/* Stock Status */}
           {!product.inStock && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
               <span className="text-white font-semibold text-lg">Hết hàng</span>
             </div>
           )}
 
           {/* Wishlist Button */}
-          <button className="absolute top-3 left-3 bg-white/90 hover:bg-white w-10 h-10 rounded-full flex items-center justify-center text-slate-600 hover:text-rose-500 transition-colors shadow-sm">
-            <Heart size={18} />
+          <button className="absolute top-3 right-3 bg-white/90 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center text-slate-600 hover:text-rose-500 transition-colors shadow-sm z-10">
+            <Heart size={16} />
           </button>
         </div>
 

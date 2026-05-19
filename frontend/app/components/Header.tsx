@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User, Menu } from "lucide-react";
+import { ShoppingCart, User, Menu } from "lucide-react";
 import { useState } from "react";
 
 export default function Header() {
@@ -40,9 +40,6 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-600 hover:text-slate-900 transition-colors">
-              <Search size={20} />
-            </button>
             <button className="p-2 text-slate-600 hover:text-slate-900 transition-colors relative">
               <ShoppingCart size={20} />
               <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold">

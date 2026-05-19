@@ -1,3 +1,42 @@
+export interface ProductOptionValue {
+  productOptionValueID: number;
+  productOptionID: number;
+  value: string;
+  price: number;
+  displayOrder: number;
+}
+
+export interface ProductOption {
+  productOptionID: number;
+  productID: number;
+  name: string;
+  displayOrder: number;
+  productOptionValues: ProductOptionValue[];
+}
+
+export interface VariantOptionValue {
+  variantOptionValueID: number;
+  variantID: number;
+  productOptionValueID: number;
+  productOptionValue?: ProductOptionValue;
+}
+
+export interface Variant {
+  variantID: number;
+  productID: number;
+  variantName: string;
+  unitPrice: number;
+  variantDiscountPercent: number;
+  effectiveDiscountPercent: number;
+  finalPrice: number;
+  stock: number;
+  sku: string;
+  imageUrl?: string;
+  description?: string;
+  status: boolean;
+  variantOptionValues: VariantOptionValue[];
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -11,6 +50,8 @@ export interface Product {
   categoryName?: string;
   inStock: boolean;
   quantity?: number;
+  variants?: Variant[];
+  productOptions?: ProductOption[];
 }
 
 export interface Category {

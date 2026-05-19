@@ -2,122 +2,11 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight, X } from "lucide-react";
 import ProductCard from "@/app/components/ProductCard";
+import FilterSidebar from "@/app/components/FilterSidebar";
 import { Product, Category } from "@/types";
 import { getProducts, getCategories } from "@/lib/api";
-
-interface FilterSidebarProps {
-  searchInput: string;
-  setSearchInput: (val: string) => void;
-  handleSearchSubmit: (e: React.FormEvent) => void;
-  selectedCategory: number | null;
-  handleCategorySelect: (id: number | null) => void;
-  categories: Category[];
-  maxPrice: number;
-  setMaxPrice: (val: number) => void;
-  handleClearFilters: () => void;
-}
-
-// Standalone component declared at module level to prevent recreating on every render
-// This ensures that the inputs inside it (like search and slider) keep their focus and dragging state!
-function FilterSidebar({
-  searchInput,
-  setSearchInput,
-  handleSearchSubmit,
-  selectedCategory,
-  handleCategorySelect,
-  categories,
-  maxPrice,
-  setMaxPrice,
-  handleClearFilters,
-}: FilterSidebarProps) {
-  return (
-    <div className="space-y-8">
-      {/* Search Widget */}
-      <div>
-        <h3 className="font-headline-md text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Search size={18} className="text-primary" />
-          Tìm kiếm
-        </h3>
-        <form onSubmit={handleSearchSubmit} className="relative">
-          <input
-            type="text"
-            placeholder="Tìm tên sản phẩm..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full h-11 pl-4 pr-10 rounded-full border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm transition-all"
-          />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
-            <Search size={18} />
-          </button>
-        </form>
-      </div>
-
-      {/* Category Selection */}
-      <div>
-        <h3 className="font-headline-md text-lg font-bold text-slate-800 mb-4">Danh mục</h3>
-        <div className="space-y-2">
-          <button
-            onClick={() => handleCategorySelect(null)}
-            className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              selectedCategory === null
-                ? "bg-primary text-white"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            }`}
-          >
-            Tất cả sản phẩm
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategorySelect(cat.id)}
-              className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-between ${
-                selectedCategory === cat.id
-                  ? "bg-primary text-white"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <span>{cat.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Price Slider */}
-      <div className="pt-6 border-t border-slate-200">
-        <h3 className="font-headline-md text-lg font-bold text-slate-800 mb-4">
-          Khoảng giá tối đa
-        </h3>
-        <input
-          type="range"
-          min="100000"
-          max="2000000"
-          step="50000"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(Number(e.target.value))}
-          className="w-full accent-primary h-2 bg-slate-200 rounded-full cursor-pointer"
-        />
-        <div className="flex justify-between mt-2 text-xs text-slate-500 font-medium">
-          <span>100.000đ</span>
-          <span className="text-primary font-bold text-sm">
-            {maxPrice.toLocaleString("vi-VN")}đ
-          </span>
-          <span>2.000.000đ+</span>
-        </div>
-      </div>
-
-      {/* Clear Button */}
-      <button
-        onClick={handleClearFilters}
-        className="w-full h-11 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2"
-      >
-        <X size={16} />
-        Đặt lại bộ lọc
-      </button>
-    </div>
-  );
-}
 
 function ProductsContent() {
   const router = useRouter();
@@ -223,17 +112,60 @@ function ProductsContent() {
     if (sortDirection !== "desc") params.set("sortDirection", sortDirection);
     if (currentPage !== 1) params.set("page", currentPage.toString());
     
+    // Preserve the sort parameter in the URL if it's there
+    if (sortParam) params.set("sort", sortParam);
+    
     const newUrl = params.toString() ? `/products?${params.toString()}` : "/products";
     window.history.pushState({}, "", newUrl);
-  }, [activeSearch, selectedCategory, sortBy, sortDirection, currentPage]);
+  }, [activeSearch, selectedCategory, sortBy, sortDirection, currentPage, sortParam]);
 
-  // Client-side filtering for Price
+  // Listen to searchParams changes to update states when navigation tabs change
+  useEffect(() => {
+    const search = searchParams.get("search") || "";
+    const category = searchParams.get("categoryId") 
+      ? Number(searchParams.get("categoryId")) 
+      : searchParams.get("category")
+      ? Number(searchParams.get("category"))
+      : null;
+    const sort = searchParams.get("sort");
+    const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
+
+    let sBy = searchParams.get("sortBy") || "CreatedAt";
+    let sDir = searchParams.get("sortDirection") || "desc";
+
+    if (sort === "newest") {
+      sBy = "CreatedAt";
+      sDir = "desc";
+    } else if (sort === "bestseller") {
+      sBy = "Rating";
+      sDir = "desc";
+    }
+
+    setSearchInput(search);
+    setActiveSearch(search);
+    setSelectedCategory(category);
+    setSortBy(sBy);
+    setSortDirection(sDir);
+    setCurrentPage(page);
+  }, [searchParams]);
+
+  // Client-side filtering for Price and Sale
   const filteredProducts = React.useMemo(() => {
     return products.filter((product) => {
+      // Price filter
       const price = product.discountPrice || product.price;
-      return price <= maxPrice;
+      if (price > maxPrice) return false;
+
+      // Sale filter: only show items with a discount price less than original price
+      if (sortParam === "sale") {
+        if (!product.discountPrice || product.discountPrice >= product.price) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [products, maxPrice]);
+  }, [products, maxPrice, sortParam]);
 
   // Handler for search form submission
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -283,16 +215,30 @@ function ProductsContent() {
     return "newest";
   };
 
+  let pageTitle = "Tất cả sản phẩm";
+  let pageSubtitle = "Khám phá bộ sưu tập đồ chơi gỗ cao cấp, quần áo cotton mềm mại và những món quà tuyệt vời dành riêng cho thiên thần nhỏ của bạn tại LazPe.";
+
+  if (sortParam === "bestseller") {
+    pageTitle = "Sản phẩm bán chạy nhất";
+    pageSubtitle = "Khám phá những món đồ được các mẹ và bé yêu thích nhất tại LazPe. Chất lượng cao cấp, thiết kế an toàn và đầy màu sắc cho tuổi thơ rực rỡ.";
+  } else if (sortParam === "newest") {
+    pageTitle = "Sản phẩm mới nhất";
+    pageSubtitle = "Cập nhật những mẫu đồ chơi gỗ thông minh và trang phục cotton mới nhất cho bé yêu tại LazPe.";
+  } else if (sortParam === "sale") {
+    pageTitle = "Sản phẩm khuyến mãi";
+    pageSubtitle = "Sở hữu những sản phẩm cao cấp cho bé với mức giá ưu đãi cực sốc chỉ có tại LazPe.";
+  }
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Hero Header */}
       <section className="bg-gradient-to-br from-[#ffd9de]/30 via-white to-white border-b border-slate-100 py-12 md:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <h1 className="font-headline-lg text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">
-            Tất cả sản phẩm
+            {pageTitle}
           </h1>
           <p className="max-w-2xl mx-auto font-body-lg text-base md:text-lg text-slate-600 leading-relaxed">
-            Khám phá bộ sưu tập đồ chơi gỗ cao cấp, quần áo cotton mềm mại và những món quà tuyệt vời dành riêng cho thiên thần nhỏ của bạn tại <span className="font-bold text-rose-500">LazPe</span>.
+            {pageSubtitle}
           </p>
         </div>
       </section>

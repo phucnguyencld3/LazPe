@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.DTOs;
@@ -32,9 +32,7 @@ namespace PolyBabyAPI.Services
                 // Apply filters
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    query = query.Where(p => p.ProductName.Contains(searchTerm) ||
-                                           p.Code.Contains(searchTerm) ||
-                                           p.Description.Contains(searchTerm));
+                    query = query.Where(p => p.ProductName.Contains(searchTerm));
                 }
 
                 if (categoryId.HasValue)
