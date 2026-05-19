@@ -1,0 +1,133 @@
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection;
+
+namespace PolyBabyAPI.Models
+{
+    public enum PayMethod
+    {
+        [Display(Name = "Thẻ tín dụng")]
+        CreditCard = 1,
+
+        [Display(Name = "Thẻ ghi nợ")]
+        DebitCard = 2,
+
+        [Display(Name = "Ví điện tử")]
+        MobilePayment = 3
+    }
+
+    public enum OrderStatus
+    {
+        [Display(Name = "Chờ xác nhận")]
+        Pending = 0,
+
+        [Display(Name = "Đã xác nhận")]
+        Confirmed = 1,
+
+        [Display(Name = "Đang giao hàng")]
+        Shipped = 2,
+
+        [Display(Name = "Hoàn tất")]
+        Completed = 3,
+
+        [Display(Name = "Yêu cầu hủy")]
+        CancelRequested = 4,
+
+        [Display(Name = "Đã hủy")]
+        Cancelled = 5
+    }
+
+    public class Invoice
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int InvoiceID { get; set; }
+
+        public string? UserID { get; set; }
+
+        // ✅ Thêm VoucherID liên kết voucher đã sử dụng
+        public int? VoucherID { get; set; }
+
+        [ForeignKey(nameof(UserID))]
+        [ValidateNever]
+        public ApplicationUser User { get; set; }
+
+        // ✅ Navigation tới Voucher
+        [ForeignKey(nameof(VoucherID))]
+        [ValidateNever]
+        public virtual Voucher? Voucher { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tạm tính")]
+        public decimal SubTotal { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm giá")]
+        public decimal DiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "Tổng tiền không hợp lệ")]
+        [Display(Name = "Tổng tiền")]
+        public decimal TotalPrice { get; set; }
+
+        public PayMethod? PayMethod { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ShippingFee { get; set; }
+
+        [MaxLength(500, ErrorMessage = "Địa chỉ giao hàng tối đa 500 ký tự")]
+        public string? ShippingAddress { get; set; }
+
+        [Display(Name = "Trạng thái đơn hàng")]
+        [Required(ErrorMessage = "Trạng thái đơn hàng không được để trống")]
+        [EnumDataType(typeof(OrderStatus), ErrorMessage = "Trạng thái không hợp lệ")]
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
+
+        [Display(Name = "Đã xóa mềm")]
+        public bool IsDeleted { get; set; } = false;
+
+        [MaxLength(500, ErrorMessage = "Lý do hủy tối đa 500 ký tự")]
+        public string? CancelReason { get; set; }
+
+        [Display(Name = "Ngày tạo")]
+        public DateTime? CreatedAt { get; set; } = DateTime.Now;
+
+        [Display(Name = "Ngày xác nhận")]
+        public DateTime? ConfirmedAt { get; set; }
+
+        [Display(Name = "Ngày giao hàng")]
+        public DateTime? ShippedAt { get; set; }
+
+        [Display(Name = "Ngày hoàn tất")]
+        public DateTime? CompletedAt { get; set; }
+
+        [Display(Name = "Ngày hủy")]
+        public DateTime? CancelledAt { get; set; }
+
+        [MaxLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự")]
+        public string? Note { get; set; }
+
+        [ValidateNever]
+        public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+
+        // ✅ Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
+        public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();
+        public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
+
+    }
+
+    public static class EnumExtensions
+    {
+        public static string GetDisplayName(this Enum enumValue)
+        {
+            var memberInfo = enumValue.GetType().GetMember(enumValue.ToString()).FirstOrDefault();
+            if (memberInfo != null)
+            {
+                var displayAttribute = memberInfo.GetCustomAttribute<DisplayAttribute>();
+                if (displayAttribute != null)
+                    return displayAttribute.Name ?? enumValue.ToString();
+            }
+            return enumValue.ToString();
+        }
+    }
+}

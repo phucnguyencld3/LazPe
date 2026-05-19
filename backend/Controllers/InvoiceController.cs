@@ -1,0 +1,1081 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PolyBabyAPI.Data;
+using PolyBabyAPI.DTOs;
+using PolyBabyAPI.Interface;
+using PolyBabyAPI.Interfaces;
+using PolyBabyAPI.Models;
+
+namespace PolyBabyAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class InvoiceController : ControllerBase
+    {
+        private readonly IInvoiceService _invoiceService;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<InvoiceController> _logger;
+        private readonly ApplicationDbContext _context;
+        private readonly IVnPayService _vnPayService;
+
+
+        public InvoiceController(
+            IInvoiceService invoiceService,
+            UserManager<ApplicationUser> userManager,
+            ILogger<InvoiceController> logger,
+            ApplicationDbContext context,
+            IVnPayService vnPayService)
+        {
+            _invoiceService = invoiceService;
+            _userManager = userManager;
+            _logger = logger;
+            _context = context;
+            _vnPayService = vnPayService;
+        }
+
+        // ======================== GET ENDPOINTS ============================
+
+        /// <summary>
+        /// Lấy danh sách tất cả hóa đơn (Admin only)
+        /// </summary>
+        [HttpGet]
+        //[Authorize(Roles = "Admin")]
+        public async Task<ActionResult<IEnumerable<object>>> GetAll()
+        {
+            try
+            {
+                var invoices = await _invoiceService.GetAllAsync();
+                var result = invoices.Select(MapInvoiceToResponse);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all invoices");
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách hóa đơn", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách hóa đơn của người dùng hiện tại
+        /// </summary>
+        [HttpGet("my-invoices")]
+        //[Authorize]
+        public async Task<ActionResult<IEnumerable<object>>> GetByCurrentUser()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var invoices = await _invoiceService.GetByUserAsync(user.Id);
+                var result = invoices.Select(MapInvoiceToResponse);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user invoices");
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách hóa đơn", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách hóa đơn của một người dùng cụ thể (Admin only)
+        /// </summary>
+        [HttpGet("user/{userId}")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<ActionResult<IEnumerable<object>>> GetByUser(string userId, [FromQuery] OrderStatus? status = null)
+        {
+            try
+            {
+                var invoices = await _invoiceService.GetByUserAsync(userId, status);
+                var result = invoices.Select(MapInvoiceToResponse);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving invoices for user {UserId}", userId);
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách hóa đơn", error = ex.Message });
+            }
+        }
+
+        [HttpGet("user/{userId}/status-counts")]
+        public async Task<IActionResult> GetUserStatusCounts(string userId)
+        {
+            try
+            {
+                var grouped = await _context.Invoices
+                    .AsNoTracking()
+                    .Where(i => i.UserID == userId && !i.IsDeleted)
+                    .GroupBy(i => i.Status)
+                    .Select(g => new
+                    {
+                        StatusCode = (int)g.Key,
+                        Count = g.Count()
+                    })
+                    .ToListAsync();
+
+                var counts = grouped.ToDictionary(x => x.StatusCode, x => x.Count);
+                var total = counts.Values.Sum();
+
+                return Ok(new
+                {
+                    total,
+                    counts
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving invoice status counts for user {UserId}", userId);
+                return StatusCode(500, new { message = "Lỗi khi lấy thống kê trạng thái đơn hàng", error = ex.Message });
+            }
+        }
+
+        [HttpGet("user/{userId}/status-list")]
+        public async Task<IActionResult> GetUserStatusList(string userId)
+        {
+            try
+            {
+                var statuses = await _context.Invoices
+                    .AsNoTracking()
+                    .Where(i => i.UserID == userId && !i.IsDeleted)
+                    .Select(i => new
+                    {
+                        i.InvoiceID,
+                        StatusCode = (int)i.Status
+                    })
+                    .ToListAsync();
+
+                return Ok(statuses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving invoice status list for user {UserId}", userId);
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách trạng thái đơn hàng", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy chi tiết hóa đơn theo ID (bao gồm thông tin voucher + lịch sử sử dụng)
+        /// </summary>
+        [HttpGet("{id}")]
+        //[Authorize]
+        public async Task<ActionResult<object>> GetById(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                var user = await _userManager.GetUserAsync(User);
+                if (User.Identity?.IsAuthenticated == true && invoice.UserID != user?.Id && !User.IsInRole("Admin"))
+                    return Forbid();
+
+                return Ok(MapInvoiceToDetailResponse(invoice));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi lấy thông tin hóa đơn", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Truy vấn hóa đơn với phân trang, lọc và sắp xếp
+        /// </summary>
+        [HttpGet("search")]
+        //[Authorize]
+        public async Task<ActionResult<object>> Search(
+            [FromQuery] string? search,
+            [FromQuery] OrderStatus? status,
+            [FromQuery] string? sortBy,
+            [FromQuery] bool desc = false,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+                var (items, totalCount) = await _invoiceService.QueryAsync(search, status, sortBy, desc, page, pageSize);
+                var invoiceIds = items.Select(i => i.InvoiceID).ToList();
+                var itemCountMap = await _context.InvoiceDetails
+                    .AsNoTracking()
+                    .Where(d => invoiceIds.Contains(d.InvoiceID))
+                    .GroupBy(d => d.InvoiceID)
+                    .Select(g => new { InvoiceID = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.InvoiceID, x => x.Count);
+
+                var result = new
+                {
+                    Items = items.Select(i => MapInvoiceToSummaryResponse(i, itemCountMap.TryGetValue(i.InvoiceID, out var c) ? c : 0)),
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    Search = search,
+                    Status = status,
+                    SortBy = sortBy,
+                    Desc = desc
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching invoices");
+                return StatusCode(500, new { message = "Lỗi khi tìm kiếm hóa đơn", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy lịch sử sử dụng voucher của một đơn hàng
+        /// </summary>
+        [HttpGet("{id}/voucher-usage")]
+        //[Authorize]
+        public async Task<IActionResult> GetVoucherUsage(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                var user = await _userManager.GetUserAsync(User);
+                if (User.Identity?.IsAuthenticated == true && invoice.UserID != user?.Id && !User.IsInRole("Admin"))
+                    return Forbid();
+
+                var usages = invoice.VoucherUsages?.Select(vu => new
+                {
+                    vu.VoucherID,
+                    VoucherCode = vu.Voucher?.Code,
+                    VoucherName = vu.Voucher?.Name,
+                    vu.DiscountAmount,
+                    vu.OrderValue,
+                    vu.UsedAt,
+                    vu.UserID
+                }).ToList();
+
+                return Ok(new
+                {
+                    invoiceId = id,
+                    hasVoucher = invoice.VoucherID.HasValue,
+                    voucher = invoice.Voucher != null ? new
+                    {
+                        invoice.Voucher.VoucherID,
+                        invoice.Voucher.Code,
+                        invoice.Voucher.Name,
+                        invoice.Voucher.DiscountType,
+                        invoice.Voucher.DiscountValue
+                    } : null,
+                    subTotal = invoice.SubTotal,
+                    discountAmount = invoice.DiscountAmount,
+                    totalPrice = invoice.TotalPrice,
+                    usageHistory = usages
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting voucher usage for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi lấy thông tin voucher", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy lịch sử sử dụng voucher của người dùng hiện tại
+        /// </summary>
+        [HttpGet("my-voucher-history")]
+        //[Authorize]
+        public async Task<IActionResult> GetMyVoucherHistory()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var usages = await _context.VoucherUsages
+                    .Where(vu => vu.UserID == user.Id && vu.InvoiceID != null)
+                    .Include(vu => vu.Voucher)
+                    .Include(vu => vu.Invoice)
+                    .OrderByDescending(vu => vu.UsedAt)
+                    .Select(vu => new
+                    {
+                        vu.VoucherID,
+                        VoucherCode = vu.Voucher.Code,
+                        VoucherName = vu.Voucher.Name,
+                        vu.DiscountAmount,
+                        vu.OrderValue,
+                        vu.UsedAt,
+                        vu.InvoiceID,
+                        InvoiceStatus = vu.Invoice != null ? vu.Invoice.Status.GetDisplayName() : null
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalUsed = usages.Count,
+                    totalSaved = usages.Sum(u => u.DiscountAmount),
+                    history = usages
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting voucher history");
+                return StatusCode(500, new { message = "Lỗi khi lấy lịch sử voucher", error = ex.Message });
+            }
+        }
+
+        // ======================== ADDRESS ENDPOINTS ============================
+
+        /// <summary>
+        /// Lấy danh sách địa chỉ đã lưu của người dùng hiện tại
+        /// </summary>
+        [HttpGet("my-addresses")]
+        //[Authorize]
+        public async Task<IActionResult> GetMyAddresses()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var addresses = await _context.UserAddresses
+                    .Where(a => a.UserID == user.Id)
+                    .Include(a => a.Province)
+                    .Include(a => a.Ward)
+                    .OrderByDescending(a => a.IsDefault)
+                    .AsNoTracking()
+                    .Select(a => new
+                    {
+                        a.AddressID,
+                        a.PhoneNumber,
+                        a.StreetAddress,
+                        a.IsDefault,
+                        ProvinceName = a.Province != null ? a.Province.Name : "",
+                        WardName = a.Ward != null ? a.Ward.Name : "",
+                        FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
+                    })
+                    .ToListAsync();
+
+                return Ok(addresses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user addresses");
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách địa chỉ", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy địa chỉ mặc định của người dùng hiện tại
+        /// </summary>
+        [HttpGet("default-address")]
+        //[Authorize]
+        public async Task<IActionResult> GetDefaultAddress()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var defaultAddress = await _context.UserAddresses
+                    .Where(a => a.UserID == user.Id && a.IsDefault)
+                    .Include(a => a.Province)
+                    .Include(a => a.Ward)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+                if (defaultAddress == null)
+                {
+                    defaultAddress = await _context.UserAddresses
+                        .Where(a => a.UserID == user.Id)
+                        .Include(a => a.Province)
+                        .Include(a => a.Ward)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync();
+                }
+
+                if (defaultAddress == null)
+                    return NotFound(new { message = "Người dùng chưa có địa chỉ nào" });
+
+                var result = new
+                {
+                    defaultAddress.AddressID,
+                    defaultAddress.PhoneNumber,
+                    defaultAddress.StreetAddress,
+                    defaultAddress.IsDefault,
+                    ProvinceName = defaultAddress.Province?.Name ?? "",
+                    WardName = defaultAddress.Ward?.Name ?? "",
+                    FullAddress = GetFullAddressFromUserAddress(defaultAddress)
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving default address");
+                return StatusCode(500, new { message = "Lỗi khi lấy địa chỉ mặc định", error = ex.Message });
+            }
+        }
+
+        // ======================== CREATE ENDPOINTS ============================
+
+        /// <summary>
+        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động)
+        /// </summary>
+        [HttpPost("create-from-cart/{cartId}")]
+        //[Authorize]
+        public async Task<ActionResult<object>> CreateFromCart(
+            int cartId,
+            [FromQuery] PayMethod? payMethod,
+            [FromQuery] int? addressId,
+            [FromQuery] string? shippingAddress,
+            [FromBody] CreateFromCartRequest? body)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                // Xác định địa chỉ giao hàng
+                string address;
+
+                if (!string.IsNullOrWhiteSpace(shippingAddress))
+                {
+                    address = shippingAddress;
+                }
+                else if (addressId.HasValue)
+                {
+                    var selectedAddress = await _context.UserAddresses
+                        .Where(a => a.AddressID == addressId.Value && a.UserID == user.Id)
+                        .Include(a => a.Province)
+                        .Include(a => a.Ward)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync();
+
+                    if (selectedAddress == null)
+                        return BadRequest(new { message = "Địa chỉ không tồn tại hoặc không thuộc về người dùng" });
+
+                    address = GetFullAddressFromUserAddress(selectedAddress);
+                }
+                else
+                {
+                    var defaultAddress = await _context.UserAddresses
+                        .Where(a => a.UserID == user.Id && a.IsDefault)
+                        .Include(a => a.Province)
+                        .Include(a => a.Ward)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync();
+
+                    if (defaultAddress == null)
+                    {
+                        defaultAddress = await _context.UserAddresses
+                            .Where(a => a.UserID == user.Id)
+                            .Include(a => a.Province)
+                            .Include(a => a.Ward)
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync();
+                    }
+
+                    if (defaultAddress == null)
+                        return BadRequest(new { message = "Vui lòng thêm địa chỉ giao hàng trước khi đặt hàng" });
+
+                    address = GetFullAddressFromUserAddress(defaultAddress);
+                }
+
+                // ✅ Lấy selectedCartDetailIds từ body (nếu có)
+                var selectedIds = body?.SelectedCartDetailIds;
+
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds);
+
+                _logger.LogInformation(
+                    "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",
+                    invoice.InvoiceID, invoice.SubTotal, invoice.DiscountAmount, invoice.TotalPrice, invoice.VoucherID);
+
+                string? paymentUrl = null;
+
+                if (invoice.PayMethod == PayMethod.MobilePayment)
+                {
+                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee;
+                    paymentUrl = _vnPayService.CreatePaymentUrl(
+                        HttpContext,
+                        invoice.InvoiceID,
+                        amountToPay,
+                        $"Thanh toan don hang #{invoice.InvoiceID}");
+                }
+
+                return CreatedAtAction(nameof(GetById), new { id = invoice.InvoiceID }, new
+                {
+                    success = true,
+                    message = "Đặt hàng thành công!",
+                    data = MapInvoiceToDetailResponse(invoice),
+                    paymentUrl = paymentUrl
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid operation creating invoice from cart {CartId}", cartId);
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating invoice from cart {CartId}", cartId);
+                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = ex.Message });
+            }
+        }
+
+        // ======================== UPDATE ENDPOINTS ============================
+
+        /// <summary>
+        /// Cập nhật thông tin hóa đơn (Admin only)
+        /// </summary>
+        [HttpPut("{id}")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(int id, [FromBody] Invoice invoice)
+        {
+            try
+            {
+                if (id != invoice.InvoiceID)
+                    return BadRequest(new { message = "ID hóa đơn không khớp" });
+
+                var existingInvoice = await _invoiceService.GetByIdAsync(id);
+                if (existingInvoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                await _invoiceService.UpdateAsync(invoice);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi cập nhật hóa đơn", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Tính toán lại tổng tiền hóa đơn
+        /// </summary>
+        [HttpPost("{id}/recalculate")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RecalculateTotal(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                await _invoiceService.RecalculateTotalAsync(id);
+                return Ok(new { message = "Tính toán lại thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recalculating invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi tính toán lại", error = ex.Message });
+            }
+        }
+
+        // ======================== STATUS CHANGE ENDPOINTS ============================
+
+        /// <summary>
+        /// Xác nhận đơn hàng (chuyển trạng thái từ Pending sang Confirmed) 
+        /// </summary>
+
+        [HttpPost("{id}/confirm")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Confirm(int id)
+        {
+            try
+            {
+                var result = await _invoiceService.ConfirmAsync(id);
+                if (!result)
+                    return BadRequest(new { message = "Không thể xác nhận đơn hàng. Kiểm tra lại trạng thái." });
+
+                return Ok(new { message = "Xác nhận đơn hàng thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error confirming invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi xác nhận đơn hàng", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật trạng thái đơn hàng thành đã giao (Admin only)
+        /// </summary>
+
+        [HttpPost("{id}/mark-shipped")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkShipped(int id)
+        {
+            try
+            {
+                var result = await _invoiceService.MarkShippedAsync(id);
+                if (!result)
+                    return BadRequest(new { message = "Không thể cập nhật trạng thái giao hàng. Kiểm tra lại trạng thái." });
+
+                return Ok(new { message = "Cập nhật trạng thái giao hàng thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking invoice as shipped {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi cập nhật trạng thái", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Xác nhận đã nhận hàng (chuyển trạng thái từ Shipped sang Completed) - Người dùng tự xác nhận
+        /// </summary>
+
+        [HttpPost("{id}/mark-completed")]
+        //[Authorize]
+        public async Task<IActionResult> MarkCompleted(int id)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var result = await _invoiceService.MarkCompletedByUserAsync(id, user.Id);
+                if (!result)
+                    return BadRequest(new { message = "Không thể xác nhận nhận hàng. Kiểm tra lại trạng thái hoặc quyền." });
+                return Ok(new { message = "Xác nhận nhận hàng thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking invoice as completed {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi xác nhận nhận hàng", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Thanh toán lại đơn hàng qua VNPay (chỉ áp dụng cho đơn hàng sử dụng phương thức MobilePayment và đang ở trạng thái Pending)
+        /// </summary>
+
+        [HttpPost("{id}/retry-vnpay")]
+        //[Authorize]
+        public async Task<IActionResult> RetryVnPay(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                if (invoice.PayMethod != PayMethod.MobilePayment)
+                    return BadRequest(new { message = "Đơn hàng không sử dụng phương thức thanh toán VNPay." });
+
+                if (invoice.Status != OrderStatus.Pending)
+                    return BadRequest(new { message = "Chỉ có thể thanh toán lại khi đơn hàng đang chờ xác nhận." });
+
+                var hasSuccessPayment = invoice.PaymentTransactions.Any(pt => pt.Status == PaymentTransactionStatus.Success);
+                if (hasSuccessPayment)
+                    return BadRequest(new { message = "Đơn hàng đã được thanh toán thành công." });
+
+                var latestPending = invoice.PaymentTransactions
+                    .Where(pt => pt.Status == PaymentTransactionStatus.Pending)
+                    .OrderByDescending(pt => pt.CreatedAt)
+                    .FirstOrDefault();
+
+                if (latestPending == null)
+                    return BadRequest(new { message = "Không có giao dịch chờ thanh toán để thực hiện lại." });
+
+                if (latestPending.CreatedAt.AddHours(24) < DateTime.Now)
+                    return BadRequest(new { message = "Đã quá hạn 24 giờ thanh toán. Vui lòng tạo đơn hàng mới." });
+
+                var amountToPay = invoice.TotalPrice + invoice.ShippingFee;
+                var paymentUrl = _vnPayService.CreatePaymentUrl(
+                    HttpContext,
+                    invoice.InvoiceID,
+                    amountToPay,
+                    $"Thanh toan lai don hang #{invoice.InvoiceID}");
+
+                _context.PaymentTransactions.Add(new PaymentTransaction
+                {
+                    InvoiceID = invoice.InvoiceID,
+                    TxnRef = invoice.InvoiceID.ToString(),
+                    Status = PaymentTransactionStatus.Pending,
+                    CreatedAt = DateTime.Now
+                });
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    paymentUrl
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrying VNPay for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi tạo lại giao dịch VNPay", error = ex.Message });
+            }
+        }
+
+        // ======================== CANCEL ENDPOINTS ============================
+
+        /// <summary>
+        /// Người dùng gửi yêu cầu hủy đơn hàng (chỉ áp dụng cho đơn hàng đang ở trạng thái Pending hoặc Confirmed)
+        /// </summary>
+
+        [HttpPost("{id}/request-cancel")]
+        //[Authorize]
+        public async Task<IActionResult> RequestCancel(int id, [FromBody] InvoiceDtos.CancelRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Lý do hủy tối đa 500 ký tự." });
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var result = await _invoiceService.RequestCancelAsync(id, user.Id, request?.Reason);
+                if (!result)
+                    return BadRequest(new { message = "Không thể gửi yêu cầu hủy. Kiểm tra lại trạng thái đơn hàng." });
+                return Ok(new { message = "Gửi yêu cầu hủy thành công. Chúng tôi sẽ xem xét sớm nhất." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error requesting cancel for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi gửi yêu cầu hủy", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Admin phê duyệt hủy đơn hàng (chuyển trạng thái sang Cancelled, hoàn trả hàng và voucher nếu có)
+        /// </summary>
+
+        [HttpPost("{id}/admin-cancel")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminCancel(int id, [FromBody] InvoiceDtos.CancelRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Lý do hủy tối đa 500 ký tự." });
+
+                var result = await _invoiceService.AdminCancelAsync(id, request?.Reason);
+                if (!result)
+                    return BadRequest(new { message = "Không thể hủy đơn hàng. Kiểm tra lại trạng thái." });
+
+                return Ok(new { message = "Hủy đơn hàng thành công. Hàng và voucher đã được hoàn trả." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error admin canceling invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi hủy đơn hàng", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Admin phê duyệt hủy đơn hàng (chuyển trạng thái sang Cancelled, hoàn trả hàng và voucher nếu có)
+        /// </summary>
+
+        [HttpPost("{id}/approve-cancel")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ApproveCancel(int id)
+        {
+            try
+            {
+                var result = await _invoiceService.ApproveCancelAsync(id, null);
+                if (!result)
+                    return BadRequest(new { message = "Không thể phê duyệt hủy. Kiểm tra lại trạng thái." });
+
+                return Ok(new { message = "Phê duyệt hủy đơn hàng thành công. Hàng và voucher đã được hoàn trả." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving cancel for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi phê duyệt hủy", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Admin từ chối yêu cầu hủy đơn hàng (trạng thái đơn hàng trở lại như cũ, không hoàn trả hàng hay voucher)
+        /// </summary>
+
+        [HttpPost("{id}/reject-cancel")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RejectCancel(int id)
+        {
+            try
+            {
+                var result = await _invoiceService.RejectCancelAsync(id);
+                if (!result)
+                    return BadRequest(new { message = "Không thể từ chối hủy. Kiểm tra lại trạng thái." });
+
+                return Ok(new { message = "Từ chối hủy đơn hàng thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting cancel for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi từ chối hủy", error = ex.Message });
+            }
+        }
+
+        // ======================== DELETE ENDPOINT ============================
+
+        /// <summary>
+        /// Xóa hóa đơn (Admin only) - Thực chất là đánh dấu IsDeleted = true, không xóa cứng để giữ lại lịch sử và tránh lỗi ràng buộc khóa ngoại
+        /// </summary>
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                await _invoiceService.DeleteAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi xóa hóa đơn", error = ex.Message });
+            }
+        }
+
+        // ======================== HELPER METHODS ============================
+
+        /// <summary>
+        /// Hàm helper để lấy địa chỉ đầy đủ từ UserAddress (kết hợp StreetAddress + Ward + Province)
+        /// </summary>
+
+        private static string GetFullAddressFromUserAddress(UserAddress userAddress)
+        {
+            var parts = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(userAddress.StreetAddress))
+                parts.Add(userAddress.StreetAddress);
+
+            if (userAddress.Ward != null && !string.IsNullOrWhiteSpace(userAddress.Ward.Name))
+                parts.Add(userAddress.Ward.Name);
+
+            if (userAddress.Province != null && !string.IsNullOrWhiteSpace(userAddress.Province.Name))
+                parts.Add(userAddress.Province.Name);
+
+            return string.Join(", ", parts);
+        }
+
+        /// <summary>
+        /// Map Invoice sang response object (danh sách)
+        /// </summary>
+        private static object MapInvoiceToResponse(Invoice invoice)
+        {
+            return new
+            {
+                invoice.InvoiceID,
+                invoice.UserID,
+                UserName = invoice.User?.UserName,
+                UserFullName = invoice.User?.FullName,
+                UserEmail = invoice.User?.Email,
+                UserPhone = invoice.User?.PhoneNumber,
+                invoice.SubTotal,
+                invoice.DiscountAmount,
+                invoice.TotalPrice,
+                invoice.ShippingFee,
+                invoice.ShippingAddress,
+                PayMethod = invoice.PayMethod?.GetDisplayName(),
+                PayMethodCode = (int?)invoice.PayMethod,
+                Status = invoice.Status.GetDisplayName(),
+                StatusCode = (int)invoice.Status,
+                invoice.CreatedAt,
+                HasVoucher = invoice.VoucherID.HasValue,
+                VoucherCode = invoice.Voucher?.Code,
+                VoucherName = invoice.Voucher?.Name,
+                ItemCount = invoice.InvoiceDetails?.Count ?? 0,
+                InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
+                {
+                    d.InvoiceDetailID,
+                    d.VariantID,
+                    d.BundleID,
+                    d.Quantity,
+                    d.UnitPrice,
+                    d.TotalPrice,
+                    ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
+                    VariantName = d.Variant?.VariantName,
+                    CategoryName = d.Variant?.Product?.Category?.CategoryName,
+                    SupplierName = d.Variant?.Product?.Supplier?.SupplierName,
+                    ImageUrl = d.Variant?.ImageUrl ?? d.Bundle?.ImageUrl
+                }).ToList(),
+                PaymentTransactions = invoice.PaymentTransactions?
+                    .OrderByDescending(pt => pt.CreatedAt)
+                    .Select(pt => new
+                    {
+                        pt.PaymentTransactionId,
+                        pt.InvoiceID,
+                        pt.TxnRef,
+                        pt.VnPayTransactionNo,
+                        pt.ResponseCode,
+                        Status = pt.Status.ToString(),
+                        StatusCode = (int)pt.Status,
+                        StatusLabel = pt.Status switch
+                        {
+                            PaymentTransactionStatus.Pending => "Đang chờ",
+                            PaymentTransactionStatus.Success => "Thành công",
+                            PaymentTransactionStatus.Failed => "Thất bại",
+                            _ => "Không xác định"
+                        },
+                        pt.CreatedAt,
+                        pt.PaidAt
+                    })
+                    .ToList()
+            };
+        }
+
+        /// <summary>
+        /// Map Invoice sang response nhẹ cho danh sách/phân trang
+        /// </summary>
+        private static object MapInvoiceToSummaryResponse(Invoice invoice, int itemCount)
+        {
+            return new
+            {
+                invoice.InvoiceID,
+                invoice.UserID,
+                UserName = invoice.User?.UserName,
+                UserFullName = invoice.User?.FullName,
+                UserEmail = invoice.User?.Email,
+                UserPhone = invoice.User?.PhoneNumber,
+                invoice.SubTotal,
+                invoice.DiscountAmount,
+                invoice.TotalPrice,
+                invoice.ShippingFee,
+                invoice.ShippingAddress,
+                PayMethod = invoice.PayMethod?.GetDisplayName(),
+                PayMethodCode = (int?)invoice.PayMethod,
+                Status = invoice.Status.GetDisplayName(),
+                StatusCode = (int)invoice.Status,
+                invoice.CreatedAt,
+                HasVoucher = invoice.VoucherID.HasValue,
+                VoucherCode = invoice.Voucher?.Code,
+                VoucherName = invoice.Voucher?.Name,
+                ItemCount = itemCount
+            };
+        }
+
+        /// <summary>
+        /// Map Invoice sang response chi tiết (bao gồm voucher usage history)
+        /// </summary>
+        /// <summary>
+        /// Map Invoice sang response chi tiết (bao gồm voucher usage history)
+        /// </summary>
+
+        private static object MapInvoiceToDetailResponse(Invoice invoice)
+        {
+            return new
+            {
+                invoice.InvoiceID,
+                invoice.UserID,
+                UserName = invoice.User?.UserName,
+                UserFullName = invoice.User?.FullName,
+                UserEmail = invoice.User?.Email,
+                UserPhone = invoice.User?.PhoneNumber,
+
+                invoice.SubTotal,
+                invoice.DiscountAmount,
+                invoice.TotalPrice,
+                invoice.ShippingFee,
+                FinalAmount = invoice.TotalPrice + invoice.ShippingFee,
+
+                invoice.ShippingAddress,
+                PayMethod = invoice.PayMethod?.GetDisplayName(),
+                PayMethodCode = (int?)invoice.PayMethod,
+                Status = invoice.Status.GetDisplayName(),
+                StatusCode = (int)invoice.Status,
+
+                HasVoucher = invoice.VoucherID.HasValue,
+                Voucher = invoice.Voucher != null ? new
+                {
+                    invoice.Voucher.VoucherID,
+                    invoice.Voucher.Code,
+                    invoice.Voucher.Name,
+                    invoice.Voucher.DiscountType,
+                    invoice.Voucher.DiscountValue,
+                    DiscountTypeLabel = invoice.Voucher.DiscountType == 1 ? "Phần trăm" : "Tiền cố định"
+                } : null,
+
+                VoucherUsages = invoice.VoucherUsages?.Select(vu => new
+                {
+                    vu.VoucherID,
+                    VoucherCode = vu.Voucher?.Code,
+                    vu.DiscountAmount,
+                    vu.OrderValue,
+                    vu.UsedAt
+                }).ToList(),
+
+                PaymentTransactions = invoice.PaymentTransactions?
+                    .OrderByDescending(pt => pt.CreatedAt)
+                    .Select(pt => new
+                    {
+                        pt.PaymentTransactionId,
+                        pt.InvoiceID,
+                        pt.TxnRef,
+                        pt.VnPayTransactionNo,
+                        pt.ResponseCode,
+                        Status = pt.Status.ToString(),
+                        StatusCode = (int)pt.Status,
+                        StatusLabel = pt.Status switch
+                        {
+                            PaymentTransactionStatus.Pending => "Đang chờ",
+                            PaymentTransactionStatus.Success => "Thành công",
+                            PaymentTransactionStatus.Failed => "Thất bại",
+                            _ => "Không xác định"
+                        },
+                        pt.CreatedAt,
+                        pt.PaidAt
+                    })
+                    .ToList(),
+
+                invoice.CreatedAt,
+                invoice.ConfirmedAt,
+                invoice.ShippedAt,
+                invoice.CompletedAt,
+                invoice.CancelledAt,
+                invoice.CancelReason,
+                invoice.Note,
+                invoice.IsDeleted,
+
+                InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
+                {
+                    d.InvoiceDetailID,
+                    d.VariantID,
+                    d.BundleID,
+                    d.Quantity,
+                    d.UnitPrice,
+                    d.TotalPrice,
+                    ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
+                    VariantName = d.Variant?.VariantName,
+                    ImageUrl = d.Variant?.ImageUrl ?? d.Bundle?.ImageUrl
+                }).ToList()
+            };
+        }
+
+
+
+        /// <summary>
+        /// Request body cho tạo hóa đơn từ giỏ hàng
+        /// </summary>
+        public class CreateFromCartRequest
+        {
+            /// <summary>
+            /// Danh sách CartDetailID được chọn (null = mua tất cả)
+            /// </summary>
+            public List<int>? SelectedCartDetailIds { get; set; }
+        }
+    }
+}
