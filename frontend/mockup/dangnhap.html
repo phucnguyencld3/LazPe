@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#514345",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-primary-container": "#7b444e",
+                        "tertiary": "#636037",
+                        "tertiary-container": "#d0cb99",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#aeedd5",
+                        "on-tertiary-fixed-variant": "#4b4822",
+                        "secondary-fixed": "#b1efd8",
+                        "primary-fixed": "#ffd9de",
+                        "outline-variant": "#d6c2c3",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "tertiary-fixed": "#eae4b1",
+                        "surface-container": "#edeeef",
+                        "on-primary-fixed": "#360c17",
+                        "error": "#ba1a1a",
+                        "background": "#f8f9fa",
+                        "on-tertiary-container": "#59562e",
+                        "on-primary-fixed-variant": "#6b3741",
+                        "primary-container": "#ffb6c1",
+                        "surface-bright": "#f8f9fa",
+                        "secondary": "#2c6956",
+                        "on-tertiary-fixed": "#1e1c00",
+                        "on-secondary-fixed": "#002118",
+                        "secondary-fixed-dim": "#96d3bd",
+                        "primary": "#874e58",
+                        "on-secondary-fixed-variant": "#0d503f",
+                        "on-error": "#ffffff",
+                        "on-background": "#191c1d",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#cdc897",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary-container": "#316d5b",
+                        "surface-tint": "#874e58",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8f9fa",
+                        "outline": "#847375",
+                        "inverse-primary": "#fcb3be",
+                        "surface-dim": "#d9dadb",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#f0f1f2",
+                        "primary-fixed-dim": "#fcb3be",
+                        "inverse-surface": "#2e3132",
+                        "surface-variant": "#e1e3e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "12px",
+                        "md": "24px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "base": "8px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "display-lg": ["Quicksand"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Quicksand"],
+                        "label-sm": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "body-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .soft-shadow {
+            box-shadow: 0 20px 40px -10px rgba(135, 78, 88, 0.1);
+        }
+        .bouncy-hover:hover {
+            transform: scale(1.02);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface shadow-sm docked full-width top-0 z-50 h-20">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-7xl mx-auto h-full">
+<div class="font-headline-md text-headline-md font-bold text-primary">TinyTrove</div>
+<div class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Shop All</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">New Arrivals</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Categories</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Sale</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="scale-95 active:scale-90 transition-transform p-2">
+<span class="material-symbols-outlined text-primary">search</span>
+</button>
+<button class="scale-95 active:scale-90 transition-transform p-2">
+<span class="material-symbols-outlined text-primary">shopping_cart</span>
+</button>
+<button class="scale-95 active:scale-90 transition-transform p-2">
+<span class="material-symbols-outlined text-primary">person</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content: Login Shell -->
+<main class="flex-grow flex items-center justify-center px-margin-mobile md:px-margin-desktop py-xl relative overflow-hidden">
+<!-- Background Decorations -->
+<div class="absolute top-0 left-0 w-64 h-64 bg-primary-container opacity-20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+<div class="absolute bottom-0 right-0 w-96 h-96 bg-secondary-container opacity-20 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl"></div>
+<!-- Login Card -->
+<div class="w-full max-w-5xl bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col md:flex-row soft-shadow z-10 animate-fade-in">
+<!-- Left Side: Visual/Branding -->
+<div class="hidden md:flex md:w-1/2 bg-primary-container relative flex-col justify-center items-center p-xl text-center">
+<div class="absolute inset-0 opacity-40">
+<img alt="TinyTrove Kids" class="w-full h-full object-cover" data-alt="A soft and high-key photograph of beautifully crafted wooden children's toys arranged neatly on a pale pink surface. The lighting is warm and joyful, creating a safe and inviting atmosphere for parents. The scene uses a gentle pastel color palette of soft pinks, mint greens, and natural wood tones. The style is professional commercial photography with a shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwTNcc9TX6I0BfPMYLu2gLY_BDAlyA8azRsHM6seEaMSy6mNbSv4bgo630nWWVSVdEhT23RaYhYueNcvAWxAue7w0E1IWeo9fO0ppJeZUvqC_J6rx_DS3BqX8-ngNSqkeVT2VHIXrss3qAZzg4m8hDxdBEpCxLnrXxceY6zlkV-3k2wnxTtVG8TTnX1qvnsBNZU2FTBtVIQhioJ6YPrCO99T9EF1PUDeCahx95aR0FRhytxq5na-nF0RKBMtYzGI8g8SsJ1FjBLnc_"/>
+</div>
+<div class="relative z-10 space-y-md">
+<h1 class="font-display-lg text-display-lg text-on-primary-container">Chào mừng trở lại!</h1>
+<p class="font-body-lg text-body-lg text-on-primary-container/80 px-lg">Tiếp tục hành trình khám phá thế giới diệu kỳ cùng bé yêu của bạn tại TinyTrove.</p>
+</div>
+<!-- Decorative Floater -->
+<div class="absolute bottom-md left-md bg-white/30 backdrop-blur-md p-md rounded-lg flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-md text-on-primary-container">100% An toàn &amp; Niềm vui</span>
+</div>
+</div>
+<!-- Right Side: Form -->
+<div class="w-full md:w-1/2 p-lg md:p-xl flex flex-col justify-center">
+<div class="mb-lg text-center md:text-left">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-xs">Đăng nhập</h2>
+<p class="font-body-md text-on-surface-variant">Nhập thông tin của bạn để truy cập tài khoản</p>
+</div>
+<form class="space-y-md" onsubmit="return false;">
+<!-- Email Field -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant ml-base">Email</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">mail</span>
+<input class="w-full h-14 pl-12 pr-md bg-surface-container-low border-none rounded-DEFAULT focus:ring-2 focus:ring-primary-container text-on-surface transition-all" placeholder="email@vidu.com" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center ml-base pr-base">
+<label class="font-label-md text-label-md text-on-surface-variant">Mật khẩu</label>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">Quên mật khẩu?</a>
+</div>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">lock</span>
+<input class="w-full h-14 pl-12 pr-md bg-surface-container-low border-none rounded-DEFAULT focus:ring-2 focus:ring-primary-container text-on-surface transition-all" placeholder="••••••••" type="password"/>
+<button class="absolute right-md top-1/2 -translate-y-1/2 text-outline hover:text-on-surface" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-md space-y-md">
+<button class="w-full h-14 bg-primary text-on-primary font-headline-md rounded-full shadow-lg shadow-primary/20 bouncy-hover flex items-center justify-center gap-sm">
+                            Đăng nhập
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<div class="relative flex items-center py-base">
+<div class="flex-grow border-t border-outline-variant"></div>
+<span class="flex-shrink mx-md font-label-sm text-on-surface-variant">Hoặc</span>
+<div class="flex-grow border-t border-outline-variant"></div>
+</div>
+<div class="text-center">
+<p class="font-body-md text-on-surface-variant">
+                                Chưa có tài khoản? 
+                                <a class="text-primary font-bold hover:underline ml-xs" href="#">Tạo tài khoản mới</a>
+</p>
+</div>
+</div>
+</form>
+<!-- Social Proof / Footer inside card -->
+<div class="mt-xl flex justify-center gap-lg">
+<button class="p-md rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
+<img alt="Google" class="w-6 h-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-Y_bpawEZwQ_1quHszPtLK_TJUWkc36jcScJCfI5xMV1EfUAHwjuQbdjhs96DksoRjtmNalPjJPSUjkFjCZNsN2ZoUGUF_Jv0HlkTWXIgi4d0GBEfdxFikp_UaQb_aZKG2nNZb1VcxBmMB41BU1UkGjllV_jAJGxmWNr_TURD7gJoGagWO7etGsaOi--8QErYYkAHRo9Lhpw1HUnoPP4l2-R5KlaeF39CWSg8Xxe2LA5PwYkYPu5dtBg9pRjTXJAyprHgufcnqOnp"/>
+</button>
+<button class="p-md rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
+<img alt="Facebook" class="w-6 h-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUGmQ4Wc7m1zyg2hFUHGSmepByqTAVfek9d6OZQg8s0CgrCaAhdgSv9Z7mZ89m-Q9kWJDCRCDsDEqZx42xG7cJsU_Hxxc-V18HPCgTVgdPrLVcDr_5it3Xcq0W5Hya-0T-KDnanrQa8cpYgZX2RZvndB6m6V-DaQq1v4VV3DvA_2LsOpmuWDQXfhb6G3mJ_D99OovmKrhxmT6B9ZclJ1mA819aExRGFsLZYOWFpL_K8eotdNFsqBfHxd4jeLISdvyTeUvC_fZ_FFpU"/>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low w-full">
+<div class="w-full py-xl px-margin-desktop max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="space-y-md">
+<div class="font-headline-md text-headline-md font-bold text-primary">TinyTrove</div>
+<p class="font-body-md text-on-surface-variant">© 2024 TinyTrove Kids Boutique. Safe &amp; Joyful shopping.</p>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-primary uppercase tracking-wider">Khám phá</span>
+<a class="text-on-surface-variant font-label-sm hover:text-secondary transition-colors" href="#">About Us</a>
+<a class="text-on-surface-variant font-label-sm hover:text-secondary transition-colors" href="#">Newsletter</a>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-primary uppercase tracking-wider">Hỗ trợ</span>
+<a class="text-on-surface-variant font-label-sm hover:text-secondary transition-colors" href="#">Contact Us</a>
+<a class="text-on-surface-variant font-label-sm hover:text-secondary transition-colors" href="#">Shipping &amp; Returns</a>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-md text-primary uppercase tracking-wider">Pháp lý</span>
+<a class="text-on-surface-variant font-label-sm hover:text-secondary transition-colors" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple animation logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const card = document.querySelector('.animate-fade-in');
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        });
+
+        // Password visibility toggle interaction
+        const passToggle = document.querySelector('button .material-symbols-outlined:contains("visibility")');
+        if(passToggle) {
+            passToggle.parentElement.addEventListener('click', function() {
+                const input = this.parentElement.querySelector('input');
+                const isPass = input.type === 'password';
+                input.type = isPass ? 'text' : 'password';
+                this.querySelector('span').innerText = isPass ? 'visibility_off' : 'visibility';
+            });
+        }
+    </script>
+</body></html>
