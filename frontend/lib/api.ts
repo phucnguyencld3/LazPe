@@ -1,6 +1,6 @@
 import { Product, Category, ApiResponse, PaginatedResponse } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
 export async function getProducts(
   page: number = 1,
