@@ -23,7 +23,7 @@ export default function UserDetailsPage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) {
         router.push("/login");
         return;
@@ -48,7 +48,7 @@ export default function UserDetailsPage() {
   }, [id, router]);
 
   const handleLockUnlock = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
     
     if (user?.isLocked) {
@@ -74,7 +74,7 @@ export default function UserDetailsPage() {
   };
 
   const confirmLock = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
     setIsLocking(true);
     try {

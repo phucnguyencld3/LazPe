@@ -22,7 +22,7 @@ export default function AdminUsersPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
       router.push("/login");
       return;

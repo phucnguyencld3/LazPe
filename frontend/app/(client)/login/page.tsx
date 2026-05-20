@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +31,22 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Lưu token vào localStorage
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        // Xóa sạch cả hai kho lưu trữ trước để tránh xung đột
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+
+        if (rememberMe) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          sessionStorage.setItem("token", data.token);
+          sessionStorage.setItem("user", JSON.stringify(data.user));
+        }
         
-        // Chuyển hướng về trang chủ
-        router.push("/");
+        // Chuyển hướng về trang chủ và làm mới trang để cập nhật Header
+        window.location.href = "/";
       } else {
         setError(data.message || "Đăng nhập thất bại");
       }
@@ -137,6 +148,20 @@ export default function LoginPage() {
                   <span className="material-symbols-outlined">{showPassword ? "visibility_off" : "visibility"}</span>
                 </button>
               </div>
+            </div>
+
+            {/* Nhớ đăng nhập Checkbox */}
+            <div className="flex items-center ml-2">
+              <input
+                id="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-outline text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+              />
+              <label htmlFor="rememberMe" className="ml-2 font-label-md text-sm text-on-surface-variant cursor-pointer select-none">
+                Nhớ đăng nhập
+              </label>
             </div>
 
             {/* Actions */}
