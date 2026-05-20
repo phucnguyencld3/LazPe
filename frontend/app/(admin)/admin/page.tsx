@@ -316,11 +316,11 @@ export default async function AdminDashboardPage() {
       
       {/* Footer */}
       <footer className="mt-xl text-center text-on-surface-variant font-label-sm pb-lg border-t border-outline-variant pt-lg">
-        <p>© 2024 LazPe Admin Portal. All rights reserved.</p>
+        <p>© 2024 Cổng quản trị LazPe. Bảo lưu mọi quyền.</p>
         <div className="mt-sm flex justify-center gap-md">
-          <Link className="hover:text-primary transition-colors" href="#">Privacy Policy</Link>
-          <Link className="hover:text-primary transition-colors" href="#">Contact Support</Link>
-          <Link className="hover:text-primary transition-colors" href="#">User Guide</Link>
+          <Link className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</Link>
+          <Link className="hover:text-primary transition-colors" href="#">Liên hệ hỗ trợ</Link>
+          <Link className="hover:text-primary transition-colors" href="#">Hướng dẫn sử dụng</Link>
         </div>
       </footer>
     </main>
