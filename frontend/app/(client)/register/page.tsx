@@ -66,7 +66,7 @@ export default function RegisterPage() {
 
         // Redirect to homepage after a short delay
         setTimeout(() => {
-          router.push("/");
+          window.location.href = "/";
         }, 1500);
       } else {
         setError(data.message || "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.");
