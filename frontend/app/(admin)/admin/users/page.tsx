@@ -12,13 +12,28 @@ export default function AdminUsersPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when search term changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Fetch data when page or debounced search changes
   useEffect(() => {
     fetchData();
-  }, [page]);
+  }, [page, debouncedSearch]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -38,7 +53,7 @@ export default function AdminUsersPage() {
       }
 
       // Fetch users list
-      const usersRes = await fetch(`${API_BASE_URL}/Users?search=${searchTerm}&page=${page}&pageSize=10`, {
+      const usersRes = await fetch(`${API_BASE_URL}/Users?search=${debouncedSearch}&page=${page}&pageSize=10`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const usersData = await usersRes.json();
@@ -54,11 +69,10 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      setPage(1);
-      fetchData();
-    }
+  const resetSearch = () => {
+    setSearchTerm("");
+    setDebouncedSearch("");
+    setPage(1);
   };
 
   const goToDetails = (id: string) => {
@@ -139,11 +153,10 @@ export default function AdminUsersPage() {
               <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
               <input
                 className="w-full pl-xl pr-md py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                placeholder="Tìm kiếm theo tên, email, SĐT... (Nhấn Enter)"
+                placeholder="Tìm kiếm theo tên, email, SĐT..."
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleSearch}
               />
             </div>
             <select className="bg-surface-container-low border-none rounded-lg px-lg py-md font-label-md text-on-surface focus:ring-2 focus:ring-primary/30 min-w-[180px]">
@@ -152,7 +165,7 @@ export default function AdminUsersPage() {
               <option value="locked">Bị khóa</option>
             </select>
             <button 
-              onClick={() => { setSearchTerm(""); setPage(1); fetchData(); }} 
+              onClick={resetSearch} 
               className="text-primary font-label-md text-label-md font-bold hover:underline px-md py-md"
             >
               Đặt lại
