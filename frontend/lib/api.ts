@@ -1,4 +1,4 @@
-import { Product, Category, ApiResponse, PaginatedResponse } from "@/types";
+import { Product, Category, ApiResponse, PaginatedResponse, Voucher } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -129,11 +129,67 @@ export async function getCategories(): Promise<Category[] | null> {
         name: item.categoryName ?? item.name,
         description: item.description ?? "",
         image: item.image ?? "",
+        parentId: item.parentID ?? item.parentId ?? null,
+        level: item.level ?? 0,
       }));
     }
     return null;
   } catch (error) {
     console.error("Error fetching categories:", error);
     return null;
+  }
+}
+
+export async function getPublicVouchers(): Promise<Voucher[] | null> {
+  try {
+    const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/vouchers/public`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch public vouchers:", response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching public vouchers:", error);
+    return null;
+  }
+}
+
+export async function collectVoucher(id: number): Promise<{ success: boolean; message: string }> {
+  try {
+    const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
+    if (!token) {
+      return { success: false, message: "Vui lòng đăng nhập để lưu voucher." };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/vouchers/${id}/collect`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      return { success: true, message: result.message || "Lưu voucher thành công." };
+    }
+    return { success: false, message: result.message || "Lưu voucher thất bại." };
+  } catch (error) {
+    console.error("Error collecting voucher:", error);
+    return { success: false, message: "Đã xảy ra lỗi kết nối." };
   }
 }

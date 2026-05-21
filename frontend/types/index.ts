@@ -59,6 +59,25 @@ export interface Category {
   name: string;
   description?: string;
   image?: string;
+  parentId?: number | null;
+  level?: number;
+}
+
+export interface Voucher {
+  voucherID: number;
+  code: string;
+  name: string;
+  discountType: number; // 1: Percentage, 2: Fixed amount
+  discountValue: number;
+  minOrderValue: number;
+  maxDiscount: number;
+  totalQuantity: number;
+  usedQuantity: number;
+  startDate: string;
+  endDate: string;
+  remainingQuantity: number;
+  visibilityType: string;
+  isCollected: boolean;
 }
 
 export interface ApiResponse<T> {

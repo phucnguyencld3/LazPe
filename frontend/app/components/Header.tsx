@@ -1,16 +1,53 @@
 "use client";
-
+ 
 import Link from "next/link";
-import { ShoppingCart, User, Menu } from "lucide-react";
+import { ShoppingCart, User, Menu, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Category } from "@/types";
+import { getCategories } from "@/lib/api";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+  
+  // Categories State
+  const [parentCategories, setParentCategories] = useState<Category[]>([]);
+  const [categoryTree, setCategoryTree] = useState<Record<number, Category[]>>({});
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     setIsAuth(!!token);
+
+    const loadCategories = async () => {
+      try {
+        const data = await getCategories();
+        if (data) {
+          // Parent categories are level 0 or parentId is null
+          const parents = data.filter(
+            (c) => c.parentId === null || c.parentId === undefined || c.level === 0
+          );
+          setParentCategories(parents);
+
+          // Build tree mapping parentId -> subcategories
+          const tree: Record<number, Category[]> = {};
+          data.forEach((c) => {
+            if (c.parentId !== null && c.parentId !== undefined) {
+              if (!tree[c.parentId]) {
+                tree[c.parentId] = [];
+              }
+              tree[c.parentId].push(c);
+            }
+          });
+          setCategoryTree(tree);
+        }
+      } catch (err) {
+        console.error("Error loading header categories:", err);
+      }
+    };
+
+    loadCategories();
   }, []);
 
   const handleLogout = () => {
@@ -23,7 +60,7 @@ export default function Header() {
   };
 
   const navigation = [
-    { label: "Tất cả", href: "/products" },
+    { label: "Tất cả sản phẩm", href: "/products" },
     { label: "Hàng mới", href: "/products?sort=newest" },
     { label: "Bán chạy", href: "/products?sort=bestseller" },
     { label: "Khuyến mãi", href: "/products?sort=sale" },
@@ -41,7 +78,64 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8 h-full relative">
+            {/* Mega Menu Trigger */}
+            <div
+              className="h-full flex items-center"
+              onMouseEnter={() => setMegaMenuOpen(true)}
+              onMouseLeave={() => setMegaMenuOpen(false)}
+            >
+              <button 
+                className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors h-full focus:outline-none"
+              >
+                Danh mục
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-200 ${
+                    megaMenuOpen ? "rotate-180 text-rose-500" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Mega Menu Dropdown */}
+              {megaMenuOpen && parentCategories.length > 0 && (
+                <div 
+                  className="absolute top-full left-0 w-[600px] bg-white shadow-xl rounded-b-2xl border border-slate-100 p-6 z-50 grid grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-150"
+                  onMouseEnter={() => setMegaMenuOpen(true)}
+                >
+                  {parentCategories.map((parent) => {
+                    const children = categoryTree[parent.id] || [];
+                    return (
+                      <div key={parent.id} className="space-y-2.5">
+                        <Link
+                          href={`/products?categoryId=${parent.id}`}
+                          className="font-semibold text-slate-900 hover:text-rose-600 transition-colors text-sm block"
+                          onClick={() => setMegaMenuOpen(false)}
+                        >
+                          {parent.name}
+                        </Link>
+                        {children.length > 0 && (
+                          <ul className="space-y-1.5 border-l border-slate-100 pl-3">
+                            {children.map((child) => (
+                              <li key={child.id}>
+                                <Link
+                                  href={`/products?categoryId=${child.id}`}
+                                  className="text-xs text-slate-600 hover:text-rose-500 transition-colors block py-0.5"
+                                  onClick={() => setMegaMenuOpen(false)}
+                                >
+                                  {child.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {navigation.map((item) => (
               <Link
                 key={item.href}
@@ -103,7 +197,53 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 py-4 space-y-2">
+          <div className="md:hidden border-t border-slate-200 py-4 space-y-2 max-h-[80vh] overflow-y-auto">
+            {/* Mobile Categories Collapsible */}
+            {parentCategories.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
+                  className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <span>Danh mục sản phẩm</span>
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${
+                      mobileCategoriesOpen ? "rotate-180 text-rose-500" : ""
+                    }`}
+                  />
+                </button>
+                {mobileCategoriesOpen && (
+                  <div className="pl-6 pr-4 py-2 space-y-2.5 bg-slate-50 rounded-lg mt-1 mx-2">
+                    {parentCategories.map((parent) => {
+                      const children = categoryTree[parent.id] || [];
+                      return (
+                        <div key={parent.id} className="space-y-1">
+                          <Link
+                            href={`/products?categoryId=${parent.id}`}
+                            className="block py-0.5 text-xs font-semibold text-slate-800 hover:text-rose-600"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {parent.name}
+                          </Link>
+                          {children.map((child) => (
+                            <Link
+                              key={child.id}
+                              href={`/products?categoryId=${child.id}`}
+                              className="block py-0.5 pl-3 text-xs text-slate-500 hover:text-rose-500"
+                              onClick={() => setMobileMenuOpen(false)}
+                            >
+                              - {child.name}
+                            </Link>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {navigation.map((item) => (
               <Link
                 key={item.href}
@@ -158,3 +298,4 @@ export default function Header() {
     </header>
   );
 }
+

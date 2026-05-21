@@ -71,12 +71,41 @@ export default function ProductDetailPage({ params }: PageProps) {
     }
   }, [productId]);
 
+  // Define helper to check if a variant option value is out of stock
+  const isOptionValueOutOfStock = (optionName: string, value: string) => {
+    if (!product || !product.variants || product.variants.length === 0) return false;
+
+    const option = product.productOptions?.find(
+      (o) => o.name.toLowerCase() === optionName.toLowerCase()
+    );
+    const optVal = option?.productOptionValues.find(
+      (v) => v.value.toLowerCase() === value.toLowerCase()
+    );
+    if (!optVal) return true;
+
+    const matchingVariants = product.variants.filter((variant) =>
+      variant.variantOptionValues.some(
+        (vov) => vov.productOptionValueID === optVal.productOptionValueID
+      )
+    );
+
+    if (matchingVariants.length === 0) return true;
+
+    return matchingVariants.every((variant) => variant.stock <= 0 || !variant.status);
+  };
+
   // Initialize selected options when product is loaded
   useEffect(() => {
     if (product && product.productOptions && product.productOptions.length > 0) {
       const initial: Record<string, string> = {};
       product.productOptions.forEach((option) => {
-        if (option.productOptionValues && option.productOptionValues.length > 0) {
+        // Find the first option value that is in stock
+        const inStockVal = option.productOptionValues.find(
+          (v) => !isOptionValueOutOfStock(option.name, v.value)
+        );
+        if (inStockVal) {
+          initial[option.name] = inStockVal.value;
+        } else if (option.productOptionValues.length > 0) {
           initial[option.name] = option.productOptionValues[0].value;
         }
       });
@@ -109,7 +138,52 @@ export default function ProductDetailPage({ params }: PageProps) {
   }, [product, selectedOptions]);
 
   // Derived Values
-  const displayImage = activeVariant?.imageUrl || product?.image;
+  const displayImage = useMemo(() => {
+    if (activeVariant?.imageUrl) {
+      return activeVariant.imageUrl;
+    }
+
+    if (product && product.variants && product.variants.length > 0) {
+      // Try to find the color option name in selected options
+      const colorOptionName = Object.keys(selectedOptions).find((name) => {
+        const lower = name.toLowerCase();
+        return lower.includes("màu") || lower.includes("color");
+      });
+
+      if (colorOptionName) {
+        const currentColorValue = selectedOptions[colorOptionName];
+        // Find option from product options to get the option value id
+        const option = product.productOptions?.find(
+          (o) => o.name.toLowerCase() === colorOptionName.toLowerCase()
+        );
+        const optVal = option?.productOptionValues.find(
+          (v) => v.value.toLowerCase() === currentColorValue.toLowerCase()
+        );
+
+        if (optVal) {
+          // Find any variant that has this color value and has an image
+          const sameColorVariantWithImage = product.variants.find((variant) => {
+            if (!variant.imageUrl) return false;
+            return variant.variantOptionValues.some(
+              (vov) => vov.productOptionValueID === optVal.productOptionValueID
+            );
+          });
+
+          if (sameColorVariantWithImage?.imageUrl) {
+            return sameColorVariantWithImage.imageUrl;
+          }
+        }
+      }
+
+      // If color fallback fails, look for ANY variant that has an image
+      const anyVariantWithImage = product.variants.find((v) => v.imageUrl);
+      if (anyVariantWithImage?.imageUrl) {
+        return anyVariantWithImage.imageUrl;
+      }
+    }
+
+    return product?.image;
+  }, [activeVariant, product, selectedOptions]);
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
   const displayDiscountPrice = activeVariant 
     ? (activeVariant.effectiveDiscountPercent > 0 ? activeVariant.finalPrice : undefined)
@@ -329,12 +403,16 @@ export default function ProductDetailPage({ params }: PageProps) {
                         <div className="flex flex-wrap gap-2">
                           {option.productOptionValues.map((optVal) => {
                             const isSelected = selectedOptions[option.name] === optVal.value;
+                            const isOutOfStock = isOptionValueOutOfStock(option.name, optVal.value);
                             return (
                               <button
                                 key={optVal.productOptionValueID}
                                 onClick={() => handleOptionSelect(option.name, optVal.value)}
+                                disabled={isOutOfStock}
                                 className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-all ${
-                                  isSelected
+                                  isOutOfStock
+                                    ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed line-through"
+                                    : isSelected
                                     ? "bg-rose-50 border-primary text-primary font-bold shadow-sm"
                                     : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                                 }`}
