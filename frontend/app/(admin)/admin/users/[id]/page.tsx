@@ -27,6 +27,15 @@ export default function UserDetailsPage() {
   const [togglingPermissionIds, setTogglingPermissionIds] = useState<number[]>([]);
   
   const [isMounted, setIsMounted] = useState(false);
+=======
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [lockReason, setLockReason] = useState("");
+  const [lockDays, setLockDays] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
+>>>>>>> origin/feature/aboutus-privacy
 
   useEffect(() => {
     setIsMounted(true);
