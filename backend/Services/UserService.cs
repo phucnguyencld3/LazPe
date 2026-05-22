@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Data;
+using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
@@ -74,6 +74,16 @@ namespace PolyBabyAPI.Services
                     })
                     .ToListAsync();
 
+                foreach (var userDto in users)
+                {
+                    var appUser = await _userManager.FindByIdAsync(userDto.Id);
+                    if (appUser != null)
+                    {
+                        var userRoles = await _userManager.GetRolesAsync(appUser);
+                        userDto.Roles = userRoles.ToList();
+                    }
+                }
+
                 return (users, totalCount);
             }
             catch (Exception ex)
@@ -96,6 +106,8 @@ namespace PolyBabyAPI.Services
                 if (user == null)
                     return null;
 
+                var roles = await _userManager.GetRolesAsync(user);
+
                 return new UserDto
                 {
                     Id = user.Id,
@@ -111,7 +123,7 @@ namespace PolyBabyAPI.Services
                     DateOfBirth = user.DateOfBirth,
                     AccessFailedCount = user.AccessFailedCount,
                     RegisterDate = user.RegisterDate,
-                    Roles = new List<string>() // TODO: Load roles
+                    Roles = roles.ToList()
                 };
             }
             catch (Exception ex)

@@ -9,34 +9,66 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/a
 export default function UserDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+  
+  // States
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userPermissions, setUserPermissions] = useState<any[]>([]);
+  const [allPermissions, setAllPermissions] = useState<any[]>([]);
+  
+  // Modals
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [lockReason, setLockReason] = useState("");
   const [lockDays, setLockDays] = useState(0);
-  const [isMounted, setIsMounted] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
+
+  const [isPermModalOpen, setIsPermModalOpen] = useState(false);
+  const [permSearchTerm, setPermSearchTerm] = useState("");
+  const [togglingPermissionIds, setTogglingPermissionIds] = useState<number[]>([]);
+  
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Fetch initial details
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) {
         router.push("/login");
         return;
       }
       try {
-        const res = await fetch(`${API_BASE_URL}/Users/${id}`, {
+        setLoading(true);
+        // 1. Fetch User details
+        const userRes = await fetch(`${API_BASE_URL}/Users/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
-        if (data.success) {
-          setUser(data.data);
+        const userData = await userRes.json();
+        if (userData.success) {
+          setUser(userData.data);
         } else {
-          console.error(data.message);
+          console.error(userData.message);
+        }
+
+        // 2. Fetch User Specific Permissions
+        const userPermRes = await fetch(`${API_BASE_URL}/Permission/user/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userPermData = await userPermRes.json();
+        if (userPermData.success) {
+          setUserPermissions(userPermData.data);
+        }
+
+        // 3. Fetch All System Permissions
+        const allPermRes = await fetch(`${API_BASE_URL}/Permission`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const allPermData = await allPermRes.json();
+        if (allPermData.success) {
+          setAllPermissions(allPermData.data);
         }
       } catch (err) {
         console.error(err);
@@ -44,9 +76,10 @@ export default function UserDetailsPage() {
         setLoading(false);
       }
     };
-    if (id) fetchUser();
+    if (id) fetchData();
   }, [id, router]);
 
+  // Handle Lock / Unlock user account
   const handleLockUnlock = async () => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
@@ -61,10 +94,10 @@ export default function UserDetailsPage() {
         if (data.success) {
           setUser({ ...user, isLocked: false, status: true });
         } else {
-            alert(data.message || "Lỗi mở khóa");
+          alert(data.message || "Lỗi mở khóa");
         }
       } catch (e) {
-          console.error(e);
+        console.error(e);
       }
     } else {
       setLockReason("");
@@ -78,25 +111,110 @@ export default function UserDetailsPage() {
     if (!token) return;
     setIsLocking(true);
     try {
-        const res = await fetch(`${API_BASE_URL}/Users/${id}/lock`, {
+      const res = await fetch(`${API_BASE_URL}/Users/${id}/lock`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ reason: lockReason, lockoutDays: lockDays === 0 ? null : lockDays }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setUser({ ...user, isLocked: true, status: false });
-          setIsLockModalOpen(false);
-        } else {
-          alert(data.message || "Lỗi khóa tài khoản");
-        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUser({ ...user, isLocked: true, status: false });
+        setIsLockModalOpen(false);
+      } else {
+        alert(data.message || "Lỗi khóa tài khoản");
+      }
     } catch(e) {
-        console.error(e);
+      console.error(e);
     } finally {
-        setIsLocking(false);
+      setIsLocking(false);
+    }
+  };
+
+  // Toggle single permission for user (grant / revoke)
+  const togglePermission = async (permission: any, isCurrentlyGranted: boolean) => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+
+    // Add to toggling set to show spinner
+    setTogglingPermissionIds(prev => [...prev, permission.id]);
+
+    try {
+      const endpoint = isCurrentlyGranted ? "revoke" : "grant";
+      const res = await fetch(`${API_BASE_URL}/Permission/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: id,
+          permissionId: permission.id
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update userPermissions state
+        if (isCurrentlyGranted) {
+          setUserPermissions(prev => prev.filter(p => p.id !== permission.id));
+        } else {
+          setUserPermissions(prev => [...prev, {
+            id: permission.id,
+            name: permission.name,
+            description: permission.description,
+            resource: permission.resource,
+            action: permission.action
+          }]);
+        }
+      } else {
+        alert(data.message || `Lỗi khi thực hiện phân quyền`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Đã xảy ra lỗi kết nối");
+    } finally {
+      setTogglingPermissionIds(prev => prev.filter(pid => pid !== permission.id));
+    }
+  };
+
+  // Group user permissions by Resource for detail list view
+  const groupedUserPermissions = userPermissions.reduce((acc: any, curr: any) => {
+    const resource = curr.resource || "Khác";
+    if (!acc[resource]) {
+      acc[resource] = [];
+    }
+    acc[resource].push(curr);
+    return acc;
+  }, {});
+
+  // Group ALL system permissions by Resource for the editing modal
+  const groupedAllPermissions = allPermissions.reduce((acc: any, curr: any) => {
+    const resource = curr.resource || "Khác";
+    if (!acc[resource]) {
+      acc[resource] = [];
+    }
+    acc[resource].push(curr);
+    return acc;
+  }, {});
+
+  const getResourceTitle = (resource: string) => {
+    switch (resource.toLowerCase()) {
+      case "user": return "Người dùng (User)";
+      case "product": return "Sản phẩm (Product)";
+      case "category": return "Danh mục (Category)";
+      case "order": return "Đơn hàng (Order)";
+      case "permission": return "Phân quyền (Permission)";
+      case "admin": return "Quyền Admin (Admin)";
+      case "bundle": return "Gói sản phẩm (Bundle)";
+      case "supplier": return "Nhà cung cấp (Supplier)";
+      case "report": return "Báo cáo (Report)";
+      case "analytics": return "Thống kê (Analytics)";
+      case "system": return "Hệ thống (System)";
+      case "review": return "Đánh giá (Review)";
+      case "address": return "Địa chỉ (Address)";
+      default: return `Nhóm ${resource}`;
     }
   };
 
@@ -117,7 +235,7 @@ export default function UserDetailsPage() {
       {/* Back Button */}
       <button
         onClick={() => router.back()}
-        className="group flex items-center gap-2 mb-lg text-on-surface-variant hover:text-primary transition-colors font-label-md"
+        className="group flex items-center gap-2 mb-lg text-on-surface-variant hover:text-primary transition-colors font-label-md bg-transparent border-none cursor-pointer"
       >
         <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
         Quay lại quản lý chung
@@ -153,7 +271,10 @@ export default function UserDetailsPage() {
           </div>
           
           <div className="flex flex-wrap gap-sm justify-center">
-            <button className="bg-secondary text-on-secondary px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md">
+            <button
+              onClick={() => setIsPermModalOpen(true)}
+              className="bg-secondary text-on-secondary px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md"
+            >
               <span className="material-symbols-outlined text-sm">security</span>
               Quản lý phân quyền
             </button>
@@ -247,27 +368,72 @@ export default function UserDetailsPage() {
 
         {/* Role/Permissions Section */}
         <div className="md:col-span-2 bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant/20">
-          <div className="flex items-center justify-between mb-md">
+          <div className="flex items-center justify-between mb-md border-b border-outline-variant/20 pb-sm">
             <h3 className="font-headline-md text-headline-md text-primary flex items-center gap-2">
               <span className="material-symbols-outlined">key</span>
-              Vai trò &amp; Quyền hạn
+              Vai trò &amp; Quyền hạn của Người dùng
             </h3>
-            <button className="text-primary font-label-md hover:underline">Sửa quyền</button>
+            <button
+              onClick={() => setIsPermModalOpen(true)}
+              className="text-primary font-label-md font-bold hover:underline bg-transparent border-none cursor-pointer"
+            >
+              Sửa quyền
+            </button>
           </div>
-          <div className="flex flex-wrap gap-sm">
-            {user.roles?.length > 0 ? (
-              user.roles.map((role: string, idx: number) => (
-                <span
-                  key={idx}
-                  className="px-4 py-2 bg-primary-container/20 text-on-primary-container font-label-md rounded-full border border-primary-container/40"
-                >
-                  {role}
+
+          {/* User Roles */}
+          <div className="mb-md">
+            <h4 className="font-label-sm text-[12px] uppercase text-on-surface-variant/80 tracking-wider mb-sm font-bold">
+              Vai trò hệ thống (Roles)
+            </h4>
+            <div className="flex flex-wrap gap-sm">
+              {user.roles?.length > 0 ? (
+                user.roles.map((role: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="px-4 py-2 bg-primary-container/20 text-on-primary-container font-label-md rounded-full border border-primary-container/40 font-bold"
+                  >
+                    {role}
+                  </span>
+                ))
+              ) : (
+                <span className="px-4 py-2 bg-surface-variant text-on-surface-variant font-label-md rounded-full border border-outline-variant/40">
+                  Người dùng cơ bản (User)
                 </span>
-              ))
+              )}
+            </div>
+          </div>
+
+          {/* User Permissions */}
+          <div>
+            <h4 className="font-label-sm text-[12px] uppercase text-on-surface-variant/80 tracking-wider mb-sm font-bold">
+              Quyền hạn chi tiết được cấp (Permissions)
+            </h4>
+            {userPermissions.length === 0 ? (
+              <p className="text-on-surface-variant/70 text-xs italic">
+                Chưa gán quyền hạn cụ thể nào. Tài khoản này chỉ chạy theo quyền mặc định của vai trò hệ thống.
+              </p>
             ) : (
-              <span className="px-4 py-2 bg-surface-variant text-on-surface-variant font-label-md rounded-full border border-outline-variant/40">
-                Người dùng cơ bản
-              </span>
+              <div className="space-y-sm">
+                {Object.keys(groupedUserPermissions).map((resource) => (
+                  <div key={resource} className="p-xs bg-surface-container-low rounded-lg border border-outline-variant/10">
+                    <span className="font-label-sm text-[11px] font-bold text-secondary uppercase px-sm py-0.5 block">
+                      {getResourceTitle(resource)}
+                    </span>
+                    <div className="flex flex-wrap gap-xs p-sm">
+                      {groupedUserPermissions[resource].map((perm: any) => (
+                        <span
+                          key={perm.id}
+                          className="px-sm py-1 bg-surface-container-lowest text-on-surface border border-outline-variant/30 text-xs rounded-lg font-medium shadow-sm cursor-help"
+                          title={perm.description}
+                        >
+                          {perm.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -281,7 +447,7 @@ export default function UserDetailsPage() {
             style={{ width: "448px", maxWidth: "calc(100vw - 32px)" }}
           >
             <h3 className="font-headline-md text-headline-md text-error mb-sm font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-[28px]">lock</span> Khóa người dùng
+              <span className="material-symbols-outlined text-[28px]">lock</span> Khóa người dùng
             </h3>
             <p className="text-on-surface-variant font-body-md mb-md">Vui lòng nhập lý do khóa tài khoản này.</p>
             <div className="space-y-md my-md">
@@ -329,6 +495,151 @@ export default function UserDetailsPage() {
                 ) : (
                   "Xác nhận khóa"
                 )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Permissions Edit Modal */}
+      {isPermModalOpen && isMounted && createPortal(
+        <div className="fixed inset-0 w-full h-full bg-black/50 flex items-center justify-center z-[9999] p-4">
+          <div 
+            className="bg-surface-container-lowest rounded-xl shadow-2xl border border-outline-variant/20 flex flex-col"
+            style={{ width: "640px", height: "80vh", maxHeight: "800px", maxWidth: "calc(100vw - 32px)" }}
+          >
+            {/* Modal Header */}
+            <div className="p-lg border-b border-outline-variant/30 flex items-center justify-between">
+              <div>
+                <h3 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
+                  <span className="material-symbols-outlined">security</span>
+                  Phân quyền: {user.fullName || user.userName}
+                </h3>
+                <p className="text-xs text-on-surface-variant/80 font-body-md mt-1">
+                  Đánh dấu để gán quyền hoặc bỏ đánh dấu để thu hồi quyền ngay lập tức.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsPermModalOpen(false)}
+                className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors border-none bg-transparent cursor-pointer"
+              >
+                close
+              </button>
+            </div>
+
+            {/* Modal Filter */}
+            <div className="px-lg py-sm bg-surface-container-low border-b border-outline-variant/10 flex items-center relative">
+              <span className="material-symbols-outlined text-on-surface-variant absolute left-[36px]">search</span>
+              <input
+                type="text"
+                placeholder="Tìm kiếm quyền (VD: Read, Create, User...)"
+                value={permSearchTerm}
+                onChange={(e) => setPermSearchTerm(e.target.value)}
+                className="w-full pl-xl pr-md py-sm bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40 font-body-md"
+              />
+              {permSearchTerm && (
+                <button
+                  onClick={() => setPermSearchTerm("")}
+                  className="material-symbols-outlined text-[18px] text-on-surface-variant hover:text-primary absolute right-[36px] bg-transparent border-none cursor-pointer"
+                >
+                  clear
+                </button>
+              )}
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-lg space-y-md" style={{ scrollbarWidth: "thin" }}>
+              {Object.keys(groupedAllPermissions).map((resource) => {
+                // Filter permissions in this group
+                const filteredGroupPerms = groupedAllPermissions[resource].filter((perm: any) =>
+                  perm.name.toLowerCase().includes(permSearchTerm.toLowerCase()) ||
+                  (perm.description && perm.description.toLowerCase().includes(permSearchTerm.toLowerCase()))
+                );
+
+                if (filteredGroupPerms.length === 0) return null;
+
+                return (
+                  <div key={resource} className="bg-surface-container-low rounded-xl p-md border border-outline-variant/10">
+                    <h4 className="font-label-sm text-sm text-secondary font-bold border-b border-outline-variant/20 pb-xs mb-sm uppercase">
+                      {getResourceTitle(resource)}
+                    </h4>
+                    <div className="space-y-sm">
+                      {filteredGroupPerms.map((perm: any) => {
+                        const isGranted = userPermissions.some(up => up.id === perm.id);
+                        const isToggling = togglingPermissionIds.includes(perm.id);
+
+                        return (
+                          <div
+                            key={perm.id}
+                            className={`flex items-start justify-between p-sm rounded-lg border transition-all ${
+                              isGranted 
+                                ? "bg-primary-container/10 border-primary/20" 
+                                : "bg-surface-container-lowest border-outline-variant/20 hover:bg-surface-container/50"
+                            }`}
+                          >
+                            <div className="flex items-start gap-sm flex-1 pr-sm">
+                              <div className="relative flex items-center mt-[3px]">
+                                <input
+                                  type="checkbox"
+                                  id={`perm-${perm.id}`}
+                                  checked={isGranted}
+                                  disabled={isToggling}
+                                  onChange={() => togglePermission(perm, isGranted)}
+                                  className="w-4 h-4 rounded text-primary focus:ring-primary border-outline accent-primary cursor-pointer disabled:opacity-50"
+                                />
+                                {isToggling && (
+                                  <div className="absolute inset-0 bg-transparent flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-3 w-3 border border-primary border-t-transparent"></div>
+                                  </div>
+                                )}
+                              </div>
+                              <label
+                                htmlFor={`perm-${perm.id}`}
+                                className={`text-xs font-bold font-label-md cursor-pointer select-none flex-1 ${
+                                  isGranted ? "text-primary" : "text-on-surface"
+                                }`}
+                              >
+                                {perm.name}
+                                <span className="block font-body-md text-[11px] text-on-surface-variant/80 font-normal mt-0.5">
+                                  {perm.description || "Không có mô tả chi tiết"}
+                                </span>
+                              </label>
+                            </div>
+                            <span className="px-sm py-0.5 bg-surface-variant text-[10px] text-on-surface-variant rounded-full font-bold uppercase shrink-0">
+                              {perm.action}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Empty state inside modal */}
+              {allPermissions.length > 0 &&
+                Object.keys(groupedAllPermissions).every(
+                  resource =>
+                    groupedAllPermissions[resource].filter(
+                      (p: any) =>
+                        p.name.toLowerCase().includes(permSearchTerm.toLowerCase()) ||
+                        (p.description && p.description.toLowerCase().includes(permSearchTerm.toLowerCase()))
+                    ).length === 0
+                ) && (
+                  <p className="text-center text-on-surface-variant/60 font-body-md py-10">
+                    Không tìm thấy quyền hạn nào khớp với "{permSearchTerm}"
+                  </p>
+                )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-md border-t border-outline-variant/30 bg-surface-container-low flex justify-end">
+              <button
+                onClick={() => setIsPermModalOpen(false)}
+                className="px-lg py-sm rounded-full font-bold font-label-md bg-primary text-on-primary hover:bg-[#7b444e] shadow-sm transition-colors hover:scale-105 active:scale-95"
+              >
+                Hoàn tất &amp; Đóng
               </button>
             </div>
           </div>

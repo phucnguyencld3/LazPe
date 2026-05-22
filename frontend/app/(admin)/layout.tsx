@@ -60,7 +60,9 @@ export default function AdminLayout({
       <header className="sticky top-0 z-40 flex items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
         <div className="flex items-center gap-sm ml-72">
           {/* Logo shifted to avoid being completely covered by sidebar, if needed. Or just leave it as is if it matches mockup. We'll leave it as in mockup */}
-          <h1 className="font-headline-md text-headline-md font-bold text-primary">LazPe</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Laz<span className="text-rose-500">Pe</span>
+          </h1>
         </div>
         <div className="flex items-center gap-md">
           <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">notifications</button>
@@ -81,7 +83,9 @@ export default function AdminLayout({
           <div className="px-md mb-lg">
             <div className="flex items-center gap-sm mb-xs">
               <span className="material-symbols-outlined text-primary text-3xl">child_care</span>
-              <h2 className="font-headline-md text-headline-md font-bold text-primary">LazPe Admin</h2>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
+              </h2>
             </div>
             <p className="font-label-sm text-label-sm text-on-surface-variant">Hệ thống quản lý LazPe</p>
           </div>

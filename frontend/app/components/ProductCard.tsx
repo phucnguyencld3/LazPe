@@ -54,7 +54,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Info */}
-        <div className="p-4 flex flex-col justify-between h-[180px]">
+        <div className="p-4 flex flex-col justify-between h-[140px]">
           {/* Top Section */}
           <div className="space-y-1">
             {/* Category */}
@@ -63,7 +63,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
 
             {/* Product Name */}
-            <h3 className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-rose-600 transition-colors line-clamp-2 h-10 overflow-hidden">
+            <h3 
+              title={product.name}
+              className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-rose-600 transition-colors truncate h-5 block"
+            >
               {product.name}
             </h3>
 
