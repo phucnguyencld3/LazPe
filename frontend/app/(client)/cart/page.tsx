@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader, Trash2, ShoppingBag, Plus, Minus, Tag, Check, X, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import {
   getCart,
   updateCartItem,
@@ -42,12 +43,14 @@ export default function CartPage() {
   const [loadingRecs, setLoadingRecs] = useState(false);
 
   // General alert
-  const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [applyingCode, setApplyingCode] = useState(false);
 
   const showAlert = (type: "success" | "error", text: string) => {
-    setAlertMsg({ type, text });
-    setTimeout(() => setAlertMsg(null), 4000);
+    if (type === "success") {
+      toast.success(text);
+    } else {
+      toast.error(text);
+    }
   };
 
   // Load cart data and recommended products on mount
@@ -288,7 +291,7 @@ export default function CartPage() {
     }
 
     // Direct to checkout
-    alert("Chuyển hướng đến trang thanh toán đơn hàng...");
+    toast.success("Chuyển hướng đến trang thanh toán đơn hàng...");
     router.push("/checkout");
   };
 
@@ -370,22 +373,6 @@ export default function CartPage() {
 
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen pb-24 relative">
-      {/* Toast Alert */}
-      {alertMsg && (
-        <div className={`fixed top-24 right-6 z-50 px-6 py-3.5 rounded-xl shadow-lg border transition-all duration-300 transform translate-y-0 ${
-          alertMsg.type === "success" 
-            ? "bg-secondary-container/95 border-secondary text-on-secondary-container" 
-            : "bg-error-container/95 border-error text-on-error-container"
-        }`}>
-          <div className="flex items-center gap-2 font-medium">
-            <span className="material-symbols-outlined text-lg">
-              {alertMsg.type === "success" ? "check_circle" : "error"}
-            </span>
-            {alertMsg.text}
-          </div>
-        </div>
-      )}
-
       <main className="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
         {/* Cart Header & Progress */}
         <div className="flex flex-col items-center mb-12">

@@ -6,6 +6,7 @@ import { getProducts, getPublicVouchers, collectVoucher } from "@/lib/api";
 import ProductCard from "@/app/components/ProductCard";
 import { ChevronRight, Loader } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -42,19 +43,19 @@ export default function HomePage() {
   const handleCollectVoucher = async (voucherId: number) => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập để lưu voucher!");
+      toast.error("Vui lòng đăng nhập để lưu voucher!");
       window.location.href = "/login";
       return;
     }
 
     const result = await collectVoucher(voucherId);
     if (result.success) {
-      alert("Lưu voucher thành công!");
+      toast.success("Lưu voucher thành công!");
       setVouchers((prev) =>
         prev.map((v) => (v.voucherID === voucherId ? { ...v, isCollected: true } : v))
       );
     } else {
-      alert(result.message || "Lưu voucher thất bại!");
+      toast.error(result.message || "Lưu voucher thất bại!");
     }
   };
 
