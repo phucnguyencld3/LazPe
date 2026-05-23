@@ -514,3 +514,218 @@ export async function deleteAddress(addressId: number, token: string): Promise<{
     return { success: false, message: "Lỗi kết nối" };
   }
 }
+
+// =============================================
+// CART APIs
+// =============================================
+
+export interface ProductCartInfo {
+  productID: number;
+  name: string;
+  imageUrl?: string;
+  slug?: string;
+}
+
+export interface VariantCartInfo {
+  variantID: number;
+  size?: string;
+  color?: string;
+  unitPrice: number;
+  stock: number;
+  imageUrl?: string;
+}
+
+export interface BundleCartInfo {
+  bundleID: number;
+  name: string;
+  price: number;
+  stock: number;
+  imageUrl?: string;
+}
+
+export interface VoucherCartInfo {
+  voucherID: number;
+  code: string;
+  name: string;
+  description?: string;
+  discountAmount: number;
+  discountPercent: number;
+  minOrderValue: number;
+  maxDiscount: number;
+  startDate: string;
+  endDate: string;
+  isPercentage: boolean;
+}
+
+export interface CartDetailInfo {
+  cartDetailID: number;
+  cartID: number;
+  variantID?: number;
+  bundleID?: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  product?: ProductCartInfo | null;
+  variant?: VariantCartInfo | null;
+  bundle?: BundleCartInfo | null;
+}
+
+export interface CartInfo {
+  cartID: number;
+  userID: string;
+  createdDate: string;
+  subTotal: number;
+  discountAmount: number;
+  totalAmount: number;
+  voucher?: VoucherCartInfo | null;
+  cartDetails: CartDetailInfo[];
+  totalItems: number;
+}
+
+export async function getCart(token: string): Promise<CartInfo | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch cart:", response.statusText);
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching cart:", error);
+    return null;
+  }
+}
+
+export async function updateCartItem(
+  token: string,
+  data: { cartDetailID: number; quantity: number }
+): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error updating cart item:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function removeFromCart(
+  token: string,
+  cartDetailId: number
+): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/remove/${cartDetailId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error removing item from cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function clearCart(token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/clear`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function applyVoucherToCart(
+  token: string,
+  voucherCode: string
+): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/apply-voucher`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ voucherCode }),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error applying voucher to cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function removeVoucherFromCart(
+  token: string
+): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/remove-voucher`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error removing voucher from cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
