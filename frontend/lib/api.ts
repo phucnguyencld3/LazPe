@@ -193,3 +193,324 @@ export async function collectVoucher(id: number): Promise<{ success: boolean; me
     return { success: false, message: "Đã xảy ra lỗi kết nối." };
   }
 }
+
+// =============================================
+// USER PROFILE APIs
+// =============================================
+
+export interface UserProfile {
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  avatar?: string;
+  registerDate: string;
+  emailConfirmed: boolean;
+  status: boolean;
+}
+
+export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch user profile:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
+}
+
+export async function updateUserProfile(
+  userId: string,
+  token: string,
+  profileData: {
+    fullName: string;
+    email: string;
+    phoneNumber?: string;
+    dateOfBirth?: string | null;
+    avatar?: string;
+  }
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/update?userId=${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function changePassword(
+  userId: string,
+  token: string,
+  passwordData: any
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/change-password?userId=${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(passwordData),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error changing password:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function uploadAvatar(
+  userId: string,
+  token: string,
+  file: File
+): Promise<{ success: boolean; message?: string; data?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append("UserId", userId);
+    formData.append("Avatar", file);
+
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/upload-avatar`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error uploading avatar:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+// =============================================
+// ADDRESS MANAGEMENT APIs
+// =============================================
+
+export interface AddressItem {
+  addressID: number;
+  recipientName: string;
+  phoneNumber: string;
+  province: string;
+  district: string;
+  ward: string;
+  detailAddress: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export async function getUserAddresses(userId: string, token: string): Promise<AddressItem[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/user/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch user addresses:", response.statusText);
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data || [];
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching user addresses:", error);
+    return null;
+  }
+}
+
+export async function getProvinces(): Promise<any[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/provinces`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data || [];
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching provinces:", error);
+    return null;
+  }
+}
+
+export async function getDistricts(provinceCode: string | number): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/districts/${provinceCode}`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching districts:", error);
+    return null;
+  }
+}
+
+export async function getWards(districtCode: string | number): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/wards/${districtCode}`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching wards:", error);
+    return null;
+  }
+}
+
+export async function createAddress(token: string, addressData: any): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/create-vietnam`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(addressData),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error creating address:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function updateAddress(
+  addressId: number,
+  token: string,
+  addressData: any
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/update/${addressId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(addressData),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error updating address:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function setDefaultAddress(addressId: number, token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/set-default/${addressId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error setting default address:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function deleteAddress(addressId: number, token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Address/delete/${addressId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error deleting address:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
