@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Product, Variant } from "@/types";
-import { getProductDetail, getProducts } from "@/lib/api";
+import { getProductDetail, getProducts, addToCart } from "@/lib/api";
 import ProductCard from "@/app/components/ProductCard";
 
 interface PageProps {
@@ -237,8 +237,54 @@ export default function ProductDetailPage({ params }: PageProps) {
     }
   };
 
-  const handleAddToCart = () => {
-    toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng! (Biến thể: ${activeVariant?.variantName || "Mặc định"})`);
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      router.push("/login");
+      return;
+    }
+
+    const variantId = activeVariant?.variantID;
+    if (!variantId) {
+      // If there are no options, but there is at least one variant, use the first variant
+      const firstVariantId = product?.variants?.[0]?.variantID;
+      if (!firstVariantId) {
+        toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
+        return;
+      }
+      
+      try {
+        const res = await addToCart(token, {
+          variantID: firstVariantId,
+          quantity: quantity,
+        });
+        if (res.success) {
+          toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng thành công!`);
+        } else {
+          toast.error(res.message || "Không thể thêm sản phẩm vào giỏ hàng");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi kết nối mạng");
+      }
+      return;
+    }
+
+    try {
+      const res = await addToCart(token, {
+        variantID: variantId,
+        quantity: quantity,
+      });
+      if (res.success) {
+        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng! (Phân loại: ${activeVariant?.variantName || "Tiêu chuẩn"})`);
+      } else {
+        toast.error(res.message || "Không thể thêm sản phẩm vào giỏ hàng");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối mạng");
+    }
   };
 
   const handleOptionSelect = (optionName: string, value: string) => {

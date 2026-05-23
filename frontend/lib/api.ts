@@ -729,3 +729,33 @@ export async function removeVoucherFromCart(
     return { success: false, message: "Lỗi kết nối" };
   }
 }
+
+export async function addToCart(
+  token: string,
+  data: { variantID?: number; bundleID?: number; quantity: number }
+): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        variantID: data.variantID || null,
+        bundleID: data.bundleID || null,
+        quantity: data.quantity,
+      }),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
