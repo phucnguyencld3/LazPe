@@ -284,11 +284,17 @@ export default function CartPage() {
     if (!cart || cart.cartDetails.length === 0) return;
     
     // Check if at least one item is selected
-    const selectedCount = Object.values(checkedDetails).filter(Boolean).length;
-    if (selectedCount === 0) {
+    const selectedIds = Object.keys(checkedDetails)
+      .map(Number)
+      .filter((id) => checkedDetails[id] && cart.cartDetails.some((cd) => cd.cartDetailID === id));
+
+    if (selectedIds.length === 0) {
       showAlert("error", "Vui lòng chọn ít nhất một sản phẩm để đặt hàng!");
       return;
     }
+
+    // Save to localStorage
+    localStorage.setItem("selectedCartDetailIds", JSON.stringify(selectedIds));
 
     // Direct to checkout
     toast.success("Chuyển hướng đến trang thanh toán đơn hàng...");

@@ -759,3 +759,66 @@ export async function addToCart(
     return { success: false, message: "Lỗi kết nối" };
   }
 }
+
+export async function createInvoiceFromCart(
+  token: string,
+  cartId: number,
+  payMethod: number | null,
+  addressId: number | null,
+  selectedCartDetailIds: number[]
+): Promise<{ success: boolean; message?: string; paymentUrl?: string; data?: any }> {
+  try {
+    const params = new URLSearchParams();
+    if (payMethod !== null) {
+      params.append("payMethod", payMethod.toString());
+    }
+    if (addressId !== null) {
+      params.append("addressId", addressId.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/Invoice/create-from-cart/${cartId}?${params.toString()}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        SelectedCartDetailIds: selectedCartDetailIds,
+      }),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && (result.success ?? true),
+      message: result.message || "Đặt hàng thành công",
+      paymentUrl: result.paymentUrl,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error creating invoice:", error);
+    return { success: false, message: "Lỗi kết nối mạng" };
+  }
+}
+
+export async function getInvoiceDetail(token: string, invoiceId: number): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${invoiceId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch invoice detail:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching invoice detail:", error);
+    return null;
+  }
+}
+
