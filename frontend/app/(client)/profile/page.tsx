@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader, User, Trash2, HelpCircle } from "lucide-react";
+import { toast } from "sonner";
 import {
   getUserProfile,
   updateUserProfile,
@@ -91,7 +92,6 @@ export default function ProfilePage() {
   });
 
   // Status Alerts
-  const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -99,8 +99,11 @@ export default function ProfilePage() {
 
   // Auto clear alerts
   const showAlert = (type: "success" | "error", text: string) => {
-    setAlertMsg({ type, text });
-    setTimeout(() => setAlertMsg(null), 5000);
+    if (type === "success") {
+      toast.success(text);
+    } else {
+      toast.error(text);
+    }
   };
 
   // Check auth and load initial data
@@ -520,7 +523,7 @@ export default function ProfilePage() {
 
   // Support Chat Click
   const handleSupportChat = () => {
-    alert("Hệ thống chăm sóc khách hàng LazPe Care (Chat) sẽ sớm khả dụng 24/7 để phục vụ bạn!");
+    toast.info("Hệ thống chăm sóc khách hàng LazPe Care (Chat) sẽ sớm khả dụng 24/7 để phục vụ bạn!");
   };
 
   // Formatting utility for date
@@ -571,22 +574,6 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen pb-24 relative">
-      {/* Toast Alert */}
-      {alertMsg && (
-        <div className={`fixed top-24 right-6 z-50 px-6 py-3.5 rounded-xl shadow-lg border transition-all duration-300 transform translate-y-0 ${
-          alertMsg.type === "success" 
-            ? "bg-secondary-container/95 border-secondary text-on-secondary-container" 
-            : "bg-error-container/95 border-error text-on-error-container"
-        }`}>
-          <div className="flex items-center gap-2 font-medium">
-            <span className="material-symbols-outlined text-lg">
-              {alertMsg.type === "success" ? "check_circle" : "error"}
-            </span>
-            {alertMsg.text}
-          </div>
-        </div>
-      )}
-
       {/* Main Page Grid */}
       <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin-desktop py-lg space-y-lg">
         
