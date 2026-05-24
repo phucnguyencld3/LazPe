@@ -1,18 +1,38 @@
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+
+export const fetchPermissions = async (token: string): Promise<any[]> => {
+  const res = await fetch(`${API_BASE_URL}/Permission`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || "Failed to fetch permissions");
+  return data.data;
+};
+
+export const fetchUserPermissions = async (token: string, userId: string): Promise<any[]> => {
+  const res = await fetch(`${API_BASE_URL}/Permission/user/${userId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || "Failed to fetch user permissions");
+  return data.data;
+};
+
 export const getResourceTitle = (resource: string) => {
   switch (resource.toLowerCase()) {
-    case "user": return "Người dùng (User)";
-    case "product": return "Sản phẩm (Product)";
-    case "category": return "Danh mục (Category)";
-    case "order": return "Đơn hàng (Order)";
-    case "permission": return "Phân quyền (Permission)";
-    case "admin": return "Quyền Admin (Admin)";
-    case "bundle": return "Gói sản phẩm (Bundle)";
-    case "supplier": return "Nhà cung cấp (Supplier)";
-    case "report": return "Báo cáo (Report)";
-    case "analytics": return "Thống kê (Analytics)";
-    case "system": return "Hệ thống (System)";
-    case "review": return "Đánh giá (Review)";
-    case "address": return "Địa chỉ (Address)";
+    case "user": return "Quản lý Người dùng (User)";
+    case "product": return "Quản lý Sản phẩm (Product)";
+    case "category": return "Quản lý Danh mục (Category)";
+    case "order": return "Quản lý Đơn hàng (Order)";
+    case "permission": return "Quản lý Phân quyền (Permission)";
+    case "admin": return "Quyền Quản trị viên (Admin)";
+    case "bundle": return "Quản lý Gói sản phẩm (Bundle)";
+    case "supplier": return "Quản lý Nhà cung cấp (Supplier)";
+    case "report": return "Xem Báo cáo (Report)";
+    case "analytics": return "Phân tích số liệu (Analytics)";
+    case "system": return "Cấu hình Hệ thống (System)";
+    case "review": return "Quản lý Đánh giá (Review)";
+    case "address": return "Quản lý Địa chỉ (Address)";
     default: return `Nhóm ${resource}`;
   }
 };
@@ -32,7 +52,7 @@ export const getResourceIcon = (resource: string) => {
     case "system": return "settings";
     case "review": return "star";
     case "address": return "location_on";
-    default: return "folder";
+    default: return "extension";
   }
 };
 
@@ -85,12 +105,18 @@ export const getDependentPermissionIdsToRemove = (permissionId: number, allPermi
     if (target) implies.add(target.id);
   };
 
-  if (action === "delete") {
-    addAction("update"); addAction("create"); addAction("read");
-  } else if (action === "update") {
-    addAction("create"); addAction("read");
+  // If we unselect Read, we must remove Create, Update, Delete
+  if (action === "read") {
+    addAction("create"); addAction("update"); addAction("delete");
   } else if (action === "create") {
-    addAction("read");
+    addAction("update"); addAction("delete");
+  } else if (action === "update") {
+    addAction("delete");
+  } else if (action === "access" && resource.toLowerCase() === "admin") {
+    // If we unselect Admin.Access, theoretically we must remove ALL other permissions since they require Admin.Access
+    allPermissions.forEach(p => {
+      if (p.id !== permissionId) implies.add(p.id);
+    });
   }
 
   return Array.from(implies);
