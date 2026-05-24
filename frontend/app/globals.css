@@ -106,3 +106,7 @@ body {
 .client-scaled-layout {
   zoom: 0.75;
 }
+
+.admin-scaled-layout {
+  zoom: 0.75;
+}

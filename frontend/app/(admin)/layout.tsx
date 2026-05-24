@@ -55,7 +55,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative">
+    <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative admin-scaled-layout">
       {/* Top Navigation Shell */}
       <header className="sticky top-0 z-40 flex items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
         <div className="flex items-center gap-sm ml-72">
