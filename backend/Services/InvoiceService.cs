@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interface;
 using PolyBabyAPI.Models;
@@ -104,7 +104,7 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== Tạo hóa đơn từ giỏ hàng (có voucher) ========
-        public async Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null)
+        public async Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null, UserAddress? userAddress = null)
         {
             var cart = await _context.Carts
                 .Include(c => c.CartDetails)
@@ -184,6 +184,10 @@ namespace PolyBabyAPI.Services
                 CreatedAt = DateTime.Now,
                 Status = OrderStatus.Pending,
                 ShippingAddress = shippingAddress,
+                ShippingProvince = userAddress?.Province?.Name,
+                ShippingDistrict = userAddress?.District?.Name,
+                ShippingWard = userAddress?.Ward?.Name,
+                ShippingStreetAddress = userAddress?.StreetAddress,
                 SubTotal = subTotal,
                 DiscountAmount = discountAmount,
             };

@@ -1,20 +1,23 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.Models
 {
-    public class Province
+    public class District
     {
         [Key]
-        public int ProvinceID { get; set; }
+        public int DistrictID { get; set; }
 
-        [Required(ErrorMessage = "Tên tỉnh/thành phố là bắt buộc")]
+        [Required(ErrorMessage = "Tên quận/huyện là bắt buộc")]
         [StringLength(100)]
-        [Display(Name = "Tên tỉnh/thành phố")]
+        [Display(Name = "Tên quận/huyện")]
         public string Name { get; set; }
 
         [Required]
         [StringLength(20)]
         public string Code { get; set; }
+
+        public int ProvinceID { get; set; }
 
         public bool IsActive { get; set; } = true;
 
@@ -24,7 +27,10 @@ namespace PolyBabyAPI.Models
         public string? Note { get; set; }
 
         // Navigation
-        public virtual ICollection<District> Districts { get; set; } = new List<District>();
+        [ForeignKey(nameof(ProvinceID))]
+        public virtual Province Province { get; set; }
+
+        public virtual ICollection<Ward> Wards { get; set; } = new List<Ward>();
         public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
     }
 }

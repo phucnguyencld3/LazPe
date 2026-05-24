@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
@@ -77,6 +77,18 @@ namespace PolyBabyAPI.Models
 
         [MaxLength(500, ErrorMessage = "Địa chỉ giao hàng tối đa 500 ký tự")]
         public string? ShippingAddress { get; set; }
+
+        [MaxLength(100)]
+        public string? ShippingProvince { get; set; }
+
+        [MaxLength(100)]
+        public string? ShippingDistrict { get; set; }
+
+        [MaxLength(100)]
+        public string? ShippingWard { get; set; }
+
+        [MaxLength(500)]
+        public string? ShippingStreetAddress { get; set; }
 
         [Display(Name = "Trạng thái đơn hàng")]
         [Required(ErrorMessage = "Trạng thái đơn hàng không được để trống")]

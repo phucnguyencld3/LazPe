@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Models;
 using System;
@@ -16,6 +16,7 @@ namespace PolyBabyAPI.Data
 
         // ===== DbSet =====
         public DbSet<Province> Provinces { get; set; }
+        public DbSet<District> Districts { get; set; }
         public DbSet<Ward> Wards { get; set; }
         public DbSet<UserAddress> UserAddresses { get; set; }
 
@@ -46,7 +47,6 @@ namespace PolyBabyAPI.Data
         public DbSet<ReviewLike> ReviewLikes { get; set; }
         public DbSet<ReviewComment> ReviewComments { get; set; }
 
-        public DbSet<Address> Addresses { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
 
@@ -56,11 +56,17 @@ namespace PolyBabyAPI.Data
         {
             base.OnModelCreating(builder);
 
-            // ===== Province - Ward =====
+            // ===== Province - District - Ward =====
+            builder.Entity<District>()
+                .HasOne(d => d.Province)
+                .WithMany(p => p.Districts)
+                .HasForeignKey(d => d.ProvinceID)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<Ward>()
-                .HasOne(w => w.Province)
-                .WithMany(p => p.Wards)
-                .HasForeignKey(w => w.ProvinceID)
+                .HasOne(w => w.District)
+                .WithMany(d => d.Wards)
+                .HasForeignKey(w => w.DistrictID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ===== UserAddress =====
@@ -74,6 +80,12 @@ namespace PolyBabyAPI.Data
                 .HasOne(ua => ua.Province)
                 .WithMany(p => p.UserAddresses)
                 .HasForeignKey(ua => ua.ProvinceID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<UserAddress>()
+                .HasOne(ua => ua.District)
+                .WithMany(d => d.UserAddresses)
+                .HasForeignKey(ua => ua.DistrictID)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<UserAddress>()
@@ -168,12 +180,7 @@ namespace PolyBabyAPI.Data
             builder.Entity<UserVoucher>()
                 .HasIndex(uv => new { uv.UserID, uv.VoucherID, uv.Status });
 
-            // ===== Address =====
-            builder.Entity<Address>()
-                .HasOne(a => a.User)
-                .WithMany(u => u.Addresses)
-                .HasForeignKey(a => a.UserID)
-                .OnDelete(DeleteBehavior.Cascade);
+
 
             // ===== Invoice =====
             builder.Entity<Invoice>()

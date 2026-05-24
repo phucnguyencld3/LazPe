@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.Models
@@ -10,11 +10,17 @@ namespace PolyBabyAPI.Models
 
         public string UserID { get; set; }
         public int ProvinceID { get; set; }
+        public int DistrictID { get; set; }
         public int WardID { get; set; }
+
+        [Required(ErrorMessage = "Tên người nhận là bắt buộc")]
+        [StringLength(100)]
+        [Display(Name = "Tên người nhận")]
+        public string RecipientName { get; set; } = "";
 
         // sđt nhận hàng
         [Required(ErrorMessage = "Số điện thoại là bắt buộc")]
-        [StringLength(13)]
+        [StringLength(15)]
         [Display(Name = "Số điện thoại nhận hàng")]
         public string PhoneNumber { get; set; }
 
@@ -26,6 +32,8 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Địa chỉ mặc định")]
         public bool IsDefault { get; set; }
 
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
         // Navigation
         [ForeignKey(nameof(UserID))]
         public virtual ApplicationUser User { get; set; }
@@ -33,7 +41,9 @@ namespace PolyBabyAPI.Models
         [ForeignKey(nameof(ProvinceID))]
         public virtual Province? Province { get; set; }
 
-        // ✅ Sửa từ Wards thành Ward (số ít)
+        [ForeignKey(nameof(DistrictID))]
+        public virtual District? District { get; set; }
+
         [ForeignKey(nameof(WardID))]
         public virtual Ward? Ward { get; set; }
     }
