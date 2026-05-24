@@ -33,7 +33,8 @@ import {
   createInvoiceFromCart,
   AddressItem,
   CartInfo,
-  CartDetailInfo
+  CartDetailInfo,
+  normalizeName
 } from "@/lib/api";
 
 export default function CheckoutPage() {
@@ -340,44 +341,60 @@ export default function CheckoutPage() {
         setProvinces(provList);
       }
 
-      // Find province code by name or use returned code
-      const provCode = address.provinceCode || provList?.find((p) => normalizeName(p.name) === normalizeName(address.province))?.code || "";
+      // Find province code by code or name
+      let matchedProvince = null;
+      if (address.provinceCode) {
+        matchedProvince = provList?.find((p) => String(p.code) === String(address.provinceCode));
+      }
+      if (!matchedProvince && address.province) {
+        matchedProvince = provList?.find((p) => normalizeName(p.name) === normalizeName(address.province));
+      }
+      const provCode = matchedProvince ? String(matchedProvince.code) : (address.provinceCode ? String(address.provinceCode) : "");
+      const provName = matchedProvince?.name || address.province || "";
 
       let distList: any[] = [];
       let matchedDistrict: any = null;
-      let distCode = address.districtCode || "";
-
       if (provCode) {
         const distData = await getDistricts(provCode);
         distList = distData?.districts || [];
         setDistricts(distList);
-        if (!distCode) {
+        
+        if (address.districtCode) {
+          matchedDistrict = distList.find((d) => String(d.code) === String(address.districtCode));
+        }
+        if (!matchedDistrict && address.district) {
           matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
-          distCode = matchedDistrict?.code || "";
         }
       }
+      const distCode = matchedDistrict ? String(matchedDistrict.code) : (address.districtCode ? String(address.districtCode) : "");
+      const distName = matchedDistrict?.name || address.district || "";
 
+      let wardList: any[] = [];
       let matchedWard: any = null;
-      let wardCode = address.wardCode || "";
       if (distCode) {
         const wardData = await getWards(distCode);
-        const wardList = wardData?.wards || [];
+        wardList = wardData?.wards || [];
         setWards(wardList);
-        if (!wardCode) {
+        
+        if (address.wardCode) {
+          matchedWard = wardList.find((w: any) => String(w.code) === String(address.wardCode));
+        }
+        if (!matchedWard && address.ward) {
           matchedWard = wardList.find((w: any) => normalizeName(w.name) === normalizeName(address.ward));
-          wardCode = matchedWard?.code || "";
         }
       }
+      const wardCode = matchedWard ? String(matchedWard.code) : (address.wardCode ? String(address.wardCode) : "");
+      const wardName = matchedWard?.name || address.ward || "";
 
       setAddressForm({
         recipientName: address.recipientName,
         phoneNumber: address.phoneNumber,
-        provinceCode: provCode.toString(),
-        provinceName: address.province,
-        districtCode: distCode.toString(),
-        districtName: address.district,
-        wardCode: wardCode.toString(),
-        wardName: address.ward,
+        provinceCode: provCode,
+        provinceName: provName,
+        districtCode: distCode,
+        districtName: distName,
+        wardCode: wardCode,
+        wardName: wardName,
         detailAddress: address.detailAddress,
         isDefault: address.isDefault
       });
