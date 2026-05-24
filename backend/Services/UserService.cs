@@ -163,6 +163,9 @@ namespace PolyBabyAPI.Services
                     user.LockoutEnd = DateTimeOffset.MaxValue;
                 }
 
+                // Cập nhật trạng thái Status = false khi khóa
+                user.Status = false;
+
                 var result = await _userManager.UpdateAsync(user);
                 
                 if (result.Succeeded)
@@ -237,6 +240,9 @@ namespace PolyBabyAPI.Services
                 // Set LockoutEnd về null
                 user.LockoutEnd = null;
                 user.AccessFailedCount = 0;
+                
+                // Cập nhật trạng thái Status = true khi mở khóa
+                user.Status = true;
 
                 var result = await _userManager.UpdateAsync(user);
                 
