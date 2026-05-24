@@ -236,7 +236,22 @@ export default function CheckoutPage() {
       setLoadingGeoData(true);
       const data = await getDistricts(code);
       if (data) {
-        setDistricts(data.districts || []);
+        const dists = data.districts || [];
+        setDistricts(dists);
+        if (dists.length === 1) {
+          const singleDist = dists[0];
+          setAddressForm((prev) => ({
+            ...prev,
+            districtCode: singleDist.code,
+            districtName: singleDist.name,
+          }));
+          
+          // Fetch wards immediately
+          const wardData = await getWards(singleDist.code);
+          if (wardData) {
+            setWards(wardData.wards || []);
+          }
+        }
       }
     } catch (err) {
       console.error("Error loading districts:", err);
@@ -359,11 +374,15 @@ export default function CheckoutPage() {
         distList = distData?.districts || [];
         setDistricts(distList);
         
-        if (address.districtCode) {
-          matchedDistrict = distList.find((d) => String(d.code) === String(address.districtCode));
-        }
-        if (!matchedDistrict && address.district) {
-          matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
+        if (distList.length === 1) {
+          matchedDistrict = distList[0];
+        } else {
+          if (address.districtCode) {
+            matchedDistrict = distList.find((d) => String(d.code) === String(address.districtCode));
+          }
+          if (!matchedDistrict && address.district) {
+            matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
+          }
         }
       }
       const distCode = matchedDistrict ? String(matchedDistrict.code) : (address.districtCode ? String(address.districtCode) : "");
@@ -371,8 +390,9 @@ export default function CheckoutPage() {
 
       let wardList: any[] = [];
       let matchedWard: any = null;
-      if (distCode) {
-        const wardData = await getWards(distCode);
+      const wardFetchCode = distCode || provCode;
+      if (wardFetchCode) {
+        const wardData = await getWards(wardFetchCode);
         wardList = wardData?.wards || [];
         setWards(wardList);
         
@@ -612,7 +632,7 @@ export default function CheckoutPage() {
                       <p className="text-slate-600 text-sm flex items-start">
                         <MapPin className="h-4 w-4 text-rose-400 mr-2 flex-shrink-0 mt-0.5" />
                         <span>
-                          {selectedAddress.detailAddress}, {selectedAddress.ward}, {selectedAddress.district}, {selectedAddress.province}
+                          {selectedAddress.detailAddress}, {selectedAddress.ward}, {selectedAddress.district === selectedAddress.province ? selectedAddress.province : `${selectedAddress.district}, ${selectedAddress.province}`}
                         </span>
                       </p>
                     </div>
@@ -1013,25 +1033,27 @@ export default function CheckoutPage() {
                     </div>
 
                     {/* District */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                        Quận / Huyện <span className="text-rose-500">*</span>
-                      </label>
-                      <select
-                        required
-                        value={addressForm.districtCode}
-                        onChange={handleDistrictChange}
-                        disabled={!addressForm.provinceCode}
-                        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-rose-500 focus:border-rose-500 bg-white outline-none disabled:bg-slate-50 disabled:text-slate-400"
-                      >
-                        <option value="">Chọn Quận / Huyện</option>
-                        {districts.map((d) => (
-                          <option key={d.code} value={d.code}>
-                            {d.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {districts.length > 1 && (
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                          Quận / Huyện <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          required
+                          value={addressForm.districtCode}
+                          onChange={handleDistrictChange}
+                          disabled={!addressForm.provinceCode}
+                          className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-rose-500 focus:border-rose-500 bg-white outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                        >
+                          <option value="">Chọn Quận / Huyện</option>
+                          {districts.map((d) => (
+                            <option key={d.code} value={d.code}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
                     {/* Ward */}
                     <div className="space-y-1">
@@ -1148,7 +1170,7 @@ export default function CheckoutPage() {
                                 )}
                               </div>
                               <p className="text-slate-500 text-xs leading-relaxed">
-                                {addr.detailAddress}, {addr.ward}, {addr.district}, {addr.province}
+                                {addr.detailAddress}, {addr.ward}, {addr.district === addr.province ? addr.province : `${addr.district}, ${addr.province}`}
                               </p>
                             </div>
                             
