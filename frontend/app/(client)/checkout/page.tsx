@@ -33,7 +33,8 @@ import {
   createInvoiceFromCart,
   AddressItem,
   CartInfo,
-  CartDetailInfo
+  CartDetailInfo,
+  normalizeName
 } from "@/lib/api";
 
 export default function CheckoutPage() {
@@ -328,9 +329,16 @@ export default function CheckoutPage() {
         setProvinces(provList);
       }
 
-      // Find province code by name to load districts
-      const matchedProvince = provList?.find((p) => p.name === address.province);
+      // Find province code by code or name
+      let matchedProvince = null;
+      if (address.provinceCode) {
+        matchedProvince = provList?.find((p) => String(p.code) === String(address.provinceCode));
+      }
+      if (!matchedProvince && address.province) {
+        matchedProvince = provList?.find((p) => normalizeName(p.name) === normalizeName(address.province));
+      }
       const provCode = matchedProvince?.code || "";
+      const provName = matchedProvince?.name || address.province;
 
       let distList: any[] = [];
       let matchedDistrict: any = null;
@@ -338,27 +346,43 @@ export default function CheckoutPage() {
         const distData = await getDistricts(provCode);
         distList = distData?.districts || [];
         setDistricts(distList);
-        matchedDistrict = distList.find((d) => d.name === address.district);
+        
+        if (address.districtCode) {
+          matchedDistrict = distList.find((d) => String(d.code) === String(address.districtCode));
+        }
+        if (!matchedDistrict && address.district) {
+          matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
+        }
       }
-
       const distCode = matchedDistrict?.code || "";
+      const distName = matchedDistrict?.name || address.district;
+
+      let wardList: any[] = [];
       let matchedWard: any = null;
       if (distCode) {
         const wardData = await getWards(distCode);
-        const wardList = wardData?.wards || [];
+        wardList = wardData?.wards || [];
         setWards(wardList);
-        matchedWard = wardList.find((w: any) => w.name === address.ward);
+        
+        if (address.wardCode) {
+          matchedWard = wardList.find((w: any) => String(w.code) === String(address.wardCode));
+        }
+        if (!matchedWard && address.ward) {
+          matchedWard = wardList.find((w: any) => normalizeName(w.name) === normalizeName(address.ward));
+        }
       }
+      const wardCode = matchedWard?.code || "";
+      const wardName = matchedWard?.name || address.ward;
 
       setAddressForm({
         recipientName: address.recipientName,
         phoneNumber: address.phoneNumber,
         provinceCode: provCode,
-        provinceName: address.province,
+        provinceName: provName,
         districtCode: distCode,
-        districtName: address.district,
-        wardCode: matchedWard?.code || "",
-        wardName: address.ward,
+        districtName: distName,
+        wardCode: wardCode,
+        wardName: wardName,
         detailAddress: address.detailAddress,
         isDefault: address.isDefault
       });

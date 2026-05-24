@@ -329,11 +329,27 @@ export interface AddressItem {
   recipientName: string;
   phoneNumber: string;
   province: string;
+  provinceCode?: string;
   district: string;
+  districtCode?: string;
   ward: string;
+  wardCode?: string;
   detailAddress: string;
   isDefault: boolean;
   createdAt: string;
+}
+
+export function normalizeName(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/^(thanh pho|tinh|quan|huyen|thi xa|thi tran|phuong|xa)\s+/i, "")
+    .replace(/\s+(thanh pho|tinh|quan|huyen|thi xa|thi tran|phuong|xa)$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function getUserAddresses(userId: string, token: string): Promise<AddressItem[] | null> {

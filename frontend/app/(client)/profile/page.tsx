@@ -18,21 +18,22 @@ import {
   setDefaultAddress,
   deleteAddress,
   UserProfile,
-  AddressItem
+  AddressItem,
+  normalizeName
 } from "@/lib/api";
 
 interface Province {
-  code: number;
+  code: string;
   name: string;
 }
 
 interface District {
-  code: number;
+  code: string;
   name: string;
 }
 
 interface Ward {
-  code: number;
+  code: string;
   name: string;
 }
 
@@ -314,31 +315,86 @@ export default function ProfilePage() {
     setAddressError(null);
 
     // Initial provinces load
+    let provList: any[] = [];
     try {
-      const provList = await getProvinces();
-      if (provList) {
-        setProvinces(provList);
+      const list = await getProvinces();
+      if (list) {
+        provList = list;
+        setProvinces(list);
       }
     } catch (err) {
       console.error("Error loading provinces:", err);
     }
 
     if (address) {
-      // Setup edit state
+      // Setup edit state with self-healing matching
+      // Find province code by code or name
+      let matchedProvince = null;
+      if (address.provinceCode) {
+        matchedProvince = provList?.find((p) => String(p.code) === String(address.provinceCode));
+      }
+      if (!matchedProvince && address.province) {
+        matchedProvince = provList?.find((p) => normalizeName(p.name) === normalizeName(address.province));
+      }
+      const provCode = matchedProvince?.code || "";
+      const provName = matchedProvince?.name || address.province;
+
+      let distList: any[] = [];
+      let matchedDistrict: any = null;
+      if (provCode) {
+        try {
+          const distData = await getDistricts(provCode);
+          distList = distData?.districts || [];
+          setDistricts(distList);
+          
+          if (address.districtCode) {
+            matchedDistrict = distList.find((d) => String(d.code) === String(address.districtCode));
+          }
+          if (!matchedDistrict && address.district) {
+            matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
+          }
+        } catch (err) {
+          console.error("Error loading districts:", err);
+        }
+      }
+      const distCode = matchedDistrict?.code || "";
+      const distName = matchedDistrict?.name || address.district;
+
+      let wardList: any[] = [];
+      let matchedWard: any = null;
+      if (distCode) {
+        try {
+          const wardData = await getWards(distCode);
+          wardList = wardData?.wards || [];
+          setWards(wardList);
+          
+          if (address.wardCode) {
+            matchedWard = wardList.find((w: any) => String(w.code) === String(address.wardCode));
+          }
+          if (!matchedWard && address.ward) {
+            matchedWard = wardList.find((w: any) => normalizeName(w.name) === normalizeName(address.ward));
+          }
+        } catch (err) {
+          console.error("Error loading wards:", err);
+        }
+      }
+      const wardCode = matchedWard?.code || "";
+      const wardName = matchedWard?.name || address.ward;
+
       setAddressForm({
         recipientName: address.recipientName,
         phoneNumber: address.phoneNumber,
-        provinceCode: "", // We lookup by name later if needed or fetch
-        provinceName: address.province,
-        districtCode: "",
-        districtName: address.district,
-        wardCode: "",
-        wardName: address.ward,
+        provinceCode: provCode,
+        provinceName: provName,
+        districtCode: distCode,
+        districtName: distName,
+        wardCode: wardCode,
+        wardName: wardName,
         detailAddress: address.detailAddress,
         isDefault: address.isDefault,
       });
-      setDistricts([]);
-      setWards([]);
+      setDistricts(distList);
+      setWards(wardList);
     } else {
       // Clear state for create
       setAddressForm({
@@ -429,12 +485,10 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!userProfile || !token) return;
 
-    // Check if dropdown names are selected
-    if (!editingAddress) {
-      if (!addressForm.provinceName || !addressForm.districtName || !addressForm.wardName) {
-        setAddressError("Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã");
-        return;
-      }
+    // Check if dropdown codes/names are selected
+    if (!addressForm.provinceCode || !addressForm.districtCode || !addressForm.wardCode) {
+      setAddressError("Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã");
+      return;
     }
 
     setAddressError(null);
@@ -1040,67 +1094,52 @@ export default function ProfilePage() {
                 />
               </div>
 
-              {/* Selection for new addresses only or show summary for edits */}
-              {!editingAddress ? (
-                <>
-                  <div className="space-y-1">
-                    <label className="font-bold text-sm text-slate-700 ml-1">Tỉnh / Thành phố</label>
-                    <select
-                      required
-                      value={addressForm.provinceCode}
-                      onChange={handleProvinceChange}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none"
-                    >
-                      <option value="">-- Chọn Tỉnh/Thành --</option>
-                      {provinces.map((prov) => (
-                        <option key={prov.code} value={prov.code}>{prov.name}</option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="space-y-1">
+                <label className="font-bold text-sm text-slate-700 ml-1">Tỉnh / Thành phố</label>
+                <select
+                  required
+                  value={addressForm.provinceCode}
+                  onChange={handleProvinceChange}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none"
+                >
+                  <option value="">-- Chọn Tỉnh/Thành --</option>
+                  {provinces.map((prov) => (
+                    <option key={prov.code} value={prov.code}>{prov.name}</option>
+                  ))}
+                </select>
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-sm text-slate-700 ml-1">Quận / Huyện</label>
-                    <select
-                      required
-                      disabled={!addressForm.provinceCode}
-                      value={addressForm.districtCode}
-                      onChange={handleDistrictChange}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none disabled:opacity-60"
-                    >
-                      <option value="">-- Chọn Quận/Huyện --</option>
-                      {districts.map((dist) => (
-                        <option key={dist.code} value={dist.code}>{dist.name}</option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="space-y-1">
+                <label className="font-bold text-sm text-slate-700 ml-1">Quận / Huyện</label>
+                <select
+                  required
+                  disabled={!addressForm.provinceCode}
+                  value={addressForm.districtCode}
+                  onChange={handleDistrictChange}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none disabled:opacity-60"
+                >
+                  <option value="">-- Chọn Quận/Huyện --</option>
+                  {districts.map((dist) => (
+                    <option key={dist.code} value={dist.code}>{dist.name}</option>
+                  ))}
+                </select>
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-sm text-slate-700 ml-1">Phường / Xã</label>
-                    <select
-                      required
-                      disabled={!addressForm.districtCode}
-                      value={addressForm.wardCode}
-                      onChange={handleWardChange}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none disabled:opacity-60"
-                    >
-                      <option value="">-- Chọn Phường/Xã --</option>
-                      {wards.map((w) => (
-                        <option key={w.code} value={w.code}>{w.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              ) : (
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/50 space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase block">Khu vực hành chính</span>
-                  <span className="font-bold text-slate-800 block text-sm">
-                    {addressForm.wardName}, {addressForm.districtName}, {addressForm.provinceName}
-                  </span>
-                  <span className="text-[11px] text-slate-400 italic block">
-                    * Không thể thay đổi vùng hành chính trực tiếp. Hãy tạo địa chỉ mới nếu muốn đổi tỉnh/quận/phường.
-                  </span>
-                </div>
-              )}
+              <div className="space-y-1">
+                <label className="font-bold text-sm text-slate-700 ml-1">Phường / Xã</label>
+                <select
+                  required
+                  disabled={!addressForm.districtCode}
+                  value={addressForm.wardCode}
+                  onChange={handleWardChange}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none disabled:opacity-60"
+                >
+                  <option value="">-- Chọn Phường/Xã --</option>
+                  {wards.map((w) => (
+                    <option key={w.code} value={w.code}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
 
               <div className="space-y-1">
                 <label className="font-bold text-sm text-slate-700 ml-1">Địa chỉ chi tiết</label>
