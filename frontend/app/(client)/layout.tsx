@@ -6,7 +6,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900 client-scaled-layout">
       <Header />
       <main className="pt-20">{children}</main>
       <footer className="border-t border-slate-200 bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">

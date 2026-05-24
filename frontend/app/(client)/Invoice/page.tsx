@@ -147,7 +147,7 @@ function InvoiceContent() {
             {isSuccess ? "Đặt Hàng Thành Công!" : "Thanh Toán Thất Bại"}
           </h1>
           
-          <p className="mt-3 text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
+          <p className="mt-3 text-slate-500 text-sm max-w-[450px] w-full mx-auto leading-relaxed">
             {isSuccess 
               ? `Cảm ơn bạn đã mua sắm tại LazPe. Đơn hàng của bạn đã được tiếp nhận và đang chờ xử lý.` 
               : getErrorDescription(errorCode)
