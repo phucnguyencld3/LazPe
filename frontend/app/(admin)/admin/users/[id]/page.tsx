@@ -276,7 +276,7 @@ export default function UserDetailsPage() {
           
           <div className="flex flex-wrap gap-sm justify-center">
             <button
-              onClick={() => setIsPermModalOpen(true)}
+              onClick={() => router.push(`/admin/users/${id}/permissions`)}
               className="bg-secondary text-on-secondary px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md"
             >
               <span className="material-symbols-outlined text-sm">security</span>
@@ -378,7 +378,7 @@ export default function UserDetailsPage() {
               Vai trò &amp; Quyền hạn của Người dùng
             </h3>
             <button
-              onClick={() => setIsPermModalOpen(true)}
+              onClick={() => router.push(`/admin/users/${id}/permissions`)}
               className="text-primary font-label-md font-bold hover:underline bg-transparent border-none cursor-pointer"
             >
               Sửa quyền
