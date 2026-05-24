@@ -8,7 +8,7 @@ import {
   getResourceIcon,
   computeImpliedPermissionIds,
   getDependentPermissionIdsToRemove,
-} from "@/lib/permissionHelpers";
+} from "@/lib/features/permissions/permissionApi";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
