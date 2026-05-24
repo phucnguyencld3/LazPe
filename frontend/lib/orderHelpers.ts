@@ -24,21 +24,9 @@ export interface OrderInfo {
   invoiceDetails?: any[];
 }
 
-export const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-};
+import { formatCurrency, formatDateTime } from "@/lib/utils/formatters";
 
-export const formatDateTime = (dateString: string) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+export { formatCurrency, formatDateTime };
 
 export const getStatusBadgeColor = (statusCode: number) => {
   // 0: Pending, 1: Confirmed, 2: Shipping, 3: Delivered, 4: Cancelled (just guessing standard flow)
