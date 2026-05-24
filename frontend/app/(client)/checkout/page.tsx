@@ -315,6 +315,18 @@ export default function CheckoutPage() {
     }
   };
 
+  const normalizeName = (name: string): string => {
+    if (!name) return "";
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/^(tinh|thanh pho|tp\.|tp|quan|huyen|thixa|thi xa|phuong|xa|thi tran|dist\.|dist)\s+/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
   const handleOpenEditAddressForm = async (address: AddressItem) => {
     setEditingAddress(address);
     setAddressFormError(null);
@@ -328,36 +340,43 @@ export default function CheckoutPage() {
         setProvinces(provList);
       }
 
-      // Find province code by name to load districts
-      const matchedProvince = provList?.find((p) => p.name === address.province);
-      const provCode = matchedProvince?.code || "";
+      // Find province code by name or use returned code
+      const provCode = address.provinceCode || provList?.find((p) => normalizeName(p.name) === normalizeName(address.province))?.code || "";
 
       let distList: any[] = [];
       let matchedDistrict: any = null;
+      let distCode = address.districtCode || "";
+
       if (provCode) {
         const distData = await getDistricts(provCode);
         distList = distData?.districts || [];
         setDistricts(distList);
-        matchedDistrict = distList.find((d) => d.name === address.district);
+        if (!distCode) {
+          matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
+          distCode = matchedDistrict?.code || "";
+        }
       }
 
-      const distCode = matchedDistrict?.code || "";
       let matchedWard: any = null;
+      let wardCode = address.wardCode || "";
       if (distCode) {
         const wardData = await getWards(distCode);
         const wardList = wardData?.wards || [];
         setWards(wardList);
-        matchedWard = wardList.find((w: any) => w.name === address.ward);
+        if (!wardCode) {
+          matchedWard = wardList.find((w: any) => normalizeName(w.name) === normalizeName(address.ward));
+          wardCode = matchedWard?.code || "";
+        }
       }
 
       setAddressForm({
         recipientName: address.recipientName,
         phoneNumber: address.phoneNumber,
-        provinceCode: provCode,
+        provinceCode: provCode.toString(),
         provinceName: address.province,
-        districtCode: distCode,
+        districtCode: distCode.toString(),
         districtName: address.district,
-        wardCode: matchedWard?.code || "",
+        wardCode: wardCode.toString(),
         wardName: address.ward,
         detailAddress: address.detailAddress,
         isDefault: address.isDefault

@@ -111,8 +111,11 @@ namespace PolyBabyAPI.Controllers
                         a.RecipientName,
                         a.PhoneNumber,
                         Province = a.Province != null ? a.Province.Name : "",
+                        ProvinceCode = a.Province != null ? a.Province.Code : "",
                         District = a.District != null ? a.District.Name : "",
+                        DistrictCode = a.District != null ? a.District.Code : "",
                         Ward = a.Ward != null ? a.Ward.Name : "",
+                        WardCode = a.Ward != null ? a.Ward.Code : "",
                         DetailAddress = a.StreetAddress,
                         a.IsDefault,
                         a.CreatedAt
@@ -436,8 +439,11 @@ namespace PolyBabyAPI.Controllers
                         a.RecipientName,
                         a.PhoneNumber,
                         Province = a.Province != null ? a.Province.Name : "",
+                        ProvinceCode = a.Province != null ? a.Province.Code : "",
                         District = a.District != null ? a.District.Name : "",
+                        DistrictCode = a.District != null ? a.District.Code : "",
                         Ward = a.Ward != null ? a.Ward.Name : "",
+                        WardCode = a.Ward != null ? a.Ward.Code : "",
                         DetailAddress = a.StreetAddress,
                         FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.District != null ? a.District.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
                     })

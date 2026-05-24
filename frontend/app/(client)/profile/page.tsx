@@ -308,37 +308,92 @@ export default function ProfilePage() {
     }
   };
 
+  const normalizeName = (name: string): string => {
+    if (!name) return "";
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/^(tinh|thanh pho|tp\.|tp|quan|huyen|thixa|thi xa|phuong|xa|thi tran|dist\.|dist)\s+/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
   // Open Address Modal for Create or Update
   const openAddressModal = async (address: AddressItem | null = null) => {
     setEditingAddress(address);
     setAddressError(null);
 
     // Initial provinces load
+    let provList: any[] = [];
     try {
-      const provList = await getProvinces();
-      if (provList) {
-        setProvinces(provList);
-      }
+      provList = await getProvinces() || [];
+      setProvinces(provList);
     } catch (err) {
       console.error("Error loading provinces:", err);
     }
 
     if (address) {
       // Setup edit state
-      setAddressForm({
-        recipientName: address.recipientName,
-        phoneNumber: address.phoneNumber,
-        provinceCode: "", // We lookup by name later if needed or fetch
-        provinceName: address.province,
-        districtCode: "",
-        districtName: address.district,
-        wardCode: "",
-        wardName: address.ward,
-        detailAddress: address.detailAddress,
-        isDefault: address.isDefault,
-      });
-      setDistricts([]);
-      setWards([]);
+      try {
+        const provCode = address.provinceCode || provList?.find((p) => normalizeName(p.name) === normalizeName(address.province))?.code || "";
+
+        let distList: any[] = [];
+        let matchedDistrict: any = null;
+        let distCode = address.districtCode || "";
+
+        if (provCode) {
+          const distData = await getDistricts(provCode);
+          distList = distData?.districts || [];
+          setDistricts(distList);
+          if (!distCode) {
+            matchedDistrict = distList.find((d) => normalizeName(d.name) === normalizeName(address.district));
+            distCode = matchedDistrict?.code || "";
+          }
+        }
+
+        let matchedWard: any = null;
+        let wardCode = address.wardCode || "";
+        if (distCode) {
+          const wardData = await getWards(distCode);
+          const wardList = wardData?.wards || [];
+          setWards(wardList);
+          if (!wardCode) {
+            matchedWard = wardList.find((w: any) => normalizeName(w.name) === normalizeName(address.ward));
+            wardCode = matchedWard?.code || "";
+          }
+        }
+
+        setAddressForm({
+          recipientName: address.recipientName,
+          phoneNumber: address.phoneNumber,
+          provinceCode: provCode.toString(),
+          provinceName: address.province,
+          districtCode: distCode.toString(),
+          districtName: address.district,
+          wardCode: wardCode.toString(),
+          wardName: address.ward,
+          detailAddress: address.detailAddress,
+          isDefault: address.isDefault,
+        });
+      } catch (err) {
+        console.error("Error setting edit address form on Profile:", err);
+        setAddressForm({
+          recipientName: address.recipientName,
+          phoneNumber: address.phoneNumber,
+          provinceCode: address.provinceCode || "",
+          provinceName: address.province,
+          districtCode: address.districtCode || "",
+          districtName: address.district,
+          wardCode: address.wardCode || "",
+          wardName: address.ward,
+          detailAddress: address.detailAddress,
+          isDefault: address.isDefault,
+        });
+        setDistricts([]);
+        setWards([]);
+      }
     } else {
       // Clear state for create
       setAddressForm({

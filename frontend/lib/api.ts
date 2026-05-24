@@ -329,8 +329,11 @@ export interface AddressItem {
   recipientName: string;
   phoneNumber: string;
   province: string;
+  provinceCode?: string;
   district: string;
+  districtCode?: string;
   ward: string;
+  wardCode?: string;
   detailAddress: string;
   isDefault: boolean;
   createdAt: string;
