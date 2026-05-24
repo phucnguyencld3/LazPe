@@ -81,6 +81,24 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách phường/xã theo tỉnh/thành phố trực tiếp từ API Vietnam V2
+        /// </summary>
+        [HttpGet("wards-by-province/{provinceCode}")]
+        public async Task<IActionResult> GetWardsByProvince(int provinceCode)
+        {
+            try
+            {
+                var wards = await _addressApiService.GetWardsByProvinceAsync(provinceCode);
+                return Ok(new { success = true, data = wards });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting wards for province {ProvinceCode}", provinceCode);
+                return StatusCode(500, new { success = false, message = "Không thể tải danh sách phường/xã" });
+            }
+        }
+
         #endregion
 
         #region User Address Management
@@ -137,6 +155,12 @@ namespace PolyBabyAPI.Controllers
         [HttpPost("create-vietnam")]
         public async Task<IActionResult> CreateVietnamAddress([FromBody] CreateVietnamAddressDto dto)
         {
+            if (string.IsNullOrEmpty(dto.DistrictCode))
+            {
+                dto.DistrictCode = dto.ProvinceCode;
+                dto.DistrictName = dto.ProvinceName;
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
@@ -243,6 +267,12 @@ namespace PolyBabyAPI.Controllers
         [HttpPut("update/{addressId}")]
         public async Task<IActionResult> UpdateAddress(int addressId, [FromBody] UpdateVietnamAddressDto dto)
         {
+            if (string.IsNullOrEmpty(dto.DistrictCode))
+            {
+                dto.DistrictCode = dto.ProvinceCode;
+                dto.DistrictName = dto.ProvinceName;
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
@@ -552,11 +582,9 @@ namespace PolyBabyAPI.Controllers
         [Required(ErrorMessage = "Tên tỉnh/thành phố là bắt buộc")]
         public string ProvinceName { get; set; } = "";
 
-        [Required(ErrorMessage = "Mã quận/huyện là bắt buộc")]
-        public string DistrictCode { get; set; } = "";
+        public string? DistrictCode { get; set; }
 
-        [Required(ErrorMessage = "Tên quận/huyện là bắt buộc")]
-        public string DistrictName { get; set; } = "";
+        public string? DistrictName { get; set; }
 
         [Required(ErrorMessage = "Mã phường/xã là bắt buộc")]
         public string WardCode { get; set; } = "";

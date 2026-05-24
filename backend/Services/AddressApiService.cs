@@ -19,27 +19,20 @@ namespace PolyBabyAPI.Services
 
         public async Task<JsonElement> GetProvincesAsync()
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{_apiUrl}province");
-            request.Headers.Add("Token", _token);
-
-            var res = await _http.SendAsync(request);
+            var res = await _http.GetAsync("https://provinces.open-api.vn/api/v2/p/");
             res.EnsureSuccessStatusCode();
 
             var json = await res.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
             
-            // Map từ format của GHN sang format tương thích với frontend mong đợi
-            // Frontend cũ mong đợi mảng các tỉnh có: code (string), name (string)
-            // GHN trả về: ProvinceID (int), ProvinceName (string)
-            var ghnProvinces = doc.RootElement.GetProperty("data");
             var resultList = new List<object>();
 
-            foreach (var item in ghnProvinces.EnumerateArray())
+            foreach (var item in doc.RootElement.EnumerateArray())
             {
                 resultList.Add(new
                 {
-                    code = item.GetProperty("ProvinceID").GetInt32().ToString(),
-                    name = item.GetProperty("ProvinceName").GetString()
+                    code = item.GetProperty("code").GetInt32().ToString(),
+                    name = item.GetProperty("name").GetString()
                 });
             }
 
@@ -48,58 +41,65 @@ namespace PolyBabyAPI.Services
 
         public async Task<JsonElement> GetDistrictByProvinceAsync(int provinceCode)
         {
-            // GHN District lấy theo POST body: { "province_id": provinceCode }
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_apiUrl}district");
-            request.Headers.Add("Token", _token);
-            request.Content = JsonContent.Create(new { province_id = provinceCode });
-
-            var res = await _http.SendAsync(request);
+            var res = await _http.GetAsync($"https://provinces.open-api.vn/api/v2/p/{provinceCode}");
             res.EnsureSuccessStatusCode();
 
             var json = await res.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
-            
-            // Map từ format của GHN sang format tương thích với frontend mong đợi
-            // Frontend mong đợi: { districts: [ { code: string, name: string } ] }
-            var ghnDistricts = doc.RootElement.GetProperty("data");
-            var districtsList = new List<object>();
+            var provinceName = doc.RootElement.GetProperty("name").GetString() ?? "Thành phố/Tỉnh";
 
-            foreach (var item in ghnDistricts.EnumerateArray())
+            var districtsList = new List<object>
             {
-                districtsList.Add(new
+                new
                 {
-                    code = item.GetProperty("DistrictID").GetInt32().ToString(),
-                    name = item.GetProperty("DistrictName").GetString()
-                });
-            }
+                    code = provinceCode.ToString(),
+                    name = provinceName
+                }
+            };
 
             return JsonSerializer.SerializeToElement(new { districts = districtsList });
         }
 
         public async Task<JsonElement> GetWardByDistrictAsync(int districtCode)
         {
-            // GHN Ward lấy theo POST body: { "district_id": districtCode }
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_apiUrl}ward");
-            request.Headers.Add("Token", _token);
-            request.Content = JsonContent.Create(new { district_id = districtCode });
-
-            var res = await _http.SendAsync(request);
+            var res = await _http.GetAsync($"https://provinces.open-api.vn/api/v2/p/{districtCode}?depth=2");
             res.EnsureSuccessStatusCode();
 
             var json = await res.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
             
-            // Map từ format của GHN sang format tương thích với frontend mong đợi
-            // Frontend mong đợi: { wards: [ { code: string, name: string } ] }
-            var ghnWards = doc.RootElement.GetProperty("data");
+            var wards = doc.RootElement.GetProperty("wards");
             var wardsList = new List<object>();
 
-            foreach (var item in ghnWards.EnumerateArray())
+            foreach (var item in wards.EnumerateArray())
             {
                 wardsList.Add(new
                 {
-                    code = item.GetProperty("WardCode").GetString(),
-                    name = item.GetProperty("WardName").GetString()
+                    code = item.GetProperty("code").GetInt32().ToString(),
+                    name = item.GetProperty("name").GetString()
+                });
+            }
+
+            return JsonSerializer.SerializeToElement(new { wards = wardsList });
+        }
+
+        public async Task<JsonElement> GetWardsByProvinceAsync(int provinceCode)
+        {
+            var res = await _http.GetAsync($"https://provinces.open-api.vn/api/v2/p/{provinceCode}?depth=2");
+            res.EnsureSuccessStatusCode();
+
+            var json = await res.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(json);
+            
+            var wards = doc.RootElement.GetProperty("wards");
+            var wardsList = new List<object>();
+
+            foreach (var item in wards.EnumerateArray())
+            {
+                wardsList.Add(new
+                {
+                    code = item.GetProperty("code").GetInt32().ToString(),
+                    name = item.GetProperty("name").GetString()
                 });
             }
 
