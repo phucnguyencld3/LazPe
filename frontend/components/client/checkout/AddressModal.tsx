@@ -53,7 +53,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
     wardCode: "",
     wardName: "",
     detailAddress: "",
-    isDefault: false
+    isDefault: false,
+    apiVersion: "v2"
   });
 
   // Handle Province Change
@@ -77,7 +78,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
 
     try {
       setLoadingGeoData(true);
-      const data = await getDistricts(code);
+      const data = await getDistricts(code, addressForm.apiVersion);
       if (data) {
         const dists = data.districts || [];
         setDistricts(dists);
@@ -90,7 +91,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
           }));
           
           // Fetch wards immediately
-          const wardData = await getWards(singleDist.code);
+          const wardData = await getWards(singleDist.code, addressForm.apiVersion);
           if (wardData) {
             setWards(wardData.wards || []);
           }
@@ -121,7 +122,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
 
     try {
       setLoadingGeoData(true);
-      const data = await getWards(code);
+      const data = await getWards(code, addressForm.apiVersion);
       if (data) {
         setWards(data.wards || []);
       }
@@ -159,14 +160,15 @@ export const AddressModal: React.FC<AddressModalProps> = ({
       wardCode: "",
       wardName: "",
       detailAddress: "",
-      isDefault: false
+      isDefault: false,
+      apiVersion: "v2"
     });
     setDistricts([]);
     setWards([]);
     
     try {
       setLoadingGeoData(true);
-      const provList = await getProvinces();
+      const provList = await getProvinces("v2");
       if (provList) {
         setProvinces(provList);
       }
@@ -185,8 +187,9 @@ export const AddressModal: React.FC<AddressModalProps> = ({
     setLoadingGeoData(true);
 
     try {
+      const apiVer = address.apiVersion || "v1";
       // Load provinces
-      const provList = await getProvinces();
+      const provList = await getProvinces(apiVer);
       if (provList) {
         setProvinces(provList);
       }
@@ -205,7 +208,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
       let distList: any[] = [];
       let matchedDistrict: any = null;
       if (provCode) {
-        const distData = await getDistricts(provCode);
+        const distData = await getDistricts(provCode, apiVer);
         distList = distData?.districts || [];
         setDistricts(distList);
         
@@ -227,7 +230,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
       let matchedWard: any = null;
       const wardFetchCode = distCode || provCode;
       if (wardFetchCode) {
-        const wardData = await getWards(wardFetchCode);
+        const wardData = await getWards(wardFetchCode, apiVer);
         wardList = wardData?.wards || [];
         setWards(wardList);
         
@@ -251,7 +254,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
         wardCode: wardCode,
         wardName: wardName,
         detailAddress: address.detailAddress,
-        isDefault: address.isDefault
+        isDefault: address.isDefault,
+        apiVersion: apiVer
       });
     } catch (err) {
       console.error("Error setting edit address form:", err);
@@ -288,6 +292,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
       wardName: addressForm.wardName,
       detailAddress: addressForm.detailAddress,
       isDefault: addressForm.isDefault,
+      apiVersion: addressForm.apiVersion
     };
 
     try {
@@ -390,6 +395,51 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                     className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-rose-500 focus:border-rose-500 outline-none"
                     placeholder="0987654321"
                   />
+                </div>
+              </div>
+
+              {/* Version Toggle */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                  Nguồn dữ liệu địa chỉ <span className="text-slate-400 font-normal normal-case">(Tùy chọn)</span>
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="apiVersion"
+                      value="v2"
+                      checked={addressForm.apiVersion === "v2"}
+                      onChange={async (e) => {
+                        const newVer = e.target.value;
+                        setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                        setDistricts([]);
+                        setWards([]);
+                        const provList = await getProvinces(newVer);
+                        if (provList) setProvinces(provList);
+                      }}
+                      className="text-rose-500 focus:ring-rose-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Phiên bản mới (V2)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="apiVersion"
+                      value="v1"
+                      checked={addressForm.apiVersion === "v1"}
+                      onChange={async (e) => {
+                        const newVer = e.target.value;
+                        setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                        setDistricts([]);
+                        setWards([]);
+                        const provList = await getProvinces(newVer);
+                        if (provList) setProvinces(provList);
+                      }}
+                      className="text-rose-500 focus:ring-rose-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Phiên bản cũ (V1)</span>
+                  </label>
                 </div>
               </div>
 

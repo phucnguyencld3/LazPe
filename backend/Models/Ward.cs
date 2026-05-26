@@ -26,6 +26,10 @@ namespace PolyBabyAPI.Models
 
         public string? Note { get; set; }
 
+        [Required]
+        [StringLength(10)]
+        public string ApiVersion { get; set; } = "v1";
+
         // Navigation
         [ForeignKey(nameof(DistrictID))]
         public virtual District District { get; set; }

@@ -23,6 +23,10 @@ namespace PolyBabyAPI.Models
 
         public string? Note { get; set; }
 
+        [Required]
+        [StringLength(10)]
+        public string ApiVersion { get; set; } = "v1";
+
         // Navigation
         public virtual ICollection<District> Districts { get; set; } = new List<District>();
         public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();

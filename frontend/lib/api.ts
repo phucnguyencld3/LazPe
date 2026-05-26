@@ -337,6 +337,7 @@ export interface AddressItem {
   detailAddress: string;
   isDefault: boolean;
   createdAt: string;
+  apiVersion?: string;
 }
 
 export function normalizeName(name: string): string {
@@ -378,9 +379,9 @@ export async function getUserAddresses(userId: string, token: string): Promise<A
   }
 }
 
-export async function getProvinces(): Promise<any[] | null> {
+export async function getProvinces(version: string = "v2"): Promise<any[] | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/Address/provinces`, {
+    const response = await fetch(`${API_BASE_URL}/Address/provinces?version=${version}`, {
       method: "GET",
     });
 
@@ -399,9 +400,9 @@ export async function getProvinces(): Promise<any[] | null> {
   }
 }
 
-export async function getDistricts(provinceCode: string | number): Promise<any | null> {
+export async function getDistricts(provinceCode: string | number, version: string = "v2"): Promise<any | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/Address/districts/${provinceCode}`, {
+    const response = await fetch(`${API_BASE_URL}/Address/districts/${provinceCode}?version=${version}`, {
       method: "GET",
     });
 
@@ -420,9 +421,9 @@ export async function getDistricts(provinceCode: string | number): Promise<any |
   }
 }
 
-export async function getWards(districtCode: string | number): Promise<any | null> {
+export async function getWards(districtCode: string | number, version: string = "v2"): Promise<any | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/Address/wards/${districtCode}`, {
+    const response = await fetch(`${API_BASE_URL}/Address/wards/${districtCode}?version=${version}`, {
       method: "GET",
     });
 

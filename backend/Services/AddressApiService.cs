@@ -17,9 +17,10 @@ namespace PolyBabyAPI.Services
             _apiUrl = config["Ghn:ApiUrl"] ?? "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/";
         }
 
-        public async Task<JsonElement> GetProvincesAsync()
+        public async Task<JsonElement> GetProvincesAsync(string version = "v2")
         {
-            var res = await _http.GetAsync("https://provinces.open-api.vn/api/v2/p/");
+            string url = version == "v1" ? "https://provinces.open-api.vn/api/p/" : "https://provinces.open-api.vn/api/v2/p/";
+            var res = await _http.GetAsync(url);
             res.EnsureSuccessStatusCode();
 
             var json = await res.Content.ReadAsStringAsync();
@@ -39,36 +40,60 @@ namespace PolyBabyAPI.Services
             return JsonSerializer.SerializeToElement(resultList);
         }
 
-        public async Task<JsonElement> GetDistrictByProvinceAsync(int provinceCode)
+        public async Task<JsonElement> GetDistrictByProvinceAsync(int provinceCode, string version = "v2")
         {
-            var res = await _http.GetAsync($"https://provinces.open-api.vn/api/v2/p/{provinceCode}");
-            res.EnsureSuccessStatusCode();
-
-            var json = await res.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(json);
-            var provinceName = doc.RootElement.GetProperty("name").GetString() ?? "Thành phố/Tỉnh";
-
-            var districtsList = new List<object>
-            {
-                new
-                {
-                    code = provinceCode.ToString(),
-                    name = provinceName
-                }
-            };
-
-            return JsonSerializer.SerializeToElement(new { districts = districtsList });
-        }
-
-        public async Task<JsonElement> GetWardByDistrictAsync(int districtCode)
-        {
-            var res = await _http.GetAsync($"https://provinces.open-api.vn/api/v2/p/{districtCode}?depth=2");
+            string url = version == "v1" ? $"https://provinces.open-api.vn/api/p/{provinceCode}?depth=2" : $"https://provinces.open-api.vn/api/v2/p/{provinceCode}?depth=2";
+            var res = await _http.GetAsync(url);
             res.EnsureSuccessStatusCode();
 
             var json = await res.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
             
-            var wards = doc.RootElement.GetProperty("wards");
+            string propertyName = version == "v1" ? "districts" : "wards";
+            if (!doc.RootElement.TryGetProperty(propertyName, out var districts))
+            {
+                return JsonSerializer.SerializeToElement(new { districts = new List<object>() });
+            }
+            
+            var districtsList = new List<object>();
+
+            foreach (var item in districts.EnumerateArray())
+            {
+                districtsList.Add(new
+                {
+                    code = item.GetProperty("code").GetInt32().ToString(),
+                    name = item.GetProperty("name").GetString()
+                });
+            }
+
+            return JsonSerializer.SerializeToElement(new { districts = districtsList });
+        }
+
+        public async Task<JsonElement> GetWardByDistrictAsync(int districtCode, string version = "v2")
+        {
+            if (version == "v2")
+            {
+                // In V2, the District dropdown already contains Wards.
+                // We return a dummy "ward" that mirrors the selected "district" to satisfy the 3-level UI logic.
+                var dummyWardsList = new List<object>
+                {
+                    new { code = districtCode.ToString(), name = "-" }
+                };
+                return JsonSerializer.SerializeToElement(new { wards = dummyWardsList });
+            }
+
+            string url = $"https://provinces.open-api.vn/api/d/{districtCode}?depth=2";
+            var res = await _http.GetAsync(url);
+            res.EnsureSuccessStatusCode();
+
+            var json = await res.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(json);
+            
+            if (!doc.RootElement.TryGetProperty("wards", out var wards))
+            {
+                return JsonSerializer.SerializeToElement(new { wards = new List<object>() });
+            }
+
             var wardsList = new List<object>();
 
             foreach (var item in wards.EnumerateArray())
@@ -83,9 +108,10 @@ namespace PolyBabyAPI.Services
             return JsonSerializer.SerializeToElement(new { wards = wardsList });
         }
 
-        public async Task<JsonElement> GetWardsByProvinceAsync(int provinceCode)
+        public async Task<JsonElement> GetWardsByProvinceAsync(int provinceCode, string version = "v2")
         {
-            var res = await _http.GetAsync($"https://provinces.open-api.vn/api/v2/p/{provinceCode}?depth=2");
+            string url = version == "v1" ? $"https://provinces.open-api.vn/api/p/{provinceCode}?depth=2" : $"https://provinces.open-api.vn/api/v2/p/{provinceCode}?depth=2";
+            var res = await _http.GetAsync(url);
             res.EnsureSuccessStatusCode();
 
             var json = await res.Content.ReadAsStringAsync();

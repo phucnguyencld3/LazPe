@@ -31,11 +31,11 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách tỉnh/thành phố từ API Vietnam
         /// </summary>
         [HttpGet("provinces")]
-        public async Task<IActionResult> GetProvinces()
+        public async Task<IActionResult> GetProvinces([FromQuery] string version = "v2")
         {
             try
             {
-                var provinces = await _addressApiService.GetProvincesAsync();
+                var provinces = await _addressApiService.GetProvincesAsync(version);
                 return Ok(new { success = true, data = provinces });
             }
             catch (Exception ex)
@@ -49,11 +49,11 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách quận/huyện theo tỉnh từ API Vietnam
         /// </summary>
         [HttpGet("districts/{provinceCode}")]
-        public async Task<IActionResult> GetDistricts(int provinceCode)
+        public async Task<IActionResult> GetDistricts(int provinceCode, [FromQuery] string version = "v2")
         {
             try
             {
-                var districts = await _addressApiService.GetDistrictByProvinceAsync(provinceCode);
+                var districts = await _addressApiService.GetDistrictByProvinceAsync(provinceCode, version);
                 return Ok(new { success = true, data = districts });
             }
             catch (Exception ex)
@@ -67,11 +67,11 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách phường/xã theo quận/huyện từ API Vietnam
         /// </summary>
         [HttpGet("wards/{districtCode}")]
-        public async Task<IActionResult> GetWards(int districtCode)
+        public async Task<IActionResult> GetWards(int districtCode, [FromQuery] string version = "v2")
         {
             try
             {
-                var wards = await _addressApiService.GetWardByDistrictAsync(districtCode);
+                var wards = await _addressApiService.GetWardByDistrictAsync(districtCode, version);
                 return Ok(new { success = true, data = wards });
             }
             catch (Exception ex)
@@ -85,11 +85,11 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách phường/xã theo tỉnh/thành phố trực tiếp từ API Vietnam V2
         /// </summary>
         [HttpGet("wards-by-province/{provinceCode}")]
-        public async Task<IActionResult> GetWardsByProvince(int provinceCode)
+        public async Task<IActionResult> GetWardsByProvince(int provinceCode, [FromQuery] string version = "v2")
         {
             try
             {
-                var wards = await _addressApiService.GetWardsByProvinceAsync(provinceCode);
+                var wards = await _addressApiService.GetWardsByProvinceAsync(provinceCode, version);
                 return Ok(new { success = true, data = wards });
             }
             catch (Exception ex)
@@ -136,7 +136,8 @@ namespace PolyBabyAPI.Controllers
                         WardCode = a.Ward != null ? a.Ward.Code : "",
                         DetailAddress = a.StreetAddress,
                         a.IsDefault,
-                        a.CreatedAt
+                        a.CreatedAt,
+                        ApiVersion = a.Province != null ? (a.Province.ApiVersion ?? "v1") : "v1"
                     })
                     .ToListAsync();
 
@@ -182,21 +183,22 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi Province
-                var province = await _context.Provinces.FirstOrDefaultAsync(p => p.Code == dto.ProvinceCode);
+                var province = await _context.Provinces.FirstOrDefaultAsync(p => p.Code == dto.ProvinceCode && p.ApiVersion == dto.ApiVersion);
                 if (province == null)
                 {
                     province = new Province
                     {
                         Code = dto.ProvinceCode,
                         Name = dto.ProvinceName,
-                        IsActive = true
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
                     };
                     _context.Provinces.Add(province);
                     await _context.SaveChangesAsync();
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi District
-                var district = await _context.Districts.FirstOrDefaultAsync(d => d.Code == dto.DistrictCode);
+                var district = await _context.Districts.FirstOrDefaultAsync(d => d.Code == dto.DistrictCode && d.ApiVersion == dto.ApiVersion);
                 if (district == null)
                 {
                     district = new District
@@ -204,14 +206,15 @@ namespace PolyBabyAPI.Controllers
                         Code = dto.DistrictCode,
                         Name = dto.DistrictName,
                         ProvinceID = province.ProvinceID,
-                        IsActive = true
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
                     };
                     _context.Districts.Add(district);
                     await _context.SaveChangesAsync();
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi Ward
-                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode);
+                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
                 if (ward == null)
                 {
                     ward = new Ward
@@ -219,7 +222,8 @@ namespace PolyBabyAPI.Controllers
                         Code = dto.WardCode,
                         Name = dto.WardName,
                         DistrictID = district.DistrictID,
-                        IsActive = true
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
                     };
                     _context.Wards.Add(ward);
                     await _context.SaveChangesAsync();
@@ -300,21 +304,22 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi Province
-                var province = await _context.Provinces.FirstOrDefaultAsync(p => p.Code == dto.ProvinceCode);
+                var province = await _context.Provinces.FirstOrDefaultAsync(p => p.Code == dto.ProvinceCode && p.ApiVersion == dto.ApiVersion);
                 if (province == null)
                 {
                     province = new Province
                     {
                         Code = dto.ProvinceCode,
                         Name = dto.ProvinceName,
-                        IsActive = true
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
                     };
                     _context.Provinces.Add(province);
                     await _context.SaveChangesAsync();
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi District
-                var district = await _context.Districts.FirstOrDefaultAsync(d => d.Code == dto.DistrictCode);
+                var district = await _context.Districts.FirstOrDefaultAsync(d => d.Code == dto.DistrictCode && d.ApiVersion == dto.ApiVersion);
                 if (district == null)
                 {
                     district = new District
@@ -322,14 +327,15 @@ namespace PolyBabyAPI.Controllers
                         Code = dto.DistrictCode,
                         Name = dto.DistrictName,
                         ProvinceID = province.ProvinceID,
-                        IsActive = true
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
                     };
                     _context.Districts.Add(district);
                     await _context.SaveChangesAsync();
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi Ward
-                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode);
+                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
                 if (ward == null)
                 {
                     ward = new Ward
@@ -337,7 +343,8 @@ namespace PolyBabyAPI.Controllers
                         Code = dto.WardCode,
                         Name = dto.WardName,
                         DistrictID = district.DistrictID,
-                        IsActive = true
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
                     };
                     _context.Wards.Add(ward);
                     await _context.SaveChangesAsync();
@@ -597,6 +604,8 @@ namespace PolyBabyAPI.Controllers
         public string DetailAddress { get; set; } = "";
 
         public bool IsDefault { get; set; } = false;
+
+        public string ApiVersion { get; set; } = "v2";
     }
 
     public class UpdateVietnamAddressDto : CreateVietnamAddressDto

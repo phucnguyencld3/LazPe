@@ -83,6 +83,7 @@ export default function ProfilePage() {
     wardName: "",
     detailAddress: "",
     isDefault: false,
+    apiVersion: "v2"
   });
 
   // Notifications State (Mocked in localStorage for persistence)
@@ -118,7 +119,7 @@ export default function ProfilePage() {
     }
 
     setToken(savedToken);
-    
+
     // Load local notification settings if any
     const savedNotifs = localStorage.getItem("notification_settings");
     if (savedNotifs) {
@@ -186,7 +187,7 @@ export default function ProfilePage() {
 
       if (result.success) {
         showAlert("success", "Cập nhật thông tin cá nhân thành công!");
-        
+
         // Refresh local details
         const updatedProfile = {
           ...userProfile,
@@ -210,7 +211,7 @@ export default function ProfilePage() {
             sessionStorage.setItem("user", JSON.stringify(userObj));
           }
         }
-        
+
         setEditProfileOpen(false);
       } else {
         setProfileError(result.message || "Không thể cập nhật thông tin cá nhân");
@@ -328,8 +329,10 @@ export default function ProfilePage() {
 
     // Initial provinces load
     let provList: any[] = [];
+    let apiVer = "v1";
+    if (address) apiVer = address.apiVersion || "v1";
     try {
-      const list = await getProvinces();
+      const list = await getProvinces(apiVer);
       if (list) {
         provList = list;
         setProvinces(list);
@@ -355,10 +358,10 @@ export default function ProfilePage() {
       let matchedDistrict: any = null;
       if (provCode) {
         try {
-          const distData = await getDistricts(provCode);
+          const distData = await getDistricts(provCode, apiVer);
           distList = distData?.districts || [];
           setDistricts(distList);
-          
+
           if (distList.length === 1) {
             matchedDistrict = distList[0];
           } else {
@@ -381,10 +384,10 @@ export default function ProfilePage() {
       const wardFetchCode = distCode || provCode;
       if (wardFetchCode) {
         try {
-          const wardData = await getWards(wardFetchCode);
+          const wardData = await getWards(wardFetchCode, apiVer);
           wardList = wardData?.wards || [];
           setWards(wardList);
-          
+
           if (address.wardCode) {
             matchedWard = wardList.find((w: any) => String(w.code) === String(address.wardCode));
           }
@@ -409,6 +412,7 @@ export default function ProfilePage() {
         wardName: wardName,
         detailAddress: address.detailAddress,
         isDefault: address.isDefault,
+        apiVersion: apiVer
       });
       setDistricts(distList);
       setWards(wardList);
@@ -425,6 +429,7 @@ export default function ProfilePage() {
         wardName: "",
         detailAddress: "",
         isDefault: false,
+        apiVersion: "v2"
       });
       setDistricts([]);
       setWards([]);
@@ -435,7 +440,7 @@ export default function ProfilePage() {
   const handleProvinceChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const code = e.target.value;
     const name = e.target.options[e.target.selectedIndex].text;
-    
+
     setAddressForm((prev) => ({
       ...prev,
       provinceCode: code,
@@ -451,7 +456,7 @@ export default function ProfilePage() {
     if (!code) return;
 
     try {
-      const data = await getDistricts(code);
+      const data = await getDistricts(code, addressForm.apiVersion);
       if (data) {
         const dists = data.districts || [];
         setDistricts(dists);
@@ -462,9 +467,9 @@ export default function ProfilePage() {
             districtCode: singleDist.code,
             districtName: singleDist.name,
           }));
-          
+
           // Fetch wards immediately
-          const wardData = await getWards(singleDist.code);
+          const wardData = await getWards(singleDist.code, addressForm.apiVersion);
           if (wardData) {
             setWards(wardData.wards || []);
           }
@@ -491,7 +496,7 @@ export default function ProfilePage() {
     if (!code) return;
 
     try {
-      const data = await getWards(code);
+      const data = await getWards(code, addressForm.apiVersion);
       if (data) {
         // API returns { wards: [], name, code }
         setWards(data.wards || []);
@@ -536,6 +541,7 @@ export default function ProfilePage() {
       wardName: addressForm.wardName,
       detailAddress: addressForm.detailAddress,
       isDefault: addressForm.isDefault,
+      apiVersion: addressForm.apiVersion
     };
 
     try {
@@ -661,7 +667,7 @@ export default function ProfilePage() {
     <div className="bg-background text-on-surface font-body-md min-h-screen pb-24 relative">
       {/* Main Page Grid */}
       <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin-desktop py-lg space-y-lg">
-        
+
         {/* Header Section: Identity */}
         <section className="flex flex-col md:flex-row items-center gap-lg bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)]">
           <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
@@ -695,7 +701,7 @@ export default function ProfilePage() {
           <div className="text-center md:text-left space-y-1">
             <h1 className="font-headline-lg text-3xl font-bold text-primary tracking-tight">{userProfile.fullName}</h1>
             <p className="font-body-lg text-on-surface-variant">{userProfile.email}</p>
-            
+
             {/* Badges / Trove Points (Mocked client side features) */}
             <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-sm pt-2">
               <span className="px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-label-sm font-bold shadow-sm">
@@ -710,10 +716,10 @@ export default function ProfilePage() {
 
         {/* Content Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg items-start">
-          
+
           {/* Left/Middle Column (Personal Info & Addresses) */}
           <div className="lg:col-span-2 space-y-lg">
-            
+
             {/* Section 1: Personal Info */}
             <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
               <div className="flex justify-between items-center mb-md pb-3 border-b border-slate-100">
@@ -727,7 +733,7 @@ export default function ProfilePage() {
                   <span className="material-symbols-outlined text-sm font-bold">edit</span> Chỉnh sửa
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-md pt-2">
                 <div className="space-y-xs">
                   <label className="text-label-sm text-on-surface-variant font-semibold px-1 text-xs uppercase tracking-wider block">Họ và Tên</label>
@@ -778,18 +784,17 @@ export default function ProfilePage() {
                   addresses.map((address) => (
                     <div
                       key={address.addressID}
-                      className={`border-2 rounded-2xl p-5 flex flex-col md:flex-row justify-between gap-md relative overflow-hidden transition-all duration-200 ${
-                        address.isDefault
+                      className={`border-2 rounded-2xl p-5 flex flex-col md:flex-row justify-between gap-md relative overflow-hidden transition-all duration-200 ${address.isDefault
                           ? "border-primary-container bg-primary-container/5"
                           : "border-slate-200 bg-white hover:border-primary/50"
-                      }`}
+                        }`}
                     >
                       {address.isDefault && (
                         <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1.5 rounded-bl-xl text-label-sm font-bold text-xs uppercase tracking-wide">
                           Mặc định
                         </div>
                       )}
-                      
+
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-primary text-lg">{address.recipientName}</span>
@@ -839,13 +844,13 @@ export default function ProfilePage() {
 
           {/* Right Column (Security, Support, Settings) */}
           <aside className="space-y-lg">
-            
+
             {/* Security Section */}
             <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
               <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2 mb-md pb-2 border-b border-slate-100">
                 <span className="material-symbols-outlined text-primary text-xl">security</span> Bảo mật & Cài đặt
               </h2>
-              
+
               <button
                 onClick={() => setChangePasswordOpen(true)}
                 className="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors group border border-slate-100"
@@ -862,7 +867,7 @@ export default function ProfilePage() {
               {/* Notification Toggles */}
               <div className="mt-lg pt-lg border-t border-slate-100 space-y-4">
                 <h3 className="font-bold text-primary uppercase tracking-wider text-[11px] mb-2">Cài đặt nhận thông báo</h3>
-                
+
                 {/* Email Toggle */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-700">Thông báo qua Email</span>
@@ -942,7 +947,7 @@ export default function ProfilePage() {
                   {profileError}
                 </div>
               )}
-              
+
               <div className="space-y-1">
                 <label className="font-bold text-sm text-slate-700 ml-1">Họ và Tên</label>
                 <input
@@ -1021,7 +1026,7 @@ export default function ProfilePage() {
                   {passwordError}
                 </div>
               )}
-              
+
               <div className="space-y-1">
                 <label className="font-bold text-sm text-slate-700 ml-1">Mật khẩu hiện tại</label>
                 <input
@@ -1120,6 +1125,51 @@ export default function ProfilePage() {
                   placeholder="Số điện thoại nhận cuộc gọi giao hàng"
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none"
                 />
+              </div>
+
+              {/* Version Toggle */}
+              <div className="space-y-2">
+                <label className="font-bold text-sm text-slate-700 ml-1">
+                  Nguồn dữ liệu địa chỉ <span className="text-slate-400 font-normal text-xs">(Tùy chọn)</span>
+                </label>
+                <div className="flex gap-4 px-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="apiVersionProfile"
+                      value="v2"
+                      checked={addressForm.apiVersion === "v2"}
+                      onChange={async (e) => {
+                        const newVer = e.target.value;
+                        setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                        setDistricts([]);
+                        setWards([]);
+                        const provList = await getProvinces(newVer);
+                        if (provList) setProvinces(provList);
+                      }}
+                      className="text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Địa chỉ hành chính mới (V2)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="apiVersionProfile"
+                      value="v1"
+                      checked={addressForm.apiVersion === "v1"}
+                      onChange={async (e) => {
+                        const newVer = e.target.value;
+                        setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                        setDistricts([]);
+                        setWards([]);
+                        const provList = await getProvinces(newVer);
+                        if (provList) setProvinces(provList);
+                      }}
+                      className="text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Địa chỉ hành chính cũ (V1)</span>
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-1">
