@@ -289,3 +289,127 @@ export const deleteProductOptionValue = async (token: string, valueId: number): 
   }
   return res.json();
 };
+
+export interface AdminVariantPagination {
+  totalCount: number;
+  pageCount: number;
+  currentPage: number;
+  pageSize: number;
+  data: AdminVariantInfo[];
+}
+
+export const fetchProductVariants = async (
+  token: string,
+  productId: number,
+  page: number = 1,
+  pageSize: number = 10,
+  searchTerm: string = ""
+): Promise<AdminVariantPagination> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+    searchTerm: searchTerm
+  });
+
+  const res = await fetch(`${API_BASE_URL}/Variant/product/${productId}?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch product variants");
+  return res.json();
+};
+
+export const updateProductVariant = async (
+  token: string,
+  variantId: number,
+  data: {
+    name?: string;
+    price: number;
+    variantDiscountPercent: number;
+    stock: number;
+    description?: string;
+    status: boolean;
+  }
+): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/${variantId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update product variant");
+  }
+  return res.json();
+};
+
+export const toggleVariantStatus = async (
+  token: string,
+  variantId: number,
+  status: boolean
+): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/${variantId}/toggle-status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ status })
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to toggle variant status");
+  }
+  return res.json();
+};
+
+export const deleteProductVariant = async (token: string, variantId: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/${variantId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete variant");
+  }
+  return res.json();
+};
+
+export const uploadVariantImage = async (token: string, variantId: number, file: File): Promise<{ message: string, imageUrl: string }> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(`${API_BASE_URL}/Variant/${variantId}/upload-image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to upload variant image");
+  }
+  return res.json();
+};
+
+export const deleteVariantImage = async (token: string, variantId: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/${variantId}/image`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete variant image");
+  }
+  return res.json();
+};
+
