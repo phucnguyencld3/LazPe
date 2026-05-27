@@ -37,6 +37,10 @@ export default function AdminProductsPage() {
   
   const [loading, setLoading] = useState(true);
 
+  // Deletion Modal states
+  const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   // Load select list categories & stats once
   const loadInitialData = async (token: string) => {
     try {
@@ -133,18 +137,25 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Handle product deletion
-  const handleDeleteProduct = async (id: number, name: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${name}" không?`)) {
-      return;
-    }
+  // Trigger custom confirmation modal
+  const handleDeleteClick = (id: number, name: string) => {
+    setProductToDelete({ id, name });
+  };
+
+  // Perform actual deletion
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    const { id, name } = productToDelete;
+    
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
 
+      setDeletingId(id);
       const res = await deleteProduct(token, id);
       if (res.success) {
         toast.success("Xóa sản phẩm thành công.");
+        setProductToDelete(null);
         loadProducts();
         fetchProductStats(token).then(setStats);
       } else {
@@ -152,7 +163,9 @@ export default function AdminProductsPage() {
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Không thể xóa sản phẩm do có ràng buộc dữ liệu.");
+      toast.error(err.message || "Không thể xóa sản phẩm do có ràng buộc dữ liệu hoặc liên kết khác.", { duration: 5000 });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -467,13 +480,13 @@ export default function AdminProductsPage() {
                           >
                             <span className="material-symbols-outlined text-[20px]">edit</span>
                           </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product.productID, product.productName)}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                            title="Xóa"
-                          >
-                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                          </button>
+                           <button
+                             onClick={() => handleDeleteClick(product.productID, product.productName)}
+                             className="w-10 h-10 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
+                             title="Xóa"
+                           >
+                             <span className="material-symbols-outlined text-[20px]">delete</span>
+                           </button>
                         </div>
                       </td>
                     </tr>
@@ -493,6 +506,63 @@ export default function AdminProductsPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+      {/* Custom Delete Confirmation Modal */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-error">warning</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">Xác nhận xóa sản phẩm</h3>
+              </div>
+              <button
+                onClick={() => setProductToDelete(null)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                disabled={deletingId !== null}
+              >
+                <span className="material-symbols-outlined text-slate-400 text-[20px]">close</span>
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="p-6">
+              <p className="text-slate-600 text-sm leading-relaxed mb-6">
+                Bạn có chắc chắn muốn xóa sản phẩm <strong className="text-slate-800">"{productToDelete.name}"</strong> không? Hành động này không thể hoàn tác và sẽ xóa toàn bộ các biến thể liên quan nếu sản phẩm chưa phát sinh đơn hàng.
+              </p>
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setProductToDelete(null)}
+                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  disabled={deletingId !== null}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={confirmDeleteProduct}
+                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  disabled={deletingId !== null}
+                >
+                  {deletingId !== null ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-white"></div>
+                      <span>Đang xóa...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                      <span>Xác nhận xóa</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

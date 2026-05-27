@@ -467,6 +467,7 @@ namespace PolyBabyAPI.Services
 
                 if (variantIds.Count > 0)
                 {
+                    // 1. Kiểm tra đơn hàng (InvoiceDetail)
                     var invoiceUsageCount = await _context.InvoiceDetails
                         .CountAsync(i => i.VariantID.HasValue && variantIds.Contains(i.VariantID.Value));
 
@@ -475,10 +476,37 @@ namespace PolyBabyAPI.Services
                         return new ServiceResult<bool>
                         {
                             Success = false,
-                            Message = $"Không thể xóa sản phẩm vì đã có {invoiceUsageCount} dữ liệu đơn hàng liên quan"
+                            Message = $"Không thể xóa sản phẩm vì biến thể đã có {invoiceUsageCount} đơn đặt hàng liên quan trong hệ thống."
                         };
                     }
 
+                    // 2. Kiểm tra đánh giá (Review)
+                    var reviewUsageCount = await _context.Reviews
+                        .CountAsync(r => variantIds.Contains(r.VariantID));
+
+                    if (reviewUsageCount > 0)
+                    {
+                        return new ServiceResult<bool>
+                        {
+                            Success = false,
+                            Message = $"Không thể xóa sản phẩm vì đã có {reviewUsageCount} lượt đánh giá từ khách hàng."
+                        };
+                    }
+
+                    // 3. Kiểm tra Combo / Bundle (BundleItem)
+                    var bundleUsageCount = await _context.BundleItems
+                        .CountAsync(bi => variantIds.Contains(bi.VariantID));
+
+                    if (bundleUsageCount > 0)
+                    {
+                        return new ServiceResult<bool>
+                        {
+                            Success = false,
+                            Message = $"Không thể xóa sản phẩm vì có {bundleUsageCount} biến thể đang nằm trong gói Combo/Bundle."
+                        };
+                    }
+
+                    // Xóa giỏ hàng tạm (CartDetail)
                     var cartDetails = await _context.CartDetails
                         .Where(cd => cd.VariantID.HasValue && variantIds.Contains(cd.VariantID.Value))
                         .ToListAsync();
@@ -486,13 +514,7 @@ namespace PolyBabyAPI.Services
                     if (cartDetails.Count > 0)
                         _context.CartDetails.RemoveRange(cartDetails);
 
-                    var bundleItems = await _context.BundleItems
-                        .Where(bi => variantIds.Contains(bi.VariantID))
-                        .ToListAsync();
-
-                    if (bundleItems.Count > 0)
-                        _context.BundleItems.RemoveRange(bundleItems);
-
+                    // Xóa liên kết thuộc tính biến thể (VariantOptionValue)
                     var variantOptionValues = await _context.VariantOptionValues
                         .Where(vov => variantIds.Contains(vov.VariantID))
                         .ToListAsync();
@@ -500,6 +522,7 @@ namespace PolyBabyAPI.Services
                     if (variantOptionValues.Count > 0)
                         _context.VariantOptionValues.RemoveRange(variantOptionValues);
 
+                    // Xóa các biến thể
                     var variants = await _context.Variants
                         .Where(v => variantIds.Contains(v.VariantID))
                         .ToListAsync();
@@ -508,6 +531,7 @@ namespace PolyBabyAPI.Services
                         _context.Variants.RemoveRange(variants);
                 }
 
+                // Xóa thuộc tính cấu hình (ProductOption)
                 var productOptions = await _context.ProductOptions
                     .Where(po => po.ProductID == id)
                     .ToListAsync();
@@ -530,10 +554,17 @@ namespace PolyBabyAPI.Services
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error deleting product {ProductId}", id);
+                
+                string errorMsg = "Có lỗi xảy ra trong quá trình xóa sản phẩm.";
+                if (ex.InnerException != null && (ex.InnerException.Message.Contains("FK_") || ex.InnerException.Message.Contains("REFERENCE constraint")))
+                {
+                    errorMsg = "Không thể xóa sản phẩm do có ràng buộc dữ liệu liên kết khác trong cơ sở dữ liệu.";
+                }
+                
                 return new ServiceResult<bool>
                 {
                     Success = false,
-                    Message = "Có lỗi xảy ra khi xóa sản phẩm"
+                    Message = errorMsg
                 };
             }
         }

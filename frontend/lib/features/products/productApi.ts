@@ -124,3 +124,71 @@ export const fetchCategoriesForSelect = async (token: string): Promise<CategoryS
   const data = await res.json();
   return data.data;
 };
+
+// Detailed definitions
+export interface AdminVariantInfo {
+  variantID: number;
+  productID: number;
+  variantName: string;
+  unitPrice: number;
+  variantDiscountPercent: number;
+  effectiveDiscountPercent: number;
+  finalPrice: number;
+  stock: number;
+  sku: string;
+  imageUrl?: string | null;
+  description?: string | null;
+  status: boolean;
+  createdAt?: string;
+}
+
+export interface AdminProductOptionValue {
+  productOptionValueID: number;
+  productOptionID: number;
+  value: string;
+  price: number;
+  displayOrder: number;
+}
+
+export interface AdminProductOption {
+  productOptionID: number;
+  productID: number;
+  name: string;
+  displayOrder: number;
+  productOptionValues: AdminProductOptionValue[];
+}
+
+export interface AdminProductDetailInfo {
+  productID: number;
+  code: string;
+  productName: string;
+  description: string;
+  price: number;
+  productDiscountPercent: number;
+  stock: number;
+  status: boolean;
+  categoryID: number;
+  supplierID: number;
+  createdAt: string;
+  createdBy?: string | null;
+  category?: {
+    categoryID: number;
+    categoryName: string;
+  } | null;
+  supplier?: {
+    supplierID: number;
+    supplierName: string;
+  } | null;
+  variants: AdminVariantInfo[];
+  productOptions: AdminProductOption[];
+}
+
+export const fetchAdminProductDetail = async (token: string, id: string): Promise<AdminProductDetailInfo> => {
+  const res = await fetch(`${API_BASE_URL}/Product/${id}/detail`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch admin product details");
+  const data = await res.json();
+  return data.data;
+};
