@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SlidersHorizontal, ChevronLeft, ChevronRight, X } from "lucide-react";
-import ProductCard from "@/app/components/ProductCard";
-import FilterSidebar from "@/app/components/FilterSidebar";
+import { X } from "lucide-react";
+import FilterSidebar from "@/components/client/products/FilterSidebar";
 import { Product, Category } from "@/types";
 import { getProducts, getCategories } from "@/lib/api";
+import { ProductsHero } from "@/components/client/products/ProductsHero";
+import { ProductControlBar } from "@/components/client/products/ProductControlBar";
+import { ProductGrid } from "@/components/client/products/ProductGrid";
+import { ProductPagination } from "@/components/client/products/ProductPagination";
 
 function ProductsContent() {
   const router = useRouter();
@@ -215,33 +218,9 @@ function ProductsContent() {
     return "newest";
   };
 
-  let pageTitle = "Tất cả sản phẩm";
-  let pageSubtitle = "Khám phá bộ sưu tập đồ chơi gỗ cao cấp, quần áo cotton mềm mại và những món quà tuyệt vời dành riêng cho thiên thần nhỏ của bạn tại LazPe.";
-
-  if (sortParam === "bestseller") {
-    pageTitle = "Sản phẩm bán chạy nhất";
-    pageSubtitle = "Khám phá những món đồ được các mẹ và bé yêu thích nhất tại LazPe. Chất lượng cao cấp, thiết kế an toàn và đầy màu sắc cho tuổi thơ rực rỡ.";
-  } else if (sortParam === "newest") {
-    pageTitle = "Sản phẩm mới nhất";
-    pageSubtitle = "Cập nhật những mẫu đồ chơi gỗ thông minh và trang phục cotton mới nhất cho bé yêu tại LazPe.";
-  } else if (sortParam === "sale") {
-    pageTitle = "Sản phẩm khuyến mãi";
-    pageSubtitle = "Sở hữu những sản phẩm cao cấp cho bé với mức giá ưu đãi cực sốc chỉ có tại LazPe.";
-  }
-
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* Hero Header */}
-      <section className="bg-gradient-to-br from-[#ffd9de]/30 via-white to-white border-b border-slate-100 py-12 md:py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center relative z-10">
-          <h1 className="font-headline-lg text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">
-            {pageTitle}
-          </h1>
-          <p className="max-w-2xl mx-auto font-body-lg text-base md:text-lg text-slate-600 leading-relaxed">
-            {pageSubtitle}
-          </p>
-        </div>
-      </section>
+      <ProductsHero sortParam={sortParam} />
 
       {/* Main Grid Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -264,116 +243,29 @@ function ProductsContent() {
 
           {/* Product Grid and Controls */}
           <div className="flex-1">
-            
-            {/* Control Bar */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-              
-              {/* Product Counter */}
-              <div className="text-sm text-slate-600 font-medium flex items-center gap-2">
-                <span>Hiển thị:</span>
-                <span className="text-slate-900 font-bold">
-                  {filteredProducts.length}
-                </span>
-                <span>/ {totalItems} sản phẩm</span>
-              </div>
+            <ProductControlBar
+              totalFiltered={filteredProducts.length}
+              totalItems={totalItems}
+              setShowMobileFilters={setShowMobileFilters}
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              handleSortChange={handleSortChange}
+            />
 
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                {/* Mobile Filter Toggle Button */}
-                <button
-                  onClick={() => setShowMobileFilters(true)}
-                  className="lg:hidden h-10 px-4 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-colors"
-                >
-                  <SlidersHorizontal size={14} />
-                  Bộ lọc
-                </button>
+            <ProductGrid
+              loading={loading}
+              error={error}
+              filteredProducts={filteredProducts}
+              handleClearFilters={handleClearFilters}
+              handleRetry={() => window.location.reload()}
+            />
 
-                {/* Sắp xếp */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Sắp xếp:</span>
-                  <select
-                    value={currentSortValue()}
-                    onChange={handleSortChange}
-                    className="bg-transparent border-none text-sm text-slate-700 font-bold focus:ring-0 cursor-pointer py-1 pl-2 pr-8"
-                  >
-                    <option value="newest">Mới nhất</option>
-                    <option value="price_asc">Giá tăng dần</option>
-                    <option value="price_desc">Giá giảm dần</option>
-                    <option value="popular">Phổ biến nhất</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Error or Loading State */}
-            {loading ? (
-              <div className="flex flex-col justify-center items-center py-24 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-primary animate-spin mb-4"></div>
-                <p className="text-slate-500 font-medium">Đang tải danh sách sản phẩm...</p>
-              </div>
-            ) : error ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <p className="text-red-500 font-semibold mb-4">{error}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="px-6 py-2 bg-primary text-white rounded-full font-medium shadow hover:brightness-110 active:scale-95 transition-all"
-                >
-                  Thử lại
-                </button>
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <p className="text-slate-500 font-medium mb-4">Không tìm thấy sản phẩm nào phù hợp với bộ lọc.</p>
-                <button
-                  onClick={handleClearFilters}
-                  className="px-6 py-2 bg-primary text-white rounded-full font-medium shadow hover:brightness-110 active:scale-95 transition-all"
-                >
-                  Xóa bộ lọc
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Product Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {filteredProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-12 flex justify-center items-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-                      <button
-                        key={pageNumber}
-                        onClick={() => setCurrentPage(pageNumber)}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                          currentPage === pageNumber
-                            ? "bg-primary text-white"
-                            : "bg-white text-slate-600 border border-slate-200 hover:border-primary hover:text-primary"
-                        }`}
-                      >
-                        {pageNumber}
-                      </button>
-                    ))}
-
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                )}
-              </>
+            {!loading && !error && filteredProducts.length > 0 && (
+              <ProductPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                setCurrentPage={setCurrentPage}
+              />
             )}
           </div>
         </div>
@@ -389,7 +281,7 @@ function ProductsContent() {
           ></div>
           
           {/* Drawer sheet */}
-          <div className="relative ml-auto w-full max-w-xs bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
+          <div className="relative ml-auto w-full max-w-[20rem] bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900">Bộ lọc tìm kiếm</h2>
               <button

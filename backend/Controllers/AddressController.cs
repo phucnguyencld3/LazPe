@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
@@ -31,11 +31,11 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách tỉnh/thành phố từ API Vietnam
         /// </summary>
         [HttpGet("provinces")]
-        public async Task<IActionResult> GetProvinces()
+        public async Task<IActionResult> GetProvinces([FromQuery] string version = "v2")
         {
             try
             {
-                var provinces = await _addressApiService.GetProvincesAsync();
+                var provinces = await _addressApiService.GetProvincesAsync(version);
                 return Ok(new { success = true, data = provinces });
             }
             catch (Exception ex)
@@ -49,11 +49,11 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách quận/huyện theo tỉnh từ API Vietnam
         /// </summary>
         [HttpGet("districts/{provinceCode}")]
-        public async Task<IActionResult> GetDistricts(int provinceCode)
+        public async Task<IActionResult> GetDistricts(int provinceCode, [FromQuery] string version = "v2")
         {
             try
             {
-                var districts = await _addressApiService.GetDistrictByProvinceAsync(provinceCode);
+                var districts = await _addressApiService.GetDistrictByProvinceAsync(provinceCode, version);
                 return Ok(new { success = true, data = districts });
             }
             catch (Exception ex)
@@ -67,16 +67,34 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách phường/xã theo quận/huyện từ API Vietnam
         /// </summary>
         [HttpGet("wards/{districtCode}")]
-        public async Task<IActionResult> GetWards(int districtCode)
+        public async Task<IActionResult> GetWards(int districtCode, [FromQuery] string version = "v2")
         {
             try
             {
-                var wards = await _addressApiService.GetWardByDistrictAsync(districtCode);
+                var wards = await _addressApiService.GetWardByDistrictAsync(districtCode, version);
                 return Ok(new { success = true, data = wards });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting wards for district {DistrictCode}", districtCode);
+                return StatusCode(500, new { success = false, message = "Không thể tải danh sách phường/xã" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách phường/xã theo tỉnh/thành phố trực tiếp từ API Vietnam V2
+        /// </summary>
+        [HttpGet("wards-by-province/{provinceCode}")]
+        public async Task<IActionResult> GetWardsByProvince(int provinceCode, [FromQuery] string version = "v2")
+        {
+            try
+            {
+                var wards = await _addressApiService.GetWardsByProvinceAsync(provinceCode, version);
+                return Ok(new { success = true, data = wards });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting wards for province {ProvinceCode}", provinceCode);
                 return StatusCode(500, new { success = false, message = "Không thể tải danh sách phường/xã" });
             }
         }
@@ -98,8 +116,11 @@ namespace PolyBabyAPI.Controllers
 
             try
             {
-                var addresses = await _context.Addresses
+                var addresses = await _context.UserAddresses
                     .Where(a => a.UserID == userId)
+                    .Include(a => a.Province)
+                    .Include(a => a.District)
+                    .Include(a => a.Ward)
                     .OrderByDescending(a => a.IsDefault)
                     .ThenByDescending(a => a.CreatedAt)
                     .Select(a => new
@@ -107,12 +128,16 @@ namespace PolyBabyAPI.Controllers
                         a.AddressID,
                         a.RecipientName,
                         a.PhoneNumber,
-                        a.Province,
-                        a.District,
-                        a.Ward,
-                        a.DetailAddress,
+                        Province = a.Province != null ? a.Province.Name : "",
+                        ProvinceCode = a.Province != null ? a.Province.Code : "",
+                        District = a.District != null ? a.District.Name : "",
+                        DistrictCode = a.District != null ? a.District.Code : "",
+                        Ward = a.Ward != null ? a.Ward.Name : "",
+                        WardCode = a.Ward != null ? a.Ward.Code : "",
+                        DetailAddress = a.StreetAddress,
                         a.IsDefault,
-                        a.CreatedAt
+                        a.CreatedAt,
+                        ApiVersion = a.Province != null ? (a.Province.ApiVersion ?? "v1") : "v1"
                     })
                     .ToListAsync();
 
@@ -131,6 +156,12 @@ namespace PolyBabyAPI.Controllers
         [HttpPost("create-vietnam")]
         public async Task<IActionResult> CreateVietnamAddress([FromBody] CreateVietnamAddressDto dto)
         {
+            if (string.IsNullOrEmpty(dto.DistrictCode))
+            {
+                dto.DistrictCode = dto.ProvinceCode;
+                dto.DistrictName = dto.ProvinceName;
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
@@ -141,7 +172,7 @@ namespace PolyBabyAPI.Controllers
                 // Nếu đặt làm mặc định, bỏ mặc định các địa chỉ khác
                 if (dto.IsDefault)
                 {
-                    var existingAddresses = await _context.Addresses
+                    var existingAddresses = await _context.UserAddresses
                         .Where(a => a.UserID == dto.UserId && a.IsDefault)
                         .ToListAsync();
 
@@ -151,21 +182,68 @@ namespace PolyBabyAPI.Controllers
                     }
                 }
 
+                // Tìm hoặc tự động tạo mới bản ghi Province
+                var province = await _context.Provinces.FirstOrDefaultAsync(p => p.Code == dto.ProvinceCode && p.ApiVersion == dto.ApiVersion);
+                if (province == null)
+                {
+                    province = new Province
+                    {
+                        Code = dto.ProvinceCode,
+                        Name = dto.ProvinceName,
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
+                    };
+                    _context.Provinces.Add(province);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Tìm hoặc tự động tạo mới bản ghi District
+                var district = await _context.Districts.FirstOrDefaultAsync(d => d.Code == dto.DistrictCode && d.ApiVersion == dto.ApiVersion);
+                if (district == null)
+                {
+                    district = new District
+                    {
+                        Code = dto.DistrictCode,
+                        Name = dto.DistrictName,
+                        ProvinceID = province.ProvinceID,
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
+                    };
+                    _context.Districts.Add(district);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Tìm hoặc tự động tạo mới bản ghi Ward
+                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
+                if (ward == null)
+                {
+                    ward = new Ward
+                    {
+                        Code = dto.WardCode,
+                        Name = dto.WardName,
+                        DistrictID = district.DistrictID,
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
+                    };
+                    _context.Wards.Add(ward);
+                    await _context.SaveChangesAsync();
+                }
+
                 // Tạo địa chỉ mới
-                var newAddress = new Address
+                var newAddress = new UserAddress
                 {
                     UserID = dto.UserId,
                     RecipientName = dto.RecipientName,
                     PhoneNumber = dto.PhoneNumber,
-                    Province = dto.ProvinceName,
-                    District = dto.DistrictName,
-                    Ward = dto.WardName,
-                    DetailAddress = dto.DetailAddress,
+                    ProvinceID = province.ProvinceID,
+                    DistrictID = district.DistrictID,
+                    WardID = ward.WardID,
+                    StreetAddress = dto.DetailAddress,
                     IsDefault = dto.IsDefault,
                     CreatedAt = DateTime.Now
                 };
 
-                _context.Addresses.Add(newAddress);
+                _context.UserAddresses.Add(newAddress);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Address created successfully for user {UserId}", dto.UserId);
@@ -193,6 +271,12 @@ namespace PolyBabyAPI.Controllers
         [HttpPut("update/{addressId}")]
         public async Task<IActionResult> UpdateAddress(int addressId, [FromBody] UpdateVietnamAddressDto dto)
         {
+            if (string.IsNullOrEmpty(dto.DistrictCode))
+            {
+                dto.DistrictCode = dto.ProvinceCode;
+                dto.DistrictName = dto.ProvinceName;
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
@@ -200,7 +284,7 @@ namespace PolyBabyAPI.Controllers
 
             try
             {
-                var address = await _context.Addresses.FindAsync(addressId);
+                var address = await _context.UserAddresses.FindAsync(addressId);
                 if (address == null)
                 {
                     return NotFound(new { success = false, message = "Không tìm thấy địa chỉ" });
@@ -209,7 +293,7 @@ namespace PolyBabyAPI.Controllers
                 // Nếu đặt làm mặc định, bỏ mặc định các địa chỉ khác
                 if (dto.IsDefault && !address.IsDefault)
                 {
-                    var otherAddresses = await _context.Addresses
+                    var otherAddresses = await _context.UserAddresses
                         .Where(a => a.UserID == address.UserID && a.AddressID != addressId && a.IsDefault)
                         .ToListAsync();
 
@@ -219,13 +303,60 @@ namespace PolyBabyAPI.Controllers
                     }
                 }
 
+                // Tìm hoặc tự động tạo mới bản ghi Province
+                var province = await _context.Provinces.FirstOrDefaultAsync(p => p.Code == dto.ProvinceCode && p.ApiVersion == dto.ApiVersion);
+                if (province == null)
+                {
+                    province = new Province
+                    {
+                        Code = dto.ProvinceCode,
+                        Name = dto.ProvinceName,
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
+                    };
+                    _context.Provinces.Add(province);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Tìm hoặc tự động tạo mới bản ghi District
+                var district = await _context.Districts.FirstOrDefaultAsync(d => d.Code == dto.DistrictCode && d.ApiVersion == dto.ApiVersion);
+                if (district == null)
+                {
+                    district = new District
+                    {
+                        Code = dto.DistrictCode,
+                        Name = dto.DistrictName,
+                        ProvinceID = province.ProvinceID,
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
+                    };
+                    _context.Districts.Add(district);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Tìm hoặc tự động tạo mới bản ghi Ward
+                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
+                if (ward == null)
+                {
+                    ward = new Ward
+                    {
+                        Code = dto.WardCode,
+                        Name = dto.WardName,
+                        DistrictID = district.DistrictID,
+                        IsActive = true,
+                        ApiVersion = dto.ApiVersion
+                    };
+                    _context.Wards.Add(ward);
+                    await _context.SaveChangesAsync();
+                }
+
                 // Cập nhật thông tin
                 address.RecipientName = dto.RecipientName;
                 address.PhoneNumber = dto.PhoneNumber;
-                address.Province = dto.ProvinceName;
-                address.District = dto.DistrictName;
-                address.Ward = dto.WardName;
-                address.DetailAddress = dto.DetailAddress;
+                address.ProvinceID = province.ProvinceID;
+                address.DistrictID = district.DistrictID;
+                address.WardID = ward.WardID;
+                address.StreetAddress = dto.DetailAddress;
                 address.IsDefault = dto.IsDefault;
 
                 await _context.SaveChangesAsync();
@@ -247,7 +378,7 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
-                var address = await _context.Addresses.FindAsync(addressId);
+                var address = await _context.UserAddresses.FindAsync(addressId);
                 if (address == null)
                 {
                     return NotFound(new { success = false, message = "Không tìm thấy địa chỉ" });
@@ -256,13 +387,13 @@ namespace PolyBabyAPI.Controllers
                 // Không cho xóa địa chỉ mặc định cuối cùng
                 if (address.IsDefault)
                 {
-                    var otherAddressCount = await _context.Addresses
+                    var otherAddressCount = await _context.UserAddresses
                         .CountAsync(a => a.UserID == address.UserID && a.AddressID != addressId);
 
                     if (otherAddressCount > 0)
                     {
                         // Đặt một địa chỉ khác làm mặc định
-                        var nextAddress = await _context.Addresses
+                        var nextAddress = await _context.UserAddresses
                             .Where(a => a.UserID == address.UserID && a.AddressID != addressId)
                             .OrderByDescending(a => a.CreatedAt)
                             .FirstAsync();
@@ -271,7 +402,7 @@ namespace PolyBabyAPI.Controllers
                     }
                 }
 
-                _context.Addresses.Remove(address);
+                _context.UserAddresses.Remove(address);
                 await _context.SaveChangesAsync();
 
                 return Ok(new { success = true, message = "Xóa địa chỉ thành công!" });
@@ -291,14 +422,14 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
-                var address = await _context.Addresses.FindAsync(addressId);
+                var address = await _context.UserAddresses.FindAsync(addressId);
                 if (address == null)
                 {
                     return NotFound(new { success = false, message = "Không tìm thấy địa chỉ" });
                 }
 
                 // Bỏ mặc định tất cả địa chỉ khác của user
-                var otherAddresses = await _context.Addresses
+                var otherAddresses = await _context.UserAddresses
                     .Where(a => a.UserID == address.UserID && a.AddressID != addressId)
                     .ToListAsync();
 
@@ -334,18 +465,24 @@ namespace PolyBabyAPI.Controllers
 
             try
             {
-                var defaultAddress = await _context.Addresses
+                var defaultAddress = await _context.UserAddresses
                     .Where(a => a.UserID == userId && a.IsDefault)
+                    .Include(a => a.Province)
+                    .Include(a => a.District)
+                    .Include(a => a.Ward)
                     .Select(a => new
                     {
                         a.AddressID,
                         a.RecipientName,
                         a.PhoneNumber,
-                        a.Province,
-                        a.District,
-                        a.Ward,
-                        a.DetailAddress,
-                        FullAddress = a.GetFullAddress()
+                        Province = a.Province != null ? a.Province.Name : "",
+                        ProvinceCode = a.Province != null ? a.Province.Code : "",
+                        District = a.District != null ? a.District.Name : "",
+                        DistrictCode = a.District != null ? a.District.Code : "",
+                        Ward = a.Ward != null ? a.Ward.Name : "",
+                        WardCode = a.Ward != null ? a.Ward.Code : "",
+                        DetailAddress = a.StreetAddress,
+                        FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.District != null ? a.District.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
                     })
                     .FirstOrDefaultAsync();
 
@@ -360,6 +497,71 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error getting default address for user {UserId}", userId);
                 return StatusCode(500, new { success = false, message = "Có lỗi khi lấy địa chỉ mặc định" });
+            }
+        }
+
+        // ======================== ACTIVE INTERNAL BOUNDARIES ============================
+
+        /// <summary>
+        /// Lấy danh sách tỉnh/thành phố đang hoạt động (IsActive = true) từ DB nội bộ
+        /// </summary>
+        [HttpGet("active-provinces")]
+        public async Task<IActionResult> GetActiveProvinces()
+        {
+            try
+            {
+                var provinces = await _context.Provinces
+                    .Where(p => p.IsActive)
+                    .Select(p => new { p.ProvinceID, p.Code, p.Name })
+                    .ToListAsync();
+                return Ok(new { success = true, data = provinces });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active provinces");
+                return StatusCode(500, new { success = false, message = "Không thể tải danh sách tỉnh/thành phố" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách quận/huyện đang hoạt động (IsActive = true) từ DB nội bộ
+        /// </summary>
+        [HttpGet("active-districts/{provinceId}")]
+        public async Task<IActionResult> GetActiveDistricts(int provinceId)
+        {
+            try
+            {
+                var districts = await _context.Districts
+                    .Where(d => d.ProvinceID == provinceId && d.IsActive)
+                    .Select(d => new { d.DistrictID, d.Code, d.Name, d.ProvinceID })
+                    .ToListAsync();
+                return Ok(new { success = true, data = districts });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active districts");
+                return StatusCode(500, new { success = false, message = "Không thể tải danh sách quận/huyện" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách phường/xã đang hoạt động (IsActive = true) từ DB nội bộ
+        /// </summary>
+        [HttpGet("active-wards/{districtId}")]
+        public async Task<IActionResult> GetActiveWards(int districtId)
+        {
+            try
+            {
+                var wards = await _context.Wards
+                    .Where(w => w.DistrictID == districtId && w.IsActive)
+                    .Select(w => new { w.WardID, w.Code, w.Name, w.DistrictID })
+                    .ToListAsync();
+                return Ok(new { success = true, data = wards });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active wards");
+                return StatusCode(500, new { success = false, message = "Không thể tải danh sách phường/xã" });
             }
         }
 
@@ -387,11 +589,9 @@ namespace PolyBabyAPI.Controllers
         [Required(ErrorMessage = "Tên tỉnh/thành phố là bắt buộc")]
         public string ProvinceName { get; set; } = "";
 
-        [Required(ErrorMessage = "Mã quận/huyện là bắt buộc")]
-        public string DistrictCode { get; set; } = "";
+        public string? DistrictCode { get; set; }
 
-        [Required(ErrorMessage = "Tên quận/huyện là bắt buộc")]
-        public string DistrictName { get; set; } = "";
+        public string? DistrictName { get; set; }
 
         [Required(ErrorMessage = "Mã phường/xã là bắt buộc")]
         public string WardCode { get; set; } = "";
@@ -404,6 +604,8 @@ namespace PolyBabyAPI.Controllers
         public string DetailAddress { get; set; } = "";
 
         public bool IsDefault { get; set; } = false;
+
+        public string ApiVersion { get; set; } = "v2";
     }
 
     public class UpdateVietnamAddressDto : CreateVietnamAddressDto

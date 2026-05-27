@@ -3,12 +3,15 @@
 import { Product } from "@/types";
 import { Heart, Star } from "lucide-react";
 import Link from "next/link";
+import { useWishlist } from "@/context/WishlistContext";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const isLiked = isInWishlist(product.id);
   return (
     <Link href={`/products/${product.id}`}>
       <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group">
@@ -48,8 +51,22 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Wishlist Button */}
-          <button className="absolute top-3 right-3 bg-white/90 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center text-slate-600 hover:text-rose-500 transition-colors shadow-sm z-10">
-            <Heart size={16} />
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(product);
+            }}
+            className="absolute top-3 right-3 bg-white/90 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
+          >
+            <Heart
+              size={16}
+              className={
+                isLiked
+                  ? "fill-rose-500 text-rose-500"
+                  : "text-slate-600 hover:text-rose-500 transition-colors"
+              }
+            />
           </button>
         </div>
 
@@ -63,7 +80,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
 
             {/* Product Name */}
-            <h3 
+            <h3
               title={product.name}
               className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-rose-600 transition-colors truncate h-5 block"
             >
