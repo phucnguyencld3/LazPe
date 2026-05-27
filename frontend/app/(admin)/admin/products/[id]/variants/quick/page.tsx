@@ -428,15 +428,16 @@ export default function QuickCreateVariantsPage() {
       </div>
 
       {/* Sticky Action Footer */}
-      <footer className="mt-12 flex flex-col items-center justify-center gap-4 border-t border-slate-100 pt-8">
-        <div className="text-center max-w-md w-full">
-          <p className="text-slate-500 text-sm font-semibold mb-4">
+      <div className="mt-12 border-t border-slate-100 pt-8 pb-12 w-full text-center" style={{ width: "100%", display: "block", clear: "both" }}>
+        <div className="mx-auto px-4" style={{ width: "100%", maxWidth: "550px", display: "block" }}>
+          <p className="text-slate-500 text-sm font-semibold mb-4" style={{ width: "100%", display: "block", textAlign: "center", whiteSpace: "normal" }}>
             Bạn đang chọn <strong className="text-primary text-base">{selectedKeys.size}</strong> tổ hợp để tạo biến thể mới cho sản phẩm này.
           </p>
           <button
             onClick={handleCreateVariants}
             disabled={selectedKeys.size === 0 || saving}
-            className="w-full md:w-auto px-12 py-3.5 bg-primary text-on-primary rounded-full font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/95 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-12 py-3.5 bg-primary text-on-primary rounded-full font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/95 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+            style={{ width: "auto", minWidth: "240px", display: "flex" }}
           >
             {saving ? (
               <>
@@ -451,7 +452,7 @@ export default function QuickCreateVariantsPage() {
             )}
           </button>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

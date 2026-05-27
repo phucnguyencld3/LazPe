@@ -105,6 +105,8 @@ export default function ProductVariantsPage() {
     } catch (err) {
       console.error("Error loading variants", err);
       toast.error("Không thể tải danh sách biến thể.");
+    } finally {
+      setLoading(false);
     }
   };
 
