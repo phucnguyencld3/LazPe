@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -59,6 +59,19 @@ try
             ValidAudience = jwtSettings["Audience"],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     })
     .AddCookie(options =>
@@ -126,10 +139,10 @@ try
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition =
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
     // API Controllers và Swagger
-    builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
 
     // Cấu hình Swagger đơn giản (không lỗi)
@@ -207,6 +220,13 @@ try
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
 
+    // Đăng ký Chat & SignalR
+    builder.Services.AddSignalR().AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
+    builder.Services.AddHostedService<ChatCleanupService>();
+
     // sau các service registration hiện có 
     builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection(VnPayOptions.SectionName));
     builder.Services.AddScoped<IVnPayService, VnPayService>();
@@ -254,6 +274,7 @@ try
     app.UseAuthentication(); 
     app.UseAuthorization();  
 
+    app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
     app.MapControllers();
     app.MapControllerRoute(
         name: "areas",
