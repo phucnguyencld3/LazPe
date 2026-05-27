@@ -6,12 +6,49 @@ interface OrderCustomerInfoProps {
 }
 
 export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) => {
+  const customerName = order.userFullName || order.userName || "Ẩn danh";
+
+  const getInitials = (name: string) => {
+    if (!name) return "AD";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getAvatarColors = (name: string) => {
+    const chars = name ? name.trim().toUpperCase() : "AD";
+    const code = chars.charCodeAt(0) || 0;
+    switch (code % 3) {
+      case 0:
+        return "bg-primary-fixed text-on-primary-fixed";
+      case 1:
+        return "bg-secondary-fixed text-on-secondary-fixed";
+      case 2:
+      default:
+        return "bg-primary-fixed-dim text-on-primary-fixed-variant";
+    }
+  };
+
   return (
     <div className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-primary-container flex items-center justify-center text-primary">
-          <span className="material-symbols-outlined">person</span>
-        </div>
+        {order.userAvatar && order.userAvatar.trim() !== "" ? (
+          <img
+            src={order.userAvatar}
+            alt={customerName}
+            className="w-12 h-12 rounded-2xl object-cover shrink-0 border border-slate-100"
+          />
+        ) : (
+          <div
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 ${getAvatarColors(
+              customerName
+            )}`}
+          >
+            {getInitials(customerName)}
+          </div>
+        )}
         <h3 className="text-xl font-bold text-slate-800">Thông tin khách hàng</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">

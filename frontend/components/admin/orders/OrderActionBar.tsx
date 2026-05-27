@@ -22,7 +22,7 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
           {getStatusLabel(order.statusCode)}
         </span>
         <span className="px-4 py-1.5 bg-slate-200 text-slate-600 rounded-full text-sm font-bold">
-          Thanh toán: {order.payMethod}
+          Thanh toán: {order.payMethod || "Thanh toán khi nhận hàng (COD)"}
         </span>
       </div>
       

@@ -34,11 +34,22 @@ export const OrderProductList: React.FC<OrderProductListProps> = ({ order }) => 
               <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-10 py-6">
                   <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-slate-400 text-3xl">inventory_2</span>
+                    <div className="w-16 h-16 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-100">
+                      {item.imageUrl && item.imageUrl.trim() !== "" ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.productName || "Sản phẩm"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-slate-400 text-3xl">inventory_2</span>
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-slate-800">{item.productName || `Mã Sản phẩm: ${item.variantID || item.bundleID}`}</p>
+                      {item.variantName && (
+                        <p className="text-xs text-secondary font-semibold mt-0.5">{item.variantName}</p>
+                      )}
                       <p className="text-xs text-slate-400 font-medium mt-1">ID Chi tiết: {item.invoiceDetailID}</p>
                     </div>
                   </div>
