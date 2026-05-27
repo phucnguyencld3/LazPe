@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -347,6 +347,7 @@ namespace PolyBabyAPI.Controllers
                 var addresses = await _context.UserAddresses
                     .Where(a => a.UserID == user.Id)
                     .Include(a => a.Province)
+                    .Include(a => a.District)
                     .Include(a => a.Ward)
                     .OrderByDescending(a => a.IsDefault)
                     .AsNoTracking()
@@ -357,8 +358,9 @@ namespace PolyBabyAPI.Controllers
                         a.StreetAddress,
                         a.IsDefault,
                         ProvinceName = a.Province != null ? a.Province.Name : "",
+                        DistrictName = a.District != null ? a.District.Name : "",
                         WardName = a.Ward != null ? a.Ward.Name : "",
-                        FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
+                        FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.District != null ? a.District.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
                     })
                     .ToListAsync();
 
@@ -387,6 +389,7 @@ namespace PolyBabyAPI.Controllers
                 var defaultAddress = await _context.UserAddresses
                     .Where(a => a.UserID == user.Id && a.IsDefault)
                     .Include(a => a.Province)
+                    .Include(a => a.District)
                     .Include(a => a.Ward)
                     .AsNoTracking()
                     .FirstOrDefaultAsync();
@@ -396,6 +399,7 @@ namespace PolyBabyAPI.Controllers
                     defaultAddress = await _context.UserAddresses
                         .Where(a => a.UserID == user.Id)
                         .Include(a => a.Province)
+                        .Include(a => a.District)
                         .Include(a => a.Ward)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
@@ -411,6 +415,7 @@ namespace PolyBabyAPI.Controllers
                     defaultAddress.StreetAddress,
                     defaultAddress.IsDefault,
                     ProvinceName = defaultAddress.Province?.Name ?? "",
+                    DistrictName = defaultAddress.District?.Name ?? "",
                     WardName = defaultAddress.Ward?.Name ?? "",
                     FullAddress = GetFullAddressFromUserAddress(defaultAddress)
                 };
@@ -446,6 +451,7 @@ namespace PolyBabyAPI.Controllers
 
                 // Xác định địa chỉ giao hàng
                 string address;
+                UserAddress? matchedAddress = null;
 
                 if (!string.IsNullOrWhiteSpace(shippingAddress))
                 {
@@ -456,6 +462,7 @@ namespace PolyBabyAPI.Controllers
                     var selectedAddress = await _context.UserAddresses
                         .Where(a => a.AddressID == addressId.Value && a.UserID == user.Id)
                         .Include(a => a.Province)
+                        .Include(a => a.District)
                         .Include(a => a.Ward)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
@@ -464,12 +471,14 @@ namespace PolyBabyAPI.Controllers
                         return BadRequest(new { message = "Địa chỉ không tồn tại hoặc không thuộc về người dùng" });
 
                     address = GetFullAddressFromUserAddress(selectedAddress);
+                    matchedAddress = selectedAddress;
                 }
                 else
                 {
                     var defaultAddress = await _context.UserAddresses
                         .Where(a => a.UserID == user.Id && a.IsDefault)
                         .Include(a => a.Province)
+                        .Include(a => a.District)
                         .Include(a => a.Ward)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
@@ -479,6 +488,7 @@ namespace PolyBabyAPI.Controllers
                         defaultAddress = await _context.UserAddresses
                             .Where(a => a.UserID == user.Id)
                             .Include(a => a.Province)
+                            .Include(a => a.District)
                             .Include(a => a.Ward)
                             .AsNoTracking()
                             .FirstOrDefaultAsync();
@@ -488,12 +498,13 @@ namespace PolyBabyAPI.Controllers
                         return BadRequest(new { message = "Vui lòng thêm địa chỉ giao hàng trước khi đặt hàng" });
 
                     address = GetFullAddressFromUserAddress(defaultAddress);
+                    matchedAddress = defaultAddress;
                 }
 
                 // ✅ Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
 
-                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds);
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress);
 
                 _logger.LogInformation(
                     "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",
@@ -866,6 +877,9 @@ namespace PolyBabyAPI.Controllers
             if (userAddress.Ward != null && !string.IsNullOrWhiteSpace(userAddress.Ward.Name))
                 parts.Add(userAddress.Ward.Name);
 
+            if (userAddress.District != null && !string.IsNullOrWhiteSpace(userAddress.District.Name))
+                parts.Add(userAddress.District.Name);
+
             if (userAddress.Province != null && !string.IsNullOrWhiteSpace(userAddress.Province.Name))
                 parts.Add(userAddress.Province.Name);
 
@@ -885,6 +899,7 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
                 invoice.TotalPrice,
@@ -951,6 +966,7 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
                 invoice.TotalPrice,
@@ -985,6 +1001,7 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
 
                 invoice.SubTotal,
                 invoice.DiscountAmount,

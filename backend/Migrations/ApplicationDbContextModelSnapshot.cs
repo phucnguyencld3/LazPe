@@ -211,7 +211,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("Addresses");
+                    b.ToTable("Address");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ApplicationUser", b =>
@@ -504,6 +504,49 @@ namespace PolyBabyAPI.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("PolyBabyAPI.Models.District", b =>
+                {
+                    b.Property<int>("DistrictID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DistrictID"));
+
+                    b.Property<string>("ApiVersion")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProvinceID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReplacedByCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("DistrictID");
+
+                    b.HasIndex("ProvinceID");
+
+                    b.ToTable("Districts");
+                });
+
             modelBuilder.Entity("PolyBabyAPI.Models.Invoice", b =>
                 {
                     b.Property<int>("InvoiceID")
@@ -548,8 +591,24 @@ namespace PolyBabyAPI.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("ShippingDistrict")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<decimal>("ShippingFee")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ShippingProvince")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ShippingStreetAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ShippingWard")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -834,10 +893,30 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProvinceID"));
 
+                    b.Property<string>("ApiVersion")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReplacedByCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("ProvinceID");
 
@@ -1020,16 +1099,27 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AddressID"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DistrictID")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<int>("ProvinceID")
                         .HasColumnType("int");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("StreetAddress")
                         .IsRequired()
@@ -1044,6 +1134,8 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("AddressID");
+
+                    b.HasIndex("DistrictID");
 
                     b.HasIndex("ProvinceID");
 
@@ -1291,17 +1383,37 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WardID"));
 
+                    b.Property<string>("ApiVersion")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("DistrictID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("ProvinceID")
-                        .HasColumnType("int");
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReplacedByCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("WardID");
 
-                    b.HasIndex("ProvinceID");
+                    b.HasIndex("DistrictID");
 
                     b.ToTable("Wards");
                 });
@@ -1425,6 +1537,17 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("PolyBabyAPI.Models.District", b =>
+                {
+                    b.HasOne("PolyBabyAPI.Models.Province", "Province")
+                        .WithMany("Districts")
+                        .HasForeignKey("ProvinceID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Province");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Invoice", b =>
@@ -1589,6 +1712,11 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserAddress", b =>
                 {
+                    b.HasOne("PolyBabyAPI.Models.District", "District")
+                        .WithMany("UserAddresses")
+                        .HasForeignKey("DistrictID")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("PolyBabyAPI.Models.Province", "Province")
                         .WithMany("UserAddresses")
                         .HasForeignKey("ProvinceID")
@@ -1606,6 +1734,8 @@ namespace PolyBabyAPI.Migrations
                         .HasForeignKey("WardID")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("District");
 
                     b.Navigation("Province");
 
@@ -1721,13 +1851,13 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.Ward", b =>
                 {
-                    b.HasOne("PolyBabyAPI.Models.Province", "Province")
+                    b.HasOne("PolyBabyAPI.Models.District", "District")
                         .WithMany("Wards")
-                        .HasForeignKey("ProvinceID")
+                        .HasForeignKey("DistrictID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Province");
+                    b.Navigation("District");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ApplicationUser", b =>
@@ -1772,6 +1902,13 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("PolyBabyAPI.Models.District", b =>
+                {
+                    b.Navigation("UserAddresses");
+
+                    b.Navigation("Wards");
+                });
+
             modelBuilder.Entity("PolyBabyAPI.Models.Invoice", b =>
                 {
                     b.Navigation("InvoiceDetails");
@@ -1805,9 +1942,9 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.Province", b =>
                 {
-                    b.Navigation("UserAddresses");
+                    b.Navigation("Districts");
 
-                    b.Navigation("Wards");
+                    b.Navigation("UserAddresses");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Review", b =>

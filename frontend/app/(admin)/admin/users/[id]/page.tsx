@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -93,8 +94,9 @@ export default function UserDetailsPage() {
         const data = await res.json();
         if (data.success) {
           setUser({ ...user, isLocked: false, status: true });
+          toast.success("Mở khóa tài khoản thành công!");
         } else {
-          alert(data.message || "Lỗi mở khóa");
+          toast.error(data.message || "Lỗi mở khóa");
         }
       } catch (e) {
         console.error(e);
@@ -123,8 +125,9 @@ export default function UserDetailsPage() {
       if (data.success) {
         setUser({ ...user, isLocked: true, status: false });
         setIsLockModalOpen(false);
+        toast.success("Khóa tài khoản thành công!");
       } else {
-        alert(data.message || "Lỗi khóa tài khoản");
+        toast.error(data.message || "Lỗi khóa tài khoản");
       }
     } catch(e) {
       console.error(e);
@@ -168,12 +171,13 @@ export default function UserDetailsPage() {
             action: permission.action
           }]);
         }
+        toast.success(isCurrentlyGranted ? `Đã thu hồi quyền "${permission.name}"` : `Đã gán quyền "${permission.name}"`);
       } else {
-        alert(data.message || `Lỗi khi thực hiện phân quyền`);
+        toast.error(data.message || `Lỗi khi thực hiện phân quyền`);
       }
     } catch (err) {
       console.error(err);
-      alert("Đã xảy ra lỗi kết nối");
+      toast.error("Đã xảy ra lỗi kết nối");
     } finally {
       setTogglingPermissionIds(prev => prev.filter(pid => pid !== permission.id));
     }
@@ -272,7 +276,7 @@ export default function UserDetailsPage() {
           
           <div className="flex flex-wrap gap-sm justify-center">
             <button
-              onClick={() => setIsPermModalOpen(true)}
+              onClick={() => router.push(`/admin/users/${id}/permissions`)}
               className="bg-secondary text-on-secondary px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md"
             >
               <span className="material-symbols-outlined text-sm">security</span>
@@ -374,7 +378,7 @@ export default function UserDetailsPage() {
               Vai trò &amp; Quyền hạn của Người dùng
             </h3>
             <button
-              onClick={() => setIsPermModalOpen(true)}
+              onClick={() => router.push(`/admin/users/${id}/permissions`)}
               className="text-primary font-label-md font-bold hover:underline bg-transparent border-none cursor-pointer"
             >
               Sửa quyền

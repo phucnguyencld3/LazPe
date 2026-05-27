@@ -616,6 +616,24 @@ namespace PolyBabyAPI.Services
             return await query.AnyAsync();
         }
 
+        public async Task<object> GetProductStatsAsync()
+        {
+            var totalProducts = await _context.Products.CountAsync();
+            var activeProducts = await _context.Products.CountAsync(p => p.Status);
+            var outOfStockProducts = await _context.Products.CountAsync(p => p.Stock == 0);
+            
+            var oneWeekAgo = DateTime.Now.AddDays(-7);
+            var newProducts = await _context.Products.CountAsync(p => p.CreatedAt >= oneWeekAgo);
+
+            return new
+            {
+                totalProducts,
+                activeProducts,
+                outOfStockProducts,
+                newProducts
+            };
+        }
+
         private async Task<string> GenerateProductCodeAsync()
         {
             var count = await _context.Products.CountAsync();

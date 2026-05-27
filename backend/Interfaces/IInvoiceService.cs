@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interface
 {
@@ -16,7 +16,7 @@ namespace PolyBabyAPI.Interface
         /// Nếu selectedCartDetailIds != null → chỉ tạo từ các CartDetail đã chọn, giữ lại phần còn lại.
         /// Nếu selectedCartDetailIds == null → tạo từ toàn bộ giỏ hàng.
         /// </summary>
-        Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null);
+        Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null, UserAddress? userAddress = null);
 
         Task RecalculateTotalAsync(int invoiceId);
 

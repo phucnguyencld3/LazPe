@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.Models
 {
@@ -7,14 +8,30 @@ namespace PolyBabyAPI.Models
         [Key]
         public int WardID { get; set; }
 
-        [Required(ErrorMessage = "Tên quận/huyện là bắt buộc")]
+        [Required(ErrorMessage = "Tên phường/xã là bắt buộc")]
         [StringLength(100)]
-        [Display(Name = "Tên quận/huyện")]
+        [Display(Name = "Tên phường/xã")]
         public string Name { get; set; }
 
-        public int ProvinceID { get; set; }  // Convention tự map FK
+        [Required]
+        [StringLength(20)]
+        public string Code { get; set; }
+
+        public int DistrictID { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        [StringLength(20)]
+        public string? ReplacedByCode { get; set; }
+
+        public string? Note { get; set; }
+
+        [Required]
+        [StringLength(10)]
+        public string ApiVersion { get; set; } = "v1";
 
         // Navigation
-        public virtual Province Province { get; set; }
+        [ForeignKey(nameof(DistrictID))]
+        public virtual District District { get; set; }
     }
 }
