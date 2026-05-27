@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -328,6 +328,25 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error toggling product status {ProductId}", id);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật trạng thái sản phẩm" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy thống kê số lượng sản phẩm (admin)
+        /// </summary>
+        [HttpGet("admin-stats")]
+        [Permission("Product.Read")]
+        public async Task<IActionResult> GetProductStats()
+        {
+            try
+            {
+                var stats = await _productService.GetProductStatsAsync();
+                return Ok(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting product stats");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy thống kê sản phẩm" });
             }
         }
 

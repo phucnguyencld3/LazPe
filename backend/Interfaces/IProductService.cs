@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.DTOs;
+using PolyBabyAPI.DTOs;
 
 namespace PolyBabyAPI.Interfaces
 {
@@ -19,5 +19,6 @@ namespace PolyBabyAPI.Interfaces
         Task<List<CategorySelectDto>> GetCategoriesForSelectAsync();
         Task<List<SupplierSelectDto>> GetSuppliersForSelectAsync();
         Task<bool> IsProductCodeExistAsync(string code, int? excludeId = null);
+        Task<object> GetProductStatsAsync();
     }
 }
