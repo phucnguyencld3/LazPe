@@ -339,7 +339,7 @@ export default function ProductVariantsPage() {
           </div>
         </div>
         <button
-          onClick={() => toast.info("Trang thêm biến thể nhanh đang được phát triển.")}
+          onClick={() => router.push(`/admin/products/${id}/variants/quick`)}
           className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold text-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
         >
           <span className="material-symbols-outlined text-sm">bolt</span>

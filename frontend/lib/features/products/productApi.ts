@@ -413,3 +413,64 @@ export const deleteVariantImage = async (token: string, variantId: number): Prom
   return res.json();
 };
 
+export interface VariantCombinationInfo {
+  variantName: string;
+  unitPrice: number;
+  optionCombination: Record<string, string>;
+  optionValueIds: number[];
+  alreadyExists: boolean;
+}
+
+export interface GenerateCombinationsResponse {
+  productId: number;
+  productName: string;
+  productCode: string;
+  totalCombinations: number;
+  combinations: VariantCombinationInfo[];
+}
+
+export const generateVariantCombinations = async (
+  token: string,
+  productId: number
+): Promise<GenerateCombinationsResponse> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/generate-combinations/${productId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to generate combinations");
+  }
+  return res.json();
+};
+
+export const createMultipleVariants = async (
+  token: string,
+  productId: number,
+  variants: {
+    productID: number;
+    name: string;
+    unitPrice: number;
+    variantDiscountPercent: number;
+    stock: number;
+    sku: string;
+    description?: string;
+    imageUrl?: string;
+    optionValueIds: number[];
+  }[]
+): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/product/${productId}/multiple`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(variants)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create multiple variants");
+  }
+  return res.json();
+};
+
+
