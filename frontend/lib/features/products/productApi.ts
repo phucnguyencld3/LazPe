@@ -192,3 +192,100 @@ export const fetchAdminProductDetail = async (token: string, id: string): Promis
   const data = await res.json();
   return data.data;
 };
+
+export const fetchProductOptions = async (token: string, productId: number): Promise<AdminProductOption[]> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/product/${productId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch product options");
+  const data = await res.json();
+  return data.data;
+};
+
+export const createProductOption = async (token: string, productId: number, name: string, displayOrder: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/product/${productId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ productID: productId, name, displayOrder })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create product option");
+  }
+  return res.json();
+};
+
+export const updateProductOption = async (token: string, optionId: number, name: string, displayOrder: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/${optionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ name, displayOrder })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update product option");
+  }
+  return res.json();
+};
+
+export const deleteProductOption = async (token: string, optionId: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/${optionId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete product option");
+  }
+  return res.json();
+};
+
+export const createProductOptionValue = async (token: string, optionId: number, value: string, price: number, displayOrder: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/${optionId}/values`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ productOptionID: optionId, value, price, displayOrder })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create option value");
+  }
+  return res.json();
+};
+
+export const updateProductOptionValue = async (token: string, valueId: number, value: string, price: number, displayOrder: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/values/${valueId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ value, price, displayOrder })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update option value");
+  }
+  return res.json();
+};
+
+export const deleteProductOptionValue = async (token: string, valueId: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/ProductOption/values/${valueId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete option value");
+  }
+  return res.json();
+};

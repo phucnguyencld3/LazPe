@@ -454,7 +454,6 @@ export default function AdminProductDetailPage() {
               </h3>
               <button
                 onClick={() => {
-                  toast.info("Tính năng quản lý thuộc tính chi tiết");
                   router.push(`/admin/products/${product.productID}/options`);
                 }}
                 className="text-primary font-bold hover:underline text-sm focus:outline-none cursor-pointer"
