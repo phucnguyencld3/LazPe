@@ -473,4 +473,49 @@ export const createMultipleVariants = async (
   return res.json();
 };
 
+export interface SupplierSelectOption {
+  supplierID: number;
+  supplierName: string;
+  status: boolean;
+}
+
+export interface CreateProductPayload {
+  code?: string;
+  productName: string;
+  description?: string;
+  price?: number;
+  productDiscountPercent?: number;
+  stock?: number;
+  categoryID: number;
+  supplierID?: number | null;
+}
+
+export const fetchSuppliersForSelect = async (token: string): Promise<SupplierSelectOption[]> => {
+  const res = await fetch(`${API_BASE_URL}/Product/suppliers`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch select suppliers");
+  const data = await res.json();
+  return data.data;
+};
+
+export const createProduct = async (token: string, payload: CreateProductPayload): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Product`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create product");
+  }
+  return res.json();
+};
+
+
 

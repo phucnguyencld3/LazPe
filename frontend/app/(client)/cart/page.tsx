@@ -18,7 +18,7 @@ import {
   CartDetailInfo
 } from "@/lib/api";
 import { Product, Voucher } from "@/types";
-import ProductCard from "@/app/components/ProductCard";
+import ProductCard from "@/components/client/common/ProductCard";
 import { CartHeader } from "@/components/client/cart/CartHeader";
 import { CartItemList } from "@/components/client/cart/CartItemList";
 import { CartSummary } from "@/components/client/cart/CartSummary";

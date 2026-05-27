@@ -283,13 +283,22 @@ export default function ProductOptionsPage() {
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Quản lý thuộc tính sản phẩm</h2>
           <p className="text-slate-500 text-sm mt-1">Cấu hình các phân loại kích thước, màu sắc, chất liệu cho từng sản phẩm.</p>
         </div>
-        <button
-          onClick={() => router.push(`/admin/products/${product.productID}`)}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm font-bold text-sm cursor-pointer active:scale-95"
-        >
-          <span className="material-symbols-outlined text-lg">arrow_back</span>
-          Quay lại chi tiết
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/admin/products/${product.productID}`)}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm font-bold text-xs cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined text-base">arrow_back</span>
+            Quay lại chi tiết
+          </button>
+          <button
+            onClick={() => router.push(`/admin/products/${product.productID}/variants`)}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 transition-all shadow-md font-bold text-xs cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined text-base">arrow_forward</span>
+            Tiếp tục tạo biến thể
+          </button>
+        </div>
       </div>
 
       {/* Product Banner Info */}

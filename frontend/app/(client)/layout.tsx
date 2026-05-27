@@ -1,4 +1,4 @@
-import Header from "@/app/components/Header";
+import Header from "@/components/client/layout/Header";
 import { WishlistProvider } from "@/context/WishlistContext";
 
 export default function ClientLayout({

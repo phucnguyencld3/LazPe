@@ -70,10 +70,24 @@ export default function QuickCreateVariantsPage() {
     }
   }, [id]);
 
+  // Helper to remove diacritics / accents for Vietnamese search
+  const removeDiacritics = (str: string): string => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
   // Filter combinations on the client side based on name search
-  const filteredCombinations = combinations.filter(c =>
-    c.variantName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCombinations = combinations.filter(c => {
+    const normalizedName = removeDiacritics(c.variantName);
+    const normalizedQuery = removeDiacritics(searchTerm);
+    return normalizedName.includes(normalizedQuery);
+  });
 
   // Checkbox select all
   const availableCombinations = filteredCombinations.filter(c => !c.alreadyExists);

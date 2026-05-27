@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart, ArrowLeft, ShoppingBag } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
-import ProductCard from "@/app/components/ProductCard";
+import ProductCard from "@/components/client/common/ProductCard";
 
 export default function WishlistPage() {
   const { wishlist, loading } = useWishlist();

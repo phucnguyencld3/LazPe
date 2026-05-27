@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
-import FilterSidebar from "@/app/components/FilterSidebar";
+import FilterSidebar from "@/components/client/products/FilterSidebar";
 import { Product, Category } from "@/types";
 import { getProducts, getCategories } from "@/lib/api";
 import { ProductsHero } from "@/components/client/products/ProductsHero";

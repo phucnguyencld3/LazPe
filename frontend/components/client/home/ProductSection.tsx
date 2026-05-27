@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { ChevronRight, Loader } from "lucide-react";
 import { Product } from "@/types";
-import ProductCard from "@/app/components/ProductCard";
+import ProductCard from "@/components/client/common/ProductCard";
 
 interface ProductSectionProps {
   products: Product[];
