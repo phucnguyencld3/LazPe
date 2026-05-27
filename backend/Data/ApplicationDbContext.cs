@@ -51,6 +51,7 @@ namespace PolyBabyAPI.Data
         public DbSet<UserPermission> UserPermissions { get; set; }
 
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+        public DbSet<Wishlist> Wishlists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -188,6 +189,22 @@ namespace PolyBabyAPI.Data
                 .WithMany(u => u.Invoices)
                 .HasForeignKey(i => i.UserID)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // ===== Wishlist =====
+            builder.Entity<Wishlist>()
+                .HasKey(w => new { w.UserID, w.ProductID });
+
+            builder.Entity<Wishlist>()
+                .HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Wishlist>()
+                .HasOne(w => w.Product)
+                .WithMany()
+                .HasForeignKey(w => w.ProductID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Permission configurations
             ConfigurePermissionEntities(builder);

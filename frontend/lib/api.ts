@@ -84,20 +84,31 @@ export async function getProductDetail(id: number): Promise<Product | null> {
     const result: ApiResponse<any> = await response.json();
     if (result.success && result.data) {
       const item = result.data;
+      const variants = item.variants ?? [];
+      
+      // Calculate total stock from variants if variants exist, otherwise use parent stock
+      const totalStock = variants.reduce((sum: number, v: any) => sum + (v.stock ?? 0), 0);
+      const parentStock = item.stock ?? 0;
+      const finalStock = variants.length > 0 ? totalStock : parentStock;
+      
+      // Fallback to first variant image if parent image is empty
+      const firstVariantImage = variants.find((v: any) => v.imageUrl)?.imageUrl;
+      const finalImage = item.imageUrl ?? item.image ?? firstVariantImage ?? "";
+
       return {
         id: item.productID ?? item.productId ?? item.id,
         name: item.productName ?? item.name,
         description: item.description ?? "",
         price: item.price ?? 0,
         discountPrice: item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined,
-        image: item.imageUrl ?? item.image ?? "",
+        image: finalImage,
         categoryId: item.categoryID ?? item.categoryId,
         categoryName: item.category?.categoryName,
-        inStock: item.status !== false && (item.stock ?? 0) > 0,
-        quantity: item.stock ?? 0,
+        inStock: item.status !== false && finalStock > 0,
+        quantity: finalStock,
         rating: item.rating,
         ratingCount: item.ratingCount,
-        variants: item.variants ?? [],
+        variants: variants,
         productOptions: item.productOptions ?? [],
       };
     }
@@ -836,6 +847,93 @@ export async function getInvoiceDetail(token: string, invoiceId: number): Promis
   } catch (error) {
     console.error("Error fetching invoice detail:", error);
     return null;
+  }
+}
+
+export async function getWishlist(token: string): Promise<Product[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch wishlist:", response.statusText);
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success && result.data) {
+      return result.data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        discountPrice: item.discountPrice ?? undefined,
+        image: item.image ?? "",
+        categoryId: item.categoryId,
+        categoryName: item.categoryName,
+        inStock: item.inStock,
+        quantity: item.quantity,
+      }));
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching wishlist:", error);
+    return null;
+  }
+}
+
+export async function toggleWishlistApi(
+  token: string,
+  productId: number
+): Promise<{ success: boolean; isWishlisted: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/toggle/${productId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      isWishlisted: result.isWishlisted ?? false,
+      message: result.message || "",
+    };
+  } catch (error) {
+    console.error("Error toggling wishlist api:", error);
+    return { success: false, isWishlisted: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function syncWishlistApi(
+  token: string,
+  productIds: number[]
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(productIds),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "",
+    };
+  } catch (error) {
+    console.error("Error syncing wishlist api:", error);
+    return { success: false, message: "Lỗi kết nối" };
   }
 }
 

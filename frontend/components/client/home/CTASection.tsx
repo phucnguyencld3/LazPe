@@ -32,7 +32,7 @@ export const CTASection: React.FC<CTASectionProps> = ({ isLoggedIn }) => {
             <p className="text-white/90 text-lg">
               Nhận các mã giảm giá độc quyền và cập nhật sản phẩm mới đầu tiên
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row gap-3 max-w-[28rem] mx-auto">
               <input
                 type="email"
                 placeholder="Email của bạn"

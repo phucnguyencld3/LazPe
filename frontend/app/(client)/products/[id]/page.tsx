@@ -11,6 +11,7 @@ import { ProductImageGallery } from "@/components/client/products/ProductImageGa
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
+import { useWishlist } from "@/context/WishlistContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -30,7 +31,11 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   // UI Interactive States
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const isWishlisted = product ? isInWishlist(product.id) : false;
+  const setIsWishlisted = () => {
+    if (product) toggleWishlist(product);
+  };
   const [activeTab, setActiveTab] = useState<"description" | "specifications" | "shipping">("description");
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
@@ -310,7 +315,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center py-20 px-4 text-center">
-        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm max-w-md w-full">
+        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm max-w-[28rem] w-full">
           <p className="text-red-500 font-bold text-lg mb-4">{error || "Sản phẩm không tồn tại."}</p>
           <button
             onClick={() => router.push("/products")}

@@ -86,7 +86,7 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
         )}
 
         {activeTab === "shipping" && (
-          <ul className="space-y-4 max-w-lg">
+          <ul className="space-y-4 max-w-[32rem]">
             <li className="flex items-start gap-3">
               <Truck size={18} className="text-green-500 shrink-0 mt-0.5" />
               <div>

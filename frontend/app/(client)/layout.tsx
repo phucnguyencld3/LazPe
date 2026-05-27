@@ -1,4 +1,5 @@
 import Header from "@/app/components/Header";
+import { WishlistProvider } from "@/context/WishlistContext";
 
 export default function ClientLayout({
   children,
@@ -6,9 +7,10 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-white text-slate-900 client-scaled-layout">
-      <Header />
-      <main className="pt-20">{children}</main>
+    <WishlistProvider>
+      <div className="min-h-screen bg-white text-slate-900 client-scaled-layout">
+        <Header />
+        <main className="pt-20">{children}</main>
       <footer className="border-t border-slate-200 bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-center">
@@ -51,5 +53,6 @@ export default function ClientLayout({
         </div>
       </footer>
     </div>
+    </WishlistProvider>
   );
 }

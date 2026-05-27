@@ -1,15 +1,20 @@
 "use client";
  
 import Link from "next/link";
-import { ShoppingCart, User, Menu, ChevronDown } from "lucide-react";
+import { ShoppingCart, User, Menu, ChevronDown, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Category } from "@/types";
 import { getCategories, getCart } from "@/lib/api";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  
+  const { wishlist } = useWishlist();
+  const wishlistCount = wishlist.length;
+  const [mounted, setMounted] = useState(false);
   
   // Categories State
   const [parentCategories, setParentCategories] = useState<Category[]>([]);
@@ -18,6 +23,7 @@ export default function Header() {
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     setIsAuth(!!token);
 
@@ -165,6 +171,15 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
+            <Link href="/wishlist" className="p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Sản phẩm yêu thích">
+              <Heart size={20} className="hover:text-rose-500 transition-colors" />
+              {mounted && wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold animate-in zoom-in-50 duration-150">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+
             <Link href="/cart" className="p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Giỏ hàng">
               <ShoppingCart size={20} />
               <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold">
@@ -270,6 +285,24 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+            
+            <Link
+              href="/wishlist"
+              className="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Heart size={16} className="text-slate-500" />
+                  Sản phẩm yêu thích
+                </span>
+                {mounted && wishlistCount > 0 && (
+                  <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                    {wishlistCount}
+                  </span>
+                )}
+              </div>
+            </Link>
             
             {isAuth ? (
               <div className="border-t border-slate-100 pt-4 px-4 flex flex-col gap-2">

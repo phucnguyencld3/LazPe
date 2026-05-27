@@ -281,7 +281,7 @@ function ProductsContent() {
           ></div>
           
           {/* Drawer sheet */}
-          <div className="relative ml-auto w-full max-w-xs bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
+          <div className="relative ml-auto w-full max-w-[20rem] bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900">Bộ lọc tìm kiếm</h2>
               <button
