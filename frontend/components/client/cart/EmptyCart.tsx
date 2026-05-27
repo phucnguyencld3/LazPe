@@ -10,7 +10,7 @@ export const EmptyCart: React.FC = () => {
       </div>
       <div className="space-y-2">
         <h2 className="text-xl font-bold text-primary">Giỏ hàng của bạn đang trống</h2>
-        <p className="text-on-surface-variant max-w-sm mx-auto text-sm">
+        <p className="text-on-surface-variant max-w-[24rem] mx-auto text-sm">
           Hãy lựa chọn các mặt hàng đồ chơi, quần áo an toàn, chất lượng hàng đầu của LazPe dành cho bé yêu của bạn!
         </p>
       </div>
