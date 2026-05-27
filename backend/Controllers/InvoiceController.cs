@@ -899,6 +899,7 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
                 invoice.TotalPrice,
@@ -965,6 +966,7 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
                 invoice.TotalPrice,
@@ -999,6 +1001,7 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
 
                 invoice.SubTotal,
                 invoice.DiscountAmount,

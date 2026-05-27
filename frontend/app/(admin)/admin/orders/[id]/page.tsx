@@ -90,7 +90,7 @@ export default function OrderDetailsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[500px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -98,8 +98,8 @@ export default function OrderDetailsPage() {
   if (!order) {
     return (
       <div className="text-center py-20">
-        <p className="text-red-500 font-bold text-lg">Không tìm thấy đơn hàng</p>
-        <button onClick={() => router.push("/admin/orders")} className="mt-4 px-6 py-2 bg-slate-800 text-white rounded-xl font-bold">
+        <p className="text-error font-bold text-lg">Không tìm thấy đơn hàng</p>
+        <button onClick={() => router.push("/admin/orders")} className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer">
           Quay lại danh sách
         </button>
       </div>
@@ -107,16 +107,16 @@ export default function OrderDetailsPage() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto pb-20">
+    <main className="w-full pb-20">
       {/* Header */}
-      <header className="h-24 flex items-center justify-between sticky top-0 z-10 bg-[#F9FAFB]/80 backdrop-blur-md mb-8">
+      <header className="h-24 flex items-center justify-between sticky top-0 z-10 bg-background/80 backdrop-blur-md mb-8">
         <div className="flex items-center gap-6">
-          <button onClick={() => router.push('/admin/orders')} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors">
+          <button onClick={() => router.push('/admin/orders')} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
             <span className="material-symbols-outlined">arrow_back</span>
             <span className="font-bold">Quay lại</span>
           </button>
-          <div className="h-6 w-px bg-slate-200"></div>
-          <h2 className="text-2xl font-bold text-slate-800">Đơn hàng #{order.invoiceID.toString().padStart(6, '0')}</h2>
+          <div className="h-6 w-px bg-outline-variant"></div>
+          <h2 className="text-2xl font-bold text-on-surface">Đơn hàng #{order.invoiceID.toString().padStart(6, '0')}</h2>
         </div>
       </header>
 

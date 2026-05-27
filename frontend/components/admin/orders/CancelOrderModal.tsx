@@ -47,38 +47,38 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
           <p className="text-slate-600 mb-6">Vui lòng chọn lý do hủy đơn hàng này</p>
           <form id="cancelForm" onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-3">
-              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-indigo-100 hover:bg-white transition-all cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-white">
+              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-primary-container hover:bg-white transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-white">
                 <input
                   type="radio"
                   name="cancel_reason"
                   value="Sản phẩm hết hàng"
                   checked={cancelReason === "Sản phẩm hết hàng"}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                  className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
                 />
                 <span className="ml-4 font-bold text-slate-700">Sản phẩm hết hàng</span>
               </label>
               
-              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-indigo-100 hover:bg-white transition-all cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-white">
+              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-primary-container hover:bg-white transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-white">
                 <input
                   type="radio"
                   name="cancel_reason"
                   value="Khách hàng đổi ý"
                   checked={cancelReason === "Khách hàng đổi ý"}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                  className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
                 />
                 <span className="ml-4 font-bold text-slate-700">Khách hàng đổi ý</span>
               </label>
 
-              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-indigo-100 hover:bg-white transition-all cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-white">
+              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-primary-container hover:bg-white transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-white">
                 <input
                   type="radio"
                   name="cancel_reason"
                   value="other"
                   checked={cancelReason === "other"}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                  className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
                 />
                 <span className="ml-4 font-bold text-slate-700">Lý do khác</span>
               </label>
@@ -90,7 +90,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                 <textarea
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
-                  className="w-full h-32 p-4 bg-slate-50 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-0 text-sm resize-none outline-none"
+                  className="w-full h-32 p-4 bg-slate-50 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-0 text-sm resize-none outline-none"
                   placeholder="Nhập lý do cụ thể..."
                   required
                 ></textarea>

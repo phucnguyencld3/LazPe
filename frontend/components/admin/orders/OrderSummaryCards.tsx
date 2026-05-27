@@ -1,63 +1,79 @@
 import React from "react";
+import { formatCurrency } from "@/lib/features/orders/orderApi";
 
 interface OrderSummaryCardsProps {
   totalOrders: number;
   pending: number;
-  shipping: number;
-  completed: number;
+  todayRevenue: number;
+  cancelledCount: number;
+  onViewRequests?: () => void;
 }
 
 export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   totalOrders,
   pending,
-  shipping,
-  completed,
+  todayRevenue,
+  cancelledCount,
+  onViewRequests,
 }) => {
+  const formatCompactRevenue = (val: number) => {
+    if (val >= 1000000) {
+      return (val / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+    }
+    if (val >= 1000) {
+      return (val / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+    }
+    return val.toString();
+  };
+
   return (
-    <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500">
-            <span className="material-symbols-outlined text-3xl">list_alt</span>
-          </div>
-          <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-full">Tổng quát</span>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-8">
+      {/* Card 1: Tổng đơn hàng */}
+      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] border border-primary-container/30 hover:shadow-lg transition-all duration-300">
+        <p className="text-label-md text-on-surface-variant font-medium">Tổng đơn hàng</p>
+        <h3 className="text-display-lg font-display-lg text-primary my-2 leading-none">
+          {totalOrders.toLocaleString()}
+        </h3>
+        <div className="flex items-center gap-1 text-secondary text-label-sm font-semibold">
+          <span className="material-symbols-outlined text-[16px]">trending_up</span>
+          <span>+12% so với tháng trước</span>
         </div>
-        <p className="text-sm font-bold text-slate-400 mb-1 uppercase">Tổng đơn hàng</p>
-        <h3 className="text-3xl font-bold text-slate-800">{totalOrders}</h3>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
-            <span className="material-symbols-outlined text-3xl">pending_actions</span>
-          </div>
-          <span className="text-xs font-bold text-amber-500 bg-amber-50 px-2 py-1 rounded-full">Cần xử lý</span>
-        </div>
-        <p className="text-sm font-bold text-slate-400 mb-1 uppercase">Đang chờ</p>
-        <h3 className="text-3xl font-bold text-slate-800">{pending}</h3>
+      {/* Card 2: Đang xử lý */}
+      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] border border-secondary-container/30 hover:shadow-lg transition-all duration-300">
+        <p className="text-label-md text-on-surface-variant font-medium">Đang xử lý</p>
+        <h3 className="text-display-lg font-display-lg text-secondary my-2 leading-none">
+          {pending.toLocaleString()}
+        </h3>
+        <p className="text-label-sm text-on-surface-variant font-medium">Cần xử lý ngay</p>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500">
-            <span className="material-symbols-outlined text-3xl">local_shipping</span>
-          </div>
-          <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-full">Trong kho</span>
-        </div>
-        <p className="text-sm font-bold text-slate-400 mb-1 uppercase">Đang giao</p>
-        <h3 className="text-3xl font-bold text-slate-800">{shipping}</h3>
+      {/* Card 3: Doanh thu hôm nay */}
+      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] hover:shadow-lg transition-all duration-300">
+        <p className="text-label-md text-on-surface-variant font-medium">Doanh thu hôm nay</p>
+        <h3 className="text-display-lg font-display-lg text-on-background my-2 leading-none">
+          {formatCompactRevenue(todayRevenue)}
+        </h3>
+        <p className="text-label-sm text-on-surface-variant font-medium">VNĐ ({formatCurrency(todayRevenue)})</p>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500">
-            <span className="material-symbols-outlined text-3xl">check_circle</span>
-          </div>
-          <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">Thành công</span>
+      {/* Card 4: Đơn hàng bị hủy */}
+      <div className="bg-primary text-on-primary p-md rounded-lg shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all duration-300 min-h-[160px]">
+        <div>
+          <p className="text-label-md opacity-90 font-medium">Đơn hàng bị hủy</p>
+          <h3 className="text-display-lg font-display-lg my-1 leading-none text-white">
+            {cancelledCount.toString().padStart(2, "0")}
+          </h3>
         </div>
-        <p className="text-sm font-bold text-slate-400 mb-1 uppercase">Hoàn thành</p>
-        <h3 className="text-3xl font-bold text-slate-800">{completed}</h3>
+        <button
+          onClick={onViewRequests}
+          className="bg-white/20 hover:bg-white/30 text-white text-label-md py-2 px-4 rounded-full transition-all text-center font-bold active:scale-95 cursor-pointer mt-2"
+        >
+          Xem yêu cầu
+        </button>
       </div>
-    </section>
+    </div>
   );
 };
+

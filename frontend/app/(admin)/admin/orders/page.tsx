@@ -66,7 +66,7 @@ export default function AdminOrdersPage() {
     return filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredOrders, currentPage]);
 
-  // Derived state: Metrics
+  // Derived state: Metrics & Calculations
   const metrics = useMemo(() => {
     const pending = orders.filter(o => o.statusCode === 0).length;
     const shipping = orders.filter(o => o.statusCode === 2).length;
@@ -74,21 +74,39 @@ export default function AdminOrdersPage() {
     return { pending, shipping, completed };
   }, [orders]);
 
+  const todayRevenue = useMemo(() => {
+    const today = new Date().toDateString();
+    return orders
+      .filter(o => new Date(o.createdAt).toDateString() === today && o.statusCode !== 5)
+      .reduce((acc, curr) => acc + curr.totalPrice, 0);
+  }, [orders]);
+
+  const cancelledCount = useMemo(() => {
+    return orders.filter(o => o.statusCode === 5).length;
+  }, [orders]);
+
+  const counts = useMemo(() => {
+    return {
+      all: orders.length,
+      pending: orders.filter(o => o.statusCode === 0).length,
+      processing: orders.filter(o => o.statusCode === 1).length,
+      shipping: orders.filter(o => o.statusCode === 2).length,
+      completed: orders.filter(o => o.statusCode === 4).length,
+      cancelled: orders.filter(o => o.statusCode === 5).length,
+    };
+  }, [orders]);
+
   return (
-    <main className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300 w-full pb-10">
-      {/* Header Section */}
-      <div className="flex justify-between items-end mb-8 pt-4">
-        <div>
-          <nav className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
-            <span>Trang chủ</span>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span className="text-rose-500">Đơn hàng</span>
-          </nav>
-          <h2 className="text-3xl font-bold text-slate-800">Quản lý đơn hàng</h2>
+    <main className="w-full space-y-md animate-in fade-in duration-300 pb-10">
+      {/* Title & Description Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 pt-4">
+        <div className="space-y-2">
+          <h1 className="text-headline-lg font-headline-lg text-on-background">Quản lý đơn hàng</h1>
+          <p className="text-body-lg font-body-lg text-on-surface-variant">Theo dõi và cập nhật trạng thái đơn hàng từ khách hàng của LazPe.</p>
         </div>
         <button
           onClick={() => toast.info("Tính năng xuất Excel chưa khả dụng")}
-          className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-bold rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
         >
           <span className="material-symbols-outlined">ios_share</span>
           Xuất file Excel
@@ -98,29 +116,29 @@ export default function AdminOrdersPage() {
       <OrderSummaryCards 
         totalOrders={orders.length}
         pending={metrics.pending}
-        shipping={metrics.shipping}
-        completed={metrics.completed}
+        todayRevenue={todayRevenue}
+        cancelledCount={cancelledCount}
+        onViewRequests={() => setStatusFilter(5)}
       />
 
-      {/* Filters & Table Section */}
-      <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <OrderFilters 
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-        />
+      {/* Filters & Table Section - Separated for Bento feel */}
+      <OrderFilters 
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        counts={counts}
+      />
 
-        <OrderTable 
-          orders={paginatedOrders}
-          loading={loading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredOrders.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          onPageChange={setCurrentPage}
-        />
-      </section>
+      <OrderTable 
+        orders={paginatedOrders}
+        loading={loading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredOrders.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
     </main>
   );
-}
+}

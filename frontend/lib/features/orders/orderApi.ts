@@ -21,6 +21,7 @@ export interface OrderInfo {
   voucherCode: string | null;
   voucherName: string | null;
   itemCount: number;
+  userAvatar?: string | null;
   invoiceDetails?: any[];
 }
 

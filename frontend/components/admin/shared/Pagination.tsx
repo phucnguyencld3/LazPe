@@ -22,27 +22,72 @@ export const Pagination: React.FC<PaginationProps> = ({
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+      }
+    }
+    return pages;
+  };
+
   return (
-    <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-      <span className="text-sm text-slate-500 font-medium">
-        Hiển thị {startItem} - {endItem} trong <span className="font-bold">{totalItems}</span> mục
-      </span>
-      <div className="flex gap-2">
+    <div className="px-6 py-4 flex items-center justify-between bg-surface-container-low border-t border-outline-variant">
+      <p className="text-label-sm text-on-surface-variant">
+        Hiển thị {startItem} - {endItem} trong tổng số {totalItems} mục
+      </p>
+      <div className="flex items-center gap-2">
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-sm transition-colors shadow-sm"
+          className="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer"
         >
-          Trước
+          <span className="material-symbols-outlined">chevron_left</span>
         </button>
+        <div className="flex items-center gap-1">
+          {getPageNumbers().map((page, index) => {
+            if (page === "...") {
+              return (
+                <span key={`dots-${index}`} className="px-2 text-outline-variant">
+                  ...
+                </span>
+              );
+            }
+            const isPageActive = page === currentPage;
+            return (
+              <button
+                key={`page-${page}`}
+                onClick={() => onPageChange(page as number)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${
+                  isPageActive
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "hover:bg-primary-container/20 text-on-surface-variant font-label-md"
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+        </div>
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-sm transition-colors shadow-sm"
+          className="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer"
         >
-          Tiếp
+          <span className="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
     </div>
   );
 };
+

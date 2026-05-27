@@ -9,7 +9,7 @@ export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) =
   return (
     <div className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+        <div className="w-12 h-12 rounded-2xl bg-primary-container flex items-center justify-center text-primary">
           <span className="material-symbols-outlined">person</span>
         </div>
         <h3 className="text-xl font-bold text-slate-800">Thông tin khách hàng</h3>
