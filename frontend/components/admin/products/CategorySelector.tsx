@@ -19,8 +19,8 @@ export function CategorySelector({
   const getLevels = (): CategorySelectOption[][] => {
     const levels: CategorySelectOption[][] = [];
     
-    // Level 1: Root categories
-    const roots = categories.filter(c => c.parentID === null && c.status);
+    // Level 1: Root categories (parentID is null or 0)
+    const roots = categories.filter(c => !c.parentID && c.status);
     levels.push(roots);
 
     // Subsequent levels
