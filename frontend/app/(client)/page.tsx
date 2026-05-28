@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Product, Voucher } from "@/types";
 import { getProducts, getPublicVouchers, collectVoucher } from "@/lib/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { HeroSection } from "@/components/client/home/HeroSection";
 import { VoucherSection } from "@/components/client/home/VoucherSection";
