@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -15,6 +15,7 @@ using PolyBabyAPI.Service;
 using PolyBabyAPI.Services;
 using PolyBabyAPI.Settings;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -215,6 +216,28 @@ try
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
 
+    // Cấu hình Rate Limiter (Chống DDoS/Spam request)
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                factory: partition => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = 100, // Tối đa 100 request
+                    QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
+                    Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
+                }));
+                
+        options.OnRejected = async (context, token) =>
+        {
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
+            await context.HttpContext.Response.WriteAsync("{\"error\": \"Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.\"}", cancellationToken: token);
+        };
+    });
+
     var app = builder.Build();
 
     // Seed data
@@ -251,6 +274,7 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("AllowMVC");
+    app.UseRateLimiter();
     app.UseAuthentication(); 
     app.UseAuthorization();  
 
