@@ -188,6 +188,18 @@ export default function AdminLayout({
                 <span className="font-label-md">Thống kê</span>
               </Link>
             </div>
+
+            {/* Loyalty */}
+            <div className="space-y-1">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Chương trình Loyalty</span>
+              <Link
+                href="/admin/loyalty"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">loyalty</span>
+                <span className="font-label-md">Quản lý Loyalty</span>
+              </Link>
+            </div>
           </nav>
           
           <div className="mt-auto px-4 pb-md pt-md">

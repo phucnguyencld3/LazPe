@@ -14,9 +14,9 @@ export const OrderCostSummary: React.FC<OrderCostSummaryProps> = ({ order }) => 
           <span>Tạm tính</span>
           <span>{formatCurrency(order.subTotal)}</span>
         </div>
-        {order.hasVoucher && (
+        {order.discountAmount > 0 && (
           <div className="flex justify-between text-emerald-600">
-            <span>Voucher ({order.voucherCode})</span>
+            <span>{order.hasVoucher ? `Giảm giá (Voucher ${order.voucherCode})` : "Giảm giá (Điểm tích lũy)"}</span>
             <span>-{formatCurrency(order.discountAmount)}</span>
           </div>
         )}
@@ -26,7 +26,7 @@ export const OrderCostSummary: React.FC<OrderCostSummaryProps> = ({ order }) => 
         </div>
         <div className="border-t border-slate-200 mt-4 pt-6 flex justify-between items-center">
           <span className="text-xl font-bold text-slate-800">Tổng cộng</span>
-          <span className="text-3xl font-bold text-rose-500 tracking-tight">{formatCurrency(order.totalPrice)}</span>
+          <span className="text-3xl font-bold text-rose-500 tracking-tight">{formatCurrency(order.totalPrice + order.shippingFee)}</span>
         </div>
       </div>
     </div>

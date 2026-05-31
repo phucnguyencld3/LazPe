@@ -7,9 +7,14 @@ interface ProfileHeaderProps {
   userProfile: UserProfile;
   token: string;
   onAvatarUpdated: (newAvatarUrl: string) => void;
+  loyaltyProfile?: {
+    currentTierName?: string;
+    availablePoints?: number;
+    colorHex?: string;
+  } | null;
 }
 
-export function ProfileHeader({ userProfile, token, onAvatarUpdated }: ProfileHeaderProps) {
+export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProfile }: ProfileHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -92,13 +97,13 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated }: ProfileHe
         <h1 className="font-headline-lg text-3xl font-bold text-primary tracking-tight">{userProfile.fullName}</h1>
         <p className="font-body-lg text-on-surface-variant">{userProfile.email}</p>
         
-        {/* Badges / Trove Points (Mocked client side features) */}
+        {/* Badges / Loyalty Info */}
         <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-sm pt-2">
           <span className="px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-label-sm font-bold shadow-sm">
-            Thành viên Gold
+            Thành viên {loyaltyProfile?.currentTierName || "Standard"}
           </span>
           <span className="px-4 py-1.5 bg-primary-container text-on-primary-container rounded-full text-label-sm font-bold shadow-sm">
-            124 Trove Points
+            {loyaltyProfile?.availablePoints != null ? loyaltyProfile.availablePoints.toLocaleString("vi-VN") : "0"} điểm
           </span>
         </div>
       </div>

@@ -55,6 +55,17 @@ namespace PolyBabyAPI.Data
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
 
+        // ===== Loyalty Program =====
+        public DbSet<LoyaltyProfile> LoyaltyProfiles { get; set; }
+        public DbSet<LoyaltyPointHistory> LoyaltyPointHistories { get; set; }
+        public DbSet<LoyaltyTier> LoyaltyTiers { get; set; }
+        public DbSet<LoyaltyEarnPolicy> LoyaltyEarnPolicies { get; set; }
+        public DbSet<LoyaltyRedeemPolicy> LoyaltyRedeemPolicies { get; set; }
+        public DbSet<LoyaltyTierPrivilege> LoyaltyTierPrivileges { get; set; }
+        public DbSet<LoyaltyMonthlyVoucher> LoyaltyMonthlyVouchers { get; set; }
+        public DbSet<LoyaltyAuditLog> LoyaltyAuditLogs { get; set; }
+        public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -232,6 +243,39 @@ namespace PolyBabyAPI.Data
                 .WithMany()
                 .HasForeignKey(cm => cm.SenderId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // ===== Loyalty Configurations =====
+            builder.Entity<LoyaltyProfile>(entity =>
+            {
+                entity.HasKey(p => p.UserID);
+
+                entity.HasOne(p => p.User)
+                      .WithOne()
+                      .HasForeignKey<LoyaltyProfile>(p => p.UserID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(p => p.Tier)
+                      .WithMany()
+                      .HasForeignKey(p => p.CurrentTierID)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<LoyaltyPointHistory>(entity =>
+            {
+                entity.HasKey(h => h.HistoryID);
+
+                entity.HasOne(h => h.Profile)
+                      .WithMany()
+                      .HasForeignKey(h => h.UserID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(h => h.Invoice)
+                      .WithMany()
+                      .HasForeignKey(h => h.InvoiceID)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(h => new { h.UserID, h.CreatedAt });
+            });
 
             // Permission configurations
             ConfigurePermissionEntities(builder);

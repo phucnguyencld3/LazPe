@@ -432,7 +432,7 @@ namespace PolyBabyAPI.Controllers
         // ======================== CREATE ENDPOINTS ============================
 
         /// <summary>
-        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động)
+        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động + points quy đổi)
         /// </summary>
         [HttpPost("create-from-cart/{cartId}")]
         //[Authorize]
@@ -441,7 +441,8 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] PayMethod? payMethod,
             [FromQuery] int? addressId,
             [FromQuery] string? shippingAddress,
-            [FromBody] CreateFromCartRequest? body)
+            [FromBody] CreateFromCartRequest? body,
+            [FromQuery] int pointsToUse = 0)
         {
             try
             {
@@ -504,7 +505,7 @@ namespace PolyBabyAPI.Controllers
                 // ✅ Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
 
-                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress);
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress, pointsToUse);
 
                 _logger.LogInformation(
                     "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",

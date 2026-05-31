@@ -129,7 +129,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                       {formatDateTime(order.createdAt)}
                     </td>
                     <td className="px-6 py-5 text-right font-bold text-on-surface">
-                      {formatCurrency(order.totalPrice)}
+                      {formatCurrency(order.totalPrice + order.shippingFee)}
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2 text-label-sm text-on-surface-variant">

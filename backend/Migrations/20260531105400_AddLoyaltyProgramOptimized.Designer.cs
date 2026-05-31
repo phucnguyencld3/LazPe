@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260531105400_AddLoyaltyProgramOptimized")]
+    partial class AddLoyaltyProgramOptimized
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -761,181 +764,6 @@ namespace PolyBabyAPI.Migrations
                     b.ToTable("InvoiceDetails");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyAuditLog", b =>
-                {
-                    b.Property<long>("LogID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("LogID"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ActorEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("ActorID")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("EntityID")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("EntityName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("NewValue")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("LogID");
-
-                    b.ToTable("LoyaltyAuditLogs");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyEarnPolicy", b =>
-                {
-                    b.Property<int>("PolicyID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PolicyID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCampaign")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("Multiplier")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("PointsEarned")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("VndAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("PolicyID");
-
-                    b.ToTable("LoyaltyEarnPolicies");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyManualRevocation", b =>
-                {
-                    b.Property<int>("RevocationID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RevocationID"));
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AuditorID")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("UserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("RevocationID");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("LoyaltyManualRevocations");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyMonthlyVoucher", b =>
-                {
-                    b.Property<int>("VoucherConfigID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VoucherConfigID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DiscountType")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("DiscountValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("MaxDiscount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MinOrderValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("TierID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ValidityDays")
-                        .HasColumnType("int");
-
-                    b.Property<int>("VoucherCount")
-                        .HasColumnType("int");
-
-                    b.HasKey("VoucherConfigID");
-
-                    b.HasIndex("TierID");
-
-                    b.ToTable("LoyaltyMonthlyVouchers");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyPointHistory", b =>
                 {
                     b.Property<long>("HistoryID")
@@ -984,7 +812,7 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int>("AvailablePoints")
                         .HasColumnType("int");
 
-                    b.Property<int>("CurrentTierID")
+                    b.Property<int>("CurrentTier")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("LastUpdated")
@@ -1001,138 +829,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("UserID");
 
-                    b.HasIndex("CurrentTierID");
-
                     b.ToTable("LoyaltyProfiles");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyRedeemPolicy", b =>
-                {
-                    b.Property<int>("PolicyID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PolicyID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<decimal>("DiscountVnd")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("PointsToRedeem")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("TierID")
-                        .HasColumnType("int");
-
-                    b.HasKey("PolicyID");
-
-                    b.HasIndex("TierID");
-
-                    b.ToTable("LoyaltyRedeemPolicies");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyTier", b =>
-                {
-                    b.Property<int>("TierID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TierID"));
-
-                    b.Property<string>("BadgeIcon")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("ColorHex")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MinPoints")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TierName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("TierID");
-
-                    b.ToTable("LoyaltyTiers");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyTierPrivilege", b =>
-                {
-                    b.Property<int>("PrivilegeID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrivilegeID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("PrivilegeType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("TierID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Value")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasKey("PrivilegeID");
-
-                    b.HasIndex("TierID");
-
-                    b.ToTable("LoyaltyTierPrivileges");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.PaymentTransaction", b =>
@@ -2106,28 +1803,6 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Variant");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyManualRevocation", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyMonthlyVoucher", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.LoyaltyTier", "Tier")
-                        .WithMany()
-                        .HasForeignKey("TierID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tier");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyPointHistory", b =>
                 {
                     b.HasOne("PolyBabyAPI.Models.Invoice", "Invoice")
@@ -2148,41 +1823,13 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyProfile", b =>
                 {
-                    b.HasOne("PolyBabyAPI.Models.LoyaltyTier", "Tier")
-                        .WithMany()
-                        .HasForeignKey("CurrentTierID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
                         .WithOne()
                         .HasForeignKey("PolyBabyAPI.Models.LoyaltyProfile", "UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Tier");
-
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyRedeemPolicy", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.LoyaltyTier", "Tier")
-                        .WithMany()
-                        .HasForeignKey("TierID");
-
-                    b.Navigation("Tier");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyTierPrivilege", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.LoyaltyTier", "Tier")
-                        .WithMany()
-                        .HasForeignKey("TierID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tier");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.PaymentTransaction", b =>

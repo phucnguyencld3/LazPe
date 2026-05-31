@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -200,6 +202,7 @@ try
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<IVoucherService, VoucherService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+    builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 
     // Product services
     builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -232,6 +235,25 @@ try
     builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection(VnPayOptions.SectionName));
     builder.Services.AddScoped<IVnPayService, VnPayService>();
     builder.Services.AddHostedService<VnPayPendingPaymentCleanupService>();
+
+    // Cấu hình Hangfire
+    builder.Services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true
+        }));
+    builder.Services.AddHangfireServer();
+
+    // Register job services
+    builder.Services.AddScoped<LoyaltyMonthlyVoucherJob>();
+    builder.Services.AddScoped<LoyaltyCycleResetJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -297,6 +319,35 @@ try
     app.UseRateLimiter();
     app.UseAuthentication(); 
     app.UseAuthorization();  
+
+    // Hangfire Dashboard
+    app.UseHangfireDashboard("/hangfire");
+
+    // Đăng ký Recurring Jobs cho Loyalty
+    try
+    {
+        var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+        
+        // 1. Job phát voucher hàng tháng (Chạy 00:00 ngày 1 hàng tháng)
+        recurringJobManager.AddOrUpdate<LoyaltyMonthlyVoucherJob>(
+            "loyalty-monthly-voucher-issuance",
+            job => job.ExecuteAsync(),
+            Cron.Monthly(1, 0, 0),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 2. Job reset cuối kỳ (Chạy 00:00 ngày 1/1 và 1/7 hàng năm)
+        recurringJobManager.AddOrUpdate<LoyaltyCycleResetJob>(
+            "loyalty-end-of-cycle-reset",
+            job => job.ExecuteAsync(),
+            "0 0 1 1,7 *",
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Lỗi cấu hình Hangfire Recurring Jobs: {ex.Message}");
+    }
 
     app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
     app.MapControllers();
