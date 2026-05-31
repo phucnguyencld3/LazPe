@@ -15,10 +15,12 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
+    if (isAuth) return;
+
     const checkAuth = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        window.location.replace("/login");
         return;
       }
       try {
@@ -27,19 +29,29 @@ export default function AdminLayout({
             Authorization: `Bearer ${token}`
           }
         });
+
+        if (!res.ok) {
+          window.location.replace("/login");
+          return;
+        }
+
         const data = await res.json();
+        const user = data.user;
+        const roles = user?.roles || [];
+        const permissions = user?.permissions || [];
+        const hasDashboardAccess = user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
-        if (!res.ok || !data.success || !data.user.isAdmin) {
-          router.push("/login");
+        if (!data.success || !hasDashboardAccess) {
+          window.location.replace("/login");
         } else {
           setIsAuth(true);
         }
       } catch (e) {
-        router.push("/login");
+        window.location.replace("/login");
       }
     };
     checkAuth();
-  }, [router]);
+  }, [router, pathname, isAuth]);
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname !== "/admin") return false;
