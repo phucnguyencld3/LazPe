@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
@@ -369,6 +369,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var roles = await _userManager.GetRolesAsync(user);
+                var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id);
 
                 return Ok(new
                 {
@@ -383,6 +384,7 @@ namespace PolyBabyAPI.Controllers
                         avatar = user.Avatar,
                         registerDate = user.RegisterDate,
                         roles = roles,
+                        permissions = userPermissions.Select(p => p.Name).ToList(),
                         isAdmin = roles.Contains("Admin")
                     }
                 });
