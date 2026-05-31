@@ -153,6 +153,18 @@ export default function AdminLayout({
               </Link>
             </div>
 
+            {/* Tin nhắn hỗ trợ */}
+            <div className="space-y-1">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Hỗ trợ</span>
+              <Link
+                href="/admin/chats"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">chat</span>
+                <span className="font-label-md">Tin nhắn</span>
+              </Link>
+            </div>
+
             {/* Thống kê */}
             <div className="space-y-1">
               <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thống kê</span>
@@ -175,13 +187,13 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className="flex-1 ml-72 p-margin-desktop flex flex-col min-h-0">
-          <div className="flex-1">
+        <main className={`flex-1 ml-72 flex flex-col ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-margin-desktop min-h-0"}`}>
+          <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
           
           {/* Footer Shell */}
-          <footer className="flex justify-between items-center py-md mt-lg text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background">
+          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${pathname === "/admin/chats" ? "py-2 mt-2" : "py-md mt-lg"}`}>
             <p>© 2024 Hệ thống quản lý LazPe. Bảo lưu mọi quyền.</p>
             <div className="flex gap-md">
               <a className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a>
