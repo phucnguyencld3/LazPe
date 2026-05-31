@@ -937,3 +937,165 @@ export async function syncWishlistApi(
   }
 }
 
+export async function getUserOrders(
+  userId: string,
+  token: string
+): Promise<any[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/user/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch user orders:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    return null;
+  }
+}
+
+export async function getUserVouchers(token: string): Promise<any[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/wallet`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch user vouchers:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user vouchers:", error);
+    return null;
+  }
+}
+
+export async function activateVoucherCode(
+  token: string,
+  code: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/activate-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Kích hoạt voucher thành công." : "Kích hoạt voucher thất bại."),
+    };
+  } catch (error) {
+    console.error("Error activating voucher code:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function getUserReviews(
+  userId: string,
+  token: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Review/user/${userId}?page=${page}&pageSize=${pageSize}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch user reviews:", response.statusText);
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success && result.data) {
+      return result.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching user reviews:", error);
+    return null;
+  }
+}
+
+export async function getPendingReviews(
+  userId: string,
+  token: string
+): Promise<any[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Review/pending/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch pending reviews:", response.statusText);
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success && result.data) {
+      return result.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching pending reviews:", error);
+    return null;
+  }
+}
+
+export async function submitProductReview(
+  token: string,
+  reviewData: {
+    invoiceID: number;
+    invoiceDetailID: number;
+    rating: number;
+    content: string;
+  }
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Review/from-invoice`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(reviewData),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || (response.ok ? "Đánh giá thành công!" : "Có lỗi xảy ra."),
+    };
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+

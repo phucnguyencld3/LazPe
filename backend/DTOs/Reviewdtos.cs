@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -40,6 +40,7 @@ namespace PolyBabyAPI.DTOs
         public string? ProductName { get; set; }
         public string? VariantName { get; set; }
         public string? BundleName { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     /// <summary>
@@ -200,5 +201,17 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Nội dung bình luận là bắt buộc")]
         [StringLength(500, ErrorMessage = "Nội dung tối đa 500 ký tự")]
         public string Content { get; set; } = string.Empty;
+    }
+
+    public class PendingReviewItemDto
+    {
+        public int InvoiceID { get; set; }
+        public int InvoiceDetailID { get; set; }
+        public int? VariantID { get; set; }
+        public int? BundleID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string VariantName { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public DateTime PurchaseDate { get; set; }
     }
 }

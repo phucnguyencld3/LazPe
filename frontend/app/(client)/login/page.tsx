@@ -45,8 +45,15 @@ export default function LoginPage() {
           sessionStorage.setItem("user", JSON.stringify(data.user));
         }
         
-        // Chuyển hướng về trang chủ và làm mới trang để cập nhật Header
-        window.location.href = "/";
+        // Kiểm tra quyền Admin
+        const isAdmin = data.user?.isAdmin || data.user?.roles?.includes("Admin");
+        
+        // Chuyển hướng về trang tương ứng
+        if (isAdmin) {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/";
+        }
       } else {
         setError(data.message || "Đăng nhập thất bại");
       }

@@ -14,7 +14,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isLiked = isInWishlist(product.id);
   return (
     <Link href={`/products/${product.id}`}>
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group">
+      <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group">
         {/* Product Image */}
         <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
           {product.image ? (
