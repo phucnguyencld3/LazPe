@@ -202,6 +202,7 @@ try
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<IVoucherService, VoucherService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+    builder.Services.AddScoped<IStatisticsService, StatisticsService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 
     // Product services
