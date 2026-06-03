@@ -297,4 +297,37 @@ namespace PolyBabyAPI.Models
 
         public DateTime Timestamp { get; set; } = DateTime.Now;
     }
+
+    // 10. LoyaltyBirthdayGiftLog
+    public class LoyaltyBirthdayGiftLog
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int GiftLogID { get; set; }
+
+        [Required]
+        [MaxLength(450)]
+        public string UserID { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(UserID))]
+        public virtual ApplicationUser? User { get; set; }
+
+        [Required]
+        public int Year { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string GiftType { get; set; } = string.Empty; // VOUCHER, POINTS, COINS, PHYSICAL
+
+        [Required]
+        [MaxLength(200)]
+        public string GiftValue { get; set; } = string.Empty; // Voucher Code, Points amount, Coins, or Gift Name
+
+        [Required]
+        [MaxLength(256)]
+        public string IssuedBy { get; set; } = "System";
+
+        public DateTime ReceivedAt { get; set; } = DateTime.Now;
+    }
 }
+

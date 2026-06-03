@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { Pagination } from "@/components/admin/shared/Pagination";
-import { formatCurrency } from "@/lib/utils/formatters";
+import { formatCurrency, formatPrivilegeDetailLines } from "@/lib/utils/formatters";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -191,6 +191,45 @@ export default function AdminLoyaltyPage() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [editingConfig, setEditingConfig] = useState<MonthlyVoucherConfig | null>(null);
   const [triggeringJob, setTriggeringJob] = useState(false);
+
+  // History Tab sub-tab & Birthday logs state
+  const [historySubTab, setHistorySubTab] = useState<"points" | "birthday" | "audit">("points");
+  const [birthdayLogs, setBirthdayLogs] = useState<any[]>([]);
+  const [loadingBirthdayLogs, setLoadingBirthdayLogs] = useState(false);
+  const [birthdayPage, setBirthdayPage] = useState(1);
+  const [birthdayTotalPages, setBirthdayTotalPages] = useState(1);
+  const [birthdayTotalItems, setBirthdayTotalItems] = useState(0);
+  const [birthdaySearch, setBirthdaySearch] = useState("");
+  const [triggeringBirthdayJob, setTriggeringBirthdayJob] = useState(false);
+  const [showManualBirthdayModal, setShowManualBirthdayModal] = useState(false);
+  const [manualBirthdayUserID, setManualBirthdayUserID] = useState("");
+  const [manualBirthdayUserSearchTerm, setManualBirthdayUserSearchTerm] = useState("");
+  const [submittingManualBirthday, setSubmittingManualBirthday] = useState(false);
+
+  // States for Privilege Modal dynamic inputs
+  const [privilegeType, setPrivilegeType] = useState("VOUCHER");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [maxSupport, setMaxSupport] = useState(30000);
+  const [minOrderValue, setMinOrderValue] = useState(200000);
+  const [discountType, setDiscountType] = useState("PERCENT");
+  const [discountValue, setDiscountValue] = useState(10);
+  const [maxDiscount, setMaxDiscount] = useState(100000);
+  const [cashbackRate, setCashbackRate] = useState(5);
+  const [maxCashback, setMaxCashback] = useState(50000);
+  const [voucherMode, setVoucherMode] = useState<"EXISTING" | "CUSTOM">("EXISTING");
+  const [validityDays, setValidityDays] = useState(30);
+
+  // Birthday gift sub-states
+  const [birthdayGiftType, setBirthdayGiftType] = useState("VOUCHER");
+  const [birthdayVoucherCode, setBirthdayVoucherCode] = useState("");
+  const [birthdayQuantity, setBirthdayQuantity] = useState(1);
+  const [birthdayPoints, setBirthdayPoints] = useState(500);
+  const [birthdayCoins, setBirthdayCoins] = useState(50000);
+  const [birthdayGiftName, setBirthdayGiftName] = useState("");
+  const [birthdayGiftDesc, setBirthdayGiftDesc] = useState("");
+
+  const [vouchers, setVouchers] = useState<any[]>([]);
 
   // States for History Tab
   const [history, setHistory] = useState<TransactionHistory[]>([]);
@@ -415,6 +454,95 @@ export default function AdminLoyaltyPage() {
     }
   };
 
+  const fetchVouchersList = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/vouchers`, { headers: getHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setVouchers(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchBirthdayLogs = async () => {
+    setLoadingBirthdayLogs(true);
+    try {
+      const params = new URLSearchParams({
+        page: birthdayPage.toString(),
+        pageSize: "15",
+        search: birthdaySearch,
+      });
+      const res = await fetch(`${API_BASE_URL}/AdminLoyalty/birthday-gift-logs?${params.toString()}`, { headers: getHeaders() });
+      if (res.ok) {
+        const r = await res.json();
+        if (r.success) {
+          setBirthdayLogs(r.data);
+          setBirthdayTotalPages(r.pagination.totalPages);
+          setBirthdayTotalItems(r.pagination.totalItems);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi tải lịch sử quà sinh nhật.");
+    } finally {
+      setLoadingBirthdayLogs(false);
+    }
+  };
+
+  const handleTriggerBirthdayJob = async () => {
+    if (triggeringBirthdayJob) return;
+    setTriggeringBirthdayJob(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/AdminLoyalty/trigger-birthday-gift-job`, {
+        method: "POST",
+        headers: getHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Chạy Job phát quà sinh nhật thành công!");
+        fetchBirthdayLogs();
+      } else {
+        toast.error(data.message || "Kích hoạt job sinh nhật thất bại.");
+      }
+    } catch (e) {
+      toast.error("Lỗi kết nối khi gửi yêu cầu.");
+    } finally {
+      setTriggeringBirthdayJob(false);
+    }
+  };
+
+  const handleManualBirthdayIssue = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!manualBirthdayUserID) {
+      toast.error("Vui lòng chọn thành viên nhận quà.");
+      return;
+    }
+    setSubmittingManualBirthday(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/AdminLoyalty/issue-birthday-gift-manual`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ userID: manualBirthdayUserID }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Cấp phát quà sinh nhật thành công!");
+        setShowManualBirthdayModal(false);
+        setManualBirthdayUserID("");
+        setManualBirthdayUserSearchTerm("");
+        fetchBirthdayLogs();
+      } else {
+        toast.error(data.message || "Cấp phát quà sinh nhật thất bại.");
+      }
+    } catch (e) {
+      toast.error("Lỗi kết nối khi gửi yêu cầu.");
+    } finally {
+      setSubmittingManualBirthday(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "dashboard") fetchStats();
     if (activeTab === "policies") fetchPolicies();
@@ -422,13 +550,19 @@ export default function AdminLoyaltyPage() {
       fetchTiers();
       fetchConfigs();
       fetchPolicies();
+      fetchVouchersList();
     }
     if (activeTab === "history") {
-      fetchHistory();
-      fetchAuditLogs();
+      if (historySubTab === "points") {
+        fetchHistory();
+      } else if (historySubTab === "birthday") {
+        fetchBirthdayLogs();
+      } else if (historySubTab === "audit") {
+        fetchAuditLogs();
+      }
       fetchTiers();
     }
-  }, [activeTab]);
+  }, [activeTab, historySubTab]);
 
   useEffect(() => {
     if (selectedTierForPrivileges) {
@@ -437,16 +571,91 @@ export default function AdminLoyaltyPage() {
   }, [selectedTierForPrivileges]);
 
   useEffect(() => {
-    if (activeTab === "history") {
+    if (activeTab === "history" && historySubTab === "points") {
       fetchHistory();
     }
   }, [historyPage, filterType, filterTier, filterSearch]);
 
   useEffect(() => {
-    if (activeTab === "history") {
+    if (activeTab === "history" && historySubTab === "audit") {
       fetchAuditLogs();
     }
   }, [auditPage]);
+
+  useEffect(() => {
+    if (activeTab === "history" && historySubTab === "birthday") {
+      fetchBirthdayLogs();
+    }
+  }, [birthdayPage, birthdaySearch]);
+
+  useEffect(() => {
+    if (editingPrivilege) {
+      setPrivilegeType(editingPrivilege.privilegeType);
+      if (editingPrivilege.value) {
+        try {
+          const val = JSON.parse(editingPrivilege.value);
+          if (editingPrivilege.privilegeType === "VOUCHER") {
+            setVoucherCode(val.voucherCode || "");
+            setQuantity(val.quantity || 1);
+            setVoucherMode(val.mode || "EXISTING");
+            setValidityDays(val.validityDays || 30);
+            if (val.mode === "CUSTOM") {
+              setDiscountType(val.discountType || "PERCENT");
+              setDiscountValue(val.discountValue || 0);
+              setMaxDiscount(val.maxDiscount || 0);
+              setMinOrderValue(val.minOrderValue || 0);
+            }
+          } else if (editingPrivilege.privilegeType === "FREESHIP") {
+            setQuantity(val.quantity || 1);
+            setMaxSupport(val.maxSupport || 0);
+            setMinOrderValue(val.minOrderValue || 0);
+          } else if (editingPrivilege.privilegeType === "DISCOUNT") {
+            setDiscountType(val.discountType || "PERCENT");
+            setDiscountValue(val.discountValue || 0);
+            setMaxDiscount(val.maxDiscount || 0);
+          } else if (editingPrivilege.privilegeType === "CASHBACK") {
+            setCashbackRate(val.cashbackRate || 0);
+            setMaxCashback(val.maxCashback || 0);
+          } else if (editingPrivilege.privilegeType === "BIRTHDAY_GIFT") {
+            setBirthdayGiftType(val.giftType || "VOUCHER");
+            if (val.giftType === "VOUCHER") {
+              setBirthdayVoucherCode(val.voucherCode || "");
+              setBirthdayQuantity(val.quantity || 1);
+            } else if (val.giftType === "POINTS") {
+              setBirthdayPoints(val.points || 0);
+            } else if (val.giftType === "COINS") {
+              setBirthdayCoins(val.coins || 0);
+            } else if (val.giftType === "PHYSICAL") {
+              setBirthdayGiftName(val.giftName || "");
+              setBirthdayGiftDesc(val.giftDesc || "");
+            }
+          }
+        } catch (e) {
+          console.error("Lỗi parse cấu hình đặc quyền:", e);
+        }
+      }
+    } else {
+      setPrivilegeType("VOUCHER");
+      setVoucherCode("");
+      setQuantity(1);
+      setVoucherMode("EXISTING");
+      setValidityDays(30);
+      setMaxSupport(30000);
+      setMinOrderValue(200000);
+      setDiscountType("PERCENT");
+      setDiscountValue(10);
+      setMaxDiscount(100000);
+      setCashbackRate(5);
+      setMaxCashback(50000);
+      setBirthdayGiftType("VOUCHER");
+      setBirthdayVoucherCode("");
+      setBirthdayQuantity(1);
+      setBirthdayPoints(500);
+      setBirthdayCoins(50000);
+      setBirthdayGiftName("");
+      setBirthdayGiftDesc("");
+    }
+  }, [editingPrivilege, showPrivilegeModal]);
 
   // Actions for Earn Policies
   const handleSaveEarn = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -645,11 +854,69 @@ export default function AdminLoyaltyPage() {
     e.preventDefault();
     if (!selectedTierForPrivileges) return;
     const data = new FormData(e.currentTarget);
+
+    if (privilegeType === "VOUCHER" && !voucherCode) {
+      toast.error(voucherMode === "EXISTING" ? "Vui lòng chọn Voucher." : "Vui lòng nhập tiền tố mã Voucher.");
+      return;
+    }
+    if (privilegeType === "BIRTHDAY_GIFT" && birthdayGiftType === "VOUCHER" && !birthdayVoucherCode) {
+      toast.error("Vui lòng chọn Voucher quà sinh nhật.");
+      return;
+    }
+
+    let configObj: any = {};
+    if (privilegeType === "VOUCHER") {
+      configObj = {
+        mode: voucherMode,
+        voucherCode,
+        quantity: parseInt(quantity.toString()),
+        validityDays: parseInt(validityDays.toString())
+      };
+      if (voucherMode === "CUSTOM") {
+        configObj.discountType = discountType;
+        configObj.discountValue = parseFloat(discountValue.toString());
+        configObj.maxDiscount = discountType === "PERCENT" ? parseFloat(maxDiscount.toString()) : 0;
+        configObj.minOrderValue = parseFloat(minOrderValue.toString());
+      }
+    } else if (privilegeType === "FREESHIP") {
+      configObj = {
+        quantity: parseInt(quantity.toString()),
+        maxSupport: parseFloat(maxSupport.toString()),
+        minOrderValue: parseFloat(minOrderValue.toString())
+      };
+    } else if (privilegeType === "DISCOUNT") {
+      configObj = {
+        discountType,
+        discountValue: parseFloat(discountValue.toString()),
+        maxDiscount: discountType === "PERCENT" ? parseFloat(maxDiscount.toString()) : 0
+      };
+    } else if (privilegeType === "CASHBACK") {
+      configObj = {
+        cashbackRate: parseFloat(cashbackRate.toString()),
+        maxCashback: parseFloat(maxCashback.toString())
+      };
+    } else if (privilegeType === "SUPPORT") {
+      configObj = {};
+    } else if (privilegeType === "BIRTHDAY_GIFT") {
+      configObj.giftType = birthdayGiftType;
+      if (birthdayGiftType === "VOUCHER") {
+        configObj.voucherCode = birthdayVoucherCode;
+        configObj.quantity = parseInt(birthdayQuantity.toString());
+      } else if (birthdayGiftType === "POINTS") {
+        configObj.points = parseInt(birthdayPoints.toString());
+      } else if (birthdayGiftType === "COINS") {
+        configObj.coins = parseInt(birthdayCoins.toString());
+      } else if (birthdayGiftType === "PHYSICAL") {
+        configObj.giftName = birthdayGiftName;
+        configObj.giftDesc = birthdayGiftDesc;
+      }
+    }
+
     const body = {
       tierID: selectedTierForPrivileges,
       name: data.get("name") as string,
-      privilegeType: data.get("privilegeType") as string,
-      value: data.get("value") as string || null,
+      privilegeType,
+      value: JSON.stringify(configObj),
       isActive: data.get("isActive") === "true",
     };
 
@@ -670,6 +937,9 @@ export default function AdminLoyaltyPage() {
         setShowPrivilegeModal(false);
         setEditingPrivilege(null);
         fetchPrivileges(selectedTierForPrivileges);
+      } else {
+        const err = await res.json();
+        toast.error(err.message || "Lỗi lưu đặc quyền.");
       }
     } catch (e) {
       toast.error("Lỗi lưu đặc quyền.");
@@ -1331,15 +1601,6 @@ export default function AdminLoyaltyPage() {
                             >
                               Đổi điểm riêng
                             </button>
-                            <button
-                              onClick={() => setSubTab("vouchers")}
-                              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${subTab === "vouchers"
-                                ? "bg-primary text-on-primary shadow-sm"
-                                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
-                                }`}
-                            >
-                              Voucher tự động
-                            </button>
                           </div>
 
                           {/* Sub-tab Content Area */}
@@ -1372,8 +1633,14 @@ export default function AdminLoyaltyPage() {
                                           <h5 className="font-label-md text-label-md text-on-surface font-bold text-base">{p.name}</h5>
                                           <div className="flex gap-1.5 mt-1 items-center">
                                             <span className="px-1.5 py-0.5 rounded-full text-sm font-bold bg-primary-container/20 text-on-primary-container uppercase">{p.privilegeType}</span>
-                                            {p.value && <span className="text-sm text-on-surface-variant/60 font-semibold">Giá trị: {p.value}</span>}
                                           </div>
+                                          {p.value && (
+                                            <ul className="text-xs text-on-surface-variant/60 font-semibold mt-1.5 space-y-0.5 pl-4 list-disc">
+                                              {formatPrivilegeDetailLines(p.privilegeType, p.value).map((line, idx) => (
+                                                <li key={idx}>{line}</li>
+                                              ))}
+                                            </ul>
+                                          )}
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
                                           <button
@@ -1467,72 +1734,7 @@ export default function AdminLoyaltyPage() {
                               </div>
                             )}
 
-                            {/* Sub-tab 3: Monthly Voucher Configuration */}
-                            {subTab === "vouchers" && (
-                              <div className="space-y-md">
-                                <div className="flex justify-between items-center mb-sm">
-                                  <h4 className="font-label-md text-on-surface-variant font-bold uppercase tracking-wider text-xs">Cấu hình voucher tháng</h4>
-                                  <button
-                                    onClick={() => {
-                                      setEditingConfig(null);
-                                      setShowConfigModal(true);
-                                    }}
-                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer"
-                                  >
-                                    + Thêm cấu hình
-                                  </button>
-                                </div>
 
-                                <div className="space-y-sm">
-                                  {monthlyConfigs.filter(c => c.tierID === selectedTierForPrivileges).length === 0 ? (
-                                    <div className="text-center py-10 text-on-surface-variant/50 font-bold text-base">
-                                      Chưa có cấu hình voucher tự động hàng tháng.
-                                    </div>
-                                  ) : (
-                                    monthlyConfigs
-                                      .filter(c => c.tierID === selectedTierForPrivileges)
-                                      .map((c) => (
-                                        <div key={c.voucherConfigID} className="p-sm border border-outline-variant/30 rounded-lg flex flex-col gap-2 bg-surface-container-low/30 hover:border-primary/30 transition-all">
-                                          <div className="flex justify-between items-start">
-                                            <div>
-                                              <h5 className="font-label-md text-label-md text-on-surface font-bold text-base">Phát {c.voucherCount} voucher/tháng</h5>
-                                              <span className={`text-sm font-bold ${c.isActive ? "text-secondary" : "text-on-surface-variant/50"}`}>
-                                                {c.isActive ? "● Đang tự động phát" : "○ Tạm dừng"}
-                                              </span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                              <button
-                                                onClick={() => {
-                                                  setEditingConfig(c);
-                                                  setShowConfigModal(true);
-                                                }}
-                                                className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/20 cursor-pointer"
-                                              >
-                                                <span className="material-symbols-outlined text-[14px]">edit</span>
-                                              </button>
-                                              <button
-                                                onClick={() => openConfirmDialog(
-                                                  "Bạn có chắc chắn muốn xóa cấu hình voucher phát hàng tháng này?",
-                                                  () => handleDeleteConfig(c.voucherConfigID)
-                                                )}
-                                                className="w-6 h-6 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 cursor-pointer"
-                                              >
-                                                <span className="material-symbols-outlined text-[14px]">delete</span>
-                                              </button>
-                                            </div>
-                                          </div>
-                                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm text-on-surface-variant/70 font-semibold border-t border-outline-variant/15 pt-1.5">
-                                            <p>Giảm: {c.discountType === 1 ? `${c.discountValue}%` : `${c.discountValue.toLocaleString()}₫`}</p>
-                                            <p>Hạn dùng: {c.validityDays} ngày</p>
-                                            <p>Đơn tối thiểu: {c.minOrderValue.toLocaleString()}₫</p>
-                                            {c.discountType === 1 && <p>Giảm tối đa: {c.maxDiscount > 0 ? `${c.maxDiscount.toLocaleString()}₫` : "Không giới hạn"}</p>}
-                                          </div>
-                                        </div>
-                                      ))
-                                  )}
-                                </div>
-                              </div>
-                            )}
                           </div>
                         </>
                       ) : (
@@ -1552,9 +1754,40 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- TAB 5: HISTORY & LOGS (Paginated Table) -------------------- */}
       {activeTab === "history" && (
         <section className="space-y-md">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-            {/* Points transaction table */}
-            <div className="lg:col-span-2 glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
+          {/* Sub-tabs Navigation inside History tab */}
+          <div className="flex border-b border-outline-variant/20 bg-surface-container-low/20 p-1 gap-1 max-w-2xl">
+            <button
+              onClick={() => setHistorySubTab("points")}
+              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${historySubTab === "points"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+                }`}
+            >
+              Tích & Đổi điểm
+            </button>
+            <button
+              onClick={() => setHistorySubTab("birthday")}
+              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${historySubTab === "birthday"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+                }`}
+            >
+              Quà sinh nhật
+            </button>
+            <button
+              onClick={() => setHistorySubTab("audit")}
+              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${historySubTab === "audit"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+                }`}
+            >
+              Thay đổi hệ thống
+            </button>
+          </div>
+
+          {/* Sub-tab 1: Points Transaction Log */}
+          {historySubTab === "points" && (
+            <div className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
               <div className="p-md border-b border-outline-variant/20 bg-primary-container/5">
                 <h3 className="font-headline-md text-on-surface font-bold">Lịch sử tích/đổi điểm của khách hàng</h3>
               </div>
@@ -1596,7 +1829,6 @@ export default function AdminLoyaltyPage() {
                     <option key={t.tierID} value={t.tierID}>{t.tierName}</option>
                   ))}
                 </select>
-
               </div>
 
               <div className="overflow-x-auto flex-1">
@@ -1696,8 +1928,117 @@ export default function AdminLoyaltyPage() {
                 onPageChange={setHistoryPage}
               />
             </div>
+          )}
 
-            {/* Audit System logs */}
+          {/* Sub-tab 2: Birthday Gift Logs */}
+          {historySubTab === "birthday" && (
+            <div className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
+              <div className="p-md border-b border-outline-variant/20 bg-primary-container/5 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h3 className="font-headline-md text-on-surface font-bold">Lịch sử nhận quà sinh nhật</h3>
+                  <p className="text-on-surface-variant/60 text-xs font-semibold mt-xs">Danh sách thành viên nhận quà và trạng thái cấp phát hàng năm</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={handleTriggerBirthdayJob}
+                    disabled={triggeringBirthdayJob}
+                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs font-bold cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+                    {triggeringBirthdayJob ? "Đang chạy Job..." : "Chạy Job sinh nhật hôm nay"}
+                  </button>
+                  <button
+                    onClick={() => setShowManualBirthdayModal(true)}
+                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">card_giftcard</span>
+                    Phát quà thủ công
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="p-md border-b border-outline-variant/20 flex flex-wrap items-center gap-md bg-surface-container-low/30">
+                <div className="relative min-w-[200px] flex-1">
+                  <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm thành viên..."
+                    value={birthdaySearch}
+                    onChange={(e) => setBirthdaySearch(e.target.value)}
+                    className="w-full pl-xl pr-md py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto flex-1">
+                <table className="w-full border-collapse">
+                  <thead className="bg-primary-container/10 border-b border-outline-variant/30 text-left">
+                    <tr>
+                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Thành viên</th>
+                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold text-center">Năm nhận</th>
+                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Loại quà</th>
+                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Giá trị quà</th>
+                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Người phát</th>
+                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Thời gian nhận</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/20 text-sm">
+                    {loadingBirthdayLogs ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-20">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+                        </td>
+                      </tr>
+                    ) : birthdayLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-20 text-on-surface-variant/60 font-bold">
+                          Không tìm thấy lịch sử quà sinh nhật nào.
+                        </td>
+                      </tr>
+                    ) : (
+                      birthdayLogs.map((l) => (
+                        <tr key={l.giftLogID} className="hover:bg-primary-container/10 transition-colors">
+                          <td className="px-lg py-md">
+                            <p className="font-bold text-on-surface">{l.fullName}</p>
+                            <p className="text-[10px] text-on-surface-variant/60 font-semibold">{l.email}</p>
+                          </td>
+                          <td className="px-lg py-md text-center font-bold text-primary">
+                            {l.year}
+                          </td>
+                          <td className="px-lg py-md">
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-secondary-container/20 text-on-secondary-container uppercase">
+                              {l.giftType}
+                            </span>
+                          </td>
+                          <td className="px-lg py-md font-semibold text-on-surface">
+                            {l.giftValue}
+                          </td>
+                          <td className="px-lg py-md font-medium text-on-surface-variant/80">
+                            {l.issuedBy}
+                          </td>
+                          <td className="px-lg py-md text-on-surface-variant/60">
+                            {new Date(l.receivedAt).toLocaleString("vi-VN")}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                currentPage={birthdayPage}
+                totalPages={birthdayTotalPages}
+                totalItems={birthdayTotalItems}
+                itemsPerPage={15}
+                onPageChange={setBirthdayPage}
+              />
+            </div>
+          )}
+
+          {/* Sub-tab 3: System Audit Logs */}
+          {historySubTab === "audit" && (
             <div className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col h-full">
               <div className="p-md border-b border-outline-variant/20 bg-primary-container/5">
                 <h3 className="font-headline-md text-on-surface font-bold">Logs thay đổi hệ thống</h3>
@@ -1736,7 +2077,7 @@ export default function AdminLoyaltyPage() {
                 onPageChange={setAuditPage}
               />
             </div>
-          </div>
+          )}
         </section>
       )}
 
@@ -2284,9 +2625,7 @@ export default function AdminLoyaltyPage() {
             </form>
           </div>
         </div>
-      )}
-
-      {/* -------------------- MODAL: PRIVILEGE FORM -------------------- */}
+      )}      {/* -------------------- MODAL: PRIVILEGE FORM -------------------- */}
       {showPrivilegeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
           <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -2313,7 +2652,7 @@ export default function AdminLoyaltyPage() {
                   name="name"
                   required
                   defaultValue={editingPrivilege?.name || ""}
-                  placeholder="Ví dụ: Voucher sinh nhật giảm 10%, Freeship đơn từ 150k..."
+                  placeholder="Ví dụ: Voucher hàng tháng Gold, Tặng xu sinh nhật..."
                   className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                 />
               </div>
@@ -2322,8 +2661,8 @@ export default function AdminLoyaltyPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại đặc quyền</label>
                   <select
-                    name="privilegeType"
-                    defaultValue={editingPrivilege?.privilegeType || "VOUCHER"}
+                    value={privilegeType}
+                    onChange={(e) => setPrivilegeType(e.target.value)}
                     className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
                   >
                     <option value="VOUCHER">Voucher hàng tháng</option>
@@ -2335,28 +2674,388 @@ export default function AdminLoyaltyPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Mô tả giá trị</label>
-                  <input
-                    type="text"
-                    name="value"
-                    defaultValue={editingPrivilege?.value || ""}
-                    placeholder="Mô tả giá trị chi tiết..."
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái đặc quyền</label>
+                  <select
+                    name="isActive"
+                    defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
+                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                  >
+                    <option value="true">Đang kích hoạt</option>
+                    <option value="false">Tạm ẩn</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái đặc quyền</label>
-                <select
-                  name="isActive"
-                  defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                >
-                  <option value="true">Đang kích hoạt</option>
-                  <option value="false">Tạm ẩn</option>
-                </select>
-              </div>
+              {/* DYNAMIC FIELDS FOR VOUCHER */}
+              {privilegeType === "VOUCHER" && (
+                <div className="space-y-4 border-t border-outline-variant/20 pt-4 animate-in fade-in duration-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Chế độ Voucher</label>
+                      <div className="flex gap-6 mt-1">
+                        <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                          <input
+                            type="radio"
+                            name="voucherMode"
+                            value="EXISTING"
+                            checked={voucherMode === "EXISTING"}
+                            onChange={() => {
+                              setVoucherMode("EXISTING");
+                              setVoucherCode("");
+                            }}
+                            className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                          />
+                          Sử dụng Voucher có sẵn
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                          <input
+                            type="radio"
+                            name="voucherMode"
+                            value="CUSTOM"
+                            checked={voucherMode === "CUSTOM"}
+                            onChange={() => {
+                              setVoucherMode("CUSTOM");
+                              setVoucherCode("");
+                            }}
+                            className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                          />
+                          Tạo Voucher riêng mới
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {voucherMode === "EXISTING" ? (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher</label>
+                        <select
+                          value={voucherCode}
+                          onChange={(e) => setVoucherCode(e.target.value)}
+                          required
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        >
+                          <option value="">-- Chọn Voucher --</option>
+                          {vouchers.map(v => (
+                            <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền tố Mã Voucher</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: VCGOLD"
+                          value={voucherCode}
+                          onChange={(e) => setVoucherCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                        <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
+                          Hệ thống sẽ thêm đuôi tháng năm. Ví dụ: VCGOLD_M0626
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng phát / tháng</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Thời hạn sử dụng (ngày)</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={validityDays}
+                        onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                      <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
+                        Số ngày voucher có hiệu lực kể từ lúc phát
+                      </span>
+                    </div>
+                  </div>
+
+                  {voucherMode === "CUSTOM" && (
+                    <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
+                        <select
+                          value={discountType}
+                          onChange={(e) => setDiscountType(e.target.value)}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        >
+                          <option value="PERCENT">Phần trăm (%)</option>
+                          <option value="FIXED">Số tiền cố định (đ)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
+                        <input
+                          type="number"
+                          required={discountType === "PERCENT"}
+                          disabled={discountType !== "PERCENT"}
+                          value={maxDiscount}
+                          onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (đ)</label>
+                        <input
+                          type="number"
+                          required
+                          min={0}
+                          value={minOrderValue}
+                          onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* DYNAMIC FIELDS FOR FREESHIP */}
+              {privilegeType === "FREESHIP" && (
+                <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượt / tháng</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hỗ trợ tối đa (VNĐ)</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={maxSupport}
+                      onChange={(e) => setMaxSupport(parseInt(e.target.value || "0"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (VNĐ)</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={minOrderValue}
+                      onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* DYNAMIC FIELDS FOR DISCOUNT */}
+              {privilegeType === "DISCOUNT" && (
+                <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
+                    <select
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value)}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    >
+                      <option value="PERCENT">Phần trăm (%)</option>
+                      <option value="FIXED">Số tiền cố định (đ)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
+                    <input
+                      type="number"
+                      required={discountType === "PERCENT"}
+                      disabled={discountType !== "PERCENT"}
+                      value={maxDiscount}
+                      onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* DYNAMIC FIELDS FOR CASHBACK */}
+              {privilegeType === "CASHBACK" && (
+                <div className="grid grid-cols-2 gap-4 border-t border-outline-variant/20 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tỷ lệ hoàn xu (%)</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={100}
+                      value={cashbackRate}
+                      onChange={(e) => setCashbackRate(parseInt(e.target.value || "0"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hoàn xu tối đa (xu/tháng)</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={maxCashback}
+                      onChange={(e) => setMaxCashback(parseInt(e.target.value || "0"))}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* DYNAMIC FIELDS FOR SUPPORT */}
+              {privilegeType === "SUPPORT" && (
+                <div className="p-sm bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-semibold text-on-surface-variant/80 border-t pt-4">
+                  Không cần cấu hình thông số. Hạng thành viên sở hữu đặc quyền này sẽ luôn được ưu tiên hỗ trợ trước.
+                </div>
+              )}
+
+              {/* DYNAMIC FIELDS FOR BIRTHDAY GIFT */}
+              {privilegeType === "BIRTHDAY_GIFT" && (
+                <div className="space-y-4 border-t border-outline-variant/20 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại quà tặng</label>
+                    <select
+                      value={birthdayGiftType}
+                      onChange={(e) => setBirthdayGiftType(e.target.value)}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    >
+                      <option value="VOUCHER">Voucher giảm giá</option>
+                      <option value="POINTS">Điểm thưởng Loyalty</option>
+                      <option value="COINS">Xu trong ví</option>
+                      <option value="PHYSICAL">Quà tặng vật lý</option>
+                    </select>
+                  </div>
+
+                  {birthdayGiftType === "VOUCHER" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher sinh nhật</label>
+                        <select
+                          value={birthdayVoucherCode}
+                          onChange={(e) => setBirthdayVoucherCode(e.target.value)}
+                          required
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        >
+                          <option value="">-- Chọn Voucher --</option>
+                          {vouchers.map(v => (
+                            <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng voucher</label>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          value={birthdayQuantity}
+                          onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {birthdayGiftType === "POINTS" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm tặng</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={birthdayPoints}
+                        onChange={(e) => setBirthdayPoints(parseInt(e.target.value || "1"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                    </div>
+                  )}
+
+                  {birthdayGiftType === "COINS" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số xu tặng</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={birthdayCoins}
+                        onChange={(e) => setBirthdayCoins(parseInt(e.target.value || "1"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                    </div>
+                  )}
+
+                  {birthdayGiftType === "PHYSICAL" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quà tặng vật lý</label>
+                        <input
+                          type="text"
+                          required
+                          value={birthdayGiftName}
+                          onChange={(e) => setBirthdayGiftName(e.target.value)}
+                          placeholder="Ví dụ: Bình nước giữ nhiệt"
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Mô tả chi tiết</label>
+                        <input
+                          type="text"
+                          value={birthdayGiftDesc}
+                          onChange={(e) => setBirthdayGiftDesc(e.target.value)}
+                          placeholder="Mô tả quà tặng sinh nhật..."
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
                 <button
@@ -2381,150 +3080,105 @@ export default function AdminLoyaltyPage() {
         </div>
       )}
 
-      {/* -------------------- MODAL: MONTHLY VOUCHER FORM -------------------- */}
-      {showConfigModal && (
+      {/* -------------------- MODAL: MANUAL BIRTHDAY GIFT ISSUANCE -------------------- */}
+      {showManualBirthdayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
           <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
-              <h3 className="text-lg font-headline-md text-on-surface font-bold">
-                {editingConfig ? "Cập nhật cấu hình voucher tháng" : "Thêm cấu hình voucher tháng"}
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary">card_giftcard</span>
+                </div>
+                <h3 className="text-lg font-headline-md text-on-surface font-bold">Phát quà sinh nhật thủ công</h3>
+              </div>
               <button
                 onClick={() => {
-                  setShowConfigModal(false);
-                  setEditingConfig(null);
+                  setShowManualBirthdayModal(false);
+                  setManualBirthdayUserID("");
+                  setManualBirthdayUserSearchTerm("");
                 }}
                 className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
+                disabled={submittingManualBirthday}
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleSaveVoucherConfig} className="p-md space-y-md">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hạng thành viên áp dụng</label>
-                <select
-                  name="tierID"
-                  required
-                  defaultValue={editingConfig ? (editingConfig.tierID || "") : (selectedTierForPrivileges || "")}
-                  disabled={selectedTierForPrivileges !== null}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
-                >
-                  <option value="" disabled>-- Chọn Hạng thành viên --</option>
-                  {tiers.map(t => (
-                    <option key={t.tierID} value={t.tierID}>{t.tierName}</option>
-                  ))}
-                </select>
-                {selectedTierForPrivileges !== null && (
+            <form onSubmit={handleManualBirthdayIssue} className="p-md space-y-md">
+              <div className="p-sm bg-primary/5 rounded-lg text-xs font-semibold text-primary/80 border border-primary/20">
+                Lưu ý: Hệ thống sẽ dựa trên đặc quyền quà tặng sinh nhật (BIRTHDAY_GIFT) đã được cấu hình cho hạng thành viên hiện tại của thành viên được chọn để phát quà tương ứng. Mỗi thành viên chỉ nhận quà tối đa 1 lần/năm.
+              </div>
+
+              {/* User search */}
+              <div className="space-y-1.5 relative">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tìm kiếm thành viên</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">person</span>
                   <input
-                    type="hidden"
-                    name="tierID"
-                    value={editingConfig ? (editingConfig.tierID || "") : (selectedTierForPrivileges || "")}
+                    type="text"
+                    placeholder="Nhập tên, email hoặc SĐT..."
+                    value={manualBirthdayUserSearchTerm}
+                    onChange={(e) => {
+                      setManualBirthdayUserSearchTerm(e.target.value);
+                      if (e.target.value.trim().length >= 3) {
+                        fetch(`${API_BASE_URL}/vouchers/search-users?keyword=${encodeURIComponent(e.target.value)}`, { headers: getHeaders() })
+                          .then(res => res.json())
+                          .then(data => setUserSuggestions(data))
+                          .catch(err => console.error(err));
+                      } else {
+                        setUserSuggestions([]);
+                      }
+                    }}
+                    className="w-full pl-10 pr-4 py-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                   />
+                </div>
+
+                {/* Suggestions list */}
+                {userSuggestions.length > 0 && (
+                  <div className="absolute top-16 left-0 right-0 z-50 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                    {userSuggestions.map((u) => (
+                      <div
+                        key={u.id}
+                        onClick={() => {
+                          setManualBirthdayUserID(u.id);
+                          setManualBirthdayUserSearchTerm(`${u.fullName} (${u.email})`);
+                          setUserSuggestions([]);
+                        }}
+                        className="p-3 hover:bg-surface-container-low cursor-pointer flex flex-col gap-0.5 border-b border-outline-variant last:border-0"
+                      >
+                        <p className="font-label-md text-on-surface text-xs font-bold">{u.fullName}</p>
+                        <p className="text-[10px] text-on-surface-variant/70 font-semibold">{u.email} {u.phoneNumber && `- ${u.phoneNumber}`}</p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng voucher phát/tháng</label>
-                  <input
-                    type="number"
-                    name="voucherCount"
-                    required
-                    min={1}
-                    defaultValue={editingConfig?.voucherCount ?? 1}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
+              {manualBirthdayUserID && (
+                <div className="p-3 bg-surface-container-low border border-outline-variant rounded-lg text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                  ID thành viên đã chọn: {manualBirthdayUserID}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Thời hạn sử dụng (ngày)</label>
-                  <input
-                    type="number"
-                    name="validityDays"
-                    required
-                    min={1}
-                    defaultValue={editingConfig?.validityDays ?? 30}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Kiểu giảm giá</label>
-                  <select
-                    name="discountType"
-                    defaultValue={editingConfig?.discountType || 1}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                  >
-                    <option value={1}>Theo phần trăm (%)</option>
-                    <option value={2}>Tiền mặt cố định (VND)</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
-                  <input
-                    type="number"
-                    name="discountValue"
-                    required
-                    min={1}
-                    defaultValue={editingConfig?.discountValue ?? 0}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị đơn tối thiểu (VND)</label>
-                  <input
-                    type="number"
-                    name="minOrderValue"
-                    required
-                    min={0}
-                    defaultValue={editingConfig?.minOrderValue ?? 0}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đối với %)</label>
-                  <input
-                    type="number"
-                    name="maxDiscount"
-                    defaultValue={editingConfig?.maxDiscount ?? 0}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Kích hoạt phát tự động</label>
-                <select
-                  name="isActive"
-                  defaultValue={editingConfig?.isActive === false ? "false" : "true"}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                >
-                  <option value="true">Kích hoạt phát tự động</option>
-                  <option value="false">Tạm khóa phát</option>
-                </select>
-              </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
                 <button
                   type="button"
                   onClick={() => {
-                    setShowConfigModal(false);
-                    setEditingConfig(null);
+                    setShowManualBirthdayModal(false);
+                    setManualBirthdayUserID("");
+                    setManualBirthdayUserSearchTerm("");
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant/30 text-on-surface hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-lg py-md rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  disabled={submittingManualBirthday}
                 >
-                  Hủy
+                  Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer"
+                  disabled={submittingManualBirthday || !manualBirthdayUserID}
+                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
                 >
-                  Lưu cấu hình
+                  {submittingManualBirthday ? "Đang xử lý..." : "Cấp phát quà"}
                 </button>
               </div>
             </form>

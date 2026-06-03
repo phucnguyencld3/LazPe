@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { getLoyaltyProfile, getLoyaltyHistory, getLoyaltyTiers, LoyaltyProfileResponse, LoyaltyPointHistoryItem, LoyaltyTierClientResponse } from "@/lib/api";
 import { toast } from "@/lib/toast";
+import { formatPrivilegeDetailLines } from "@/lib/utils/formatters";
 
 interface LoyaltySectionProps {
   token: string;
@@ -354,18 +355,23 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
                     ? "≥ " + t.minPoints.toLocaleString("vi-VN") + " điểm"
                     : t.minPoints.toLocaleString("vi-VN") + " - " + (sortedTiers[index + 1].minPoints - 1).toLocaleString("vi-VN") + " điểm"}
                 </p>
-                <ul className="text-[11px] text-slate-500 leading-relaxed font-semibold space-y-1.5 pl-1">
+                <ul className="text-[11px] text-slate-500 leading-relaxed font-semibold space-y-2 pl-1">
                   {t.privileges.length === 0 ? (
                     <li className="text-slate-400 italic">Không có đặc quyền nào.</li>
                   ) : (
-                    t.privileges.map((p) => (
-                      <li key={p.privilegeID} className="flex items-start gap-1">
-                        <span className="text-rose-500 mt-0.5">•</span>
-                        <span>
-                          {p.name} {p.value && <strong className="text-slate-800">({p.value})</strong>}
-                        </span>
-                      </li>
-                    ))
+                    t.privileges.map((p) => {
+                      const lines = formatPrivilegeDetailLines(p.privilegeType, p.value);
+                      return (
+                        <li key={p.privilegeID} className="space-y-0.5">
+                          <span className="text-slate-700 font-bold block">{p.name}</span>
+                          <ul className="pl-3 space-y-0.5 list-disc text-slate-500/80">
+                            {lines.map((line, idx) => (
+                              <li key={idx} className="font-medium">{line}</li>
+                            ))}
+                          </ul>
+                        </li>
+                      );
+                    })
                   )}
                 </ul>
               </div>

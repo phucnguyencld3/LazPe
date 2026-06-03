@@ -254,6 +254,7 @@ try
     // Register job services
     builder.Services.AddScoped<LoyaltyMonthlyVoucherJob>();
     builder.Services.AddScoped<LoyaltyCycleResetJob>();
+    builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -341,6 +342,14 @@ try
             "loyalty-end-of-cycle-reset",
             job => job.ExecuteAsync(),
             "0 0 1 1,7 *",
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 3. Job phát quà sinh nhật hàng ngày (Chạy 00:05 hàng ngày)
+        recurringJobManager.AddOrUpdate<LoyaltyBirthdayGiftJob>(
+            "loyalty-daily-birthday-gift-issuance",
+            job => job.ExecuteAsync(),
+            Cron.Daily(0, 5),
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

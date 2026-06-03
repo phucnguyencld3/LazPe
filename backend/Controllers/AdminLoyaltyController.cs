@@ -457,6 +457,12 @@ namespace PolyBabyAPI.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
+            var validationError = await ValidatePrivilegeConfigAsync(privilege);
+            if (validationError != null)
+            {
+                return BadRequest(new { success = false, message = validationError });
+            }
+
             privilege.CreatedAt = DateTime.Now;
             privilege.CreatedBy = GetCurrentUserEmail();
 
@@ -479,7 +485,13 @@ namespace PolyBabyAPI.Controllers
             var privilege = await _context.LoyaltyTierPrivileges.FindAsync(id);
             if (privilege == null) return NotFound();
 
-            var oldValue = $"Name: {privilege.Name}, Type: {privilege.PrivilegeType}, Active: {privilege.IsActive}";
+            var validationError = await ValidatePrivilegeConfigAsync(request);
+            if (validationError != null)
+            {
+                return BadRequest(new { success = false, message = validationError });
+            }
+
+            var oldValue = $"Name: {privilege.Name}, Type: {privilege.PrivilegeType}, Value: {privilege.Value}, Active: {privilege.IsActive}";
 
             privilege.Name = request.Name;
             privilege.PrivilegeType = request.PrivilegeType;
@@ -488,7 +500,7 @@ namespace PolyBabyAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            var newValue = $"Name: {privilege.Name}, Type: {privilege.PrivilegeType}, Active: {privilege.IsActive}";
+            var newValue = $"Name: {privilege.Name}, Type: {privilege.PrivilegeType}, Value: {privilege.Value}, Active: {privilege.IsActive}";
             await LogAuditAsync("UPDATE_PRIVILEGE", "LoyaltyTierPrivilege", privilege.PrivilegeID.ToString(), oldValue, newValue);
 
             return Ok(new { success = true, data = privilege });
@@ -934,6 +946,135 @@ namespace PolyBabyAPI.Controllers
         }
         #endregion
 
+        #region 10. Birthday Gift Logs & Trigger
+        /// <summary>
+        /// Lấy danh sách log nhận quà sinh nhật.
+        /// </summary>
+        [HttpGet("birthday-gift-logs")]
+        public async Task<IActionResult> GetBirthdayGiftLogs([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 15)
+        {
+            try
+            {
+                var query = _context.LoyaltyBirthdayGiftLogs
+                    .Include(l => l.User)
+                    .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var kw = search.Trim().ToLower();
+                    query = query.Where(l => l.User != null && (l.User.FullName.ToLower().Contains(kw) || l.User.Email.ToLower().Contains(kw) || l.GiftType.ToLower().Contains(kw)));
+                }
+
+                var totalItems = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(l => l.ReceivedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(l => new
+                    {
+                        l.GiftLogID,
+                        l.UserID,
+                        FullName = l.User != null ? l.User.FullName : "N/A",
+                        Email = l.User != null ? l.User.Email : "N/A",
+                        l.Year,
+                        l.GiftType,
+                        l.GiftValue,
+                        l.IssuedBy,
+                        l.ReceivedAt
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    data = items,
+                    pagination = new
+                    {
+                        pageNumber = page,
+                        pageSize,
+                        totalItems,
+                        totalPages = (int)Math.Ceiling((double)totalItems / pageSize)
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi lấy log nhận quà sinh nhật");
+                return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi tải log nhận quà sinh nhật" });
+            }
+        }
+
+        public class ManualBirthdayGiftRequest
+        {
+            public string UserID { get; set; } = string.Empty;
+        }
+
+        /// <summary>
+        /// Phát quà sinh nhật thủ công cho thành viên.
+        /// </summary>
+        [HttpPost("issue-birthday-gift-manual")]
+        public async Task<IActionResult> IssueBirthdayGiftManual([FromBody] ManualBirthdayGiftRequest request, [FromServices] PolyBabyAPI.Services.LoyaltyBirthdayGiftJob job)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.UserID))
+                {
+                    return BadRequest(new { success = false, message = "UserId không được để trống" });
+                }
+
+                var user = await _context.Users.FindAsync(request.UserID);
+                if (user == null)
+                {
+                    return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var year = DateTime.Today.Year;
+                var adminEmail = GetCurrentUserEmail();
+
+                // Kiểm tra xem đã nhận trong năm nay chưa
+                var alreadyReceived = await _context.LoyaltyBirthdayGiftLogs
+                    .AnyAsync(l => l.UserID == request.UserID && l.Year == year);
+                if (alreadyReceived)
+                {
+                    return BadRequest(new { success = false, message = $"Thành viên này đã nhận quà sinh nhật của năm {year} rồi." });
+                }
+
+                var success = await job.IssueBirthdayGiftForUserAsync(request.UserID, year, adminEmail);
+                if (success)
+                {
+                    return Ok(new { success = true, message = "Cấp phát quà sinh nhật thành công!" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = "Cấp phát thất bại. Vui lòng kiểm tra cấu hình đặc quyền quà sinh nhật của hạng thành viên hiện tại của người dùng." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi cấp phát quà sinh nhật thủ công");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Kích hoạt chạy job sinh nhật ngày hôm nay thủ công.
+        /// </summary>
+        [HttpPost("trigger-birthday-gift-job")]
+        public async Task<IActionResult> TriggerBirthdayGiftJob([FromServices] PolyBabyAPI.Services.LoyaltyBirthdayGiftJob job)
+        {
+            try
+            {
+                await job.ExecuteAsync();
+                return Ok(new { success = true, message = "Chạy Job phát quà sinh nhật tự động thành công." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi chạy Job phát quà sinh nhật");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống khi chạy Job: " + ex.Message });
+            }
+        }
+        #endregion
+
         #region Helpers
         private string GetCurrentUserId()
         {
@@ -965,6 +1106,193 @@ namespace PolyBabyAPI.Controllers
 
             _context.LoyaltyAuditLogs.Add(log);
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<string?> ValidatePrivilegeConfigAsync(LoyaltyTierPrivilege privilege)
+        {
+            if (privilege == null) return "Dữ liệu đặc quyền không hợp lệ";
+
+            var allowedTypes = new[] { "VOUCHER", "FREESHIP", "DISCOUNT", "CASHBACK", "SUPPORT", "BIRTHDAY_GIFT" };
+            if (!allowedTypes.Contains(privilege.PrivilegeType.ToUpper()))
+            {
+                return $"Loại đặc quyền '{privilege.PrivilegeType}' không hợp lệ. Phải thuộc: {string.Join(", ", allowedTypes)}";
+            }
+
+            // SUPPORT doesn't require complex value fields
+            if (privilege.PrivilegeType.ToUpper() == "SUPPORT")
+            {
+                privilege.Value = "{}";
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(privilege.Value))
+            {
+                return "Cấu hình chi tiết đặc quyền (Value) không được để trống";
+            }
+
+            try
+            {
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(privilege.Value);
+                var root = jsonDoc.RootElement;
+
+                switch (privilege.PrivilegeType.ToUpper())
+                {
+                    case "VOUCHER":
+                        {
+                            string mode = "EXISTING";
+                            if (root.TryGetProperty("mode", out var modeProp))
+                            {
+                                mode = modeProp.GetString()?.ToUpper() ?? "EXISTING";
+                            }
+
+                            if (!root.TryGetProperty("voucherCode", out var codeProp) || string.IsNullOrWhiteSpace(codeProp.GetString()))
+                                return "Thiếu mã voucher áp dụng (voucherCode)";
+                            if (!root.TryGetProperty("quantity", out var qtyProp) || qtyProp.GetInt32() <= 0)
+                                return "Số lượng voucher phát mỗi tháng (quantity) phải lớn hơn 0";
+                            if (!root.TryGetProperty("validityDays", out var validityProp) || validityProp.GetInt32() <= 0)
+                                return "Thời hạn sử dụng voucher (validityDays) phải lớn hơn 0";
+
+                            if (mode == "EXISTING")
+                            {
+                                var voucherCode = codeProp.GetString()!;
+                                var voucherExists = await _context.Vouchers.AnyAsync(v => v.Code == voucherCode);
+                                if (!voucherExists)
+                                    return $"Voucher với mã '{voucherCode}' không tồn tại trong hệ thống";
+                            }
+                            else if (mode == "CUSTOM")
+                            {
+                                if (!root.TryGetProperty("discountType", out var discTypeProp) || string.IsNullOrWhiteSpace(discTypeProp.GetString()))
+                                    return "Thiếu kiểu giảm giá (discountType: PERCENT hoặc FIXED) cho voucher riêng";
+
+                                var discType = discTypeProp.GetString()!.ToUpper();
+                                if (discType != "PERCENT" && discType != "FIXED")
+                                    return "Kiểu giảm giá (discountType) phải là PERCENT hoặc FIXED";
+
+                                if (!root.TryGetProperty("discountValue", out var valProp) || valProp.GetDecimal() <= 0)
+                                    return "Giá trị giảm (discountValue) phải lớn hơn 0";
+
+                                if (discType == "PERCENT")
+                                {
+                                    var pct = valProp.GetDecimal();
+                                    if (pct > 100)
+                                        return "Tỷ lệ giảm giá (%) không được vượt quá 100%";
+                                    if (!root.TryGetProperty("maxDiscount", out var maxProp) || maxProp.GetDecimal() < 0)
+                                        return "Giá trị giảm tối đa (maxDiscount) không được âm";
+                                }
+
+                                if (!root.TryGetProperty("minOrderValue", out var minProp) || minProp.GetDecimal() < 0)
+                                    return "Điều kiện đơn hàng tối thiểu (minOrderValue) không được âm";
+                            }
+                            else
+                            {
+                                return "Chế độ phát voucher (mode) không hợp lệ (Phải là EXISTING hoặc CUSTOM)";
+                            }
+                        }
+                        break;
+
+                    case "FREESHIP":
+                        {
+                            if (!root.TryGetProperty("quantity", out var qtyProp) || qtyProp.GetInt32() <= 0)
+                                return "Số lượt miễn phí/tháng (quantity) phải lớn hơn 0";
+                            if (!root.TryGetProperty("maxSupport", out var maxProp) || maxProp.GetDecimal() <= 0)
+                                return "Giá trị hỗ trợ tối đa (maxSupport) phải lớn hơn 0";
+                            if (!root.TryGetProperty("minOrderValue", out var minProp) || minProp.GetDecimal() < 0)
+                                return "Điều kiện đơn hàng tối thiểu (minOrderValue) không được âm";
+                        }
+                        break;
+
+                    case "DISCOUNT":
+                        {
+                            if (!root.TryGetProperty("discountType", out var typeProp) || string.IsNullOrWhiteSpace(typeProp.GetString()))
+                                return "Thiếu kiểu giảm giá (discountType: PERCENT hoặc FIXED)";
+
+                            var discType = typeProp.GetString()!.ToUpper();
+                            if (discType != "PERCENT" && discType != "FIXED")
+                                return "Kiểu giảm giá (discountType) phải là PERCENT hoặc FIXED";
+
+                            if (!root.TryGetProperty("discountValue", out var valProp) || valProp.GetDecimal() <= 0)
+                                return "Giá trị giảm (discountValue) phải lớn hơn 0";
+
+                            if (discType == "PERCENT")
+                            {
+                                var pct = valProp.GetDecimal();
+                                if (pct > 100)
+                                    return "Tỷ lệ giảm giá (%) không được vượt quá 100%";
+
+                                if (!root.TryGetProperty("maxDiscount", out var maxProp) || maxProp.GetDecimal() < 0)
+                                    return "Giá trị giảm tối đa (maxDiscount) không được âm";
+                            }
+                        }
+                        break;
+
+                    case "CASHBACK":
+                        {
+                            if (!root.TryGetProperty("cashbackRate", out var rateProp) || rateProp.GetDecimal() <= 0 || rateProp.GetDecimal() > 100)
+                                return "Tỷ lệ hoàn xu (cashbackRate) phải từ 1 đến 100%";
+                            if (!root.TryGetProperty("maxCashback", out var maxProp) || maxProp.GetDecimal() <= 0)
+                                return "Giới hạn hoàn xu (maxCashback) phải lớn hơn 0";
+                        }
+                        break;
+
+                    case "BIRTHDAY_GIFT":
+                        {
+                            if (!root.TryGetProperty("giftType", out var gTypeProp) || string.IsNullOrWhiteSpace(gTypeProp.GetString()))
+                                return "Thiếu loại quà tặng sinh nhật (giftType: VOUCHER, POINTS, COINS, PHYSICAL)";
+
+                            var gType = gTypeProp.GetString()!.ToUpper();
+                            var allowedGiftTypes = new[] { "VOUCHER", "POINTS", "COINS", "PHYSICAL" };
+                            if (!allowedGiftTypes.Contains(gType))
+                                return $"Loại quà tặng sinh nhật '{gType}' không hợp lệ. Phải thuộc: {string.Join(", ", allowedGiftTypes)}";
+
+                            if (gType == "VOUCHER")
+                            {
+                                if (!root.TryGetProperty("voucherCode", out var codeProp) || string.IsNullOrWhiteSpace(codeProp.GetString()))
+                                    return "Thiếu mã voucher sinh nhật (voucherCode)";
+                                if (!root.TryGetProperty("quantity", out var qtyProp) || qtyProp.GetInt32() <= 0)
+                                    return "Số lượng voucher (quantity) phải lớn hơn 0";
+
+                                var voucherCode = codeProp.GetString()!;
+                                var voucherExists = await _context.Vouchers.AnyAsync(v => v.Code == voucherCode);
+                                if (!voucherExists)
+                                    return $"Voucher sinh nhật với mã '{voucherCode}' không tồn tại trong hệ thống";
+                            }
+                            else if (gType == "POINTS")
+                            {
+                                if (!root.TryGetProperty("points", out var ptsProp) || ptsProp.GetInt32() <= 0)
+                                    return "Số điểm tặng (points) phải lớn hơn 0";
+                            }
+                            else if (gType == "COINS")
+                            {
+                                if (!root.TryGetProperty("coins", out var coinsProp) || coinsProp.GetInt32() <= 0)
+                                    return "Số xu tặng (coins) phải lớn hơn 0";
+                            }
+                            else if (gType == "PHYSICAL")
+                            {
+                                if (!root.TryGetProperty("giftName", out var nameProp) || string.IsNullOrWhiteSpace(nameProp.GetString()))
+                                    return "Thiếu tên quà vật lý (giftName)";
+                            }
+                        }
+                        break;
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return "Cấu hình chi tiết đặc quyền (Value) không đúng định dạng JSON hợp lệ";
+            }
+
+            // Kiểm tra trùng đặc quyền loại & cấu hình trong cùng 1 hạng
+            var isDuplicate = await _context.LoyaltyTierPrivileges.AnyAsync(p => 
+                p.TierID == privilege.TierID 
+                && p.PrivilegeType == privilege.PrivilegeType 
+                && p.Value == privilege.Value 
+                && p.PrivilegeID != privilege.PrivilegeID);
+
+            if (isDuplicate)
+            {
+                return "Đặc quyền trùng loại và cùng cấu hình này đã tồn tại trong hạng thành viên";
+            }
+
+            return null;
         }
         #endregion
     }

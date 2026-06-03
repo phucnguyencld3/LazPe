@@ -65,6 +65,7 @@ namespace PolyBabyAPI.Data
         public DbSet<LoyaltyMonthlyVoucher> LoyaltyMonthlyVouchers { get; set; }
         public DbSet<LoyaltyAuditLog> LoyaltyAuditLogs { get; set; }
         public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
+        public DbSet<LoyaltyBirthdayGiftLog> LoyaltyBirthdayGiftLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
