@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
+using PolyBabyAPI.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,11 +19,13 @@ namespace PolyBabyAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AdminLoyaltyController> _logger;
+        private readonly ILoyaltyService _loyaltyService;
 
-        public AdminLoyaltyController(ApplicationDbContext context, ILogger<AdminLoyaltyController> logger)
+        public AdminLoyaltyController(ApplicationDbContext context, ILogger<AdminLoyaltyController> logger, ILoyaltyService loyaltyService)
         {
             _context = context;
             _logger = logger;
+            _loyaltyService = loyaltyService;
         }
 
         #region 1. Dashboard Statistics
@@ -656,6 +659,7 @@ namespace PolyBabyAPI.Controllers
             public string UserID { get; set; } = string.Empty;
             public int Amount { get; set; }
             public string Reason { get; set; } = string.Empty;
+            public int? InvoiceID { get; set; } // Hỗ trợ thu hồi theo đơn hàng
         }
 
         /// <summary>
@@ -664,9 +668,39 @@ namespace PolyBabyAPI.Controllers
         [HttpPost("revoke-points")]
         public async Task<IActionResult> RevokePoints([FromBody] ManualRevocationRequest request)
         {
-            if (string.IsNullOrEmpty(request.UserID) || request.Amount <= 0 || string.IsNullOrEmpty(request.Reason))
+            if (string.IsNullOrEmpty(request.UserID) || string.IsNullOrEmpty(request.Reason))
             {
                 return BadRequest(new { success = false, message = "Thông tin thu hồi điểm không hợp lệ" });
+            }
+
+            // Thu hồi điểm theo hóa đơn (đơn hàng)
+            if (request.InvoiceID.HasValue && request.InvoiceID.Value > 0)
+            {
+                try
+                {
+                    var result = await _loyaltyService.RevokePointsAsync(request.UserID, request.InvoiceID.Value);
+                    if (result)
+                    {
+                        var profile = await _loyaltyService.GetProfileAsync(request.UserID);
+                        await LogAuditAsync("REVOKE_POINTS", "LoyaltyProfile", request.UserID, 
+                            null, null, $"Thu hồi điểm theo đơn hàng #{request.InvoiceID.Value}. Lý do: {request.Reason}");
+                        return Ok(new { success = true, message = "Thu hồi điểm theo đơn hàng thành công", data = profile });
+                    }
+                    else
+                    {
+                        return BadRequest(new { success = false, message = "Thu hồi điểm theo đơn hàng thất bại. Đơn hàng chưa được tích điểm hoặc đã được thu hồi." });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi khi thu hồi điểm theo đơn hàng");
+                    return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi thu hồi điểm theo đơn hàng" });
+                }
+            }
+
+            if (request.Amount <= 0)
+            {
+                return BadRequest(new { success = false, message = "Số điểm thu hồi phải lớn hơn 0" });
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -785,6 +819,71 @@ namespace PolyBabyAPI.Controllers
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Lỗi khi thu hồi điểm thủ công");
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi thực hiện thu hồi điểm" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách voucher chưa sử dụng của một người dùng (hỗ trợ thu hồi).
+        /// </summary>
+        [HttpGet("users/{userId}/unused-vouchers")]
+        public async Task<IActionResult> GetUserUnusedVouchers(string userId)
+        {
+            try
+            {
+                var vouchers = await _context.UserVouchers
+                    .Include(uv => uv.Voucher)
+                    .Where(uv => uv.UserID == userId && uv.Status == UserVoucherStatus.Unused)
+                    .OrderByDescending(uv => uv.CollectedAt)
+                    .Select(uv => new
+                    {
+                        uv.UserVoucherID,
+                        uv.VoucherID,
+                        VoucherCode = uv.Voucher != null ? uv.Voucher.Code : string.Empty,
+                        VoucherName = uv.Voucher != null ? uv.Voucher.Name : string.Empty,
+                        DiscountType = uv.Voucher != null ? (int)uv.Voucher.DiscountType : 0,
+                        DiscountValue = uv.Voucher != null ? uv.Voucher.DiscountValue : 0,
+                        CollectedAt = uv.CollectedAt
+                    })
+                    .ToListAsync();
+
+                return Ok(new { success = true, data = vouchers });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy voucher chưa dùng của user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Lỗi khi lấy danh sách voucher" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách giao dịch tích điểm (EARN/BONUS) của một người dùng để thu hồi.
+        /// </summary>
+        [HttpGet("users/{userId}/earn-transactions")]
+        public async Task<IActionResult> GetUserEarnTransactions(string userId)
+        {
+            try
+            {
+                var transactions = await _context.LoyaltyPointHistories
+                    .Where(h => h.UserID == userId && (h.TransactionType == "EARN" || h.TransactionType == "BONUS") && h.Amount >= 0)
+                    .OrderByDescending(h => h.CreatedAt)
+                    .Select(h => new
+                    {
+                        h.HistoryID,
+                        h.UserID,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.Description,
+                        h.CreatedAt
+                    })
+                    .ToListAsync();
+
+                return Ok(new { success = true, data = transactions });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy lịch sử tích điểm của user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Lỗi khi lấy lịch sử tích điểm" });
             }
         }
         #endregion

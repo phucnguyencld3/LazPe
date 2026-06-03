@@ -282,6 +282,12 @@ export default function AdminLoyaltyPage() {
   const [revocationReason, setRevocationReason] = useState("");
   const [submittingRevocation, setSubmittingRevocation] = useState(false);
   const [showRevocationModal, setShowRevocationModal] = useState(false);
+  const [revocationType, setRevocationType] = useState<"POINTS" | "VOUCHER">("POINTS");
+  const [userEarnTransactions, setUserEarnTransactions] = useState<any[]>([]);
+  const [userUnusedVouchers, setUserUnusedVouchers] = useState<any[]>([]);
+  const [selectedEarnTransactionId, setSelectedEarnTransactionId] = useState<string>("");
+  const [selectedUserVoucherId, setSelectedUserVoucherId] = useState<string>("");
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
   // User search suggestion state
   const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
@@ -1063,47 +1069,132 @@ export default function AdminLoyaltyPage() {
     }
   };
 
-  // Points Reclamation Action
-  const handleManualRevocation = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (revocationAmount <= 0) {
-      toast.error("Số điểm thu hồi phải lớn hơn 0.");
-      return;
-    }
-    if (!revocationReason.trim()) {
-      toast.error("Vui lòng cung cấp lý do thu hồi.");
-      return;
-    }
+  // Points & Voucher Reclamation Action
+  const selectUserForRevocation = async (userId: string, fullName: string, email: string) => {
+    setRevocationUserID(userId);
+    setUserSearchTerm(`${fullName} (${email})`);
+    setUserSuggestions([]);
 
-    setSubmittingRevocation(true);
+    // Clear previous selection
+    setSelectedEarnTransactionId("");
+    setSelectedUserVoucherId("");
+    setRevocationAmount(0);
+    setUserEarnTransactions([]);
+    setUserUnusedVouchers([]);
+
+    setLoadingUserDetails(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/AdminLoyalty/revoke-points`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify({
-          userID: revocationUserID,
-          amount: revocationAmount,
-          reason: revocationReason,
-        }),
-      });
+      // Fetch transactions
+      const resTrans = await fetch(`${API_BASE_URL}/AdminLoyalty/users/${userId}/earn-transactions`, { headers: getHeaders() });
+      if (resTrans.ok) {
+        const data = await resTrans.json();
+        if (data.success) setUserEarnTransactions(data.data);
+      }
 
-      const result = await res.json();
-      if (res.ok && result.success) {
-        toast.success("Thu hồi điểm thành viên thành công.");
-        setRevocationUserID("");
-        setUserSearchTerm("");
-        setRevocationAmount(0);
-        setRevocationReason("");
-        setShowRevocationModal(false);
-        fetchHistory();
-        fetchAuditLogs();
-      } else {
-        toast.error(result.message || "Thu hồi điểm thất bại.");
+      // Fetch unused vouchers
+      const resVouchers = await fetch(`${API_BASE_URL}/AdminLoyalty/users/${userId}/unused-vouchers`, { headers: getHeaders() });
+      if (resVouchers.ok) {
+        const data = await resVouchers.json();
+        if (data.success) setUserUnusedVouchers(data.data);
       }
     } catch (e) {
-      toast.error("Lỗi kết nối khi gửi yêu cầu.");
+      console.error("Lỗi khi tải chi tiết người dùng:", e);
+      toast.error("Không thể tải lịch sử giao dịch và voucher của thành viên này.");
     } finally {
-      setSubmittingRevocation(false);
+      setLoadingUserDetails(false);
+    }
+  };
+
+  const handleManualRevocation = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!revocationUserID) {
+      toast.error("Vui lòng chọn thành viên.");
+      return;
+    }
+
+    if (revocationType === "POINTS") {
+      if (revocationAmount <= 0) {
+        toast.error("Số điểm thu hồi phải lớn hơn 0.");
+        return;
+      }
+      if (!revocationReason.trim()) {
+        toast.error("Vui lòng cung cấp lý do thu hồi.");
+        return;
+      }
+
+      setSubmittingRevocation(true);
+      try {
+        // Tìm xem giao dịch được chọn có InvoiceID không
+        const selectedTrans = userEarnTransactions.find(t => t.historyID.toString() === selectedEarnTransactionId);
+        const invoiceID = selectedTrans?.invoiceID || null;
+
+        const res = await fetch(`${API_BASE_URL}/AdminLoyalty/revoke-points`, {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({
+            userID: revocationUserID,
+            amount: revocationAmount,
+            reason: revocationReason,
+            invoiceID: invoiceID,
+          }),
+        });
+
+        const result = await res.json();
+        if (res.ok && result.success) {
+          toast.success(invoiceID ? `Thu hồi điểm theo đơn hàng #${invoiceID} thành công.` : "Thu hồi điểm thành công.");
+          setRevocationUserID("");
+          setUserSearchTerm("");
+          setRevocationAmount(0);
+          setRevocationReason("");
+          setSelectedEarnTransactionId("");
+          setShowRevocationModal(false);
+          fetchHistory();
+          fetchAuditLogs();
+        } else {
+          toast.error(result.message || "Thu hồi điểm thất bại.");
+        }
+      } catch (e) {
+        toast.error("Lỗi kết nối khi gửi yêu cầu.");
+      } finally {
+        setSubmittingRevocation(false);
+      }
+    } else {
+      // VOUCHER revocation
+      if (!selectedUserVoucherId) {
+        toast.error("Vui lòng chọn Voucher muốn thu hồi.");
+        return;
+      }
+      if (!revocationReason.trim()) {
+        toast.error("Vui lòng cung cấp lý do thu hồi.");
+        return;
+      }
+
+      setSubmittingRevocation(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/vouchers/direct-assignments/${selectedUserVoucherId}`, {
+          method: "DELETE",
+          headers: getHeaders(),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          toast.success("Thu hồi Voucher thành công.");
+          setRevocationUserID("");
+          setUserSearchTerm("");
+          setRevocationAmount(0);
+          setRevocationReason("");
+          setSelectedUserVoucherId("");
+          setShowRevocationModal(false);
+          fetchHistory();
+          fetchAuditLogs();
+        } else {
+          toast.error(result.message || "Thu hồi Voucher thất bại.");
+        }
+      } catch (e) {
+        toast.error("Lỗi kết nối khi gửi yêu cầu.");
+      } finally {
+        setSubmittingRevocation(false);
+      }
     }
   };
 
@@ -1123,7 +1214,7 @@ export default function AdminLoyaltyPage() {
             }}
             className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-102 active:scale-95 transition-all font-bold cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">remove_circle</span> Thu hồi điểm
+            <span className="material-symbols-outlined text-[18px]">remove_circle</span> Thu hồi Đặc quyền / Điểm
           </button>
         </div>
       </header>
@@ -2119,16 +2210,16 @@ export default function AdminLoyaltyPage() {
         </div>
       )}
 
-      {/* -------------------- MODAL: MANUAL REVOCATION (Points Revocation) -------------------- */}
+      {/* -------------------- MODAL: MANUAL REVOCATION (Points & Voucher Revocation) -------------------- */}
       {showRevocationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[550px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
                   <span className="material-symbols-outlined text-error">remove_circle</span>
                 </div>
-                <h3 className="text-lg font-headline-md text-on-surface font-bold">Thu hồi điểm thành viên</h3>
+                <h3 className="text-lg font-headline-md text-on-surface font-bold">Thu hồi Đặc quyền / Điểm</h3>
               </div>
               <button
                 onClick={() => {
@@ -2137,6 +2228,8 @@ export default function AdminLoyaltyPage() {
                   setUserSearchTerm("");
                   setRevocationAmount(0);
                   setRevocationReason("");
+                  setSelectedEarnTransactionId("");
+                  setSelectedUserVoucherId("");
                 }}
                 className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
                 disabled={submittingRevocation}
@@ -2145,75 +2238,191 @@ export default function AdminLoyaltyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleManualRevocation} className="p-md space-y-md">
-              {/* User search */}
-              <div className="space-y-1.5 relative">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tìm kiếm thành viên</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">person</span>
-                  <input
-                    type="text"
-                    placeholder="Nhập tên, email hoặc SĐT..."
-                    value={userSearchTerm}
-                    onChange={(e) => handleUserSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
+            <form onSubmit={handleManualRevocation} className="flex flex-col min-h-0 flex-1">
+              <div className="p-md space-y-md overflow-y-auto flex-1">
+                {/* Selector */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Loại hình thu hồi</label>
+                  <div className="flex gap-6 mt-1">
+                    <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                      <input
+                        type="radio"
+                        name="revocationType"
+                        value="POINTS"
+                        checked={revocationType === "POINTS"}
+                        onChange={() => {
+                          setRevocationType("POINTS");
+                          setRevocationAmount(0);
+                          setRevocationReason("");
+                          setSelectedEarnTransactionId("");
+                          setSelectedUserVoucherId("");
+                        }}
+                        className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                      />
+                      Thu hồi Đặc quyền / Điểm
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                      <input
+                        type="radio"
+                        name="revocationType"
+                        value="VOUCHER"
+                        checked={revocationType === "VOUCHER"}
+                        onChange={() => {
+                          setRevocationType("VOUCHER");
+                          setRevocationAmount(0);
+                          setRevocationReason("");
+                          setSelectedEarnTransactionId("");
+                          setSelectedUserVoucherId("");
+                        }}
+                        className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                      />
+                      Thu hồi Voucher đặc quyền
+                    </label>
+                  </div>
                 </div>
 
-                {/* Suggestions list */}
-                {userSuggestions.length > 0 && (
-                  <div className="absolute top-16 left-0 right-0 z-50 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
-                    {userSuggestions.map((u) => (
-                      <div
-                        key={u.id}
-                        onClick={() => {
-                          setRevocationUserID(u.id);
-                          setUserSearchTerm(`${u.fullName} (${u.email})`);
-                          setUserSuggestions([]);
+                {/* User search */}
+                <div className="space-y-1.5 relative">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tìm kiếm thành viên</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">person</span>
+                    <input
+                      type="text"
+                      placeholder="Nhập tên, email hoặc SĐT..."
+                      value={userSearchTerm}
+                      onChange={(e) => handleUserSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+
+                  {/* Suggestions list */}
+                  {userSuggestions.length > 0 && (
+                    <div className="absolute top-16 left-0 right-0 z-50 bg-surface-container-lowest border border-outline-variant rounded-md shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                      {userSuggestions.map((u) => (
+                        <div
+                          key={u.id}
+                          onClick={() => selectUserForRevocation(u.id, u.fullName, u.email)}
+                          className="p-3 hover:bg-surface-container-low cursor-pointer flex flex-col gap-0.5 border-b border-outline-variant last:border-0"
+                        >
+                          <p className="font-label-md text-on-surface text-xs font-bold">{u.fullName}</p>
+                          <p className="text-[10px] text-on-surface-variant/70 font-semibold">{u.email} {u.phoneNumber && `- ${u.phoneNumber}`}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {revocationUserID && (
+                  <div className="p-3 bg-surface-container-low border border-outline-variant rounded-lg text-[10px] font-bold text-on-surface-variant uppercase tracking-widest flex items-center justify-between">
+                    <span>ID thành viên: {revocationUserID}</span>
+                    {loadingUserDetails && (
+                      <span className="text-primary animate-pulse text-[11px]">Đang tải dữ liệu...</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Conditional Fields for POINTS */}
+                {revocationUserID && !loadingUserDetails && revocationType === "POINTS" && (
+                  <div className="space-y-md border-t border-outline-variant/20 pt-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn lượt tích điểm hoặc đơn hàng</label>
+                      <select
+                        value={selectedEarnTransactionId}
+                        onChange={(e) => {
+                          const valId = e.target.value;
+                          setSelectedEarnTransactionId(valId);
+                          if (valId) {
+                            const trans = userEarnTransactions.find(t => t.historyID.toString() === valId);
+                            if (trans) {
+                              setRevocationAmount(Math.abs(trans.amount));
+                              setRevocationReason(`Thu hồi điểm từ: ${trans.description}`);
+                            }
+                          } else {
+                            setRevocationAmount(0);
+                            setRevocationReason("");
+                          }
                         }}
-                        className="p-3 hover:bg-surface-container-low cursor-pointer flex flex-col gap-0.5 border-b border-outline-variant last:border-0"
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
                       >
-                        <p className="font-label-md text-on-surface text-xs font-bold">{u.fullName}</p>
-                        <p className="text-[10px] text-on-surface-variant/70 font-semibold">{u.email} {u.phoneNumber && `- ${u.phoneNumber}`}</p>
-                      </div>
-                    ))}
+                        <option value="">-- Thu hồi tự do (Không theo lượt tích điểm) --</option>
+                        {userEarnTransactions.map(t => (
+                          <option key={t.historyID} value={t.historyID}>
+                            {t.amount} điểm - {t.description} ({new Date(t.createdAt).toLocaleDateString("vi-VN")})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm cần thu hồi</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={revocationAmount}
+                        onChange={(e) => setRevocationAmount(parseInt(e.target.value || "0"))}
+                        className="w-full px-4 py-3 bg-surface-container-low border-none rounded-lg font-bold text-sm text-error outline-none focus:ring-2 focus:ring-error/20 focus:border-error transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Fields for VOUCHER */}
+                {revocationUserID && !loadingUserDetails && revocationType === "VOUCHER" && (
+                  <div className="space-y-md border-t border-outline-variant/20 pt-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher muốn thu hồi</label>
+                      {userUnusedVouchers.length === 0 ? (
+                        <div className="p-3 bg-surface-container-low/50 border border-outline-variant/10 rounded-lg text-xs font-semibold text-on-surface-variant/70">
+                          Thành viên này không sở hữu voucher đặc quyền nào chưa sử dụng.
+                        </div>
+                      ) : (
+                        <select
+                          value={selectedUserVoucherId}
+                          onChange={(e) => {
+                            const valId = e.target.value;
+                            setSelectedUserVoucherId(valId);
+                            if (valId) {
+                              const uv = userUnusedVouchers.find(v => v.userVoucherID.toString() === valId);
+                              if (uv) {
+                                setRevocationReason(`Thu hồi voucher ${uv.voucherCode} (${uv.voucherName}) phát qua đặc quyền`);
+                              }
+                            } else {
+                              setRevocationReason("");
+                            }
+                          }}
+                          required
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        >
+                          <option value="">-- Chọn voucher trong ví --</option>
+                          {userUnusedVouchers.map(uv => (
+                            <option key={uv.userVoucherID} value={uv.userVoucherID}>
+                              {uv.voucherCode} - {uv.voucherName} (Thu thập: {new Date(uv.collectedAt).toLocaleDateString("vi-VN")})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reason */}
+                {revocationUserID && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Lý do thu hồi</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={revocationReason}
+                      onChange={(e) => setRevocationReason(e.target.value)}
+                      placeholder={revocationType === "POINTS" ? "Mô tả lý do thu hồi điểm..." : "Mô tả lý do thu hồi voucher..."}
+                      className="w-full px-4 py-3 bg-surface-container-low border-none rounded-lg font-semibold text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                    />
                   </div>
                 )}
               </div>
 
-              {revocationUserID && (
-                <div className="p-3 bg-surface-container-low border border-outline-variant rounded-lg text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-                  ID thành viên: {revocationUserID}
-                </div>
-              )}
-
-              {/* Amount */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm cần thu hồi</label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  value={revocationAmount}
-                  onChange={(e) => setRevocationAmount(parseInt(e.target.value || "0"))}
-                  className="w-full px-4 py-3 bg-surface-container-low border-none rounded-lg font-bold text-sm text-error outline-none focus:ring-2 focus:ring-error/20 focus:border-error transition-all"
-                />
-              </div>
-
-              {/* Reason */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Lý do thu hồi điểm</label>
-                <textarea
-                  required
-                  rows={3}
-                  value={revocationReason}
-                  onChange={(e) => setRevocationReason(e.target.value)}
-                  placeholder="Mô tả lý do: phát hiện gian lận tích lũy, hoàn tiền/trả đơn hàng thủ công..."
-                  className="w-full px-4 py-3 bg-surface-container-low border-none rounded-lg font-semibold text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
+              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -2222,6 +2431,8 @@ export default function AdminLoyaltyPage() {
                     setUserSearchTerm("");
                     setRevocationAmount(0);
                     setRevocationReason("");
+                    setSelectedEarnTransactionId("");
+                    setSelectedUserVoucherId("");
                   }}
                   className="px-lg py-md rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
                   disabled={submittingRevocation}
@@ -2230,7 +2441,7 @@ export default function AdminLoyaltyPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingRevocation || !revocationUserID}
+                  disabled={submittingRevocation || !revocationUserID || (revocationType === "VOUCHER" && !selectedUserVoucherId)}
                   className="px-lg py-md rounded-full bg-error text-on-error hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
                 >
                   {submittingRevocation ? "Đang xử lý..." : "Xác nhận thu hồi"}
@@ -2244,8 +2455,8 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: EARN POLICY FORM -------------------- */}
       {showEarnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <h3 className="text-lg font-headline-md text-on-surface font-bold">
                 {editingEarnPolicy ? "Cập nhật cơ chế tích điểm" : "Thêm cơ chế tích điểm mới"}
               </h3>
@@ -2260,104 +2471,107 @@ export default function AdminLoyaltyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEarn} className="p-md space-y-md">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên chính sách</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  defaultValue={editingEarnPolicy?.name || ""}
-                  placeholder="Ví dụ: Tích điểm mặc định, Tích điểm lễ Tết..."
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSaveEarn} className="flex flex-col min-h-0 flex-1">
+              <div className="p-md space-y-md overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số tiền mua hàng (VND)</label>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên chính sách</label>
                   <input
-                    type="number"
-                    name="vndAmount"
+                    type="text"
+                    name="name"
                     required
-                    min={1}
-                    defaultValue={editingEarnPolicy?.vndAmount ?? 1000}
+                    defaultValue={editingEarnPolicy?.name || ""}
+                    placeholder="Ví dụ: Tích điểm mặc định, Tích điểm lễ Tết..."
                     className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm nhận được</label>
-                  <input
-                    type="number"
-                    name="pointsEarned"
-                    required
-                    min={1}
-                    defaultValue={editingEarnPolicy?.pointsEarned ?? 10}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số tiền mua hàng (VND)</label>
+                    <input
+                      type="number"
+                      name="vndAmount"
+                      required
+                      min={1}
+                      defaultValue={editingEarnPolicy?.vndAmount ?? 1000}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm nhận được</label>
+                    <input
+                      type="number"
+                      name="pointsEarned"
+                      required
+                      min={1}
+                      defaultValue={editingEarnPolicy?.pointsEarned ?? 10}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại chính sách</label>
+                    <select
+                      name="isCampaign"
+                      defaultValue={editingEarnPolicy?.isCampaign ? "true" : "false"}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    >
+                      <option value="false">Mặc định hệ thống</option>
+                      <option value="true">Chiến dịch tạm thời</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hệ số nhân (Campaign)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="multiplier"
+                      required
+                      min="0.1"
+                      defaultValue={editingEarnPolicy?.multiplier ?? 1.0}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày bắt đầu</label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      defaultValue={editingEarnPolicy?.startDate ? editingEarnPolicy.startDate.split("T")[0] : ""}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày kết thúc</label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      defaultValue={editingEarnPolicy?.endDate ? editingEarnPolicy.endDate.split("T")[0] : ""}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại chính sách</label>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái kích hoạt</label>
                   <select
-                    name="isCampaign"
-                    defaultValue={editingEarnPolicy?.isCampaign ? "true" : "false"}
+                    name="isActive"
+                    defaultValue={editingEarnPolicy?.isActive === false ? "false" : "true"}
                     className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
                   >
-                    <option value="false">Mặc định hệ thống</option>
-                    <option value="true">Chiến dịch tạm thời</option>
+                    <option value="true">Đang kích hoạt</option>
+                    <option value="false">Tạm khóa</option>
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hệ số nhân (Campaign)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="multiplier"
-                    required
-                    min="0.1"
-                    defaultValue={editingEarnPolicy?.multiplier ?? 1.0}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
+
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày bắt đầu</label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    defaultValue={editingEarnPolicy?.startDate ? editingEarnPolicy.startDate.split("T")[0] : ""}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày kết thúc</label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    defaultValue={editingEarnPolicy?.endDate ? editingEarnPolicy.endDate.split("T")[0] : ""}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái kích hoạt</label>
-                <select
-                  name="isActive"
-                  defaultValue={editingEarnPolicy?.isActive === false ? "false" : "true"}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                >
-                  <option value="true">Đang kích hoạt</option>
-                  <option value="false">Tạm khóa</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
+              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -2383,8 +2597,8 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: REDEEM POLICY FORM -------------------- */}
       {showRedeemModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <h3 className="text-lg font-headline-md text-on-surface font-bold">
                 {editingRedeemPolicy ? "Cập nhật quy tắc đổi điểm" : "Thêm quy tắc đổi điểm mới"}
               </h3>
@@ -2399,101 +2613,104 @@ export default function AdminLoyaltyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveRedeem} className="p-md space-y-md">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quy tắc</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  defaultValue={editingRedeemPolicy?.name || ""}
-                  placeholder="Ví dụ: Đổi điểm mặc định, Tỷ lệ ưu đãi hạng Vàng..."
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSaveRedeem} className="flex flex-col min-h-0 flex-1">
+              <div className="p-md space-y-md overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm đổi</label>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quy tắc</label>
                   <input
-                    type="number"
-                    name="pointsToRedeem"
+                    type="text"
+                    name="name"
                     required
-                    min={1}
-                    defaultValue={editingRedeemPolicy?.pointsToRedeem ?? 1}
+                    defaultValue={editingRedeemPolicy?.name || ""}
+                    placeholder="Ví dụ: Đổi điểm mặc định, Tỷ lệ ưu đãi hạng Vàng..."
                     className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền giảm được (VND)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    name="discountVnd"
-                    required
-                    min={0.1}
-                    defaultValue={editingRedeemPolicy?.discountVnd ?? 1}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Áp dụng cho hạng</label>
-                <select
-                  name="tierID"
-                  defaultValue={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
-                  disabled={selectedTierForPrivileges !== null}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
-                >
-                  <option value="">Áp dụng chung toàn hệ thống</option>
-                  {tiers.map(t => (
-                    <option key={t.tierID} value={t.tierID}>{t.tierName}</option>
-                  ))}
-                </select>
-                {selectedTierForPrivileges !== null && (
-                  <input
-                    type="hidden"
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm đổi</label>
+                    <input
+                      type="number"
+                      name="pointsToRedeem"
+                      required
+                      min={1}
+                      defaultValue={editingRedeemPolicy?.pointsToRedeem ?? 1}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền giảm được (VND)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      name="discountVnd"
+                      required
+                      min={0.1}
+                      defaultValue={editingRedeemPolicy?.discountVnd ?? 1}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Áp dụng cho hạng</label>
+                  <select
                     name="tierID"
-                    value={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày bắt đầu</label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    defaultValue={editingRedeemPolicy?.startDate ? editingRedeemPolicy.startDate.split("T")[0] : ""}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
+                    defaultValue={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
+                    disabled={selectedTierForPrivileges !== null}
+                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Áp dụng chung toàn hệ thống</option>
+                    {tiers.map(t => (
+                      <option key={t.tierID} value={t.tierID}>{t.tierName}</option>
+                    ))}
+                  </select>
+                  {selectedTierForPrivileges !== null && (
+                    <input
+                      type="hidden"
+                      name="tierID"
+                      value={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
+                    />
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày kết thúc</label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    defaultValue={editingRedeemPolicy?.endDate ? editingRedeemPolicy.endDate.split("T")[0] : ""}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày bắt đầu</label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      defaultValue={editingRedeemPolicy?.startDate ? editingRedeemPolicy.startDate.split("T")[0] : ""}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày kết thúc</label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      defaultValue={editingRedeemPolicy?.endDate ? editingRedeemPolicy.endDate.split("T")[0] : ""}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái hoạt động</label>
+                  <select
+                    name="isActive"
+                    defaultValue={editingRedeemPolicy?.isActive === false ? "false" : "true"}
+                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                  >
+                    <option value="true">Đang hoạt động</option>
+                    <option value="false">Tạm khóa</option>
+                  </select>
+                </div>
+
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái hoạt động</label>
-                <select
-                  name="isActive"
-                  defaultValue={editingRedeemPolicy?.isActive === false ? "false" : "true"}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                >
-                  <option value="true">Đang hoạt động</option>
-                  <option value="false">Tạm khóa</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
+              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -2519,8 +2736,8 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: TIER CONFIG FORM -------------------- */}
       {showTierModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[480px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <h3 className="text-lg font-headline-md text-on-surface font-bold">
                 {editingTier ? "Chỉnh sửa hạng thành viên" : "Tạo hạng thành viên mới"}
               </h3>
@@ -2535,76 +2752,79 @@ export default function AdminLoyaltyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveTier} className="p-md space-y-md">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên hạng</label>
-                <input
-                  type="text"
-                  name="tierName"
-                  required
-                  defaultValue={editingTier?.tierName || ""}
-                  placeholder="Ví dụ: Bạc, Vàng, Kim Cương..."
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngưỡng điểm tối thiểu (Min Points)</label>
-                <input
-                  type="number"
-                  name="minPoints"
-                  required
-                  min={0}
-                  defaultValue={editingTier?.minPoints ?? 0}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSaveTier} className="flex flex-col min-h-0 flex-1">
+              <div className="p-md space-y-md overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Màu sắc hiển thị</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="color"
-                      name="colorHex"
-                      defaultValue={editingTier?.colorHex || "#64748b"}
-                      className="w-10 h-10 border border-outline-variant/30 rounded-lg bg-transparent cursor-pointer p-0 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      placeholder="#64748b"
-                      name="colorHexText"
-                      defaultValue={editingTier?.colorHex || "#64748b"}
-                      className="w-full px-3 py-md bg-surface-container-low border-none rounded-lg font-mono text-center text-xs font-bold text-on-surface focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Biểu tượng Huy hiệu</label>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên hạng</label>
                   <input
                     type="text"
-                    name="badgeIcon"
+                    name="tierName"
                     required
-                    defaultValue={editingTier ? cleanIconName(editingTier.badgeIcon) : "workspace_premium"}
-                    placeholder="award_star, star, v.v."
+                    defaultValue={editingTier?.tierName || ""}
+                    placeholder="Ví dụ: Bạc, Vàng, Kim Cương..."
                     className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngưỡng điểm tối thiểu (Min Points)</label>
+                  <input
+                    type="number"
+                    name="minPoints"
+                    required
+                    min={0}
+                    defaultValue={editingTier?.minPoints ?? 0}
+                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Màu sắc hiển thị</label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        name="colorHex"
+                        defaultValue={editingTier?.colorHex || "#64748b"}
+                        className="w-10 h-10 border border-outline-variant/30 rounded-lg bg-transparent cursor-pointer p-0 shrink-0"
+                      />
+                      <input
+                        type="text"
+                        placeholder="#64748b"
+                        name="colorHexText"
+                        defaultValue={editingTier?.colorHex || "#64748b"}
+                        className="w-full px-3 py-md bg-surface-container-low border-none rounded-lg font-mono text-center text-xs font-bold text-on-surface focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Biểu tượng Huy hiệu</label>
+                    <input
+                      type="text"
+                      name="badgeIcon"
+                      required
+                      defaultValue={editingTier ? cleanIconName(editingTier.badgeIcon) : "workspace_premium"}
+                      placeholder="award_star, star, v.v."
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cho phép hoạt động</label>
+                  <select
+                    name="isActive"
+                    defaultValue={editingTier?.isActive === false ? "false" : "true"}
+                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                  >
+                    <option value="true">Cho phép thăng hạng</option>
+                    <option value="false">Tạm ẩn/Khóa hạng</option>
+                  </select>
+                </div>
+
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cho phép hoạt động</label>
-                <select
-                  name="isActive"
-                  defaultValue={editingTier?.isActive === false ? "false" : "true"}
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                >
-                  <option value="true">Cho phép thăng hạng</option>
-                  <option value="false">Tạm ẩn/Khóa hạng</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
+              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -2628,8 +2848,8 @@ export default function AdminLoyaltyPage() {
       )}      {/* -------------------- MODAL: PRIVILEGE FORM -------------------- */}
       {showPrivilegeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[650px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <h3 className="text-lg font-headline-md text-on-surface font-bold">
                 {editingPrivilege ? "Chỉnh sửa đặc quyền" : "Thêm đặc quyền mới"}
               </h3>
@@ -2644,122 +2864,208 @@ export default function AdminLoyaltyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSavePrivilege} className="p-md space-y-md">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên đặc quyền</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  defaultValue={editingPrivilege?.name || ""}
-                  placeholder="Ví dụ: Voucher hàng tháng Gold, Tặng xu sinh nhật..."
-                  className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSavePrivilege} className="flex flex-col min-h-0 flex-1">
+              <div className="p-md space-y-md overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại đặc quyền</label>
-                  <select
-                    value={privilegeType}
-                    onChange={(e) => setPrivilegeType(e.target.value)}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                  >
-                    <option value="VOUCHER">Voucher hàng tháng</option>
-                    <option value="FREESHIP">Miễn phí vận chuyển</option>
-                    <option value="DISCOUNT">Giảm giá đơn hàng</option>
-                    <option value="CASHBACK">Hoàn xu / tích lũy</option>
-                    <option value="SUPPORT">Ưu tiên hỗ trợ</option>
-                    <option value="BIRTHDAY_GIFT">Quà tặng sinh nhật</option>
-                  </select>
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên đặc quyền</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    defaultValue={editingPrivilege?.name || ""}
+                    placeholder="Ví dụ: Voucher hàng tháng Gold, Tặng xu sinh nhật..."
+                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái đặc quyền</label>
-                  <select
-                    name="isActive"
-                    defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                  >
-                    <option value="true">Đang kích hoạt</option>
-                    <option value="false">Tạm ẩn</option>
-                  </select>
-                </div>
-              </div>
 
-              {/* DYNAMIC FIELDS FOR VOUCHER */}
-              {privilegeType === "VOUCHER" && (
-                <div className="space-y-4 border-t border-outline-variant/20 pt-4 animate-in fade-in duration-200">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2 space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Chế độ Voucher</label>
-                      <div className="flex gap-6 mt-1">
-                        <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
-                          <input
-                            type="radio"
-                            name="voucherMode"
-                            value="EXISTING"
-                            checked={voucherMode === "EXISTING"}
-                            onChange={() => {
-                              setVoucherMode("EXISTING");
-                              setVoucherCode("");
-                            }}
-                            className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
-                          />
-                          Sử dụng Voucher có sẵn
-                        </label>
-                        <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
-                          <input
-                            type="radio"
-                            name="voucherMode"
-                            value="CUSTOM"
-                            checked={voucherMode === "CUSTOM"}
-                            onChange={() => {
-                              setVoucherMode("CUSTOM");
-                              setVoucherCode("");
-                            }}
-                            className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
-                          />
-                          Tạo Voucher riêng mới
-                        </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại đặc quyền</label>
+                    <select
+                      value={privilegeType}
+                      onChange={(e) => setPrivilegeType(e.target.value)}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    >
+                      <option value="VOUCHER">Voucher hàng tháng</option>
+                      <option value="FREESHIP">Miễn phí vận chuyển</option>
+                      <option value="DISCOUNT">Giảm giá đơn hàng</option>
+                      <option value="CASHBACK">Hoàn xu / tích lũy</option>
+                      <option value="SUPPORT">Ưu tiên hỗ trợ</option>
+                      <option value="BIRTHDAY_GIFT">Quà tặng sinh nhật</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái đặc quyền</label>
+                    <select
+                      name="isActive"
+                      defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
+                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    >
+                      <option value="true">Đang kích hoạt</option>
+                      <option value="false">Tạm ẩn</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* DYNAMIC FIELDS FOR VOUCHER */}
+                {privilegeType === "VOUCHER" && (
+                  <div className="space-y-4 border-t border-outline-variant/20 pt-4 animate-in fade-in duration-200">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Chế độ Voucher</label>
+                        <div className="flex gap-6 mt-1">
+                          <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                            <input
+                              type="radio"
+                              name="voucherMode"
+                              value="EXISTING"
+                              checked={voucherMode === "EXISTING"}
+                              onChange={() => {
+                                setVoucherMode("EXISTING");
+                                setVoucherCode("");
+                              }}
+                              className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                            />
+                            Sử dụng Voucher có sẵn
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                            <input
+                              type="radio"
+                              name="voucherMode"
+                              value="CUSTOM"
+                              checked={voucherMode === "CUSTOM"}
+                              onChange={() => {
+                                setVoucherMode("CUSTOM");
+                                setVoucherCode("");
+                              }}
+                              className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                            />
+                            Tạo Voucher riêng mới
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {voucherMode === "EXISTING" ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {voucherMode === "EXISTING" ? (
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher</label>
+                          <select
+                            value={voucherCode}
+                            onChange={(e) => setVoucherCode(e.target.value)}
+                            required
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                          >
+                            <option value="">-- Chọn Voucher --</option>
+                            {vouchers.map(v => (
+                              <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền tố Mã Voucher</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Ví dụ: VCGOLD"
+                            value={voucherCode}
+                            onChange={(e) => setVoucherCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          />
+                          <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
+                            Hệ thống sẽ thêm đuôi tháng năm. Ví dụ: VCGOLD_M0626
+                          </span>
+                        </div>
+                      )}
+
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher</label>
-                        <select
-                          value={voucherCode}
-                          onChange={(e) => setVoucherCode(e.target.value)}
-                          required
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                        >
-                          <option value="">-- Chọn Voucher --</option>
-                          {vouchers.map(v => (
-                            <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền tố Mã Voucher</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng phát / tháng</label>
                         <input
-                          type="text"
+                          type="number"
                           required
-                          placeholder="Ví dụ: VCGOLD"
-                          value={voucherCode}
-                          onChange={(e) => setVoucherCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                          min={1}
+                          value={quantity}
+                          onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Thời hạn sử dụng (ngày)</label>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          value={validityDays}
+                          onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
                           className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                         />
                         <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
-                          Hệ thống sẽ thêm đuôi tháng năm. Ví dụ: VCGOLD_M0626
+                          Số ngày voucher có hiệu lực kể từ lúc phát
                         </span>
                       </div>
-                    )}
+                    </div>
 
+                    {voucherMode === "CUSTOM" && (
+                      <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
+                          <select
+                            value={discountType}
+                            onChange={(e) => setDiscountType(e.target.value)}
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                          >
+                            <option value="PERCENT">Phần trăm (%)</option>
+                            <option value="FIXED">Số tiền cố định (đ)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                          <input
+                            type="number"
+                            required
+                            min={1}
+                            value={discountValue}
+                            onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
+                          <input
+                            type="number"
+                            required={discountType === "PERCENT"}
+                            disabled={discountType !== "PERCENT"}
+                            value={maxDiscount}
+                            onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (đ)</label>
+                          <input
+                            type="number"
+                            required
+                            min={0}
+                            value={minOrderValue}
+                            onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* DYNAMIC FIELDS FOR FREESHIP */}
+                {privilegeType === "FREESHIP" && (
+                  <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng phát / tháng</label>
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượt / tháng</label>
                       <input
                         type="number"
                         required
@@ -2769,295 +3075,212 @@ export default function AdminLoyaltyPage() {
                         className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                       />
                     </div>
-
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Thời hạn sử dụng (ngày)</label>
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hỗ trợ tối đa (VNĐ)</label>
                       <input
                         type="number"
                         required
                         min={1}
-                        value={validityDays}
-                        onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
+                        value={maxSupport}
+                        onChange={(e) => setMaxSupport(parseInt(e.target.value || "0"))}
                         className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                       />
-                      <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
-                        Số ngày voucher có hiệu lực kể từ lúc phát
-                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (VNĐ)</label>
+                      <input
+                        type="number"
+                        required
+                        min={0}
+                        value={minOrderValue}
+                        onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
                     </div>
                   </div>
+                )}
 
-                  {voucherMode === "CUSTOM" && (
-                    <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
-                        <select
-                          value={discountType}
-                          onChange={(e) => setDiscountType(e.target.value)}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                        >
-                          <option value="PERCENT">Phần trăm (%)</option>
-                          <option value="FIXED">Số tiền cố định (đ)</option>
-                        </select>
+                {/* DYNAMIC FIELDS FOR DISCOUNT */}
+                {privilegeType === "DISCOUNT" && (
+                  <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
+                      <select
+                        value={discountType}
+                        onChange={(e) => setDiscountType(e.target.value)}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                      >
+                        <option value="PERCENT">Phần trăm (%)</option>
+                        <option value="FIXED">Số tiền cố định (đ)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={discountValue}
+                        onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
+                      <input
+                        type="number"
+                        required={discountType === "PERCENT"}
+                        disabled={discountType !== "PERCENT"}
+                        value={maxDiscount}
+                        onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* DYNAMIC FIELDS FOR CASHBACK */}
+                {privilegeType === "CASHBACK" && (
+                  <div className="grid grid-cols-2 gap-4 border-t border-outline-variant/20 pt-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tỷ lệ hoàn xu (%)</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        max={100}
+                        value={cashbackRate}
+                        onChange={(e) => setCashbackRate(parseInt(e.target.value || "0"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hoàn xu tối đa (xu/tháng)</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={maxCashback}
+                        onChange={(e) => setMaxCashback(parseInt(e.target.value || "0"))}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* DYNAMIC FIELDS FOR SUPPORT */}
+                {privilegeType === "SUPPORT" && (
+                  <div className="p-sm bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-semibold text-on-surface-variant/80 border-t pt-4">
+                    Không cần cấu hình thông số. Hạng thành viên sở hữu đặc quyền này sẽ luôn được ưu tiên hỗ trợ trước.
+                  </div>
+                )}
+
+                {/* DYNAMIC FIELDS FOR BIRTHDAY GIFT */}
+                {privilegeType === "BIRTHDAY_GIFT" && (
+                  <div className="space-y-4 border-t border-outline-variant/20 pt-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại quà tặng</label>
+                      <select
+                        value={birthdayGiftType}
+                        onChange={(e) => setBirthdayGiftType(e.target.value)}
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                      >
+                        <option value="VOUCHER">Voucher giảm giá</option>
+                        <option value="POINTS">Điểm thưởng Loyalty</option>
+                        <option value="COINS">Xu trong ví</option>
+                        <option value="PHYSICAL">Quà tặng vật lý</option>
+                      </select>
+                    </div>
+
+                    {birthdayGiftType === "VOUCHER" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher sinh nhật</label>
+                          <select
+                            value={birthdayVoucherCode}
+                            onChange={(e) => setBirthdayVoucherCode(e.target.value)}
+                            required
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                          >
+                            <option value="">-- Chọn Voucher --</option>
+                            {vouchers.map(v => (
+                              <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng voucher</label>
+                          <input
+                            type="number"
+                            required
+                            min={1}
+                            value={birthdayQuantity}
+                            onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          />
+                        </div>
                       </div>
+                    )}
 
+                    {birthdayGiftType === "POINTS" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm tặng</label>
                         <input
                           type="number"
                           required
                           min={1}
-                          value={discountValue}
-                          onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
+                          value={birthdayPoints}
+                          onChange={(e) => setBirthdayPoints(parseInt(e.target.value || "1"))}
                           className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                         />
                       </div>
+                    )}
 
+                    {birthdayGiftType === "COINS" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
-                        <input
-                          type="number"
-                          required={discountType === "PERCENT"}
-                          disabled={discountType !== "PERCENT"}
-                          value={maxDiscount}
-                          onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (đ)</label>
-                        <input
-                          type="number"
-                          required
-                          min={0}
-                          value={minOrderValue}
-                          onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* DYNAMIC FIELDS FOR FREESHIP */}
-              {privilegeType === "FREESHIP" && (
-                <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượt / tháng</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hỗ trợ tối đa (VNĐ)</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={maxSupport}
-                      onChange={(e) => setMaxSupport(parseInt(e.target.value || "0"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (VNĐ)</label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={minOrderValue}
-                      onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* DYNAMIC FIELDS FOR DISCOUNT */}
-              {privilegeType === "DISCOUNT" && (
-                <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
-                    <select
-                      value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value)}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                    >
-                      <option value="PERCENT">Phần trăm (%)</option>
-                      <option value="FIXED">Số tiền cố định (đ)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
-                    <input
-                      type="number"
-                      required={discountType === "PERCENT"}
-                      disabled={discountType !== "PERCENT"}
-                      value={maxDiscount}
-                      onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* DYNAMIC FIELDS FOR CASHBACK */}
-              {privilegeType === "CASHBACK" && (
-                <div className="grid grid-cols-2 gap-4 border-t border-outline-variant/20 pt-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tỷ lệ hoàn xu (%)</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      max={100}
-                      value={cashbackRate}
-                      onChange={(e) => setCashbackRate(parseInt(e.target.value || "0"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hoàn xu tối đa (xu/tháng)</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={maxCashback}
-                      onChange={(e) => setMaxCashback(parseInt(e.target.value || "0"))}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* DYNAMIC FIELDS FOR SUPPORT */}
-              {privilegeType === "SUPPORT" && (
-                <div className="p-sm bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-semibold text-on-surface-variant/80 border-t pt-4">
-                  Không cần cấu hình thông số. Hạng thành viên sở hữu đặc quyền này sẽ luôn được ưu tiên hỗ trợ trước.
-                </div>
-              )}
-
-              {/* DYNAMIC FIELDS FOR BIRTHDAY GIFT */}
-              {privilegeType === "BIRTHDAY_GIFT" && (
-                <div className="space-y-4 border-t border-outline-variant/20 pt-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại quà tặng</label>
-                    <select
-                      value={birthdayGiftType}
-                      onChange={(e) => setBirthdayGiftType(e.target.value)}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                    >
-                      <option value="VOUCHER">Voucher giảm giá</option>
-                      <option value="POINTS">Điểm thưởng Loyalty</option>
-                      <option value="COINS">Xu trong ví</option>
-                      <option value="PHYSICAL">Quà tặng vật lý</option>
-                    </select>
-                  </div>
-
-                  {birthdayGiftType === "VOUCHER" && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher sinh nhật</label>
-                        <select
-                          value={birthdayVoucherCode}
-                          onChange={(e) => setBirthdayVoucherCode(e.target.value)}
-                          required
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
-                        >
-                          <option value="">-- Chọn Voucher --</option>
-                          {vouchers.map(v => (
-                            <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng voucher</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số xu tặng</label>
                         <input
                           type="number"
                           required
                           min={1}
-                          value={birthdayQuantity}
-                          onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
+                          value={birthdayCoins}
+                          onChange={(e) => setBirthdayCoins(parseInt(e.target.value || "1"))}
                           className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
                         />
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {birthdayGiftType === "POINTS" && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm tặng</label>
-                      <input
-                        type="number"
-                        required
-                        min={1}
-                        value={birthdayPoints}
-                        onChange={(e) => setBirthdayPoints(parseInt(e.target.value || "1"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                      />
-                    </div>
-                  )}
-
-                  {birthdayGiftType === "COINS" && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số xu tặng</label>
-                      <input
-                        type="number"
-                        required
-                        min={1}
-                        value={birthdayCoins}
-                        onChange={(e) => setBirthdayCoins(parseInt(e.target.value || "1"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                      />
-                    </div>
-                  )}
-
-                  {birthdayGiftType === "PHYSICAL" && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quà tặng vật lý</label>
-                        <input
-                          type="text"
-                          required
-                          value={birthdayGiftName}
-                          onChange={(e) => setBirthdayGiftName(e.target.value)}
-                          placeholder="Ví dụ: Bình nước giữ nhiệt"
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                        />
+                    {birthdayGiftType === "PHYSICAL" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quà tặng vật lý</label>
+                          <input
+                            type="text"
+                            required
+                            value={birthdayGiftName}
+                            onChange={(e) => setBirthdayGiftName(e.target.value)}
+                            placeholder="Ví dụ: Bình nước giữ nhiệt"
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Mô tả chi tiết</label>
+                          <input
+                            type="text"
+                            value={birthdayGiftDesc}
+                            onChange={(e) => setBirthdayGiftDesc(e.target.value)}
+                            placeholder="Mô tả quà tặng sinh nhật..."
+                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Mô tả chi tiết</label>
-                        <input
-                          type="text"
-                          value={birthdayGiftDesc}
-                          onChange={(e) => setBirthdayGiftDesc(e.target.value)}
-                          placeholder="Mô tả quà tặng sinh nhật..."
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                )}
 
-              <div className="flex justify-end gap-3 pt-md border-t border-outline-variant/20">
+              </div>
+
+              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -3135,7 +3358,7 @@ export default function AdminLoyaltyPage() {
 
                 {/* Suggestions list */}
                 {userSuggestions.length > 0 && (
-                  <div className="absolute top-16 left-0 right-0 z-50 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                  <div className="absolute top-16 left-0 right-0 z-50 bg-surface-container-lowest border border-outline-variant rounded-md shadow-xl overflow-hidden max-h-48 overflow-y-auto">
                     {userSuggestions.map((u) => (
                       <div
                         key={u.id}
