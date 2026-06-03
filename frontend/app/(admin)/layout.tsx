@@ -24,7 +24,8 @@ export default function AdminLayout({
         return;
       }
       try {
-        const res = await fetch("http://localhost:5101/api/Authentication/current-user", {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+        const res = await fetch(`${API_BASE_URL}/Authentication/current-user`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
