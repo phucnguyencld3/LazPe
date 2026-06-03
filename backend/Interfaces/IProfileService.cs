@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.DTOs;
+using PolyBabyAPI.DTOs;
 
 namespace PolyBabyAPI.Interface
 {
@@ -9,6 +9,7 @@ namespace PolyBabyAPI.Interface
         Task<bool> UpdateProfileAsync(string userId, UpdateProfileDto updateDto);
         Task<bool> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto);
         Task<UploadAvatarResponseDto> UploadAvatarAsync(string userId, IFormFile avatarFile);
+        Task<bool> UpdateNotificationSettingsAsync(string userId, UpdateNotificationSettingsDto settingsDto);
     }
 }
 

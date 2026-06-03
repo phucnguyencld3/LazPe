@@ -200,6 +200,18 @@ export default function AdminLayout({
                 <span className="font-label-md">Quản lý Loyalty</span>
               </Link>
             </div>
+
+            {/* Thông báo */}
+            <div className="space-y-1">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thông báo</span>
+              <Link
+                href="/admin/notifications"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">notifications</span>
+                <span className="font-label-md">Quản lý thông báo</span>
+              </Link>
+            </div>
           </nav>
           
           <div className="mt-auto px-4 pb-md pt-md">

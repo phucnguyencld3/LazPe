@@ -1,0 +1,694 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import { Loader, Plus, Search, Calendar, Play, AlertTriangle, Eye, Trash2, CheckCircle, Clock, XCircle, FileText, ChevronRight } from "lucide-react";
+import { toast } from "@/lib/toast";
+import { 
+  adminGetNotifications, 
+  adminDeleteNotification, 
+  adminSendNotificationNow, 
+  adminCancelNotificationSchedule, 
+  adminGetNotificationStats,
+  adminGetTemplates,
+  adminCreateTemplate,
+  adminUpdateTemplate,
+  adminDeleteTemplate
+} from "@/lib/api";
+
+// Import ApexCharts dynamically to avoid Hydration errors
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+type TabKey = "STATS" | "CAMPAIGNS" | "TEMPLATES";
+
+export default function AdminNotificationsPage() {
+  // State
+  const [token, setToken] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("STATS");
+  const [loading, setLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [stats, setStats] = useState<any | null>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Template Modal States
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [templateForm, setTemplateForm] = useState({
+    templateName: "",
+    templateCode: "",
+    templateContent: "",
+    isActive: true
+  });
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!savedToken) {
+      window.location.replace("/login");
+      return;
+    }
+    setToken(savedToken);
+    loadTabData(savedToken, activeTab);
+  }, [activeTab]);
+
+  const loadTabData = async (authToken: string, tab: TabKey) => {
+    setLoading(true);
+    try {
+      if (tab === "STATS") {
+        const statsData = await adminGetNotificationStats(authToken);
+        if (statsData) setStats(statsData);
+      } else if (tab === "CAMPAIGNS") {
+        const data = await adminGetNotifications(authToken);
+        if (data) setCampaigns(data);
+      } else if (tab === "TEMPLATES") {
+        const data = await adminGetTemplates(authToken);
+        if (data) setTemplates(data);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi khi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendNow = async (id: number) => {
+    if (!token) return;
+    if (!window.confirm("Bạn có chắc chắn muốn phát hành thông báo này ngay lập tức?")) return;
+
+    try {
+      const result = await adminSendNotificationNow(token, id);
+      if (result.success) {
+        toast.success("Thông báo đã được phát đi thành công!");
+        loadTabData(token, activeTab);
+      } else {
+        toast.error(result.message || "Gửi thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCancelSchedule = async (id: number) => {
+    if (!token) return;
+    if (!window.confirm("Bạn có chắc chắn muốn hủy lịch gửi của thông báo này?")) return;
+
+    try {
+      const result = await adminCancelNotificationSchedule(token, id);
+      if (result.success) {
+        toast.success("Đã hủy lịch gửi thành công");
+        loadTabData(token, activeTab);
+      } else {
+        toast.error(result.message || "Không thể hủy lịch gửi");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteCampaign = async (id: number) => {
+    if (!token) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa chiến dịch này? (Xóa mềm, dữ liệu vẫn được lưu trữ)")) return;
+
+    try {
+      const result = await adminDeleteNotification(token, id);
+      if (result.success) {
+        toast.success("Đã xóa chiến dịch thành công");
+        loadTabData(token, activeTab);
+      } else {
+        toast.error(result.message || "Xóa thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Template Handlers
+  const handleOpenTemplateModal = (tpl: any = null) => {
+    if (tpl) {
+      setEditingTemplate(tpl);
+      setTemplateForm({
+        templateName: tpl.templateName,
+        templateCode: tpl.templateCode,
+        templateContent: tpl.templateContent,
+        isActive: tpl.isActive
+      });
+    } else {
+      setEditingTemplate(null);
+      setTemplateForm({
+        templateName: "",
+        templateCode: "",
+        templateContent: "",
+        isActive: true
+      });
+    }
+    setTemplateModalOpen(true);
+  };
+
+  const handleTemplateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (!templateForm.templateName || !templateForm.templateCode || !templateForm.templateContent) {
+      toast.error("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    try {
+      let result;
+      if (editingTemplate) {
+        result = await adminUpdateTemplate(token, editingTemplate.id, templateForm);
+      } else {
+        result = await adminCreateTemplate(token, templateForm);
+      }
+
+      if (result.success) {
+        toast.success(editingTemplate ? "Cập nhật mẫu thành công" : "Tạo mẫu mới thành công");
+        setTemplateModalOpen(false);
+        loadTabData(token, "TEMPLATES");
+      } else {
+        toast.error(result.message || "Thao tác thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteTemplate = async (id: number) => {
+    if (!token) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa mẫu thông báo này?")) return;
+
+    try {
+      const result = await adminDeleteTemplate(token, id);
+      if (result.success) {
+        toast.success("Đã xóa mẫu thành công");
+        loadTabData(token, "TEMPLATES");
+      } else {
+        toast.error(result.message || "Xóa thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Styling Helpers
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Sent":
+        return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1 w-fit"><CheckCircle size={12} /> Đã gửi</span>;
+      case "Scheduled":
+        return <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold flex items-center gap-1 w-fit"><Clock size={12} /> Lập lịch</span>;
+      case "Draft":
+        return <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold flex items-center gap-1 w-fit"><FileText size={12} /> Bản nháp</span>;
+      case "Cancelled":
+        return <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1 w-fit"><XCircle size={12} /> Đã hủy</span>;
+      default:
+        return <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold w-fit">{status}</span>;
+    }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "Critical":
+        return <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-[10px] font-bold">Khẩn cấp</span>;
+      case "High":
+        return <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded text-[10px] font-bold">Cao</span>;
+      case "Medium":
+        return <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[10px] font-bold">Trung bình</span>;
+      default:
+        return <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-bold">Thấp</span>;
+    }
+  };
+
+  const formatDateTime = (dateStr?: string) => {
+    if (!dateStr) return "-";
+    const date = new Date(dateStr);
+    return date.toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+  };
+
+  const filteredCampaigns = campaigns.filter(c => 
+    c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Chart configs
+  const timeSeriesChartOptions = stats ? {
+    chart: { id: "time-series-notif", type: "line" as const, toolbar: { show: false } },
+    colors: ["#ec4899", "#6366f1"],
+    stroke: { curve: "smooth" as const, width: 3 },
+    xaxis: { categories: stats.sentOverTime?.map((d: any) => d.date) || [] },
+    markers: { size: 4 },
+    dataLabels: { enabled: false },
+    legend: { position: "top" as const }
+  } : {};
+
+  const timeSeriesChartSeries = stats ? [
+    { name: "Số lượng gửi", data: stats.sentOverTime?.map((d: any) => d.sentCount) || [] },
+    { name: "Số lượng đã đọc", data: stats.sentOverTime?.map((d: any) => d.readCount) || [] }
+  ] : [];
+
+  const typeChartOptions = stats ? {
+    chart: { type: "bar" as const, toolbar: { show: false } },
+    colors: ["#f43f5e"],
+    plotOptions: { bar: { borderRadius: 6, horizontal: true } },
+    xaxis: { categories: stats.readRatesByType?.map((t: any) => t.typeName) || [] },
+    dataLabels: {
+      formatter: function (val: number) {
+        return val + "%";
+      }
+    }
+  } : {};
+
+  const typeChartSeries = stats ? [
+    { name: "Tỷ lệ đọc", data: stats.readRatesByType?.map((t: any) => t.readRate) || [] }
+  ] : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Header Panel */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Quản lý Thông báo (Notification Center)</h1>
+          <p className="text-xs text-slate-500 font-semibold mt-1">Lập chiến dịch tiếp thị, gửi thông báo hệ thống và theo dõi hiệu suất tương tác</p>
+        </div>
+
+        <Link
+          href="/admin/notifications/create"
+          className="px-5 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all duration-200 active:scale-95 shadow-md shadow-rose-500/10 w-fit"
+        >
+          <Plus size={16} /> Tạo thông báo mới
+        </Link>
+      </div>
+
+      {/* Tabs Menu */}
+      <div className="flex gap-2 border-b border-slate-200 pb-1">
+        {(
+          [
+            { key: "STATS", label: "Thống kê hiệu quả", icon: "bar_chart" },
+            { key: "CAMPAIGNS", label: "Lịch sử chiến dịch", icon: "history" },
+            { key: "TEMPLATES", label: "Mẫu thông báo", icon: "file_copy" }
+          ] as const
+        ).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-2 px-5 py-3 rounded-t-xl text-xs font-bold transition-all border-b-2 -mb-1.5 focus:outline-none ${
+              activeTab === tab.key
+                ? "border-rose-500 text-rose-600 bg-white"
+                : "border-transparent text-slate-500 hover:text-rose-500"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Loading overlay */}
+      {loading ? (
+        <div className="bg-white rounded-2xl p-16 border border-slate-100 shadow-sm flex flex-col items-center justify-center min-h-[400px]">
+          <Loader className="animate-spin text-rose-500 mb-3" size={36} />
+          <p className="text-xs text-slate-500 font-semibold">Đang tải dữ liệu...</p>
+        </div>
+      ) : (
+        <>
+          {/* TAB 1: STATISTICS */}
+          {activeTab === "STATS" && stats && (
+            <div className="space-y-6">
+              {/* KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {[
+                  { label: "Tổng chiến dịch", value: stats.totalNotifications, icon: "campaign", color: "text-blue-500 bg-blue-50 border-blue-100" },
+                  { label: "Đã phát hành", value: stats.totalSent, icon: "done_all", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
+                  { label: "Tổng người nhận", value: stats.totalRecipients, icon: "groups", color: "text-purple-500 bg-purple-50 border-purple-100" },
+                  { label: "Tỷ lệ đọc trung bình", value: `${stats.overallReadRate}%`, icon: "mark_chat_read", color: "text-pink-500 bg-pink-50 border-pink-100" },
+                  { label: "Tỷ lệ tương tác", value: `${stats.engagementRate}%`, icon: "ads_click", color: "text-amber-500 bg-amber-50 border-amber-100" }
+                ].map((kpi, idx) => (
+                  <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{kpi.label}</p>
+                      <h3 className="text-xl font-extrabold text-slate-800 mt-1">{kpi.value}</h3>
+                    </div>
+                    <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${kpi.color}`}>
+                      <span className="material-symbols-outlined text-xl">{kpi.icon}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Charts grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Sent over time */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <span className="material-symbols-outlined text-rose-500">timeline</span> Tương tác chiến dịch (7 ngày qua)
+                  </h3>
+                  <div className="h-64">
+                    <Chart options={timeSeriesChartOptions} series={timeSeriesChartSeries} type="line" height="100%" />
+                  </div>
+                </div>
+
+                {/* Read rates by type */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <span className="material-symbols-outlined text-rose-500">bar_chart</span> Hiệu suất đọc theo loại thông báo (%)
+                  </h3>
+                  <div className="h-64">
+                    <Chart options={typeChartOptions} series={typeChartSeries} type="bar" height="100%" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Campaigns table */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <span className="material-symbols-outlined text-rose-500">stars</span> Top 5 chiến dịch hiệu quả nhất
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        <th className="pb-3 pl-4">Mã</th>
+                        <th className="pb-3">Tiêu đề chiến dịch</th>
+                        <th className="pb-3">Loại thông báo</th>
+                        <th className="pb-3">Tổng người nhận</th>
+                        <th className="pb-3">Đã đọc</th>
+                        <th className="pb-3 pr-4">Tỷ lệ đọc</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                      {stats.topCampaigns?.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-6 text-slate-400">Chưa có chiến dịch nào được ghi nhận hiệu suất.</td>
+                        </tr>
+                      ) : (
+                        stats.topCampaigns?.map((camp: any) => (
+                          <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-3 pl-4 font-mono font-bold text-slate-400">{camp.code}</td>
+                            <td className="py-3 font-bold text-slate-800">{camp.title}</td>
+                            <td className="py-3 capitalize">{camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}</td>
+                            <td className="py-3">{camp.recipientsCount}</td>
+                            <td className="py-3">{camp.readCount}</td>
+                            <td className="py-3 pr-4 text-rose-500 font-bold">{camp.readRate}%</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CAMPAIGNS LIST */}
+          {activeTab === "CAMPAIGNS" && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center gap-4 justify-between bg-slate-50/50">
+                <div className="relative w-full sm:w-80">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Search size={14} />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm chiến dịch bằng tiêu đề, mã..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                  />
+                </div>
+                <span className="text-xs text-slate-400 font-bold">Hiển thị {filteredCampaigns.length} chiến dịch</span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/20">
+                      <th className="py-3.5 pl-6">Mã</th>
+                      <th>Chiến dịch</th>
+                      <th>Loại / Mức độ</th>
+                      <th>Đối tượng nhận</th>
+                      <th>Trạng thái</th>
+                      <th>Lịch gửi</th>
+                      <th>Tương tác</th>
+                      <th className="pr-6 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                    {filteredCampaigns.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="text-center py-16 text-slate-400">
+                          <span className="material-symbols-outlined text-4xl text-slate-300 mb-1">campaign</span>
+                          <p className="font-medium text-xs mt-1">Không tìm thấy chiến dịch nào</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCampaigns.map((camp) => (
+                        <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4 pl-6 font-mono font-bold text-slate-400">{camp.code}</td>
+                          <td className="py-4 max-w-xs">
+                            <p className="font-bold text-slate-800 truncate" title={camp.title}>{camp.title}</p>
+                            <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5" title={camp.shortDescription}>{camp.shortDescription}</p>
+                          </td>
+                          <td className="py-4 space-y-1">
+                            <p className="capitalize font-bold text-slate-600 text-[11px]">
+                              {camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}
+                            </p>
+                            {getPriorityBadge(camp.priority)}
+                          </td>
+                          <td className="py-4">
+                            <span className="px-2 py-1 bg-slate-50 border border-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                              {camp.targetTypeName}
+                            </span>
+                            {camp.targetValue && (
+                              <p className="text-[9px] text-slate-400 mt-1 font-mono max-w-[120px] truncate" title={camp.targetValue}>
+                                {camp.targetValue}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-4">{getStatusBadge(camp.status)}</td>
+                          <td className="py-4 text-[11px] text-slate-500 font-bold">{formatDateTime(camp.publishedAt)}</td>
+                          <td className="py-4 text-[11px]">
+                            {camp.status === "Sent" ? (
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-slate-800">{camp.readCount} / {camp.recipientsCount} đọc</p>
+                                <p className="text-[10px] text-rose-500 font-bold">{camp.readRate}%</p>
+                              </div>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 pr-6 text-right">
+                            <div className="flex justify-end gap-1.5">
+                              {camp.status === "Scheduled" && (
+                                <button
+                                  onClick={() => handleCancelSchedule(camp.id)}
+                                  className="p-1.5 hover:bg-orange-50 text-orange-500 rounded-lg transition-colors"
+                                  title="Hủy lịch gửi"
+                                >
+                                  <span className="material-symbols-outlined text-[16px] font-bold">cancel_schedule_send</span>
+                                </button>
+                              )}
+                              {(camp.status === "Draft" || camp.status === "Scheduled" || camp.status === "Cancelled") && (
+                                <>
+                                  <button
+                                    onClick={() => handleSendNow(camp.id)}
+                                    className="p-1.5 hover:bg-emerald-50 text-emerald-500 rounded-lg transition-colors"
+                                    title="Gửi ngay bây giờ"
+                                  >
+                                    <Play size={14} />
+                                  </button>
+                                  <Link
+                                    href={`/admin/notifications/edit/${camp.id}`}
+                                    className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors flex items-center justify-center"
+                                    title="Chỉnh sửa"
+                                  >
+                                    <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
+                                  </Link>
+                                </>
+                              )}
+                              <button
+                                onClick={() => handleDeleteCampaign(camp.id)}
+                                className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-lg transition-colors"
+                                title="Xóa"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: TEMPLATES LIST */}
+          {activeTab === "TEMPLATES" && (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleOpenTemplateModal()}
+                  className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 shadow-sm"
+                >
+                  <Plus size={14} /> Tạo mẫu thông báo mới
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/20">
+                        <th className="py-3.5 pl-6">ID</th>
+                        <th>Tên Mẫu</th>
+                        <th>Mã Mẫu Code</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th className="pr-6 text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                      {templates.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-12 text-slate-400">Chưa có mẫu thông báo nào.</td>
+                        </tr>
+                      ) : (
+                        templates.map((tpl) => (
+                          <tr key={tpl.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4 pl-6 font-mono font-bold text-slate-400">{tpl.id}</td>
+                            <td className="py-4 font-bold text-slate-800">{tpl.templateName}</td>
+                            <td className="py-4 font-mono font-bold text-slate-400">{tpl.templateCode}</td>
+                            <td className="py-4">
+                              {tpl.isActive ? (
+                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[10px] font-bold">Kích hoạt</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-slate-50 text-slate-400 border border-slate-100 rounded text-[10px] font-bold">Tắt</span>
+                              )}
+                            </td>
+                            <td className="py-4 text-[11px] text-slate-400">{formatDateTime(tpl.createdAt)}</td>
+                            <td className="py-4 pr-6 text-right">
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleOpenTemplateModal(tpl)}
+                                  className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors"
+                                  title="Sửa mẫu"
+                                >
+                                  <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTemplate(tpl.id)}
+                                  className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                                  title="Xóa mẫu"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* TEMPLATE DIALOG MODAL */}
+      {templateModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800 text-sm">{editingTemplate ? "Chỉnh sửa mẫu" : "Tạo mẫu thông báo mới"}</h3>
+              <button 
+                onClick={() => setTemplateModalOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleTemplateSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tên mẫu</label>
+                <input
+                  type="text"
+                  value={templateForm.templateName}
+                  onChange={(e) => setTemplateForm({ ...templateForm, templateName: e.target.value })}
+                  placeholder="Ví dụ: Voucher Sinh Nhật Khách Hàng"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã mẫu (Code)</label>
+                <input
+                  type="text"
+                  value={templateForm.templateCode}
+                  onChange={(e) => setTemplateForm({ ...templateForm, templateCode: e.target.value.toUpperCase().replace(/\s+/g, "_") })}
+                  placeholder="Ví dụ: TPL_BIRTHDAY_GIFT"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                  disabled={!!editingTemplate}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nội dung mẫu (Content Template)</label>
+                <textarea
+                  rows={6}
+                  value={templateForm.templateContent}
+                  onChange={(e) => setTemplateForm({ ...templateForm, templateContent: e.target.value })}
+                  placeholder="Chúc mừng sinh nhật {FullName}! LazPe tặng bạn 1 voucher giảm 10% cho đơn hàng tiếp theo. Mã voucher: {VoucherCode}."
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                />
+                <p className="text-[10px] text-slate-400 mt-1.5 font-medium leading-relaxed">
+                  * Gợi ý: Có thể sử dụng các biến placeholder như {"{FullName}"}, {"{VoucherCode}"}, {"{TierName}"} để hệ thống tự động thay đổi giá trị theo từng người nhận.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="tpl-active"
+                  checked={templateForm.isActive}
+                  onChange={(e) => setTemplateForm({ ...templateForm, isActive: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-200 text-rose-500 focus:ring-rose-400"
+                />
+                <label htmlFor="tpl-active" className="text-xs font-semibold text-slate-700 select-none">
+                  Kích hoạt sử dụng mẫu này
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTemplateModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600"
+                >
+                  {editingTemplate ? "Cập nhật mẫu" : "Tạo mẫu"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

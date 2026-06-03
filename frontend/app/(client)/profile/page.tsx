@@ -19,7 +19,8 @@ import {
   getLoyaltyProfile,
   UserProfile,
   AddressItem,
-  normalizeName
+  normalizeName,
+  updateNotificationSettings
 } from "@/lib/api";
 
 import { ProfileHeader } from "@/components/client/profile/ProfileHeader";
@@ -104,14 +105,7 @@ export default function ProfilePage() {
 
     setToken(savedToken);
 
-    const savedNotifs = localStorage.getItem("notification_settings");
-    if (savedNotifs) {
-      try {
-        setNotificationSettings(JSON.parse(savedNotifs));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    // Gỡ bỏ load từ localStorage để dùng API backend trực tiếp
 
     const parsedUser = JSON.parse(savedUserJson);
     const userId = parsedUser.id || parsedUser.userId;
@@ -143,6 +137,11 @@ export default function ProfilePage() {
           email: profileData.email,
           phoneNumber: profileData.phoneNumber || "",
           dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.split("T")[0] : "",
+        });
+        setNotificationSettings({
+          emailNotifications: (profileData as any).receiveEmailNotifications ?? true,
+          orderUpdates: (profileData as any).receiveOrderUpdates ?? true,
+          promotions: (profileData as any).receivePromotions ?? true,
         });
       }
 
@@ -247,11 +246,24 @@ export default function ProfilePage() {
     }
   };
 
-  const handleNotificationToggle = (key: keyof typeof notificationSettings) => {
+  const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
+    if (!userProfile || !token) return;
     const updated = { ...notificationSettings, [key]: !notificationSettings[key] };
+    
     setNotificationSettings(updated);
-    localStorage.setItem("notification_settings", JSON.stringify(updated));
-    toast.success("Đã cập nhật cài đặt thông báo!");
+    try {
+      const result = await updateNotificationSettings(userProfile.userId, token, updated);
+      if (result.success) {
+        toast.success("Đã cập nhật cài đặt thông báo!");
+      } else {
+        toast.error(result.message || "Không thể lưu cài đặt");
+        setNotificationSettings(notificationSettings);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi kết nối khi cập nhật cài đặt");
+      setNotificationSettings(notificationSettings);
+    }
   };
 
   const handleAvatarUpdated = (newAvatarUrl: string) => {

@@ -69,7 +69,8 @@ try
             {
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                if (!string.IsNullOrEmpty(accessToken) && 
+                    (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub")))
                 {
                     context.Token = accessToken;
                 }
@@ -197,6 +198,7 @@ try
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
     // Core business services
+    builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<IBundleService, BundleService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<ICartService, CartService>();
@@ -360,6 +362,7 @@ try
     }
 
     app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
+    app.MapHub<PolyBabyAPI.Hubs.NotificationHub>("/notificationHub");
     app.MapControllers();
     app.MapControllerRoute(
         name: "areas",

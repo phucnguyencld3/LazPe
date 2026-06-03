@@ -67,6 +67,11 @@ namespace PolyBabyAPI.Data
         public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
         public DbSet<LoyaltyBirthdayGiftLog> LoyaltyBirthdayGiftLogs { get; set; }
 
+        // ===== Notification Center =====
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
+        public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -276,6 +281,37 @@ namespace PolyBabyAPI.Data
                       .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(h => new { h.UserID, h.CreatedAt });
+            });
+
+            // ===== Notification Center Configurations =====
+            builder.Entity<UserNotification>(entity =>
+            {
+                entity.HasKey(un => un.Id);
+
+                entity.HasOne(un => un.User)
+                      .WithMany()
+                      .HasForeignKey(un => un.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(un => un.Notification)
+                      .WithMany(n => n.UserNotifications)
+                      .HasForeignKey(un => un.NotificationId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(un => new { un.UserId, un.IsRead });
+            });
+
+            builder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(n => n.Id);
+                entity.HasIndex(n => n.Code).IsUnique();
+                entity.HasIndex(n => n.Status);
+            });
+
+            builder.Entity<NotificationTemplate>(entity =>
+            {
+                entity.HasKey(nt => nt.Id);
+                entity.HasIndex(nt => nt.TemplateCode).IsUnique();
             });
 
             // Permission configurations
