@@ -9,11 +9,13 @@ namespace PolyBabyAPI.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<InvoiceService> _logger;
+        private readonly ILoyaltyService _loyaltyService;
 
-        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger)
+        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService)
         {
             _context = context;
             _logger = logger;
+            _loyaltyService = loyaltyService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -104,7 +106,7 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== Tạo hóa đơn từ giỏ hàng (có voucher) ========
-        public async Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null, UserAddress? userAddress = null)
+        public async Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null, UserAddress? userAddress = null, int pointsToUse = 0)
         {
             var cart = await _context.Carts
                 .Include(c => c.CartDetails)
@@ -175,7 +177,19 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            // ✅ Tạo Invoice với thông tin voucher
+            // ✅ Kiểm tra và áp dụng Loyalty Points nếu có
+            decimal pointsDiscount = 0;
+            if (pointsToUse > 0)
+            {
+                var isPointsValid = await _loyaltyService.ValidatePointsRedemptionAsync(cart.UserID, pointsToUse, subTotal - discountAmount);
+                if (!isPointsValid)
+                {
+                    throw new InvalidOperationException("Số điểm quy đổi sử dụng không hợp lệ hoặc vượt quá số dư khả dụng.");
+                }
+                pointsDiscount = await _loyaltyService.CalculateRedemptionDiscountAsync(cart.UserID, pointsToUse);
+            }
+
+            // ✅ Tạo Invoice với thông tin voucher + điểm loyalty
             var invoice = new Invoice
             {
                 UserID = cart.UserID,
@@ -189,7 +203,7 @@ namespace PolyBabyAPI.Services
                 ShippingWard = userAddress?.Ward?.Name,
                 ShippingStreetAddress = userAddress?.StreetAddress,
                 SubTotal = subTotal,
-                DiscountAmount = discountAmount,
+                DiscountAmount = discountAmount + pointsDiscount,
             };
 
             foreach (var item in itemsToCheckout)
@@ -229,8 +243,8 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            // ✅ Tính TotalPrice = SubTotal - DiscountAmount
-            invoice.TotalPrice = subTotal - discountAmount;
+            // ✅ Tính TotalPrice = SubTotal - DiscountAmount (bao gồm cả Voucher + Loyalty Points)
+            invoice.TotalPrice = subTotal - invoice.DiscountAmount;
             if (invoice.TotalPrice < 0) invoice.TotalPrice = 0;
             invoice.ShippingFee = CalculateShippingFee(invoice.TotalPrice);
 
@@ -239,6 +253,16 @@ namespace PolyBabyAPI.Services
             {
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync(); // Cần save trước để có InvoiceID
+
+                // ✅ Khấu trừ điểm trong LoyaltyProfile & Ghi log lịch sử điểm
+                if (pointsToUse > 0)
+                {
+                    var deductResult = await _loyaltyService.ApplyPointsRedemptionAsync(cart.UserID, pointsToUse, invoice.InvoiceID);
+                    if (!deductResult)
+                    {
+                        throw new InvalidOperationException("Khấu trừ điểm Loyalty thất bại. Vui lòng kiểm tra lại số dư điểm.");
+                    }
+                }
 
                 if (payMethod == PayMethod.MobilePayment)
                 {
@@ -432,6 +456,19 @@ namespace PolyBabyAPI.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Đơn hàng {InvoiceId} đã hoàn thành bởi người dùng {UserId}", invoiceId, userId);
+
+            try
+            {
+                if (!string.IsNullOrEmpty(invoice.UserID))
+                {
+                    await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.TotalPrice);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi tích điểm Loyalty khi hoàn thành đơn hàng {InvoiceId}", invoiceId);
+            }
+
             return true;
         }
 
@@ -478,6 +515,7 @@ namespace PolyBabyAPI.Services
             {
                 await RestoreStockAsync(invoice);
                 await RestoreVoucherAsync(invoice);
+                await HandleLoyaltyOnCancelAsync(invoice);
 
                 invoice.Status = OrderStatus.Cancelled;
                 invoice.CancelReason = reason;
@@ -525,6 +563,7 @@ namespace PolyBabyAPI.Services
             {
                 await RestoreStockAsync(invoice);
                 await RestoreVoucherAsync(invoice);
+                await HandleLoyaltyOnCancelAsync(invoice);
 
                 invoice.Status = OrderStatus.Cancelled;
                 invoice.CancelReason = reason ?? invoice.CancelReason;
@@ -668,6 +707,33 @@ namespace PolyBabyAPI.Services
                 payment.ResponseCode = string.IsNullOrWhiteSpace(payment.ResponseCode)
                     ? responseCode
                     : payment.ResponseCode;
+            }
+        }
+        // ======== PRIVATE: Xử lý Loyalty (Hoàn/Thu hồi điểm) khi hủy đơn ========
+        private async Task HandleLoyaltyOnCancelAsync(Invoice invoice)
+        {
+            if (invoice == null || string.IsNullOrEmpty(invoice.UserID)) return;
+
+            try
+            {
+                // 1. Thu hồi điểm đã tích lũy (nếu có)
+                await _loyaltyService.RevokePointsAsync(invoice.UserID, invoice.InvoiceID);
+
+                // 2. Tìm kiếm xem đơn hàng này có dùng điểm để thanh toán không và hoàn lại
+                var spendHistory = await _context.LoyaltyPointHistories
+                    .FirstOrDefaultAsync(h => h.InvoiceID == invoice.InvoiceID && h.TransactionType == "SPEND");
+
+                if (spendHistory != null)
+                {
+                    int pointsToRefund = Math.Abs(spendHistory.Amount);
+                    await _loyaltyService.RefundPointsAsync(invoice.UserID, pointsToRefund, invoice.InvoiceID);
+                    _logger.LogInformation("Đã hoàn lại {Points} điểm cho user {UserId} từ đơn hàng hủy {InvoiceId}", 
+                        pointsToRefund, invoice.UserID, invoice.InvoiceID);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi xử lý Loyalty hoàn trả/thu hồi điểm khi hủy đơn {InvoiceId}", invoice.InvoiceID);
             }
         }
     }

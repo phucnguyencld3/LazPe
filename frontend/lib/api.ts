@@ -793,7 +793,8 @@ export async function createInvoiceFromCart(
   cartId: number,
   payMethod: number | null,
   addressId: number | null,
-  selectedCartDetailIds: number[]
+  selectedCartDetailIds: number[],
+  pointsToUse: number = 0
 ): Promise<{ success: boolean; message?: string; paymentUrl?: string; data?: any }> {
   try {
     const params = new URLSearchParams();
@@ -802,6 +803,9 @@ export async function createInvoiceFromCart(
     }
     if (addressId !== null) {
       params.append("addressId", addressId.toString());
+    }
+    if (pointsToUse > 0) {
+      params.append("pointsToUse", pointsToUse.toString());
     }
 
     const response = await fetch(`${API_BASE_URL}/Invoice/create-from-cart/${cartId}?${params.toString()}`, {
@@ -1098,4 +1102,567 @@ export async function submitProductReview(
     return { success: false, message: "Lỗi kết nối mạng." };
   }
 }
+
+// =============================================
+// LOYALTY PROGRAM APIs
+// =============================================
+
+export interface LoyaltyProfileResponse {
+  userID: string;
+  fullName: string;
+  availablePoints: number;
+  totalPoints: number;
+  pointsToNextTier: number;
+  currentTierID: number;
+  currentTierName: string;
+  currentTierDescription: string;
+  progressPercentage: number;
+  rankAdjustmentOffset: number;
+  lastUpdated: string;
+}
+
+export interface LoyaltyPointHistoryItem {
+  historyID: number;
+  transactionType: string;
+  amount: number;
+  invoiceID?: number;
+  description: string;
+  createdAt: string;
+}
+
+export async function getLoyaltyProfile(token: string): Promise<LoyaltyProfileResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching loyalty profile:", error);
+    return null;
+  }
+}
+
+export interface ClientPrivilege {
+  privilegeID: number;
+  name: string;
+  privilegeType: string;
+  value?: string;
+}
+
+export interface LoyaltyTierClientResponse {
+  tierID: number;
+  tierName: string;
+  minPoints: number;
+  colorHex: string;
+  badgeIcon: string;
+  isActive: boolean;
+  privileges: ClientPrivilege[];
+}
+
+export interface LoyaltyEarnPolicySummary {
+  policyID: number;
+  name: string;
+  vndAmount: number;
+  pointsEarned: number;
+  multiplier: number;
+  isCampaign: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  isFallback: boolean;
+}
+
+export interface LoyaltyRedeemPolicySummary {
+  policyID: number;
+  name: string;
+  pointsToRedeem: number;
+  discountVnd: number;
+  tierID?: number | null;
+  tierName: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  isFallback: boolean;
+}
+
+export interface LoyaltyPolicySummaryResponse {
+  earnPolicy: LoyaltyEarnPolicySummary;
+  redeemPolicy: LoyaltyRedeemPolicySummary;
+}
+
+export async function getLoyaltyTiers(token: string): Promise<LoyaltyTierClientResponse[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/tiers`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching loyalty tiers:", error);
+    return null;
+  }
+}
+
+export async function getLoyaltyPolicySummary(token: string): Promise<LoyaltyPolicySummaryResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/policies/summary`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching loyalty policy summary:", error);
+    return null;
+  }
+}
+
+export async function getLoyaltyHistory(
+  token: string,
+  type: string = "ALL",
+  period: string = "All",
+  page: number = 1,
+  pageSize: number = 10
+): Promise<{ data: LoyaltyPointHistoryItem[]; pagination: any } | null> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/Loyalty/history?type=${type}&period=${period}&page=${page}&pageSize=${pageSize}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const result = await response.json();
+    if (result.success) {
+      return {
+        data: result.data || [],
+        pagination: result.pagination
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching loyalty history:", error);
+    return null;
+  }
+}
+
+export async function validateLoyaltyRedemption(
+  token: string,
+  pointsToUse: number,
+  cartSubtotal: number
+): Promise<{ success: boolean; isApplied: boolean; pointsUsed: number; discountAmount: number; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/redemption/validate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pointsToUse, cartSubtotal }),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && (result.isApplied ?? false),
+      isApplied: result.isApplied ?? false,
+      pointsUsed: result.pointsUsed ?? 0,
+      discountAmount: result.discountAmount ?? 0,
+      message: result.message || "",
+    };
+  } catch (error) {
+    console.error("Error validating loyalty redemption:", error);
+    return { success: false, isApplied: false, pointsUsed: 0, discountAmount: 0, message: "Lỗi kết nối mạng" };
+  }
+}
+
+// =============================================
+// NOTIFICATION CENTER APIs
+// =============================================
+
+export interface UserNotificationItem {
+  id: number;
+  userId: string;
+  notificationId: number;
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+  code: string;
+  title: string;
+  shortDescription: string;
+  content: string;
+  thumbnailImage?: string;
+  bannerImage?: string;
+  type: string;
+  priority: string;
+  actionType: string;
+  actionUrl?: string;
+  isPinned: boolean;
+}
+
+export async function getNotifications(
+  token: string,
+  type?: string,
+  isRead?: boolean,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<UserNotificationItem[] | null> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    });
+    if (type) params.append("type", type);
+    if (isRead !== undefined) params.append("isRead", isRead.toString());
+
+    const response = await fetch(`${API_BASE_URL}/Notification?${params.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return null;
+  }
+}
+
+export async function getUnreadNotificationCount(token: string): Promise<number> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Notification/unread-count`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return 0;
+    const result = await response.json();
+    return result.success ? result.data : 0;
+  } catch (error) {
+    console.error("Error fetching unread count:", error);
+    return 0;
+  }
+}
+
+export async function markNotificationRead(token: string, id: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Notification/read/${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error marking read:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function markAllNotificationsRead(token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Notification/read-all`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error marking all read:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function deleteNotification(token: string, id: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Notification/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function updateNotificationSettings(
+  userId: string,
+  token: string,
+  settings: {
+    emailNotifications: boolean;
+    orderUpdates: boolean;
+    promotions: boolean;
+  }
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/notification-settings?userId=${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        receiveEmailNotifications: settings.emailNotifications,
+        receiveOrderUpdates: settings.orderUpdates,
+        receivePromotions: settings.promotions,
+      }),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error updating notification settings:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+// Admin APIs
+
+export async function adminGetNotifications(token: string, searchTerm?: string): Promise<any[] | null> {
+  try {
+    const url = searchTerm
+      ? `${API_BASE_URL}/admin/AdminNotification/campaigns?searchTerm=${encodeURIComponent(searchTerm)}`
+      : `${API_BASE_URL}/admin/AdminNotification/campaigns`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error listing admin campaigns:", error);
+    return null;
+  }
+}
+
+export async function adminCreateNotification(token: string, data: any): Promise<{ success: boolean; data?: any; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/campaigns`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, data: result.data, message: result.message };
+  } catch (error) {
+    console.error("Error creating campaign:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminUpdateNotification(token: string, id: number, data: any): Promise<{ success: boolean; data?: any; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/campaigns/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, data: result.data, message: result.message };
+  } catch (error) {
+    console.error("Error updating campaign:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminDeleteNotification(token: string, id: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/campaigns/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error deleting campaign:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminSendNotificationNow(token: string, id: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/campaigns/${id}/send-now`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error triggering send now:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminCancelNotificationSchedule(token: string, id: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/campaigns/${id}/cancel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error cancelling schedule:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminGetNotificationStats(token: string): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/statistics`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error getting stats:", error);
+    return null;
+  }
+}
+
+// Templates APIs
+
+export async function adminGetTemplates(token: string): Promise<any[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/templates`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error getting templates:", error);
+    return null;
+  }
+}
+
+export async function adminCreateTemplate(token: string, data: any): Promise<{ success: boolean; data?: any; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/templates`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, data: result.data, message: result.message };
+  } catch (error) {
+    console.error("Error creating template:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminUpdateTemplate(token: string, id: number, data: any): Promise<{ success: boolean; data?: any; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/templates/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, data: result.data, message: result.message };
+  } catch (error) {
+    console.error("Error updating template:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function adminDeleteTemplate(token: string, id: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/AdminNotification/templates/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success, message: result.message };
+  } catch (error) {
+    console.error("Error deleting template:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
 

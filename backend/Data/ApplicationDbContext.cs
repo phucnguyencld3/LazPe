@@ -55,6 +55,23 @@ namespace PolyBabyAPI.Data
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
 
+        // ===== Loyalty Program =====
+        public DbSet<LoyaltyProfile> LoyaltyProfiles { get; set; }
+        public DbSet<LoyaltyPointHistory> LoyaltyPointHistories { get; set; }
+        public DbSet<LoyaltyTier> LoyaltyTiers { get; set; }
+        public DbSet<LoyaltyEarnPolicy> LoyaltyEarnPolicies { get; set; }
+        public DbSet<LoyaltyRedeemPolicy> LoyaltyRedeemPolicies { get; set; }
+        public DbSet<LoyaltyTierPrivilege> LoyaltyTierPrivileges { get; set; }
+        public DbSet<LoyaltyMonthlyVoucher> LoyaltyMonthlyVouchers { get; set; }
+        public DbSet<LoyaltyAuditLog> LoyaltyAuditLogs { get; set; }
+        public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
+        public DbSet<LoyaltyBirthdayGiftLog> LoyaltyBirthdayGiftLogs { get; set; }
+
+        // ===== Notification Center =====
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
+        public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -232,6 +249,78 @@ namespace PolyBabyAPI.Data
                 .WithMany()
                 .HasForeignKey(cm => cm.SenderId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // ===== Loyalty Configurations =====
+            builder.Entity<LoyaltyProfile>(entity =>
+            {
+                entity.HasKey(p => p.UserID);
+
+                entity.HasOne(p => p.User)
+                      .WithOne()
+                      .HasForeignKey<LoyaltyProfile>(p => p.UserID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(p => p.Tier)
+                      .WithMany()
+                      .HasForeignKey(p => p.CurrentTierID)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<LoyaltyPointHistory>(entity =>
+            {
+                entity.HasKey(h => h.HistoryID);
+
+                entity.HasOne(h => h.Profile)
+                      .WithMany()
+                      .HasForeignKey(h => h.UserID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(h => h.Invoice)
+                      .WithMany()
+                      .HasForeignKey(h => h.InvoiceID)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(h => new { h.UserID, h.CreatedAt });
+            });
+
+            // ===== Notification Center Configurations =====
+            builder.Entity<UserNotification>(entity =>
+            {
+                entity.HasKey(un => un.Id);
+
+                entity.HasOne(un => un.User)
+                      .WithMany()
+                      .HasForeignKey(un => un.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(un => un.Notification)
+                      .WithMany(n => n.UserNotifications)
+                      .HasForeignKey(un => un.NotificationId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(un => new { un.UserId, un.IsRead });
+            });
+
+            builder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(n => n.Id);
+                entity.HasIndex(n => n.Code).IsUnique();
+                entity.HasIndex(n => n.Status);
+            });
+
+            builder.Entity<NotificationTemplate>(entity =>
+            {
+                entity.HasKey(nt => nt.Id);
+                entity.HasIndex(nt => nt.TemplateCode).IsUnique();
+            });
+
+            // User notification settings default values
+            builder.Entity<ApplicationUser>(entity =>
+            {
+                entity.Property(u => u.ReceiveEmailNotifications).HasDefaultValue(true);
+                entity.Property(u => u.ReceiveOrderUpdates).HasDefaultValue(true);
+                entity.Property(u => u.ReceivePromotions).HasDefaultValue(true);
+            });
 
             // Permission configurations
             ConfigurePermissionEntities(builder);

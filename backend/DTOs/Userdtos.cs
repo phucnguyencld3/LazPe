@@ -61,6 +61,9 @@ namespace PolyBabyAPI.DTOs
         public DateTime RegisterDate { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool Status { get; set; }
+        public bool ReceiveEmailNotifications { get; set; }
+        public bool ReceiveOrderUpdates { get; set; }
+        public bool ReceivePromotions { get; set; }
     }
 
     /// <summary>
@@ -98,6 +101,10 @@ namespace PolyBabyAPI.DTOs
 
         /// <summary>URL Cloudinary sau khi upload riêng, null = giữ nguyên</summary>
         public string? Avatar { get; set; }
+
+        public bool? ReceiveEmailNotifications { get; set; }
+        public bool? ReceiveOrderUpdates { get; set; }
+        public bool? ReceivePromotions { get; set; }
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
@@ -44,7 +44,10 @@ namespace PolyBabyAPI.Service
                     Avatar = user.Avatar,
                     RegisterDate = user.RegisterDate,
                     EmailConfirmed = user.EmailConfirmed,
-                    Status = user.Status
+                    Status = user.Status,
+                    ReceiveEmailNotifications = user.ReceiveEmailNotifications,
+                    ReceiveOrderUpdates = user.ReceiveOrderUpdates,
+                    ReceivePromotions = user.ReceivePromotions
                 };
             }
             catch (Exception ex)
@@ -76,6 +79,19 @@ namespace PolyBabyAPI.Service
                 if (!string.IsNullOrEmpty(updateDto.Avatar))
                 {
                     user.Avatar = updateDto.Avatar;
+                }
+
+                if (updateDto.ReceiveEmailNotifications.HasValue)
+                {
+                    user.ReceiveEmailNotifications = updateDto.ReceiveEmailNotifications.Value;
+                }
+                if (updateDto.ReceiveOrderUpdates.HasValue)
+                {
+                    user.ReceiveOrderUpdates = updateDto.ReceiveOrderUpdates.Value;
+                }
+                if (updateDto.ReceivePromotions.HasValue)
+                {
+                    user.ReceivePromotions = updateDto.ReceivePromotions.Value;
                 }
 
                 _logger.LogInformation("Updating user {UserId}. Avatar: {Avatar}",
@@ -214,13 +230,41 @@ namespace PolyBabyAPI.Service
                     Avatar = user.Avatar,
                     RegisterDate = user.RegisterDate,
                     EmailConfirmed = user.EmailConfirmed,
-                    Status = user.Status
+                    Status = user.Status,
+                    ReceiveEmailNotifications = user.ReceiveEmailNotifications,
+                    ReceiveOrderUpdates = user.ReceiveOrderUpdates,
+                    ReceivePromotions = user.ReceivePromotions
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting profile by email {Email}", email);
                 return null;
+            }
+        }
+
+        public async Task<bool> UpdateNotificationSettingsAsync(string userId, UpdateNotificationSettingsDto settingsDto)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId} for updating settings", userId);
+                    return false;
+                }
+
+                user.ReceiveEmailNotifications = settingsDto.ReceiveEmailNotifications;
+                user.ReceiveOrderUpdates = settingsDto.ReceiveOrderUpdates;
+                user.ReceivePromotions = settingsDto.ReceivePromotions;
+
+                var result = await _userManager.UpdateAsync(user);
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating notification settings for user {UserId}", userId);
+                return false;
             }
         }
     }

@@ -19,6 +19,7 @@ namespace PolyBabyAPI.Controllers
         private readonly ILogger<InvoiceController> _logger;
         private readonly ApplicationDbContext _context;
         private readonly IVnPayService _vnPayService;
+        private readonly INotificationService _notificationService;
 
 
         public InvoiceController(
@@ -26,13 +27,15 @@ namespace PolyBabyAPI.Controllers
             UserManager<ApplicationUser> userManager,
             ILogger<InvoiceController> logger,
             ApplicationDbContext context,
-            IVnPayService vnPayService)
+            IVnPayService vnPayService,
+            INotificationService notificationService)
         {
             _invoiceService = invoiceService;
             _userManager = userManager;
             _logger = logger;
             _context = context;
             _vnPayService = vnPayService;
+            _notificationService = notificationService;
         }
 
         // ======================== GET ENDPOINTS ============================
@@ -432,7 +435,7 @@ namespace PolyBabyAPI.Controllers
         // ======================== CREATE ENDPOINTS ============================
 
         /// <summary>
-        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động)
+        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động + points quy đổi)
         /// </summary>
         [HttpPost("create-from-cart/{cartId}")]
         //[Authorize]
@@ -441,7 +444,8 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] PayMethod? payMethod,
             [FromQuery] int? addressId,
             [FromQuery] string? shippingAddress,
-            [FromBody] CreateFromCartRequest? body)
+            [FromBody] CreateFromCartRequest? body,
+            [FromQuery] int pointsToUse = 0)
         {
             try
             {
@@ -504,7 +508,7 @@ namespace PolyBabyAPI.Controllers
                 // ✅ Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
 
-                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress);
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress, pointsToUse);
 
                 _logger.LogInformation(
                     "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",
@@ -520,6 +524,28 @@ namespace PolyBabyAPI.Controllers
                         invoice.InvoiceID,
                         amountToPay,
                         $"Thanh toan don hang #{invoice.InvoiceID}");
+                }
+ 
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Đơn hàng mới",
+                        ShortDescription = $"Khách hàng {user.FullName} vừa đặt đơn hàng #{invoice.InvoiceID}",
+                        Content = $"<p>Đơn hàng mới <strong>#{invoice.InvoiceID}</strong> đã được đặt thành công bởi khách hàng <strong>{user.FullName}</strong> ({user.Email}).</p><p>Tổng giá trị: {invoice.TotalPrice:N0} đ.</p>",
+                        Type = NotificationType.Order,
+                        Priority = NotificationPriority.High,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = $"/admin/orders/{invoice.InvoiceID}",
+                        TargetType = TargetType.Role,
+                        TargetValue = "Admin",
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception nEx)
+                {
+                    _logger.LogError(nEx, "Error sending order notification to admin");
                 }
 
                 return CreatedAtAction(nameof(GetById), new { id = invoice.InvoiceID }, new
@@ -609,6 +635,32 @@ namespace PolyBabyAPI.Controllers
                 if (!result)
                     return BadRequest(new { message = "Không thể xác nhận đơn hàng. Kiểm tra lại trạng thái." });
 
+                try
+                {
+                    var invoice = await _invoiceService.GetByIdAsync(id);
+                    if (invoice != null)
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Đơn hàng đã được xác nhận",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã được xác nhận.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                }
+                catch (Exception nEx)
+                {
+                    _logger.LogError(nEx, "Error sending order confirmation notification to user");
+                }
+
                 return Ok(new { message = "Xác nhận đơn hàng thành công" });
             }
             catch (Exception ex)
@@ -631,6 +683,32 @@ namespace PolyBabyAPI.Controllers
                 var result = await _invoiceService.MarkShippedAsync(id);
                 if (!result)
                     return BadRequest(new { message = "Không thể cập nhật trạng thái giao hàng. Kiểm tra lại trạng thái." });
+
+                try
+                {
+                    var invoice = await _invoiceService.GetByIdAsync(id);
+                    if (invoice != null)
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Đơn hàng đang được vận chuyển",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã bắt đầu được vận chuyển.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                }
+                catch (Exception nEx)
+                {
+                    _logger.LogError(nEx, "Error sending order shipping notification to user");
+                }
 
                 return Ok(new { message = "Cập nhật trạng thái giao hàng thành công" });
             }
@@ -776,9 +854,36 @@ namespace PolyBabyAPI.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(new { message = "Lý do hủy tối đa 500 ký tự." });
 
+                var invoice = await _invoiceService.GetByIdAsync(id);
+
                 var result = await _invoiceService.AdminCancelAsync(id, request?.Reason);
                 if (!result)
                     return BadRequest(new { message = "Không thể hủy đơn hàng. Kiểm tra lại trạng thái." });
+
+                if (invoice != null)
+                {
+                    try
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Đơn hàng đã bị hủy",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} của bạn đã bị hủy.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã bị hủy bởi quản trị viên.</p><p>Lý do: {request?.Reason ?? "Không có lý do cụ thể"}</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.High,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                    catch (Exception nEx)
+                    {
+                        _logger.LogError(nEx, "Error sending order cancellation notification to user");
+                    }
+                }
 
                 return Ok(new { message = "Hủy đơn hàng thành công. Hàng và voucher đã được hoàn trả." });
             }
@@ -799,9 +904,36 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+
                 var result = await _invoiceService.ApproveCancelAsync(id, null);
                 if (!result)
                     return BadRequest(new { message = "Không thể phê duyệt hủy. Kiểm tra lại trạng thái." });
+
+                if (invoice != null)
+                {
+                    try
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Yêu cầu hủy đơn được chấp nhận",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceID} đã được phê duyệt.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được phê duyệt thành công. Tiền, hàng và voucher (nếu có) đã được xử lý hoàn trả.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                    catch (Exception nEx)
+                    {
+                        _logger.LogError(nEx, "Error sending cancel approval notification to user");
+                    }
+                }
 
                 return Ok(new { message = "Phê duyệt hủy đơn hàng thành công. Hàng và voucher đã được hoàn trả." });
             }
@@ -822,9 +954,36 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+
                 var result = await _invoiceService.RejectCancelAsync(id);
                 if (!result)
                     return BadRequest(new { message = "Không thể từ chối hủy. Kiểm tra lại trạng thái." });
+
+                if (invoice != null)
+                {
+                    try
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Yêu cầu hủy đơn bị từ chối",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceID} đã bị từ chối.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã bị từ chối. Đơn hàng của bạn sẽ tiếp tục được xử lý và giao đến bạn.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                    catch (Exception nEx)
+                    {
+                        _logger.LogError(nEx, "Error sending cancel rejection notification to user");
+                    }
+                }
 
                 return Ok(new { message = "Từ chối hủy đơn hàng thành công" });
             }

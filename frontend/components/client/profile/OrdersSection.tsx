@@ -6,13 +6,30 @@ import { Loader } from "lucide-react";
 interface OrdersSectionProps {
   userId: string;
   token: string;
+  initialOrderId?: number | null;
+  onClearInitialOrderId?: () => void;
 }
 
-export function OrdersSection({ userId, token }: OrdersSectionProps) {
+export function OrdersSection({ 
+  userId, 
+  token,
+  initialOrderId,
+  onClearInitialOrderId 
+}: OrdersSectionProps) {
   const [activeTab, setActiveTab] = useState<"all" | "0" | "2" | "4" | "5">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (initialOrderId) {
+      setSearchQuery(initialOrderId.toString());
+      setActiveTab("all");
+      if (onClearInitialOrderId) {
+        onClearInitialOrderId();
+      }
+    }
+  }, [initialOrderId]);
 
   useEffect(() => {
     const loadOrders = async () => {

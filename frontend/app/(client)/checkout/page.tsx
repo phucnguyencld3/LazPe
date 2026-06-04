@@ -8,9 +8,13 @@ import {
   getCart,
   getUserAddresses,
   createInvoiceFromCart,
+  getLoyaltyProfile,
+  getLoyaltyPolicySummary,
+  validateLoyaltyRedemption,
   AddressItem,
   CartInfo,
   CartDetailInfo,
+  LoyaltyPolicySummaryResponse,
   normalizeName
 } from "@/lib/api";
 
@@ -52,6 +56,17 @@ export default function CheckoutPage() {
   const [shippingFee, setShippingFee] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
+
+  // Loyalty states
+  const [availablePoints, setAvailablePoints] = useState<number>(0);
+  const [pointsToUse, setPointsToUse] = useState<number>(0);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState<number>(0);
+  const [isPointsApplied, setIsPointsApplied] = useState<boolean>(false);
+  const [loyaltyMessage, setLoyaltyMessage] = useState<string>("");
+  const [loyaltyError, setLoyaltyError] = useState<string>("");
+  const [isApplyingPoints, setIsApplyingPoints] = useState<boolean>(false);
+  const [loyaltyPolicySummary, setLoyaltyPolicySummary] = useState<LoyaltyPolicySummaryResponse | null>(null);
+  const [estimatedEarnPoints, setEstimatedEarnPoints] = useState<number>(0);
 
   // Check auth and init
   useEffect(() => {
@@ -118,8 +133,33 @@ export default function CheckoutPage() {
       }
     }
     setDiscountAmount(discount);
-    setTotalPrice(sum + ship - discount);
-  }, [selectedItems, cart]);
+
+    // Capping loyalty discount if it exceeds net subtotal (sum - discount)
+    let currentLoyaltyDiscount = loyaltyDiscount;
+    if (loyaltyDiscount > 0 && loyaltyDiscount > (sum - discount)) {
+      currentLoyaltyDiscount = 0;
+      setLoyaltyDiscount(0);
+      setPointsToUse(0);
+      setIsPointsApplied(false);
+      setLoyaltyMessage("");
+      setLoyaltyError("Cấu trúc giá thay đổi, điểm tích lũy được gỡ bỏ.");
+    }
+
+    setTotalPrice(sum + ship - discount - currentLoyaltyDiscount);
+  }, [selectedItems, cart, loyaltyDiscount]);
+
+  useEffect(() => {
+    const policy = loyaltyPolicySummary?.earnPolicy;
+    if (!policy || policy.vndAmount <= 0 || policy.pointsEarned <= 0) {
+      setEstimatedEarnPoints(0);
+      return;
+    }
+
+    const netSubtotal = Math.max(subTotal - discountAmount - loyaltyDiscount, 0);
+    const basePoints = Math.floor(netSubtotal / policy.vndAmount) * policy.pointsEarned;
+    const multiplied = Math.floor(basePoints * (policy.multiplier || 1));
+    setEstimatedEarnPoints(Math.max(0, multiplied));
+  }, [subTotal, discountAmount, loyaltyDiscount, loyaltyPolicySummary]);
 
   const initializeData = async (uid: string, authToken: string) => {
     setLoading(true);
@@ -153,11 +193,96 @@ export default function CheckoutPage() {
 
       // 2. Fetch User Addresses
       await refreshAddresses(uid, authToken);
+
+      // 3. Fetch Loyalty Profile
+      try {
+        const loyaltyProfile = await getLoyaltyProfile(authToken);
+        if (loyaltyProfile) {
+          setAvailablePoints(loyaltyProfile.availablePoints);
+        }
+        const policySummary = await getLoyaltyPolicySummary(authToken);
+        if (policySummary) {
+          setLoyaltyPolicySummary(policySummary);
+        }
+      } catch (e) {
+        console.error("Error fetching loyalty profile:", e);
+      }
     } catch (error) {
       console.error("Initialization error:", error);
       toast.error("Không thể tải thông tin thanh toán. Vui lòng thử lại!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Apply Points
+  const handleApplyPoints = async (pointsInput: number) => {
+    console.log("handleApplyPoints called with:", pointsInput, "token:", token ? "exists" : "null");
+    toast.info(`Đang xác thực ${pointsInput.toLocaleString("vi-VN")} điểm...`);
+
+    if (!token) {
+      toast.error("Vui lòng đăng nhập lại để sử dụng điểm!");
+      return;
+    }
+
+    if (pointsInput < 0) {
+      setLoyaltyError("Số điểm sử dụng phải lớn hơn hoặc bằng 0");
+      setLoyaltyDiscount(0);
+      setIsPointsApplied(false);
+      setPointsToUse(0);
+      return;
+    }
+
+    if (pointsInput === 0) {
+      setLoyaltyDiscount(0);
+      setIsPointsApplied(false);
+      setPointsToUse(0);
+      setLoyaltyMessage("");
+      setLoyaltyError("");
+      return;
+    }
+
+    if (pointsInput > availablePoints) {
+      setLoyaltyError(`Số điểm sử dụng vượt quá số dư khả dụng (${availablePoints} điểm)`);
+      setLoyaltyDiscount(0);
+      setIsPointsApplied(false);
+      setPointsToUse(0);
+      return;
+    }
+
+    const maxAllowedPoints = subTotal - discountAmount;
+    if (pointsInput > maxAllowedPoints) {
+      setLoyaltyError(`Số điểm sử dụng vượt quá giá trị đơn hàng sau giảm giá (${formatVND(maxAllowedPoints)})`);
+      setLoyaltyDiscount(0);
+      setIsPointsApplied(false);
+      setPointsToUse(0);
+      return;
+    }
+
+    setIsApplyingPoints(true);
+    setLoyaltyError("");
+    setLoyaltyMessage("");
+    try {
+      const res = await validateLoyaltyRedemption(token, pointsInput, subTotal - discountAmount);
+      if (res.success && res.isApplied) {
+        setLoyaltyDiscount(res.discountAmount);
+        setPointsToUse(res.pointsUsed);
+        setIsPointsApplied(true);
+        setLoyaltyMessage(`Áp dụng đổi ${res.pointsUsed.toLocaleString("vi-VN")} điểm thành công (-${formatVND(res.discountAmount)})`);
+      } else {
+        setLoyaltyError(res.message || "Điểm quy đổi không hợp lệ.");
+        setLoyaltyDiscount(0);
+        setIsPointsApplied(false);
+        setPointsToUse(0);
+      }
+    } catch (error) {
+      console.error("Redemption error:", error);
+      setLoyaltyError("Có lỗi xảy ra khi xác thực điểm tích lũy.");
+      setLoyaltyDiscount(0);
+      setIsPointsApplied(false);
+      setPointsToUse(0);
+    } finally {
+      setIsApplyingPoints(false);
     }
   };
 
@@ -209,7 +334,8 @@ export default function CheckoutPage() {
         cart.cartID,
         payMethod,
         selectedAddress.addressID,
-        selectedIds
+        selectedIds,
+        pointsToUse
       );
 
       if (res.success && res.data) {
@@ -291,6 +417,17 @@ export default function CheckoutPage() {
             submitting={submitting}
             handlePlaceOrder={handlePlaceOrder}
             formatVND={formatVND}
+            availablePoints={availablePoints}
+            pointsToUse={pointsToUse}
+            loyaltyDiscount={loyaltyDiscount}
+            isPointsApplied={isPointsApplied}
+            loyaltyMessage={loyaltyMessage}
+            loyaltyError={loyaltyError}
+            isApplyingPoints={isApplyingPoints}
+            handleApplyPoints={handleApplyPoints}
+            earnPolicy={loyaltyPolicySummary?.earnPolicy || null}
+            redeemPolicy={loyaltyPolicySummary?.redeemPolicy || null}
+            estimatedEarnPoints={estimatedEarnPoints}
           />
         </div>
 

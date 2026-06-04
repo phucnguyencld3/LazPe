@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -32,6 +32,15 @@ namespace PolyBabyAPI.Models
 
         [Display(Name = "Ngày đăng ký")]
         public DateTime RegisterDate { get; set; } = DateTime.Now;
+
+        [Display(Name = "Nhận thông báo qua Email")]
+        public bool ReceiveEmailNotifications { get; set; } = true;
+
+        [Display(Name = "Nhận cập nhật đơn hàng")]
+        public bool ReceiveOrderUpdates { get; set; } = true;
+
+        [Display(Name = "Nhận thông báo khuyến mãi")]
+        public bool ReceivePromotions { get; set; } = true;
 
         // Navigation Properties
         public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();

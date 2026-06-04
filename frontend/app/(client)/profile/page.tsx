@@ -16,9 +16,11 @@ import {
   updateAddress,
   setDefaultAddress,
   deleteAddress,
+  getLoyaltyProfile,
   UserProfile,
   AddressItem,
-  normalizeName
+  normalizeName,
+  updateNotificationSettings
 } from "@/lib/api";
 
 import { ProfileHeader } from "@/components/client/profile/ProfileHeader";
@@ -32,6 +34,8 @@ import { VoucherSection } from "@/components/client/profile/VoucherSection";
 import { OrdersSection } from "@/components/client/profile/OrdersSection";
 import { ReviewsSection } from "@/components/client/profile/ReviewsSection";
 import { PrivacySection } from "@/components/client/profile/PrivacySection";
+import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
+import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -42,9 +46,37 @@ export default function ProfilePage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
+  const [loyaltyProfile, setLoyaltyProfile] = useState<any>(null);
   const [provinces, setProvinces] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
+  const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const idParam = params.get("id");
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+      if (idParam) {
+        const parsed = parseInt(idParam, 10);
+        if (!isNaN(parsed)) {
+          setInitialNotifId(parsed);
+        }
+      }
+    }
+  }, []);
+
+  const handleClearInitialId = () => {
+    setInitialNotifId(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("id");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  };
 
   // Modals States
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -101,14 +133,7 @@ export default function ProfilePage() {
 
     setToken(savedToken);
 
-    const savedNotifs = localStorage.getItem("notification_settings");
-    if (savedNotifs) {
-      try {
-        setNotificationSettings(JSON.parse(savedNotifs));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    // Gỡ bỏ load từ localStorage để dùng API backend trực tiếp
 
     const parsedUser = JSON.parse(savedUserJson);
     const userId = parsedUser.id || parsedUser.userId;
@@ -141,11 +166,26 @@ export default function ProfilePage() {
           phoneNumber: profileData.phoneNumber || "",
           dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.split("T")[0] : "",
         });
+        setNotificationSettings({
+          emailNotifications: (profileData as any).receiveEmailNotifications ?? true,
+          orderUpdates: (profileData as any).receiveOrderUpdates ?? true,
+          promotions: (profileData as any).receivePromotions ?? true,
+        });
       }
 
       const addressList = await getUserAddresses(userId, authToken);
       if (addressList) {
         setAddresses(addressList);
+      }
+
+      // Fetch Loyalty Profile
+      try {
+        const lp = await getLoyaltyProfile(authToken);
+        if (lp) {
+          setLoyaltyProfile(lp);
+        }
+      } catch (e) {
+        console.error("Error fetching loyalty profile in profile:", e);
       }
     } catch (error) {
       console.error("Error fetching profile details:", error);
@@ -234,11 +274,24 @@ export default function ProfilePage() {
     }
   };
 
-  const handleNotificationToggle = (key: keyof typeof notificationSettings) => {
+  const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
+    if (!userProfile || !token) return;
     const updated = { ...notificationSettings, [key]: !notificationSettings[key] };
+    
     setNotificationSettings(updated);
-    localStorage.setItem("notification_settings", JSON.stringify(updated));
-    toast.success("Đã cập nhật cài đặt thông báo!");
+    try {
+      const result = await updateNotificationSettings(userProfile.userId, token, updated);
+      if (result.success) {
+        toast.success("Đã cập nhật cài đặt thông báo!");
+      } else {
+        toast.error(result.message || "Không thể lưu cài đặt");
+        setNotificationSettings(notificationSettings);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi kết nối khi cập nhật cài đặt");
+      setNotificationSettings(notificationSettings);
+    }
   };
 
   const handleAvatarUpdated = (newAvatarUrl: string) => {
@@ -509,8 +562,9 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-slate-800 text-base line-clamp-1 leading-snug">{userProfile.fullName}</h3>
                 <p className="text-xs text-slate-400 font-semibold truncate">{userProfile.email}</p>
                 <div className="flex gap-1.5 pt-1.5">
-                  <span className="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold">
-                    Thành viên Gold
+                  <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[10px] font-bold border border-rose-100 flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[10px] font-bold">military_tech</span>
+                    Thành viên {loyaltyProfile?.currentTierName || "Standard"}
                   </span>
                 </div>
               </div>
@@ -523,9 +577,11 @@ export default function ProfilePage() {
                 {(
                   [
                     { id: "profile", label: "Thông tin tài khoản", icon: "person" },
+                    { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
                     { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                     { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                     { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                    { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
                     { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
                     { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
                   ] as const
@@ -552,9 +608,11 @@ export default function ProfilePage() {
                 {(
                   [
                     { id: "profile", label: "Tài khoản", icon: "person" },
+                    { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
                     { id: "address", label: "Địa chỉ", icon: "location_on" },
                     { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                     { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                    { id: "notifications", label: "Thông báo", icon: "notifications" },
                     { id: "reviews", label: "Đánh giá", icon: "reviews" },
                     { id: "privacy", label: "Bảo mật", icon: "policy" },
                   ] as const
@@ -585,7 +643,8 @@ export default function ProfilePage() {
                 <ProfileHeader 
                   userProfile={userProfile} 
                   token={token} 
-                  onAvatarUpdated={handleAvatarUpdated} 
+                  onAvatarUpdated={handleAvatarUpdated}
+                  loyaltyProfile={loyaltyProfile}
                 />
                 <PersonalInfo 
                   userProfile={userProfile} 
@@ -611,10 +670,24 @@ export default function ProfilePage() {
 
             {activeTab === "vouchers" && <VoucherSection token={token} />}
 
+            {activeTab === "loyalty" && (
+              <LoyaltySection token={token} />
+            )}
+
             {activeTab === "orders" && (
               <OrdersSection 
                 userId={userProfile.userId} 
                 token={token} 
+                initialOrderId={initialNotifId}
+                onClearInitialOrderId={handleClearInitialId}
+              />
+            )}
+
+            {activeTab === "notifications" && (
+              <NotificationsSection 
+                token={token} 
+                initialSelectedId={initialNotifId}
+                onClearInitialId={handleClearInitialId}
               />
             )}
 
