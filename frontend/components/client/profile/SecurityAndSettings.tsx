@@ -1,5 +1,5 @@
 import React from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface SecurityAndSettingsProps {
   onChangePasswordClick: () => void;
@@ -9,14 +9,12 @@ interface SecurityAndSettingsProps {
     promotions: boolean;
   };
   onNotificationToggle: (key: "emailNotifications" | "orderUpdates" | "promotions") => void;
-  onSupportChatClick: () => void;
 }
 
 export function SecurityAndSettings({
   onChangePasswordClick,
   notificationSettings,
   onNotificationToggle,
-  onSupportChatClick
 }: SecurityAndSettingsProps) {
   return (
     <aside className="space-y-lg">
@@ -31,16 +29,16 @@ export function SecurityAndSettings({
           onClick={onChangePasswordClick}
           className="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors group border border-slate-100"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined">lock</span>
             </div>
-            <div className="text-left">
-              <p className="font-bold text-slate-800">Đổi mật khẩu</p>
-              <p className="text-xs text-slate-500">Bảo vệ tài khoản của bạn</p>
+            <div className="text-left min-w-0">
+              <p className="font-bold text-slate-800 whitespace-nowrap">Đổi mật khẩu</p>
+              <p className="text-xs text-slate-500 whitespace-nowrap">Bảo vệ tài khoản của bạn</p>
             </div>
           </div>
-          <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">
+          <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors flex-shrink-0">
             chevron_right
           </span>
         </button>
@@ -90,27 +88,6 @@ export function SecurityAndSettings({
               <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
           </div>
-        </div>
-      </section>
-
-      {/* Support Section */}
-      <section className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-lg text-white shadow-lg shadow-primary/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <span className="material-symbols-outlined text-[100px]">support_agent</span>
-        </div>
-        <div className="relative z-10">
-          <h2 className="font-headline-md text-xl font-bold flex items-center gap-2 mb-2">
-            Cần hỗ trợ?
-          </h2>
-          <p className="text-primary-container font-medium text-sm mb-6">
-            Đội ngũ LazPe Care luôn sẵn sàng giải đáp mọi thắc mắc của bạn 24/7.
-          </p>
-          <button 
-            onClick={onSupportChatClick}
-            className="w-full bg-white text-primary font-bold py-3 px-4 rounded-full flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors shadow-md active:scale-95"
-          >
-            <span className="material-symbols-outlined">chat</span> Trò chuyện ngay
-          </button>
         </div>
       </section>
     </aside>

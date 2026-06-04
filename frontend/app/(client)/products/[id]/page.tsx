@@ -4,7 +4,7 @@ import React, { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
 import { getProductDetail, getProducts, addToCart } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";

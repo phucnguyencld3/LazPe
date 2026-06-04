@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -456,6 +456,110 @@ namespace PolyBabyAPI.Services
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        #endregion
+
+        #region User Functions
+
+        public async Task<IEnumerable<Review>> GetUserReviewsAsync(string userId, int page = 1, int pageSize = 10)
+        {
+            return await _context.Reviews
+                .Include(r => r.User)
+                .Include(r => r.Variant)
+                    .ThenInclude(v => v.Product)
+                        .ThenInclude(p => p.Variants)
+                .Include(r => r.Bundle)
+                .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewComments)
+                    .ThenInclude(rc => rc.User)
+                .Where(r => r.UserID == userId && !r.IsHidden)
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUserReviewCountAsync(string userId)
+        {
+            return await _context.Reviews
+                .CountAsync(r => r.UserID == userId && !r.IsHidden);
+        }
+
+        public async Task<IEnumerable<PendingReviewItemDto>> GetPendingReviewsAsync(string userId)
+        {
+            var completedInvoices = await _context.Invoices
+                .AsNoTracking()
+                .Include(i => i.InvoiceDetails)
+                    .ThenInclude(d => d.Variant)
+                        .ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails)
+                    .ThenInclude(d => d.Bundle)
+                .Where(i => i.UserID == userId && i.Status == OrderStatus.Completed)
+                .ToListAsync();
+
+            var reviewedContentTokens = await _context.Reviews
+                .AsNoTracking()
+                .Where(r => r.UserID == userId && r.Content.StartsWith(InvoiceReviewPrefix))
+                .Select(r => r.Content)
+                .ToListAsync();
+
+            var pendingItems = new List<PendingReviewItemDto>();
+
+            // Fetch fallback images for variants that have no ImageUrl
+            var productIdsForFallback = completedInvoices
+                .SelectMany(i => i.InvoiceDetails)
+                .Where(d => d.Variant != null && string.IsNullOrEmpty(d.Variant.ImageUrl) && d.Variant.ProductID > 0)
+                .Select(d => d.Variant.ProductID)
+                .Distinct()
+                .ToList();
+
+            var fallbackImages = new Dictionary<int, string>();
+            if (productIdsForFallback.Any())
+            {
+                var variantImages = await _context.Variants
+                    .AsNoTracking()
+                    .Where(v => productIdsForFallback.Contains(v.ProductID) && !string.IsNullOrEmpty(v.ImageUrl))
+                    .Select(v => new { v.ProductID, v.ImageUrl })
+                    .ToListAsync();
+
+                fallbackImages = variantImages
+                    .GroupBy(v => v.ProductID)
+                    .ToDictionary(g => g.Key, g => g.First().ImageUrl ?? string.Empty);
+            }
+
+            foreach (var invoice in completedInvoices)
+            {
+                foreach (var detail in invoice.InvoiceDetails)
+                {
+                    var marker = BuildInvoiceReviewMarker(invoice.InvoiceID, detail.InvoiceDetailID);
+                    var isReviewed = reviewedContentTokens.Any(c => c.StartsWith(marker));
+
+                    if (!isReviewed)
+                    {
+                        var imageUrl = detail.Variant?.ImageUrl;
+                        if (string.IsNullOrEmpty(imageUrl) && detail.Variant != null)
+                        {
+                            fallbackImages.TryGetValue(detail.Variant.ProductID, out imageUrl);
+                        }
+                        imageUrl = imageUrl ?? detail.Bundle?.ImageUrl ?? string.Empty;
+
+                        pendingItems.Add(new PendingReviewItemDto
+                        {
+                            InvoiceID = invoice.InvoiceID,
+                            InvoiceDetailID = detail.InvoiceDetailID,
+                            VariantID = detail.VariantID,
+                            BundleID = detail.BundleID,
+                            ProductName = detail.Variant?.Product?.ProductName ?? detail.Bundle?.Name ?? "Sản phẩm",
+                            VariantName = detail.Variant?.VariantName ?? string.Empty,
+                            ImageUrl = imageUrl,
+                            PurchaseDate = invoice.CreatedAt ?? DateTime.Now
+                        });
+                    }
+                }
+            }
+
+            return pendingItems;
         }
 
         #endregion

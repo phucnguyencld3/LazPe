@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -341,6 +341,55 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách đánh giá của một người dùng cụ thể
+        /// </summary>
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetUserReviews(string userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var reviews = await _reviewService.GetUserReviewsAsync(userId, page, pageSize);
+                var currentUserId = GetCurrentUserId();
+                var reviewDtos = reviews.Select(r => MapReviewToDto(r, currentUserId)).ToList();
+                var totalCount = await _reviewService.GetUserReviewCountAsync(userId);
+
+                var response = new ReviewListResponseDto
+                {
+                    Reviews = reviewDtos,
+                    Stats = null,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
+                };
+
+                return Ok(new { success = true, data = response });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting reviews for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi khi lấy đánh giá của người dùng" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm chờ đánh giá của một người dùng cụ thể
+        /// </summary>
+        [HttpGet("pending/{userId}")]
+        public async Task<IActionResult> GetPendingReviews(string userId)
+        {
+            try
+            {
+                var pendingItems = await _reviewService.GetPendingReviewsAsync(userId);
+                return Ok(new { success = true, data = pendingItems });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pending reviews for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi khi lấy sản phẩm chờ đánh giá" });
+            }
+        }
+
         #endregion
 
         #region Review Interactions
@@ -502,7 +551,11 @@ namespace PolyBabyAPI.Controllers
                     .Select(MapCommentToDto).ToList() ?? new List<ReviewCommentDto>(),
                 ProductName = review.Variant?.Product?.ProductName,
                 VariantName = review.Variant?.VariantName,
-                BundleName = review.Bundle?.Name
+                BundleName = review.Bundle?.Name,
+                ImageUrl = review.Variant?.ImageUrl 
+                    ?? review.Variant?.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl 
+                    ?? review.Bundle?.ImageUrl 
+                    ?? ""
             };
         }
 

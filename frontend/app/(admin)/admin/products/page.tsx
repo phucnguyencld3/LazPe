@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   AdminProductInfo,
   ProductStats,
@@ -388,7 +388,8 @@ export default function AdminProductsPage() {
                 </tr>
               ) : (
                 products.map((product) => {
-                  const stockDetails = getStockBadge(product.stock);
+                  const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
+                  const stockDetails = getStockBadge(actualStock);
                   return (
                     <tr key={product.productID} className="hover:bg-slate-50/30 transition-colors group">
                       <td className="px-8 py-5">
@@ -434,13 +435,20 @@ export default function AdminProductsPage() {
 
                       <td className="px-6 py-5">
                         <div className="font-bold text-slate-800 text-sm">
-                          {product.stock} chiếc
+                          {actualStock} chiếc
                         </div>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${stockDetails.dotColor}`}></span>
-                          <span className={`text-[10px] font-bold uppercase ${stockDetails.textColor}`}>
-                            {stockDetails.label}
-                          </span>
+                        <div className="flex flex-col gap-1 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${stockDetails.dotColor}`}></span>
+                            <span className={`text-[10px] font-bold uppercase ${stockDetails.textColor}`}>
+                              {stockDetails.label}
+                            </span>
+                          </div>
+                          {product.variantCount > 0 && (
+                            <span className="text-[10px] font-bold text-slate-400">
+                              (Tổng {product.variantCount} biến thể)
+                            </span>
+                          )}
                         </div>
                       </td>
 

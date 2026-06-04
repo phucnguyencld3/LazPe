@@ -15,10 +15,12 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
+    if (isAuth) return;
+
     const checkAuth = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        window.location.replace("/login");
         return;
       }
       try {
@@ -27,19 +29,29 @@ export default function AdminLayout({
             Authorization: `Bearer ${token}`
           }
         });
+
+        if (!res.ok) {
+          window.location.replace("/login");
+          return;
+        }
+
         const data = await res.json();
+        const user = data.user;
+        const roles = user?.roles || [];
+        const permissions = user?.permissions || [];
+        const hasDashboardAccess = user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
-        if (!res.ok || !data.success || !data.user.isAdmin) {
-          router.push("/login");
+        if (!data.success || !hasDashboardAccess) {
+          window.location.replace("/login");
         } else {
           setIsAuth(true);
         }
       } catch (e) {
-        router.push("/login");
+        window.location.replace("/login");
       }
     };
     checkAuth();
-  }, [router]);
+  }, [router, pathname, isAuth]);
 
   const isActive = (path: string) => {
     if (path === "/admin" && pathname !== "/admin") return false;
@@ -82,7 +94,7 @@ export default function AdminLayout({
         <aside className="fixed left-0 top-0 h-full w-72 py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 transition-all overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
           <div className="px-md mb-lg">
             <div className="flex items-center gap-sm mb-xs">
-              <span className="material-symbols-outlined text-primary text-3xl">child_care</span>
+              <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
               </h2>
@@ -112,6 +124,13 @@ export default function AdminLayout({
               >
                 <span className="material-symbols-outlined">inventory_2</span>
                 <span className="font-label-md">Sản phẩm</span>
+              </Link>
+              <Link
+                href="/admin/combo"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">inventory</span>
+                <span className="font-label-md">Combo</span>
               </Link>
               <Link
                 href="/admin/categories"
@@ -153,6 +172,18 @@ export default function AdminLayout({
               </Link>
             </div>
 
+            {/* Tin nhắn hỗ trợ */}
+            <div className="space-y-1">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Hỗ trợ</span>
+              <Link
+                href="/admin/chats"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">chat</span>
+                <span className="font-label-md">Tin nhắn</span>
+              </Link>
+            </div>
+
             {/* Thống kê */}
             <div className="space-y-1">
               <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thống kê</span>
@@ -175,13 +206,13 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className="flex-1 ml-72 p-margin-desktop flex flex-col min-h-0">
-          <div className="flex-1">
+        <main className={`flex-1 ml-72 flex flex-col ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-margin-desktop min-h-0"}`}>
+          <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
           
           {/* Footer Shell */}
-          <footer className="flex justify-between items-center py-md mt-lg text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background">
+          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${pathname === "/admin/chats" ? "py-2 mt-2" : "py-md mt-lg"}`}>
             <p>© 2024 Hệ thống quản lý LazPe. Bảo lưu mọi quyền.</p>
             <div className="flex gap-md">
               <a className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a>

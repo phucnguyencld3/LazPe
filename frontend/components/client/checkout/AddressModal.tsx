@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Check, Plus, Pencil, AlertTriangle, Loader } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { 
   AddressItem, 
   getProvinces, 

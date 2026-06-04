@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -15,6 +15,7 @@ using PolyBabyAPI.Service;
 using PolyBabyAPI.Services;
 using PolyBabyAPI.Settings;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,19 @@ try
             ValidAudience = jwtSettings["Audience"],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     })
     .AddCookie(options =>
@@ -126,10 +140,10 @@ try
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition =
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
     // API Controllers và Swagger
-    builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
 
     // Cấu hình Swagger đơn giản (không lỗi)
@@ -207,6 +221,13 @@ try
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
 
+    // Đăng ký Chat & SignalR
+    builder.Services.AddSignalR().AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
+    builder.Services.AddHostedService<ChatCleanupService>();
+
     // sau các service registration hiện có 
     builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection(VnPayOptions.SectionName));
     builder.Services.AddScoped<IVnPayService, VnPayService>();
@@ -214,6 +235,28 @@ try
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
+
+    // Cấu hình Rate Limiter (Chống DDoS/Spam request)
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                factory: partition => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = 100, // Tối đa 100 request
+                    QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
+                    Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
+                }));
+                
+        options.OnRejected = async (context, token) =>
+        {
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
+            await context.HttpContext.Response.WriteAsync("{\"error\": \"Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.\"}", cancellationToken: token);
+        };
+    });
 
     var app = builder.Build();
 
@@ -251,9 +294,11 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("AllowMVC");
+    app.UseRateLimiter();
     app.UseAuthentication(); 
     app.UseAuthorization();  
 
+    app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
     app.MapControllers();
     app.MapControllerRoute(
         name: "areas",

@@ -517,5 +517,34 @@ export const createProduct = async (token: string, payload: CreateProductPayload
   return res.json();
 };
 
+export interface UpdateProductPayload {
+  code?: string;
+  productName: string;
+  description?: string;
+  price?: number;
+  productDiscountPercent?: number;
+  stock?: number;
+  categoryID: number;
+  supplierID?: number | null;
+  status: boolean;
+}
+
+export const updateProduct = async (token: string, id: number, payload: UpdateProductPayload): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Product/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update product");
+  }
+  return res.json();
+};
+
 
 

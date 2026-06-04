@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { User, Loader } from "lucide-react";
 import { UserProfile, uploadAvatar } from "@/lib/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface ProfileHeaderProps {
   userProfile: UserProfile;

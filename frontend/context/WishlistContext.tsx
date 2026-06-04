@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product } from "@/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getWishlist, toggleWishlistApi, syncWishlistApi } from "@/lib/api";
 
 interface WishlistContextType {

@@ -45,8 +45,29 @@ export default function LoginPage() {
           sessionStorage.setItem("user", JSON.stringify(data.user));
         }
         
-        // Chuyển hướng về trang chủ và làm mới trang để cập nhật Header
-        window.location.href = "/";
+        // Chuyển hướng: Admin hoặc User có quyền Admin.Access về trang quản trị, còn lại về trang chủ
+        let hasDashboardAccess = false;
+        try {
+          const user = data.user;
+          const roles = user?.roles || [];
+          const permissions = user?.permissions || [];
+          
+          console.log("=== Login Debug ===");
+          console.log("User:", user);
+          console.log("Roles:", roles);
+          console.log("Permissions:", permissions);
+          
+          hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access"));
+          console.log("hasDashboardAccess:", hasDashboardAccess);
+        } catch (evalError) {
+          console.error("Error evaluating redirect:", evalError);
+        }
+
+        if (hasDashboardAccess) {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/";
+        }
       } else {
         setError(data.message || "Đăng nhập thất bại");
       }

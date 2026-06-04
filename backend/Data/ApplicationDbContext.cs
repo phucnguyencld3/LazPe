@@ -52,6 +52,8 @@ namespace PolyBabyAPI.Data
 
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<Wishlist> Wishlists { get; set; }
+        public DbSet<ChatSession> ChatSessions { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -205,6 +207,31 @@ namespace PolyBabyAPI.Data
                 .WithMany()
                 .HasForeignKey(w => w.ProductID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Chat configurations
+            builder.Entity<ChatSession>()
+                .HasOne(cs => cs.User)
+                .WithMany()
+                .HasForeignKey(cs => cs.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<ChatSession>()
+                .HasOne(cs => cs.Admin)
+                .WithMany()
+                .HasForeignKey(cs => cs.AdminId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<ChatMessage>()
+                .HasOne(cm => cm.ChatSession)
+                .WithMany(cs => cs.Messages)
+                .HasForeignKey(cm => cm.ChatSessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ChatMessage>()
+                .HasOne(cm => cm.Sender)
+                .WithMany()
+                .HasForeignKey(cm => cm.SenderId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Permission configurations
             ConfigurePermissionEntities(builder);
