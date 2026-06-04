@@ -382,6 +382,10 @@ try
 
     app.MapRazorPages();
 
+    // Health Check endpoints cho UptimeRobot
+    app.MapGet("/", () => Results.Ok(new { status = "UP", message = "Backend is running!" }));
+    app.MapGet("/api", () => Results.Ok(new { status = "UP", message = "Backend API is running!" }));
+
     Console.WriteLine("PolyBaby API starting...");
     app.Run();
 }
