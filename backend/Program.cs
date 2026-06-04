@@ -129,7 +129,7 @@ try
     {
         options.AddPolicy("AllowMVC", policy =>
         {
-            policy.WithOrigins("https://localhost:7102", "http://localhost:5102", "https://localhost:7101", "http://localhost:5101", "http://localhost:3000")
+            policy.SetIsOriginAllowed(origin => true) // Cho phép tất cả các domain (kể cả Render URL)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
