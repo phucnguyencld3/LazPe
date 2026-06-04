@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -25,6 +25,9 @@ namespace PolyBabyAPI.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public bool IsHidden { get; set; }
+
+        public bool HasEarnedRewardPoints { get; set; } = false;
+        public int LoyaltyPointsEarned { get; set; } = 0;
 
         // Navigation
         public virtual ApplicationUser User { get; set; }

@@ -1309,6 +1309,59 @@ export async function validateLoyaltyRedemption(
   }
 }
 
+export interface LoyaltySettings {
+  id?: number;
+  enableReviewReward: boolean;
+  reviewRewardPoints: number;
+  minimumReviewWords: number;
+  requiredRatingForReward: number;
+  allowMultipleRewardsPerProduct: boolean;
+  updatedAt?: string;
+}
+
+export async function getLoyaltySettings(token: string): Promise<LoyaltySettings | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/settings`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching loyalty settings:", error);
+    return null;
+  }
+}
+
+export async function updateLoyaltySettings(
+  token: string,
+  settings: LoyaltySettings
+): Promise<{ success: boolean; message?: string; data?: LoyaltySettings }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/settings`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(settings),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error updating loyalty settings:", error);
+    return { success: false, message: "Lỗi kết nối mạng" };
+  }
+}
+
 // =============================================
 // NOTIFICATION CENTER APIs
 // =============================================

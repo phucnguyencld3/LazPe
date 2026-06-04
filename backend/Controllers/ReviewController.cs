@@ -536,6 +536,8 @@ namespace PolyBabyAPI.Controllers
                 Content = SanitizeReviewContent(review.Content),
                 CreatedAt = review.CreatedAt,
                 IsHidden = review.IsHidden,
+                HasEarnedRewardPoints = review.HasEarnedRewardPoints,
+                LoyaltyPointsEarned = review.LoyaltyPointsEarned,
                 User = review.User != null ? new ReviewUserDto
                 {
                     UserID = review.User.Id,

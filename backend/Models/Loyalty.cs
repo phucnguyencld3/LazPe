@@ -329,5 +329,20 @@ namespace PolyBabyAPI.Models
 
         public DateTime ReceivedAt { get; set; } = DateTime.Now;
     }
+
+    // 11. LoyaltySetting
+    public class LoyaltySetting
+    {
+        [Key]
+        public int Id { get; set; } = 1;
+
+        public bool EnableReviewReward { get; set; } = true;
+        public int ReviewRewardPoints { get; set; } = 200;
+        public int MinimumReviewWords { get; set; } = 50;
+        public int RequiredRatingForReward { get; set; } = 5;
+        public bool AllowMultipleRewardsPerProduct { get; set; } = false;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+    }
 }
 

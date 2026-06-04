@@ -23,6 +23,8 @@ namespace PolyBabyAPI.DTOs
         public string Content { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public bool IsHidden { get; set; }
+        public bool HasEarnedRewardPoints { get; set; }
+        public int LoyaltyPointsEarned { get; set; }
 
         /// <summary>Thông tin tóm tắt người viết đánh giá</summary>
         public ReviewUserDto? User { get; set; }
