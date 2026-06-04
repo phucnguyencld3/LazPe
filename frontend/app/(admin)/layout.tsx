@@ -94,7 +94,7 @@ export default function AdminLayout({
         <aside className="fixed left-0 top-0 h-full w-72 py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 transition-all overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
           <div className="px-md mb-lg">
             <div className="flex items-center gap-sm mb-xs">
-              <span className="material-symbols-outlined text-primary text-3xl">child_care</span>
+              <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
               </h2>
@@ -124,6 +124,13 @@ export default function AdminLayout({
               >
                 <span className="material-symbols-outlined">inventory_2</span>
                 <span className="font-label-md">Sản phẩm</span>
+              </Link>
+              <Link
+                href="/admin/combo"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">inventory</span>
+                <span className="font-label-md">Combo</span>
               </Link>
               <Link
                 href="/admin/categories"
