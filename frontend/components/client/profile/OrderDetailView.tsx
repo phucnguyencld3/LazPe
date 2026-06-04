@@ -148,34 +148,10 @@ export function OrderDetailView({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
-        <Loader className="animate-spin text-primary mb-4" size={40} />
-        <p className="text-slate-500 font-medium">Đang tải thông tin chi tiết đơn hàng...</p>
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="text-center py-16 bg-white rounded-xl border border-slate-100 shadow-sm">
-        <span className="material-symbols-outlined text-5xl text-rose-500 mb-2">error</span>
-        <p className="text-slate-600 font-bold mb-4">Không tìm thấy thông tin đơn hàng này.</p>
-        <button 
-          onClick={onBack}
-          className="px-6 py-2 rounded-xl bg-primary text-white font-bold transition-transform active:scale-95"
-        >
-          Quay lại danh sách
-        </button>
-      </div>
-    );
-  }
-
   // Check if VNPay Payment can be retried
   // Conditions: statusCode === 0 (Pending) AND payMethodCode === 3 (MobilePayment/Ví điện tử)
-  const isVnPay = order.payMethodCode === 3 || order.payMethodCode === 2 || order.payMethod?.includes("VNPay") || order.payMethod?.includes("Ví điện tử");
-  const baseCanRetryPayment = order.statusCode === 0 && isVnPay;
+  const isVnPay = order?.payMethodCode === 3 || order?.payMethodCode === 2 || order?.payMethod?.includes("VNPay") || order?.payMethod?.includes("Ví điện tử");
+  const baseCanRetryPayment = order?.statusCode === 0 && isVnPay;
 
   // Countdown Timer logic for VNPay pending payment (24 hours expiration)
   useEffect(() => {
@@ -219,14 +195,38 @@ export function OrderDetailView({
 
   // Check if order can be canceled
   // Conditions: statusCode === 0 (Pending) OR statusCode === 1 (Confirmed)
-  const canCancelOrder = (order.statusCode === 0 || order.statusCode === 1) && !isExpired;
+  const canCancelOrder = (order?.statusCode === 0 || order?.statusCode === 1) && !isExpired;
 
   // Check if order can be completed by user
   // Conditions: statusCode === 2 (Shipped)
-  const canCompleteOrder = order.statusCode === 2;
+  const canCompleteOrder = order?.statusCode === 2;
 
   // Timeline statuses
-  const isTimelineVisible = order.statusCode !== 4 && order.statusCode !== 5 && !isExpired;
+  const isTimelineVisible = order?.statusCode !== 4 && order?.statusCode !== 5 && !isExpired;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
+        <Loader className="animate-spin text-primary mb-4" size={40} />
+        <p className="text-slate-500 font-medium">Đang tải thông tin chi tiết đơn hàng...</p>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="text-center py-16 bg-white rounded-xl border border-slate-100 shadow-sm">
+        <span className="material-symbols-outlined text-5xl text-rose-500 mb-2">error</span>
+        <p className="text-slate-600 font-bold mb-4">Không tìm thấy thông tin đơn hàng này.</p>
+        <button 
+          onClick={onBack}
+          className="px-6 py-2 rounded-xl bg-primary text-white font-bold transition-transform active:scale-95"
+        >
+          Quay lại danh sách
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
