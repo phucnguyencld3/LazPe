@@ -1064,6 +1064,8 @@ namespace PolyBabyAPI.Controllers
                 invoice.TotalPrice,
                 invoice.ShippingFee,
                 invoice.ShippingAddress,
+                ShippingRecipientName = invoice.ShippingRecipientName ?? invoice.User?.FullName,
+                ShippingPhone = invoice.ShippingPhone ?? invoice.User?.PhoneNumber,
                 PayMethod = invoice.PayMethod?.GetDisplayName(),
                 PayMethodCode = (int?)invoice.PayMethod,
                 Status = invoice.Status.GetDisplayName(),
@@ -1169,6 +1171,8 @@ namespace PolyBabyAPI.Controllers
                 FinalAmount = invoice.TotalPrice + invoice.ShippingFee,
 
                 invoice.ShippingAddress,
+                ShippingRecipientName = invoice.ShippingRecipientName ?? invoice.User?.FullName,
+                ShippingPhone = invoice.ShippingPhone ?? invoice.User?.PhoneNumber,
                 PayMethod = invoice.PayMethod?.GetDisplayName(),
                 PayMethodCode = (int?)invoice.PayMethod,
                 Status = invoice.Status.GetDisplayName(),
