@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PolyBabyAPI.Data;
@@ -112,9 +112,13 @@ namespace PolyBabyAPI.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)
+                ? "http://localhost:3000"
+                : _vnPayOptions.FrontendBaseUrl.Trim().TrimEnd('/');
+
             var redirectUrl = success
-                ? $"{_vnPayOptions.FrontendBaseUrl}/Invoice?payment=success&invoiceId={txnRef}&txnNo={transactionNo}"
-                : $"{_vnPayOptions.FrontendBaseUrl}/Invoice?payment=failed&invoiceId={txnRef}&code={responseCode}";
+                ? $"{baseUrl}/Invoice?payment=success&invoiceId={txnRef}&txnNo={transactionNo}"
+                : $"{baseUrl}/profile?tab=orders&id={txnRef}&payment=failed&code={responseCode}";
 
             return Redirect(redirectUrl);
         }

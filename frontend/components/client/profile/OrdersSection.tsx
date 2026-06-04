@@ -35,6 +35,47 @@ export function OrdersSection({
     }
   }, [initialOrderId]);
 
+  // Handle VNPay payment status from URL redirect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = params.get("payment");
+      const errorCode = params.get("code");
+
+      if (paymentStatus === "failed") {
+        let msg = "Thanh toán thất bại hoặc đã bị hủy.";
+        if (errorCode === "24") {
+          msg = "Giao dịch đã được hủy theo yêu cầu của bạn.";
+        } else if (errorCode) {
+          switch (errorCode) {
+            case "09":
+              msg = "Thẻ/Tài khoản của bạn chưa đăng ký dịch vụ Internet Banking.";
+              break;
+            case "11":
+              msg = "Giao dịch không thành công do đã hết hạn chờ thanh toán.";
+              break;
+            case "12":
+              msg = "Thẻ/Tài khoản của bạn bị khóa hoặc bị lỗi.";
+              break;
+            case "51":
+              msg = "Tài khoản của bạn không đủ số dư để thực hiện giao dịch.";
+              break;
+            default:
+              msg = `Đã xảy ra lỗi trong quá trình thanh toán (Mã lỗi: ${errorCode}).`;
+              break;
+          }
+        }
+        toast.error(msg);
+
+        // Clean up URL parameters so toast doesn't show again on refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete("payment");
+        url.searchParams.delete("code");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    }
+  }, []);
+
   const loadOrders = async () => {
     setLoading(true);
     try {
