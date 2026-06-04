@@ -970,6 +970,108 @@ export async function getUserOrders(
   }
 }
 
+export async function getOrderDetails(
+  id: number,
+  token: string
+): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch order details:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    return null;
+  }
+}
+
+export async function requestCancelOrder(
+  id: number,
+  token: string,
+  reason: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/request-cancel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Gửi yêu cầu hủy thành công." : "Không thể hủy đơn hàng."),
+    };
+  } catch (error) {
+    console.error("Error request cancel order:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function markOrderCompleted(
+  id: number,
+  token: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/mark-completed`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Xác nhận nhận hàng thành công." : "Không thể xác nhận nhận hàng."),
+    };
+  } catch (error) {
+    console.error("Error marking order completed:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function retryVnPayPayment(
+  id: number,
+  token: string
+): Promise<{ success: boolean; paymentUrl?: string; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/retry-vnpay`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    if (response.ok && result.success) {
+      return { success: true, paymentUrl: result.paymentUrl };
+    }
+    return {
+      success: false,
+      message: result.message || "Tạo lại liên kết thanh toán VNPay thất bại.",
+    };
+  } catch (error) {
+    console.error("Error retrying VNPay payment:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
 export async function getUserVouchers(token: string): Promise<any[] | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/vouchers/wallet`, {

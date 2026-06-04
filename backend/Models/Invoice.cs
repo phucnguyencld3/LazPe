@@ -90,6 +90,14 @@ namespace PolyBabyAPI.Models
         [MaxLength(500)]
         public string? ShippingStreetAddress { get; set; }
 
+        [MaxLength(100, ErrorMessage = "Tên người nhận tối đa 100 ký tự")]
+        [Display(Name = "Tên người nhận")]
+        public string? ShippingRecipientName { get; set; }
+
+        [MaxLength(15, ErrorMessage = "Số điện thoại người nhận tối đa 15 ký tự")]
+        [Display(Name = "Số điện thoại nhận hàng")]
+        public string? ShippingPhone { get; set; }
+
         [Display(Name = "Trạng thái đơn hàng")]
         [Required(ErrorMessage = "Trạng thái đơn hàng không được để trống")]
         [EnumDataType(typeof(OrderStatus), ErrorMessage = "Trạng thái không hợp lệ")]

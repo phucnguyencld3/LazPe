@@ -202,6 +202,8 @@ namespace PolyBabyAPI.Services
                 ShippingDistrict = userAddress?.District?.Name,
                 ShippingWard = userAddress?.Ward?.Name,
                 ShippingStreetAddress = userAddress?.StreetAddress,
+                ShippingRecipientName = userAddress?.RecipientName,
+                ShippingPhone = userAddress?.PhoneNumber,
                 SubTotal = subTotal,
                 DiscountAmount = discountAmount + pointsDiscount,
             };
