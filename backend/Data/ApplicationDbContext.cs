@@ -71,6 +71,7 @@ namespace PolyBabyAPI.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserNotification> UserNotifications { get; set; }
         public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
+        public DbSet<LoyaltySetting> LoyaltySettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -312,6 +313,22 @@ namespace PolyBabyAPI.Data
             {
                 entity.HasKey(nt => nt.Id);
                 entity.HasIndex(nt => nt.TemplateCode).IsUnique();
+            });
+
+            // ===== Loyalty Settings Seed =====
+            builder.Entity<LoyaltySetting>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+                entity.HasData(new LoyaltySetting
+                {
+                    Id = 1,
+                    EnableReviewReward = true,
+                    ReviewRewardPoints = 200,
+                    MinimumReviewWords = 50,
+                    RequiredRatingForReward = 5,
+                    AllowMultipleRewardsPerProduct = false,
+                    UpdatedAt = new DateTime(2026, 6, 4, 17, 0, 0, DateTimeKind.Utc)
+                });
             });
 
             // User notification settings default values

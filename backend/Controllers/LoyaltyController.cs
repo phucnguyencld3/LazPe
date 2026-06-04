@@ -411,6 +411,122 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy cấu hình Loyalty hiện tại
+        /// </summary>
+        [HttpGet("settings")]
+        public async Task<IActionResult> GetSettings()
+        {
+            try
+            {
+                var settings = await _context.LoyaltySettings.FirstOrDefaultAsync(s => s.Id == 1);
+                if (settings == null)
+                {
+                    settings = new LoyaltySetting
+                    {
+                        Id = 1,
+                        EnableReviewReward = true,
+                        ReviewRewardPoints = 200,
+                        MinimumReviewWords = 50,
+                        RequiredRatingForReward = 5,
+                        AllowMultipleRewardsPerProduct = false,
+                        UpdatedAt = DateTime.Now
+                    };
+                }
+                return Ok(new { success = true, data = settings });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy cấu hình Loyalty");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống khi tải cấu hình" });
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật cấu hình Loyalty (Chỉ dành cho Admin)
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPut("settings")]
+        public async Task<IActionResult> UpdateSettings([FromBody] LoyaltySetting request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var settings = await _context.LoyaltySettings.FirstOrDefaultAsync(s => s.Id == 1);
+                var isNew = false;
+                string oldValue = "N/A";
+
+                if (settings == null)
+                {
+                    settings = new LoyaltySetting { Id = 1 };
+                    isNew = true;
+                }
+                else
+                {
+                    oldValue = $"Enable: {settings.EnableReviewReward}, Points: {settings.ReviewRewardPoints}, MinWords: {settings.MinimumReviewWords}, Rating: {settings.RequiredRatingForReward}, Multiple: {settings.AllowMultipleRewardsPerProduct}";
+                }
+
+                settings.EnableReviewReward = request.EnableReviewReward;
+                settings.ReviewRewardPoints = request.ReviewRewardPoints;
+                settings.MinimumReviewWords = request.MinimumReviewWords;
+                settings.RequiredRatingForReward = request.RequiredRatingForReward;
+                settings.AllowMultipleRewardsPerProduct = request.AllowMultipleRewardsPerProduct;
+                settings.UpdatedAt = DateTime.Now;
+
+                if (isNew)
+                {
+                    _context.LoyaltySettings.Add(settings);
+                }
+                else
+                {
+                    _context.LoyaltySettings.Update(settings);
+                }
+
+                var newValue = $"Enable: {settings.EnableReviewReward}, Points: {settings.ReviewRewardPoints}, MinWords: {settings.MinimumReviewWords}, Rating: {settings.RequiredRatingForReward}, Multiple: {settings.AllowMultipleRewardsPerProduct}";
+                
+                await LogAuditAsync("UPDATE_LOYALTY_SETTINGS", "LoyaltySettings", "1", oldValue, newValue);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Cập nhật cấu hình thành công", data = settings });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi cập nhật cấu hình Loyalty");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống khi lưu cấu hình" });
+            }
+        }
+
+        private string GetCurrentUserEmail()
+        {
+            return User.FindFirst(ClaimTypes.Email)?.Value ?? User.Identity?.Name ?? "admin@lazpe.vn";
+        }
+
+        private async Task LogAuditAsync(string action, string entityName, string entityId, string? oldValue, string? newValue, string? notes = null)
+        {
+            var actorId = GetCurrentUserId();
+            var actorEmail = GetCurrentUserEmail();
+
+            var log = new LoyaltyAuditLog
+            {
+                Action = action,
+                ActorID = actorId,
+                ActorEmail = actorEmail,
+                EntityName = entityName,
+                EntityID = entityId,
+                OldValue = oldValue,
+                NewValue = newValue,
+                Notes = notes,
+                Timestamp = DateTime.Now
+            };
+
+            _context.LoyaltyAuditLogs.Add(log);
+        }
+
         private string GetCurrentUserId()
         {
             return User.FindFirst("UserId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";

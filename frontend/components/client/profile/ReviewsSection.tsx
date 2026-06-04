@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "@/lib/toast";
-import { getUserReviews, getPendingReviews, submitProductReview } from "@/lib/api";
+import { getUserReviews, getPendingReviews, submitProductReview, getLoyaltySettings, LoyaltySettings } from "@/lib/api";
 import { Loader } from "lucide-react";
 
 interface ReviewItem {
@@ -15,6 +15,8 @@ interface ReviewItem {
   invoiceId?: number;
   invoiceDetailId?: number;
   imageUrl?: string;
+  hasEarnedRewardPoints?: boolean;
+  loyaltyPointsEarned?: number;
 }
 
 interface ReviewsSectionProps {
@@ -33,6 +35,21 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
   const [writingReviewFor, setWritingReviewFor] = useState<ReviewItem | null>(null);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState("");
+  const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings | null>(null);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      if (token) {
+        try {
+          const settings = await getLoyaltySettings(token);
+          setLoyaltySettings(settings);
+        } catch (error) {
+          console.error("Error fetching loyalty settings:", error);
+        }
+      }
+    }
+    fetchSettings();
+  }, [token]);
 
   const fetchData = useCallback(async () => {
     if (!userId || !token) return;
@@ -73,7 +90,9 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
             rating: r.rating,
             comment: r.content,
             shopResponse: shopResponse,
-            imageUrl: r.imageUrl
+            imageUrl: r.imageUrl,
+            hasEarnedRewardPoints: r.hasEarnedRewardPoints,
+            loyaltyPointsEarned: r.loyaltyPointsEarned
           };
         });
         setReviewedList(mappedReviewed);
@@ -120,7 +139,12 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
       });
 
       if (result.success) {
-        toast.success("Gửi đánh giá thành công! Cảm ơn ý kiến đóng góp của bạn.");
+        const rewardPoints = result.data?.loyaltyPointsEarned;
+        if (result.data?.hasEarnedRewardPoints && rewardPoints) {
+          toast.success(`Đánh giá thành công! Bạn đã nhận được +${rewardPoints} điểm Loyalty! 🎉`);
+        } else {
+          toast.success("Gửi đánh giá thành công! Cảm ơn ý kiến đóng góp của bạn.");
+        }
         setWritingReviewFor(null);
         setActiveTab("reviewed");
         await fetchData();
@@ -246,13 +270,58 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Nội dung đánh giá</label>
             <textarea
-              placeholder="Chia sẻ trải nghiệm thực tế về sản phẩm để nhận LazPe Xu nhé..."
+              placeholder="Chia sẻ trải nghiệm thực tế về sản phẩm..."
               rows={4}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
             />
+            {loyaltySettings?.enableReviewReward && (
+              <div className="flex justify-end text-[11px] text-slate-400 font-bold">
+                Số từ: <span className={newComment.trim() === "" ? "text-slate-400 ml-1" : newComment.trim().split(/\s+/).length >= loyaltySettings.minimumReviewWords ? "text-emerald-600 ml-1" : "text-amber-600 ml-1"}>
+                  {newComment.trim() === "" ? 0 : newComment.trim().split(/\s+/).length}
+                </span>
+                /{loyaltySettings.minimumReviewWords} từ
+              </div>
+            )}
           </div>
+
+          {loyaltySettings?.enableReviewReward && (() => {
+            const wordCount = newComment.trim() === "" ? 0 : newComment.trim().split(/\s+/).length;
+            const reqRating = loyaltySettings.requiredRatingForReward;
+            const minWords = loyaltySettings.minimumReviewWords;
+            const rewardPoints = loyaltySettings.reviewRewardPoints;
+            const qualifiesForReward = newRating >= reqRating && wordCount >= minWords;
+
+            return (
+              <div className={`p-4 rounded-xl border text-xs font-semibold space-y-1.5 transition-all ${
+                qualifiesForReward 
+                  ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
+                  : "bg-amber-50 border-amber-100 text-amber-800"
+              }`}>
+                <div className="flex items-center gap-1.5 font-bold">
+                  <span className="material-symbols-outlined text-sm">
+                    {qualifiesForReward ? "check_circle" : "info"}
+                  </span>
+                  Chương trình quà tặng Loyalty
+                </div>
+                <p className="leading-relaxed">
+                  Đánh giá đạt tối thiểu <span className="font-bold">{reqRating} sao</span> và <span className="font-bold">{minWords} từ</span> để nhận <span className="font-bold text-primary">+{rewardPoints} điểm Loyalty</span> thưởng.
+                </p>
+                <div className="flex justify-between items-center pt-1 border-t border-current/10 mt-1">
+                  <span>Tiêu chí hiện tại:</span>
+                  <div className="flex gap-3">
+                    <span className={newRating >= reqRating ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
+                      ⭐ {newRating}/{reqRating} sao
+                    </span>
+                    <span className={wordCount >= minWords ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
+                      📝 {wordCount}/{minWords} từ
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           <button
             type="submit"
@@ -338,8 +407,14 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
                         <p className="text-[10px] text-slate-400 font-semibold">{item.variant}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-1">
                       {item.rating && renderStars(item.rating)}
+                      {item.hasEarnedRewardPoints && (
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 mt-1 shadow-sm">
+                          <span className="material-symbols-outlined text-[12px] font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>military_tech</span>
+                          +{item.loyaltyPointsEarned} điểm
+                        </span>
+                      )}
                       {item.reviewDate && (
                         <span className="text-[10px] text-slate-400 font-semibold block mt-1">
                           {new Date(item.reviewDate).toLocaleDateString("vi-VN")}

@@ -161,10 +161,27 @@ const getAuditActionLabel = (action: string): string => {
 
 export default function AdminLoyaltyPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "policies" | "tiers" | "history">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "policies" | "tiers" | "history" | "settings">("dashboard");
   const [subTab, setSubTab] = useState<"privileges" | "redeem" | "vouchers">("privileges");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  // States for Settings Tab
+  const [loyaltySettings, setLoyaltySettings] = useState<{
+    enableReviewReward: boolean;
+    reviewRewardPoints: number;
+    minimumReviewWords: number;
+    requiredRatingForReward: number;
+    allowMultipleRewardsPerProduct: boolean;
+  }>({
+    enableReviewReward: true,
+    reviewRewardPoints: 200,
+    minimumReviewWords: 50,
+    requiredRatingForReward: 5,
+    allowMultipleRewardsPerProduct: false
+  });
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // States for Policies Tab
   const [earnPolicies, setEarnPolicies] = useState<EarnPolicy[]>([]);
@@ -549,9 +566,54 @@ export default function AdminLoyaltyPage() {
     }
   };
 
+  const fetchSettings = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/Loyalty/settings`, { headers: getHeaders() });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) setLoyaltySettings(result.data);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Không thể tải cấu hình Loyalty.");
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/Loyalty/settings`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify(loyaltySettings),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          toast.success("Cập nhật cấu hình thành công!");
+          setLoyaltySettings(result.data);
+        } else {
+          toast.error(result.message || "Cập nhật thất bại.");
+        }
+      } else {
+        toast.error("Cập nhật cấu hình thất bại.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi khi kết nối đến máy chủ.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "dashboard") fetchStats();
     if (activeTab === "policies") fetchPolicies();
+    if (activeTab === "settings") fetchSettings();
     if (activeTab === "tiers") {
       fetchTiers();
       fetchConfigs();
@@ -1260,6 +1322,16 @@ export default function AdminLoyaltyPage() {
         >
           <span className="material-symbols-outlined text-sm">history</span>
           Lịch sử & Logs
+        </button>
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "settings"
+            ? "border-primary text-primary"
+            : "border-transparent text-on-surface-variant/70 hover:text-primary"
+            }`}
+        >
+          <span className="material-symbols-outlined text-sm">settings</span>
+          Cấu hình
         </button>
       </div>
 
@@ -2168,6 +2240,132 @@ export default function AdminLoyaltyPage() {
                 onPageChange={setAuditPage}
               />
             </div>
+          )}
+        </section>
+      )}
+
+      {/* -------------------- TAB 6: SETTINGS (Loyalty Settings Configuration) -------------------- */}
+      {activeTab === "settings" && (
+        <section className="space-y-md animate-in fade-in duration-200">
+          {loadingSettings ? (
+            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSaveSettings} className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest max-w-3xl">
+              <div className="p-md border-b border-outline-variant/20 bg-primary-container/5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary">reviews</span>
+                </div>
+                <div>
+                  <h3 className="font-headline-md text-on-surface font-bold text-lg">Cấu hình thưởng điểm Đánh giá</h3>
+                  <p className="text-xs text-on-surface-variant/70 font-semibold">Quy định điểm thưởng khi khách hàng đánh giá sản phẩm</p>
+                </div>
+              </div>
+
+              <div className="p-md space-y-lg">
+                {/* Enable Switch */}
+                <div className="flex items-center justify-between p-md bg-surface-container-low/30 rounded-xl border border-outline-variant/20">
+                  <div className="space-y-1">
+                    <span className="font-label-lg text-on-surface font-bold text-sm block">Kích hoạt chương trình thưởng đánh giá</span>
+                    <span className="text-xs text-on-surface-variant/70 font-semibold">Bật/tắt việc cộng điểm thưởng khi khách hàng viết đánh giá sản phẩm</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={loyaltySettings.enableReviewReward}
+                      onChange={(e) => setLoyaltySettings({ ...loyaltySettings, enableReviewReward: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                {loyaltySettings.enableReviewReward && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-md animate-in fade-in duration-200">
+                    {/* Points */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Số điểm thưởng</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={loyaltySettings.reviewRewardPoints}
+                        onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewRewardPoints: parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface font-semibold"
+                        required
+                      />
+                      <p className="text-[10px] text-on-surface-variant/60 font-semibold">Số điểm Loyalty cộng vào ví khách hàng</p>
+                    </div>
+
+                    {/* Minimum Words */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Số từ tối thiểu</label>
+                      <input
+                        type="number"
+                        min="10"
+                        value={loyaltySettings.minimumReviewWords}
+                        onChange={(e) => setLoyaltySettings({ ...loyaltySettings, minimumReviewWords: parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface font-semibold"
+                        required
+                      />
+                      <p className="text-[10px] text-on-surface-variant/60 font-semibold">Chiều dài tối thiểu của bình luận (chuẩn tiếng Việt)</p>
+                    </div>
+
+                    {/* Required Rating */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Yêu cầu số sao tối thiểu</label>
+                      <select
+                        value={loyaltySettings.requiredRatingForReward}
+                        onChange={(e) => setLoyaltySettings({ ...loyaltySettings, requiredRatingForReward: parseInt(e.target.value) || 5 })}
+                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface font-semibold"
+                      >
+                        <option value={5}>⭐⭐⭐⭐⭐ 5 Sao</option>
+                        <option value={4}>⭐⭐⭐⭐ 4 Sao hoặc hơn</option>
+                        <option value={3}>⭐⭐⭐ 3 Sao hoặc hơn</option>
+                        <option value={2}>⭐⭐ 2 Sao hoặc hơn</option>
+                        <option value={1}>⭐ 1 Sao hoặc hơn</option>
+                      </select>
+                      <p className="text-[10px] text-on-surface-variant/60 font-semibold">Chỉ cộng điểm khi đạt mức sao tối thiểu này</p>
+                    </div>
+
+                    {/* Allow Multiple Rewards */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Cơ chế nhận thưởng nhiều lần</label>
+                      <div className="flex items-center gap-3 p-3 bg-surface-container-low/50 rounded-lg border border-outline-variant/20 mt-1">
+                        <input
+                          type="checkbox"
+                          id="allowMultipleRewards"
+                          checked={loyaltySettings.allowMultipleRewardsPerProduct}
+                          onChange={(e) => setLoyaltySettings({ ...loyaltySettings, allowMultipleRewardsPerProduct: e.target.checked })}
+                          className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary rounded cursor-pointer"
+                        />
+                        <label htmlFor="allowMultipleRewards" className="text-xs font-bold text-on-surface cursor-pointer select-none">
+                          Nhận thưởng nhiều lần trên 1 sản phẩm
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-on-surface-variant/60 font-semibold mt-1">Nếu tắt, mỗi sản phẩm trong lịch sử mua hàng chỉ được cộng thưởng đánh giá 1 lần duy nhất</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest">
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                >
+                  {savingSettings ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-on-primary"></div>
+                      Đang lưu cấu hình...
+                    </>
+                  ) : (
+                    "Lưu cấu hình"
+                  )}
+                </button>
+              </div>
+            </form>
           )}
         </section>
       )}

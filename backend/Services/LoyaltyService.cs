@@ -317,5 +317,120 @@ namespace PolyBabyAPI.Services
                 throw;
             }
         }
+
+        public async Task<bool> AddPointsAsync(string userId, int amount, string transactionType, string description, int? invoiceId = null)
+        {
+            if (amount <= 0) return false;
+
+            var currentTransaction = _context.Database.CurrentTransaction;
+            var transaction = currentTransaction == null 
+                ? await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted) 
+                : null;
+
+            try
+            {
+                var profile = await _context.LoyaltyProfiles
+                    .FromSqlRaw("SELECT * FROM dbo.LoyaltyProfiles WITH (UPDLOCK, ROWLOCK) WHERE UserID = {0}", userId)
+                    .FirstOrDefaultAsync();
+
+                if (profile == null)
+                {
+                    profile = new LoyaltyProfile
+                    {
+                        UserID = userId,
+                        CurrentTierID = 1,
+                        AvailablePoints = 0,
+                        TotalPoints = 0,
+                        PointsToNextTier = 30000,
+                        RankAdjustmentOffset = 0,
+                        LastUpdated = DateTime.Now
+                    };
+                    _context.LoyaltyProfiles.Add(profile);
+                    await _context.SaveChangesAsync();
+                }
+
+                var oldTierID = profile.CurrentTierID;
+                var offset = profile.RankAdjustmentOffset;
+                var newTotalPoints = profile.TotalPoints + amount;
+
+                profile.AvailablePoints += amount;
+                profile.TotalPoints = newTotalPoints;
+                profile.LastUpdated = DateTime.Now;
+
+                // Xác định Tier mới cao nhất mà khách hàng đạt điều kiện
+                var activeTiers = await _context.LoyaltyTiers
+                    .Where(t => t.IsActive)
+                    .OrderByDescending(t => t.MinPoints)
+                    .ToListAsync();
+
+                var newTier = activeTiers.FirstOrDefault(t => newTotalPoints >= (t.MinPoints - offset));
+                var newTierID = newTier?.TierID ?? 1;
+
+                profile.CurrentTierID = newTierID;
+
+                // Tính toán PointsToNextTier
+                var nextTier = activeTiers
+                    .Where(t => t.MinPoints > (newTier?.MinPoints ?? 0))
+                    .OrderBy(t => t.MinPoints)
+                    .FirstOrDefault();
+
+                if (nextTier != null)
+                {
+                    var pointsToNext = (nextTier.MinPoints - offset) - newTotalPoints;
+                    profile.PointsToNextTier = pointsToNext < 0 ? 0 : pointsToNext;
+                }
+                else
+                {
+                    profile.PointsToNextTier = 0;
+                }
+
+                _context.LoyaltyProfiles.Update(profile);
+
+                // Lưu lịch sử biến động điểm
+                var history = new LoyaltyPointHistory
+                {
+                    UserID = userId,
+                    TransactionType = transactionType,
+                    Amount = amount,
+                    InvoiceID = invoiceId,
+                    Description = description,
+                    CreatedAt = DateTime.Now
+                };
+                _context.LoyaltyPointHistories.Add(history);
+
+                // Ghi nhận thăng hạng nếu có
+                if (newTierID > oldTierID)
+                {
+                    var tierName = newTier?.TierName ?? "";
+                    var upgradeHistory = new LoyaltyPointHistory
+                    {
+                        UserID = userId,
+                        TransactionType = "BONUS",
+                        Amount = 0,
+                        InvoiceID = invoiceId,
+                        Description = $"Thăng hạng lên thành viên {tierName}",
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.LoyaltyPointHistories.Add(upgradeHistory);
+                }
+
+                await _context.SaveChangesAsync();
+
+                if (transaction != null)
+                {
+                    await transaction.CommitAsync();
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                if (transaction != null)
+                {
+                    await transaction.RollbackAsync();
+                }
+                throw;
+            }
+        }
     }
 }

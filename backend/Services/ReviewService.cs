@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
+using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 
@@ -9,11 +11,21 @@ namespace PolyBabyAPI.Services
     public class ReviewService : IReviewService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILoyaltyService _loyaltyService;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<ReviewService> _logger;
         private const string InvoiceReviewPrefix = "[#INV:";
 
-        public ReviewService(ApplicationDbContext context)
+        public ReviewService(
+            ApplicationDbContext context,
+            ILoyaltyService loyaltyService,
+            INotificationService notificationService,
+            ILogger<ReviewService> logger)
         {
             _context = context;
+            _loyaltyService = loyaltyService;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         #region Review Management
@@ -131,6 +143,10 @@ namespace PolyBabyAPI.Services
         {
             var invoice = await _context.Invoices
                 .Include(i => i.InvoiceDetails)
+                    .ThenInclude(d => d.Variant)
+                        .ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails)
+                    .ThenInclude(d => d.Bundle)
                 .FirstOrDefaultAsync(i => i.InvoiceID == dto.InvoiceID && i.UserID == userId);
 
             if (invoice == null)
@@ -171,11 +187,119 @@ namespace PolyBabyAPI.Services
                 Rating = dto.Rating,
                 Content = storedContent,
                 CreatedAt = DateTime.Now,
-                IsHidden = false
+                IsHidden = false,
+                HasEarnedRewardPoints = false,
+                LoyaltyPointsEarned = 0
             };
+
+            // Word counter
+            var wordCount = 0;
+            if (!string.IsNullOrWhiteSpace(dto.Content))
+            {
+                wordCount = dto.Content.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+            }
+
+            // Load configurations
+            var settings = await _context.LoyaltySettings.FirstOrDefaultAsync() ?? new LoyaltySetting();
+
+            // Check eligibility
+            bool qualifyForReward = settings.EnableReviewReward 
+                && dto.Rating >= settings.RequiredRatingForReward 
+                && wordCount >= settings.MinimumReviewWords;
+
+            // Check if already rewarded
+            bool alreadyRewarded = false;
+            if (qualifyForReward && !settings.AllowMultipleRewardsPerProduct)
+            {
+                if (invoiceItem.VariantID.HasValue && invoiceItem.VariantID.Value > 0)
+                {
+                    var productID = await _context.Variants
+                        .Where(v => v.VariantID == invoiceItem.VariantID.Value)
+                        .Select(v => v.ProductID)
+                        .FirstOrDefaultAsync();
+
+                    alreadyRewarded = await _context.Reviews
+                        .AnyAsync(r => r.UserID == userId 
+                            && r.HasEarnedRewardPoints 
+                            && _context.Variants.Any(v => v.VariantID == r.VariantID && v.ProductID == productID));
+                }
+                else if (invoiceItem.BundleID.HasValue)
+                {
+                    alreadyRewarded = await _context.Reviews
+                        .AnyAsync(r => r.UserID == userId 
+                            && r.HasEarnedRewardPoints 
+                            && r.BundleID == invoiceItem.BundleID.Value);
+                }
+            }
+
+            if (qualifyForReward && !alreadyRewarded)
+            {
+                review.HasEarnedRewardPoints = true;
+                review.LoyaltyPointsEarned = settings.ReviewRewardPoints;
+            }
 
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
+
+            // Reward points & Send notifications AFTER review is saved
+            if (qualifyForReward && !alreadyRewarded)
+            {
+                var productName = invoiceItem.Variant?.Product?.ProductName 
+                    ?? invoiceItem.Bundle?.Name 
+                    ?? "sản phẩm";
+                var description = $"Thưởng điểm khi đánh giá sản phẩm {settings.RequiredRatingForReward} sao";
+
+                _logger.LogInformation("Cộng {Points} điểm thưởng review cho user {UserId} (Sản phẩm: {ProductName}, Đơn hàng: #{InvoiceId})", 
+                    settings.ReviewRewardPoints, userId, productName, dto.InvoiceID);
+
+                await _loyaltyService.AddPointsAsync(userId, settings.ReviewRewardPoints, "EARN", description, dto.InvoiceID);
+
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Nhận điểm thưởng đánh giá",
+                        ShortDescription = $"Bạn đã nhận được {settings.ReviewRewardPoints} điểm thưởng từ chương trình đánh giá sản phẩm.",
+                        Content = $"<p>Cảm ơn bạn đã đóng góp đánh giá chi tiết cho sản phẩm. Bạn đã được cộng <strong>{settings.ReviewRewardPoints} điểm</strong> vào tài khoản Loyalty.</p>",
+                        Type = NotificationType.RewardPoints,
+                        Priority = NotificationPriority.Medium,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = "/profile?tab=loyalty",
+                        TargetType = TargetType.SpecificUsers,
+                        TargetValue = userId,
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi gửi thông báo điểm thưởng cho user {UserId}", userId);
+                }
+            }
+            else if (!qualifyForReward && settings.EnableReviewReward)
+            {
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Đánh giá chưa đủ điều kiện nhận thưởng",
+                        ShortDescription = $"Đánh giá cần tối thiểu {settings.MinimumReviewWords} từ và đạt {settings.RequiredRatingForReward} sao để nhận điểm thưởng.",
+                        Content = $"<p>Đánh giá của bạn chưa đủ điều kiện nhận điểm thưởng. Để nhận điểm thưởng từ hệ thống Loyalty, đánh giá cần có tối thiểu <strong>{settings.MinimumReviewWords} từ</strong> và đạt mức đánh giá <strong>{settings.RequiredRatingForReward} sao</strong>.</p>",
+                        Type = NotificationType.RewardPoints,
+                        Priority = NotificationPriority.Low,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = "/profile?tab=loyalty",
+                        TargetType = TargetType.SpecificUsers,
+                        TargetValue = userId,
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi gửi thông báo nhắc nhở điều kiện nhận thưởng cho user {UserId}", userId);
+                }
+            }
 
             return await GetReviewByIdAsync(review.ReviewID) ?? review;
         }
