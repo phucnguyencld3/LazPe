@@ -28,6 +28,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "LazPe",
   description: "Nền tảng thương mại điện tử LazPe",
+  icons: {
+    icon: "/logo/icon_logo.svg",
+    shortcut: "/logo/icon_logo.svg",
+    apple: "/logo/icon_logo.svg",
+  },
 };
 
 export default function RootLayout({
