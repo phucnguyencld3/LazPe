@@ -72,55 +72,97 @@ namespace PolyBabyAPI.Controllers
         [HttpGet("vnpay-return")]
         public async Task<IActionResult> VnPayReturn()
         {
-            var success = _vnPayService.ValidateReturn(Request.Query, out var responseCode, out var txnRef, out var transactionNo);
-
-            if (int.TryParse(txnRef, out var invoiceId))
+            try
             {
-                var invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
-                var tx = await _context.PaymentTransactions
-                    .Where(x => x.InvoiceID == invoiceId && x.TxnRef == txnRef)
-                    .OrderByDescending(x => x.PaymentTransactionId)
-                    .FirstOrDefaultAsync();
+                var success = _vnPayService.ValidateReturn(Request.Query, out var responseCode, out var txnRef, out var transactionNo);
 
-                if (tx != null)
+                if (int.TryParse(txnRef, out var invoiceId))
                 {
-                    tx.ResponseCode = responseCode;
-                    tx.VnPayTransactionNo = transactionNo;
-                    tx.RawQuery = Request.QueryString.Value;
-                    if (success)
+                    var invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
+                    var tx = await _context.PaymentTransactions
+                        .Where(x => x.InvoiceID == invoiceId && x.TxnRef == txnRef)
+                        .OrderByDescending(x => x.PaymentTransactionId)
+                        .FirstOrDefaultAsync();
+
+                    if (tx != null)
                     {
-                        tx.Status = PaymentTransactionStatus.Success;
-                        tx.PaidAt = DateTime.Now;
+                        tx.ResponseCode = responseCode;
+                        tx.VnPayTransactionNo = transactionNo;
+                        tx.RawQuery = Request.QueryString.Value;
+                        if (success)
+                        {
+                            tx.Status = PaymentTransactionStatus.Success;
+                            tx.PaidAt = DateTime.Now;
+                        }
+                        else if (responseCode == "24")
+                        {
+                            tx.Status = PaymentTransactionStatus.Pending;
+                        }
+                        else
+                        {
+                            tx.Status = PaymentTransactionStatus.Failed;
+                            tx.PaidAt = null;
+                        }
                     }
-                    else if (responseCode == "24")
+
+                    if (invoice != null && success)
                     {
-                        tx.Status = PaymentTransactionStatus.Pending;
+                        invoice.Status = OrderStatus.Confirmed;
+                        invoice.ConfirmedAt = DateTime.Now;
                     }
-                    else
-                    {
-                        tx.Status = PaymentTransactionStatus.Failed;
-                        tx.PaidAt = null;
-                    }
+
+                    await _context.SaveChangesAsync();
                 }
 
-                if (invoice != null && success)
-                {
-                    invoice.Status = OrderStatus.Confirmed;
-                    invoice.ConfirmedAt = DateTime.Now;
-                }
+                var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)
+                    ? "http://localhost:3000"
+                    : _vnPayOptions.FrontendBaseUrl.Trim().TrimEnd('/');
 
-                await _context.SaveChangesAsync();
+                var redirectUrl = success
+                    ? $"{baseUrl}/Invoice?payment=success&invoiceId={txnRef}&txnNo={transactionNo}"
+                    : $"{baseUrl}/profile?tab=orders&id={txnRef}&payment=failed&code={responseCode}";
+
+                // Trả về HTML chứa script redirect để tránh lỗi Mixed Content (HTTPS -> HTTP) của trình duyệt
+                return Content($@"
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset='utf-8' />
+                        <title>Đang chuyển hướng...</title>
+                        <script>
+                            window.location.href = '{redirectUrl}';
+                        </script>
+                    </head>
+                    <body>
+                        <div style='text-align: center; margin-top: 100px; font-family: sans-serif;'>
+                            <h2>Đang chuyển hướng về LazPe...</h2>
+                            <p>Nếu trình duyệt không tự động chuyển hướng, vui lòng <a href='{redirectUrl}'>nhấp vào đây</a>.</p>
+                        </div>
+                    </body>
+                    </html>", "text/html");
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"VnPayReturn Error: {ex}");
+                
+                var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)
+                    ? "http://localhost:3000"
+                    : _vnPayOptions.FrontendBaseUrl.Trim().TrimEnd('/');
 
-            var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)
-                ? "http://localhost:3000"
-                : _vnPayOptions.FrontendBaseUrl.Trim().TrimEnd('/');
-
-            var redirectUrl = success
-                ? $"{baseUrl}/Invoice?payment=success&invoiceId={txnRef}&txnNo={transactionNo}"
-                : $"{baseUrl}/profile?tab=orders&id={txnRef}&payment=failed&code={responseCode}";
-
-            return Redirect(redirectUrl);
+                return Content($@"
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset='utf-8' />
+                        <script>
+                            window.location.href = '{baseUrl}/profile?tab=orders';
+                        </script>
+                    </head>
+                    <body>
+                        <script>window.location.href = '{baseUrl}/profile?tab=orders';</script>
+                    </body>
+                    </html>", "text/html");
+            }
         }
 
         public class CreateVnPayUrlRequest
