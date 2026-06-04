@@ -4,7 +4,7 @@ services:
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    autoDeploy: false # Thay đổi thành true nếu muốn tự động deploy khi push code
+    autoDeploy: true # Thay đổi thành true nếu muốn tự động deploy khi push code
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -16,13 +16,27 @@ services:
         value: "https://lazpe-backend.onrender.com"
       - key: JwtSettings__Audience
         value: "https://lazpe-frontend.onrender.com"
+      - key: VnPay__ReturnUrl
+        value: "https://lazpe-backend.onrender.com/api/payment/vnpay-return"
+      - key: VnPay__FrontendBaseUrl
+        value: "https://lazpe-frontend.onrender.com"
+      - key: Cloudinary__CloudName
+        sync: false # Giá trị của bạn: dmqow0hu4
+      - key: Cloudinary__ApiKey
+        sync: false # Giá trị của bạn: 622594698344116
+      - key: Cloudinary__ApiSecret
+        sync: false # Lấy từ appsettings.json
+      - key: EmailSettings__SmtpPassword
+        sync: false # Mật khẩu ứng dụng Gmail (xyuq altp vmsp hvfi)
+      - key: Ghn__Token
+        sync: false # Token GHN
 
   - type: web
     name: lazpe-frontend
     env: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
-    autoDeploy: false # Thay đổi thành true nếu muốn tự động deploy khi push code
+    autoDeploy: true # Thay đổi thành true nếu muốn tự động deploy khi push code
     envVars:
       - key: NEXT_PUBLIC_API_URL
         fromService:
