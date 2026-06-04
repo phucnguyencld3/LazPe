@@ -291,6 +291,8 @@ try
     {
         try
         {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await dbContext.Database.MigrateAsync();
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
         }
         catch (Exception ex)
