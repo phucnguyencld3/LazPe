@@ -659,7 +659,10 @@ export function OrderDetailView({
       {/* Cancel Order Dialog Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0">
+          <div 
+            className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
+            style={{ width: '448px', maxWidth: 'calc(100vw - 32px)' }}
+          >
             <div className="flex justify-between items-center">
               <h3 className="text-base sm:text-lg font-bold text-slate-800">Yêu cầu hủy đơn hàng</h3>
               <button 
@@ -715,7 +718,10 @@ export function OrderDetailView({
       {/* Confirm Completed Order Modal (Thay thế cho Modal mặc định của trình duyệt) */}
       {showCompleteModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-sm shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0">
+          <div 
+            className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
+            style={{ width: '384px', maxWidth: 'calc(100vw - 32px)' }}
+          >
             <div className="flex items-center gap-2 text-emerald-600 font-bold">
               <CheckCircle size={22} className="text-emerald-500 shrink-0" />
               <h3 className="text-base md:text-lg text-slate-800">Xác nhận nhận hàng</h3>
