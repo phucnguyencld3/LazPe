@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: lazpe-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    autoDeploy: false # Thay đổi thành true nếu muốn tự động deploy khi push code
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Giá trị này bạn sẽ điền trực tiếp trên trang Dashboard của Render
+      - key: JwtSettings__SecretKey
+        sync: false # Giá trị này bạn sẽ điền trực tiếp trên trang Dashboard của Render
+      - key: JwtSettings__Issuer
+        value: "https://lazpe-backend.onrender.com"
+      - key: JwtSettings__Audience
+        value: "https://lazpe-frontend.onrender.com"
+
+  - type: web
+    name: lazpe-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    autoDeploy: false # Thay đổi thành true nếu muốn tự động deploy khi push code
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: lazpe-backend
+          envVarKey: RENDER_EXTERNAL_URL
+      # Nối chuỗi /api vào sau URL ở trên (ví dụ: https://lazpe-backend.onrender.com/api)
+      # Render sẽ tự động gán giá trị RENDER_EXTERNAL_URL của backend vào NEXT_PUBLIC_API_URL

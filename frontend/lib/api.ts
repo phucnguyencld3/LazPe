@@ -1,6 +1,10 @@
 import { Product, Category, ApiResponse, PaginatedResponse, Voucher } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+let apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.endsWith('/api')) {
+  apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+}
+const API_BASE_URL = apiUrl;
 
 export async function getProducts(
   page: number = 1,
