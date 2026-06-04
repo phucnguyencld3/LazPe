@@ -6,7 +6,7 @@ import {
   retryVnPayPayment 
 } from "@/lib/api";
 import { toast } from "@/lib/toast";
-import { Loader, ArrowLeft, CheckCircle, HelpCircle, XCircle, Info, Copy, ClipboardCheck } from "lucide-react";
+import { Loader, ArrowLeft, CheckCircle, HelpCircle, XCircle, Info, Copy, ClipboardCheck, X, AlertTriangle } from "lucide-react";
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -27,6 +27,7 @@ export function OrderDetailView({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const fetchOrder = async () => {
     setLoading(true);
@@ -174,18 +175,58 @@ export function OrderDetailView({
   // Check if VNPay Payment can be retried
   // Conditions: statusCode === 0 (Pending) AND payMethodCode === 3 (MobilePayment/Ví điện tử)
   const isVnPay = order.payMethodCode === 3 || order.payMethodCode === 2 || order.payMethod?.includes("VNPay") || order.payMethod?.includes("Ví điện tử");
-  const canRetryPayment = order.statusCode === 0 && isVnPay;
+  const baseCanRetryPayment = order.statusCode === 0 && isVnPay;
+
+  // Countdown Timer logic for VNPay pending payment (24 hours expiration)
+  useEffect(() => {
+    if (!order || order.statusCode !== 0 || !isVnPay) return;
+
+    const calculateTimeLeft = () => {
+      const createdTime = new Date(order.createdAt).getTime();
+      const expireTime = createdTime + 24 * 60 * 60 * 1000; // 24 hours
+      const difference = expireTime - Date.now();
+      return Math.max(0, Math.floor(difference / 1000));
+    };
+
+    const initialTime = calculateTimeLeft();
+    setTimeLeft(initialTime);
+
+    if (initialTime <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          fetchOrder();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [order?.invoiceID, order?.statusCode, isVnPay]);
+
+  const formatTimeLeft = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, "0")} giờ ${minutes.toString().padStart(2, "0")} phút ${secs.toString().padStart(2, "0")} giây`;
+  };
+
+  const isExpired = baseCanRetryPayment && timeLeft === 0;
+  const canRetryPayment = baseCanRetryPayment && !isExpired;
 
   // Check if order can be canceled
   // Conditions: statusCode === 0 (Pending) OR statusCode === 1 (Confirmed)
-  const canCancelOrder = order.statusCode === 0 || order.statusCode === 1;
+  const canCancelOrder = (order.statusCode === 0 || order.statusCode === 1) && !isExpired;
 
   // Check if order can be completed by user
   // Conditions: statusCode === 2 (Shipped)
   const canCompleteOrder = order.statusCode === 2;
 
   // Timeline statuses
-  const isTimelineVisible = order.statusCode !== 4 && order.statusCode !== 5;
+  const isTimelineVisible = order.statusCode !== 4 && order.statusCode !== 5 && !isExpired;
 
   return (
     <div className="space-y-6">
@@ -202,9 +243,15 @@ export function OrderDetailView({
             <h1 className="text-xl md:text-2xl font-bold text-slate-800">
               Chi tiết đơn hàng <span className="text-primary">#TT-{order.invoiceID}</span>
             </h1>
-            <span className={`px-3 py-1 text-xs font-bold border rounded-full ${getStatusColor(order.statusCode)}`}>
-              {order.status}
-            </span>
+            {isExpired ? (
+              <span className="px-3 py-1 text-xs font-bold border rounded-full text-rose-800 bg-rose-50 border-rose-300">
+                Đã hủy (Quá hạn)
+              </span>
+            ) : (
+              <span className={`px-3 py-1 text-xs font-bold border rounded-full ${getStatusColor(order.statusCode)}`}>
+                {order.status}
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 font-semibold">
             Ngày đặt hàng: {formatDate(order.createdAt)}
@@ -243,10 +290,40 @@ export function OrderDetailView({
         </div>
       </div>
 
+      {/* Expiration Countdown/Expired Warning Banners */}
+      {baseCanRetryPayment && !isExpired && (
+        <div className="bg-amber-50 border border-amber-200 p-5 rounded-3xl flex items-start gap-4 shadow-sm animate-pulse">
+          <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={22} />
+          <div className="space-y-1">
+            <h3 className="font-bold text-amber-800 text-sm md:text-base">
+              Chờ thanh toán VNPay
+            </h3>
+            <p className="text-xs md:text-sm text-amber-700 font-semibold leading-relaxed">
+              Đơn hàng này chưa hoàn tất thanh toán. Vui lòng thanh toán qua cổng VNPay trong vòng: <span className="font-extrabold text-rose-600 bg-white border border-amber-250 px-2.5 py-0.5 rounded-lg shadow-2xs font-mono">{formatTimeLeft(timeLeft)}</span> để tránh đơn hàng bị hủy tự động.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isExpired && (
+        <div className="bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-start gap-4 shadow-sm">
+          <XCircle className="text-rose-500 shrink-0 mt-0.5" size={22} />
+          <div className="space-y-1">
+            <h3 className="font-bold text-rose-800 text-sm md:text-base">
+              Đơn hàng đã hết hạn
+            </h3>
+            <p className="text-xs md:text-sm text-rose-700 font-semibold leading-relaxed">
+              Đơn hàng này đã bị hủy tự động do quá hạn 24 giờ chưa hoàn tất thanh toán qua cổng VNPay.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Timeline or Cancel Alert */}
       {!isTimelineVisible ? (
-        <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-start gap-4">
-          <XCircle className="text-rose-500 shrink-0 mt-0.5" size={24} />
+        !isExpired && (
+          <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-start gap-4">
+            <XCircle className="text-rose-500 shrink-0 mt-0.5" size={24} />
           <div className="space-y-1">
             <h3 className="font-bold text-rose-800 text-sm md:text-base">
               {order.statusCode === 4 ? "Đang chờ duyệt hủy đơn hàng" : "Đơn hàng đã được hủy thành công"}
@@ -259,8 +336,9 @@ export function OrderDetailView({
                 Lý do hủy: "{order.cancelReason}"
               </p>
             )}
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
           {/* Progress Timeline Graphic */}
@@ -581,14 +659,14 @@ export function OrderDetailView({
       {/* Cancel Order Dialog Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-slate-100 space-y-4">
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-bold text-slate-800">Yêu cầu hủy đơn hàng</h3>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0">
+            <div className="flex justify-between items-center">
+              <h3 className="text-base sm:text-lg font-bold text-slate-800">Yêu cầu hủy đơn hàng</h3>
               <button 
                 onClick={() => setShowCancelModal(false)}
-                className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm font-bold">close</span>
+                <X size={18} />
               </button>
             </div>
             
@@ -637,7 +715,7 @@ export function OrderDetailView({
       {/* Confirm Completed Order Modal (Thay thế cho Modal mặc định của trình duyệt) */}
       {showCompleteModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border border-slate-100 space-y-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-sm shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0">
             <div className="flex items-center gap-2 text-emerald-600 font-bold">
               <CheckCircle size={22} className="text-emerald-500 shrink-0" />
               <h3 className="text-base md:text-lg text-slate-800">Xác nhận nhận hàng</h3>
