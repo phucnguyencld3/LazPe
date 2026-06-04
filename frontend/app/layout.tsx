@@ -26,8 +26,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PolyBaby",
-  description: "PolyBaby frontend",
+  title: "LazPe",
+  description: "Nền tảng thương mại điện tử LazPe",
 };
 
 export default function RootLayout({
