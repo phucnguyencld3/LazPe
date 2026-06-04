@@ -1085,7 +1085,7 @@ export async function submitProductReview(
     rating: number;
     content: string;
   }
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string; data?: any }> {
   try {
     const response = await fetch(`${API_BASE_URL}/Review/from-invoice`, {
       method: "POST",
@@ -1100,6 +1100,7 @@ export async function submitProductReview(
     return {
       success: response.ok && result.success,
       message: result.message || (response.ok ? "Đánh giá thành công!" : "Có lỗi xảy ra."),
+      data: result.data,
     };
   } catch (error) {
     console.error("Error submitting review:", error);
