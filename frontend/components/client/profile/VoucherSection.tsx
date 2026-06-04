@@ -216,7 +216,7 @@ export function VoucherSection({ token }: VoucherSectionProps) {
       </div>
 
       {/* Search Bar */}
-      <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-3 max-w-lg">
+      <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-3 max-w-[32rem]">
         <input
           type="text"
           placeholder="Nhập mã voucher tại đây..."

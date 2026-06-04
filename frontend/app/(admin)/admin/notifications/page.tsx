@@ -31,6 +31,29 @@ export default function AdminNotificationsPage() {
   const [stats, setStats] = useState<any | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const requestConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({
+      show: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
 
   // Template Modal States
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -73,10 +96,8 @@ export default function AdminNotificationsPage() {
     }
   };
 
-  const handleSendNow = async (id: number) => {
+  const executeSendNow = async (id: number) => {
     if (!token) return;
-    if (!window.confirm("Bạn có chắc chắn muốn phát hành thông báo này ngay lập tức?")) return;
-
     try {
       const result = await adminSendNotificationNow(token, id);
       if (result.success) {
@@ -90,10 +111,16 @@ export default function AdminNotificationsPage() {
     }
   };
 
-  const handleCancelSchedule = async (id: number) => {
-    if (!token) return;
-    if (!window.confirm("Bạn có chắc chắn muốn hủy lịch gửi của thông báo này?")) return;
+  const handleSendNow = (id: number) => {
+    requestConfirm(
+      "Phát hành thông báo?",
+      "Bạn có chắc chắn muốn phát hành thông báo này ngay lập tức?",
+      () => executeSendNow(id)
+    );
+  };
 
+  const executeCancelSchedule = async (id: number) => {
+    if (!token) return;
     try {
       const result = await adminCancelNotificationSchedule(token, id);
       if (result.success) {
@@ -107,10 +134,16 @@ export default function AdminNotificationsPage() {
     }
   };
 
-  const handleDeleteCampaign = async (id: number) => {
-    if (!token) return;
-    if (!window.confirm("Bạn có chắc chắn muốn xóa chiến dịch này? (Xóa mềm, dữ liệu vẫn được lưu trữ)")) return;
+  const handleCancelSchedule = (id: number) => {
+    requestConfirm(
+      "Hủy lịch gửi?",
+      "Bạn có chắc chắn muốn hủy lịch gửi của thông báo này?",
+      () => executeCancelSchedule(id)
+    );
+  };
 
+  const executeDeleteCampaign = async (id: number) => {
+    if (!token) return;
     try {
       const result = await adminDeleteNotification(token, id);
       if (result.success) {
@@ -122,6 +155,14 @@ export default function AdminNotificationsPage() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleDeleteCampaign = (id: number) => {
+    requestConfirm(
+      "Xóa chiến dịch?",
+      "Bạn có chắc chắn muốn xóa chiến dịch này? (Dữ liệu vẫn được lưu trữ trên hệ thống)",
+      () => executeDeleteCampaign(id)
+    );
   };
 
   // Template Handlers
@@ -175,10 +216,8 @@ export default function AdminNotificationsPage() {
     }
   };
 
-  const handleDeleteTemplate = async (id: number) => {
+  const executeDeleteTemplate = async (id: number) => {
     if (!token) return;
-    if (!window.confirm("Bạn có chắc chắn muốn xóa mẫu thông báo này?")) return;
-
     try {
       const result = await adminDeleteTemplate(token, id);
       if (result.success) {
@@ -190,6 +229,14 @@ export default function AdminNotificationsPage() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleDeleteTemplate = (id: number) => {
+    requestConfirm(
+      "Xóa mẫu thông báo?",
+      "Bạn có chắc chắn muốn xóa mẫu thông báo này?",
+      () => executeDeleteTemplate(id)
+    );
   };
 
   // Styling Helpers
@@ -452,7 +499,7 @@ export default function AdminNotificationsPage() {
                       filteredCampaigns.map((camp) => (
                         <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-4 pl-6 font-mono font-bold text-slate-400">{camp.code}</td>
-                          <td className="py-4 max-w-xs">
+                          <td className="py-4 max-w-[20rem]">
                             <p className="font-bold text-slate-800 truncate" title={camp.title}>{camp.title}</p>
                             <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5" title={camp.shortDescription}>{camp.shortDescription}</p>
                           </td>
@@ -608,7 +655,7 @@ export default function AdminNotificationsPage() {
       {/* TEMPLATE DIALOG MODAL */}
       {templateModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-[32rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <h3 className="font-bold text-slate-800 text-sm">{editingTemplate ? "Chỉnh sửa mẫu" : "Tạo mẫu thông báo mới"}</h3>
               <button 
@@ -686,6 +733,38 @@ export default function AdminNotificationsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div 
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
+          />
+          <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 max-w-[380px] w-full relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
+            <h3 className="text-sm font-bold text-slate-800 mb-2">
+              {confirmModal.title}
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed mb-6 font-semibold">
+              {confirmModal.message}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-[11px] font-bold text-slate-600 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold transition-all shadow-md shadow-rose-500/10 active:scale-95"
+              >
+                Xác nhận
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -4,6 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import * as signalR from "@microsoft/signalr";
+import { toast } from "@/lib/toast";
+import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, UserNotificationItem } from "@/lib/api";
 
 export default function AdminLayout({
   children,
@@ -13,6 +16,119 @@ export default function AdminLayout({
   const [isAuth, setIsAuth] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Notifications states
+  const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+
+    const loadNotifications = async (authToken: string) => {
+      try {
+        const data = await getNotifications(authToken, undefined, undefined, 1, 5);
+        if (data) {
+          setNotifications(data);
+        }
+        const count = await getUnreadNotificationCount(authToken);
+        setUnreadCount(count);
+      } catch (err) {
+        console.error("Error loading admin notifications:", err);
+      }
+    };
+
+    loadNotifications(token);
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5101/notificationHub", {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on("ReceiveNotification", (notif: UserNotificationItem) => {
+      setNotifications((prev) => [notif, ...prev.slice(0, 4)]);
+      setUnreadCount((prev) => prev + 1);
+      toast.success(`Thông báo mới: ${notif.title}`);
+
+      try {
+        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
+        audio.volume = 0.4;
+        audio.play();
+      } catch (e) {
+        // blocked by browser
+      }
+    });
+
+    connection.start().catch((err) => console.error("Admin SignalR error:", err));
+
+    return () => {
+      connection.stop();
+    };
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+    try {
+      const result = await markAllNotificationsRead(token);
+      if (result.success) {
+        setUnreadCount(0);
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        toast.success("Đã đánh dấu đã đọc tất cả");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleNotificationClick = async (notif: UserNotificationItem) => {
+    setIsNotifDropdownOpen(false);
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+
+    if (!notif.isRead) {
+      try {
+        await markNotificationRead(token, notif.id);
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        setNotifications((prev) => prev.map((n) => n.id === notif.id ? { ...n, isRead: true } : n));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (notif.actionUrl) {
+      window.location.href = notif.actionUrl;
+    } else {
+      window.location.href = "/admin/notifications";
+    }
+  };
+
+  const getNotifIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "system": return "settings";
+      case "promotion": return "campaign";
+      case "order": return "local_shipping";
+      case "membership": return "military_tech";
+      case "rewardpoints": return "stars";
+      default: return "notifications";
+    }
+  };
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    
+    if (diffMins < 1) return "Vừa xong";
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return date.toLocaleDateString("vi-VN");
+  };
 
   useEffect(() => {
     if (isAuth) return;
@@ -77,7 +193,90 @@ export default function AdminLayout({
           </h1>
         </div>
         <div className="flex items-center gap-md">
-          <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">notifications</button>
+          <div className="relative">
+            <button
+              onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
+              className={`material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300 relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
+              title="Thông báo"
+            >
+              notifications
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Panel */}
+            {isNotifDropdownOpen && (
+              <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 text-slate-800">
+                <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
+                  <span className="font-bold text-slate-800 text-sm">Thông báo mới</span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-[11px] text-rose-500 hover:text-rose-600 font-bold transition-colors"
+                    >
+                      Đọc tất cả
+                    </button>
+                  )}
+                </div>
+                
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                      <span className="material-symbols-outlined text-3xl mb-1 text-slate-300">notifications_off</span>
+                      <span className="text-[11px] font-medium">Không có thông báo nào</span>
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        onClick={() => handleNotificationClick(notif)}
+                        className={`flex items-start gap-3 p-3 hover:bg-slate-50 transition-colors cursor-pointer relative ${!notif.isRead ? "bg-rose-500/5" : ""}`}
+                      >
+                        {!notif.isRead && (
+                          <span className="absolute top-4 right-3 w-2 h-2 bg-rose-500 rounded-full"></span>
+                        )}
+
+                        <div className="w-9 h-9 rounded-full bg-rose-50/50 flex-shrink-0 overflow-hidden flex items-center justify-center border border-rose-100/50 text-rose-500">
+                          {notif.thumbnailImage ? (
+                            <img src={notif.thumbnailImage} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-lg">
+                              {getNotifIcon(notif.type)}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className={`text-xs text-slate-800 line-clamp-1 leading-snug ${!notif.isRead ? "font-bold" : "font-semibold"}`}>
+                            {notif.title}
+                          </p>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+                            {notif.shortDescription}
+                          </p>
+                          <span className="text-[9px] text-slate-400 font-bold block mt-1">
+                            {formatTime(notif.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="px-3 pt-2 mt-2 border-t border-slate-100">
+                  <Link
+                    href="/admin/notifications"
+                    className="block text-center w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 transition-colors"
+                    onClick={() => setIsNotifDropdownOpen(false)}
+                  >
+                    Xem tất cả thông báo
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
           <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
           <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container">
             <img 

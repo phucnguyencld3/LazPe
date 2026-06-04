@@ -13,7 +13,8 @@ namespace PolyBabyAPI.DTOs
         public string? ThumbnailImage { get; set; }
         public string? BannerImage { get; set; }
         public NotificationType Type { get; set; }
-        public string TypeName => Type.ToString();
+        public string? CustomTypeName { get; set; }
+        public string TypeName => Type == NotificationType.Custom ? (CustomTypeName ?? "Custom") : Type.ToString();
         public NotificationPriority Priority { get; set; }
         public string PriorityName => Priority.ToString();
         public ActionType ActionType { get; set; }
@@ -57,6 +58,7 @@ namespace PolyBabyAPI.DTOs
         public string? BannerImage { get; set; }
 
         public NotificationType Type { get; set; } = NotificationType.System;
+        public string? CustomTypeName { get; set; }
         public NotificationPriority Priority { get; set; } = NotificationPriority.Medium;
         public ActionType ActionType { get; set; } = ActionType.None;
 

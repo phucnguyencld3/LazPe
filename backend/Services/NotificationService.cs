@@ -60,6 +60,7 @@ namespace PolyBabyAPI.Services
                 ThumbnailImage = dto.ThumbnailImage,
                 BannerImage = dto.BannerImage,
                 Type = dto.Type,
+                CustomTypeName = dto.CustomTypeName,
                 Priority = dto.Priority,
                 ActionType = dto.ActionType,
                 ActionUrl = dto.ActionUrl,
@@ -118,6 +119,7 @@ namespace PolyBabyAPI.Services
             notif.ThumbnailImage = dto.ThumbnailImage;
             notif.BannerImage = dto.BannerImage;
             notif.Type = dto.Type;
+            notif.CustomTypeName = dto.CustomTypeName;
             notif.Priority = dto.Priority;
             notif.ActionType = dto.ActionType;
             notif.ActionUrl = dto.ActionUrl;
@@ -531,7 +533,7 @@ namespace PolyBabyAPI.Services
                 Content = un.Notification.Content,
                 ThumbnailImage = un.Notification.ThumbnailImage,
                 BannerImage = un.Notification.BannerImage,
-                Type = un.Notification.Type.ToString(),
+                Type = un.Notification.Type == NotificationType.Custom ? (un.Notification.CustomTypeName ?? "Custom") : un.Notification.Type.ToString(),
                 Priority = un.Notification.Priority.ToString(),
                 ActionType = un.Notification.ActionType.ToString(),
                 ActionUrl = un.Notification.ActionUrl,
@@ -699,6 +701,7 @@ namespace PolyBabyAPI.Services
                 ThumbnailImage = entity.ThumbnailImage,
                 BannerImage = entity.BannerImage,
                 Type = entity.Type,
+                CustomTypeName = entity.CustomTypeName,
                 Priority = entity.Priority,
                 ActionType = entity.ActionType,
                 ActionUrl = entity.ActionUrl,

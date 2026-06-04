@@ -8,7 +8,8 @@ namespace PolyBabyAPI.Models
         Promotion,   // Khuyến mãi
         Order,       // Đơn hàng
         Membership,  // Thành viên
-        RewardPoints // Điểm thưởng
+        RewardPoints, // Điểm thưởng
+        Custom       // Tự chọn / Tùy chỉnh
     }
 
     public enum NotificationPriority
@@ -74,6 +75,8 @@ namespace PolyBabyAPI.Models
         public string? BannerImage { get; set; }
 
         public NotificationType Type { get; set; } = NotificationType.System;
+        [StringLength(100)]
+        public string? CustomTypeName { get; set; }
         public NotificationPriority Priority { get; set; } = NotificationPriority.Medium;
         public ActionType ActionType { get; set; } = ActionType.None;
 

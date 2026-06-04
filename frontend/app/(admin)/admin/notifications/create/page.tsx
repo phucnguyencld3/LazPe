@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Calendar, Upload, Loader, Image as ImageIcon, Sparkles, HelpCircle } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { adminCreateNotification, adminGetTemplates } from "@/lib/api";
+import TiptapEditor from "@/components/admin/shared/TiptapEditor";
 
 const BUILT_IN_TEMPLATES = [
   {
@@ -42,12 +43,14 @@ const BUILT_IN_TEMPLATES = [
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  
+
   // State
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState<"list" | "detail">("list");
 
   const [form, setForm] = useState({
     title: "",
@@ -56,6 +59,7 @@ export default function CreateCampaignPage() {
     thumbnailImage: "",
     bannerImage: "",
     type: "System", // System, Promotion, Order, Membership, RewardPoints
+    customTypeName: "",
     priority: "Medium", // Low, Medium, High, Critical
     actionType: "None", // None, Product, Voucher, Order, Membership, Promotion, CustomUrl
     actionUrl: "",
@@ -80,7 +84,7 @@ export default function CreateCampaignPage() {
       return;
     }
     setToken(savedToken);
-    
+
     // Load templates for quick selection
     adminGetTemplates(savedToken).then(data => {
       const dbTemplates = data || [];
@@ -167,7 +171,7 @@ export default function CreateCampaignPage() {
 
     try {
       const compiledTargetValue = getCompiledTargetValue();
-      
+
       let publishedAt: string | null = null;
       if (form.sendOption === "schedule" && form.publishDate && form.publishTime) {
         publishedAt = new Date(`${form.publishDate}T${form.publishTime}`).toISOString();
@@ -180,6 +184,7 @@ export default function CreateCampaignPage() {
         thumbnailImage: form.thumbnailImage || null,
         bannerImage: form.bannerImage || null,
         type: parseInt(getTypeEnum(form.type)),
+        customTypeName: form.type === "Custom" ? form.customTypeName : null,
         priority: parseInt(getPriorityEnum(form.priority)),
         actionType: parseInt(getActionTypeEnum(form.actionType)),
         actionUrl: form.actionUrl || null,
@@ -193,8 +198,8 @@ export default function CreateCampaignPage() {
       const result = await adminCreateNotification(token, payload);
       if (result.success) {
         toast.success(
-          form.sendOption === "schedule" 
-            ? "Đã lên lịch chiến dịch thông báo thành công!" 
+          form.sendOption === "schedule"
+            ? "Đã lên lịch chiến dịch thông báo thành công!"
             : "Thông báo đã được phát đi thành công!"
         );
         router.push("/admin/notifications");
@@ -210,7 +215,7 @@ export default function CreateCampaignPage() {
   };
 
   const getTypeEnum = (val: string) => {
-    const map: any = { "System": "0", "Promotion": "1", "Order": "2", "Membership": "3", "RewardPoints": "4" };
+    const map: any = { "System": "0", "Promotion": "1", "Order": "2", "Membership": "3", "RewardPoints": "4", "Custom": "5" };
     return map[val] || "0";
   };
 
@@ -229,46 +234,10 @@ export default function CreateCampaignPage() {
     return map[val] || "0";
   };
 
-  // Helper text editors
-  const insertText = (before: string, after: string = "") => {
-    const textarea = document.getElementById("notif-content-area") as HTMLTextAreaElement;
-    if (!textarea) return;
-    
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const selected = text.substring(start, end);
-    const replacement = before + selected + after;
-    
-    setForm(prev => ({
-      ...prev,
-      content: text.substring(0, start) + replacement + text.substring(end)
-    }));
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
-    }, 10);
-  };
-
-  const handleLinkInsert = () => {
-    const url = prompt("Nhập đường dẫn liên kết (URL):", "https://");
-    const text = prompt("Nhập văn bản hiển thị:", "Xem chi tiết");
-    if (url && text) {
-      insertText(`[${text}](${url})`);
-    }
-  };
-
-  const handleImageInsert = () => {
-    const url = prompt("Nhập đường dẫn ảnh (URL):", "https://");
-    const alt = prompt("Nhập mô tả ảnh (Alt):", "Hình ảnh");
-    if (url) {
-      insertText(`![${alt || "Hình ảnh"}](${url})`);
-    }
-  };
+  // Tiptap handles editor insertions internally
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-10">
+    <div className="space-y-6 pb-10">
       {/* Back link */}
       <Link
         href="/admin/notifications"
@@ -332,27 +301,10 @@ export default function CreateCampaignPage() {
           {/* Rich Content Editor */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung chi tiết thông báo *</label>
-            
-            {/* Editor Toolbar */}
-            <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-100 border-x border-t border-slate-200 rounded-t-xl">
-              <button type="button" onClick={() => insertText("# ", "")} className="px-2 py-1 text-[11px] font-extrabold hover:bg-slate-200 rounded text-slate-700" title="Tiêu đề lớn">H1</button>
-              <button type="button" onClick={() => insertText("## ", "")} className="px-2 py-1 text-[11px] font-extrabold hover:bg-slate-200 rounded text-slate-700" title="Tiêu đề trung">H2</button>
-              <button type="button" onClick={() => insertText("**", "**")} className="px-2 py-1 text-[11px] font-bold hover:bg-slate-200 rounded text-slate-700" title="In đậm">B</button>
-              <button type="button" onClick={() => insertText("*", "*")} className="px-2 py-1 text-[11px] italic hover:bg-slate-200 rounded text-slate-700" title="In nghiêng">I</button>
-              <button type="button" onClick={() => insertText("- ", "")} className="px-2 py-1 text-[11px] hover:bg-slate-200 rounded text-slate-700" title="Danh sách">List</button>
-              <button type="button" onClick={handleLinkInsert} className="px-2 py-1 text-[11px] hover:bg-slate-200 rounded text-slate-700 text-rose-500 font-bold" title="Chèn liên kết">Link</button>
-              <button type="button" onClick={handleImageInsert} className="px-2 py-1 text-[11px] hover:bg-slate-200 rounded text-slate-700" title="Chèn ảnh">Image</button>
-              <button type="button" onClick={() => insertText(":::highlight\n", "\n:::")} className="px-2 py-1 text-[11px] hover:bg-slate-200 rounded text-slate-700" title="Hộp quà/Nổi bật">HighlightBox</button>
-            </div>
-
-            <textarea
-              id="notif-content-area"
-              rows={8}
+            <TiptapEditor
               value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder="Nhập nội dung chi tiết thông báo tại đây..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-b-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800 border-t-0 font-sans"
-              required
+              onChange={(html) => setForm(prev => ({ ...prev, content: html }))}
+              token={token}
             />
           </div>
 
@@ -427,7 +379,19 @@ export default function CreateCampaignPage() {
                 <option value="Order">Đơn hàng (Đang giao, Hóa đơn)</option>
                 <option value="Membership">Thành viên (Thăng hạng, Privilege)</option>
                 <option value="RewardPoints">Điểm thưởng (Tích điểm, Đổi điểm)</option>
+                <option value="Custom">Tùy chỉnh (Nhập tên loại thông báo riêng)</option>
               </select>
+              
+              {form.type === "Custom" && (
+                <input
+                  type="text"
+                  placeholder="Nhập tên loại thông báo tự chọn (Ví dụ: Giao hàng, Bảo hành...)"
+                  value={form.customTypeName || ""}
+                  onChange={(e) => setForm({ ...form, customTypeName: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800 mt-2 animate-in slide-in-from-top-1 duration-200"
+                  required
+                />
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -467,8 +431,8 @@ export default function CreateCampaignPage() {
             {form.actionType !== "None" && (
               <div className="space-y-1.5 animate-in fade-in duration-150">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {form.actionType === "Product" ? "Mã ID Sản phẩm (ProductId) *" : 
-                   form.actionType === "CustomUrl" ? "Đường dẫn URL liên kết *" : "Tham số / Link bổ sung"}
+                  {form.actionType === "Product" ? "Mã ID Sản phẩm (ProductId) *" :
+                    form.actionType === "CustomUrl" ? "Đường dẫn URL liên kết *" : "Tham số / Link bổ sung"}
                 </label>
                 <input
                   type="text"
@@ -649,6 +613,13 @@ export default function CreateCampaignPage() {
               Hủy bỏ
             </button>
             <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="px-5 py-3 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors flex items-center gap-1"
+            >
+              <Sparkles size={14} className="text-rose-500" /> Xem trước
+            </button>
+            <button
               type="submit"
               disabled={loading}
               className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 disabled:opacity-50 active:scale-95 shadow-md shadow-rose-500/10 transition-all"
@@ -666,6 +637,177 @@ export default function CreateCampaignPage() {
           </div>
         </form>
       </div>
+
+      {/* Preview Modal */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setPreviewOpen(false)}
+          />
+
+          {/* Preview Container */}
+          <div className="bg-slate-50 rounded-3xl w-full max-w-[640px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-100 bg-white flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-sm">Xem trước thông báo (Khách hàng thấy)</h3>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Hiển thị mô phỏng trên thiết device của khách hàng</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Toggle tabs */}
+            <div className="bg-white border-b border-slate-100 px-5 py-2.5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPreviewTab("list")}
+                className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all ${previewTab === "list"
+                  ? "bg-rose-500 text-white shadow-sm"
+                  : "bg-slate-50 text-slate-600 hover:text-rose-500 hover:bg-slate-100"
+                  }`}
+              >
+                Giao diện Danh sách (Inbox list)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewTab("detail")}
+                className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all ${previewTab === "detail"
+                  ? "bg-rose-500 text-white shadow-sm"
+                  : "bg-slate-50 text-slate-600 hover:text-rose-500 hover:bg-slate-100"
+                  }`}
+              >
+                Giao diện Chi tiết (Popup detail)
+              </button>
+            </div>
+
+            {/* Simulated Content Area */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {previewTab === "list" ? (
+                /* SIMULATED INBOX ITEM */
+                <div className="max-w-[450px] mx-auto bg-white rounded-2xl p-4 border border-rose-200 bg-rose-50/10 shadow-[0_4px_12px_rgba(135,78,88,0.02)] relative flex gap-4">
+                  {/* Pin badge simulation */}
+                  {form.isPinned && (
+                    <span className="absolute top-0 left-6 -translate-y-1/2 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-[8px] font-bold">push_pin</span>
+                      Ghim
+                    </span>
+                  )}
+
+                  {/* Thumbnail */}
+                  <div className={`w-10 h-10 rounded-xl border flex-shrink-0 flex items-center justify-center relative overflow-hidden bg-rose-50 text-rose-600 border-rose-100`}>
+                    {form.thumbnailImage ? (
+                      <img src={form.thumbnailImage} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-base">
+                        {form.type === "System" ? "settings" : form.type === "Promotion" ? "campaign" : form.type === "Order" ? "local_shipping" : form.type === "Membership" ? "military_tech" : "stars"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs text-slate-800 line-clamp-1 leading-snug font-bold text-slate-900">
+                        {form.title || "Tiêu đề thông báo"}
+                      </h3>
+                      <span className="w-1.5 h-1.5 bg-rose-500 rounded-full flex-shrink-0"></span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                      {form.shortDescription || "Mô tả ngắn gọn về thông báo này..."}
+                    </p>
+
+                    <div className="flex items-center gap-2 mt-2 text-[9px] text-slate-400 font-bold">
+                      <span>{new Date().toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                      <span>•</span>
+                      <span className="uppercase tracking-wider text-[8px]">{form.type}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* SIMULATED DETAIL VIEW */
+                <div className="max-w-[500px] mx-auto bg-white rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] overflow-hidden">
+                  {/* Banner Image */}
+                  {form.bannerImage && (
+                    <div className="w-full h-36 bg-slate-100 overflow-hidden relative border-b border-slate-100">
+                      <img
+                        src={form.bannerImage}
+                        alt="Banner"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Body Wrapper */}
+                  <div className="p-5 space-y-4">
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border bg-rose-50 text-rose-600 border-rose-100`}>
+                        {form.type}
+                      </span>
+                      {(form.priority === "Critical" || form.priority === "High") && (
+                        <span className="bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-lg text-[8px] font-bold uppercase tracking-wider">
+                          Quan trọng
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h2 className="text-base font-extrabold text-slate-800 leading-tight">
+                      {form.title || "Tiêu đề thông báo"}
+                    </h2>
+
+                    {/* Short Description */}
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100/50">
+                      <p className="text-slate-600 text-[11px] font-semibold leading-relaxed">
+                        {form.shortDescription || "Mô tả ngắn gọn về thông báo này..."}
+                      </p>
+                    </div>
+
+                    {/* Editor Content */}
+                    <div
+                      className="tiptap prose prose-slate max-w-none text-slate-700 text-xs leading-relaxed mb-4 whitespace-pre-line border-t border-slate-100 pt-3"
+                      dangerouslySetInnerHTML={{ __html: form.content || "<p className='text-slate-400 italic'>Chưa nhập nội dung chi tiết...</p>" }}
+                    />
+
+                    {/* Action Button */}
+                    {form.actionType !== "None" && form.actionUrl && (
+                      <div className="pt-3 border-t border-slate-100 flex justify-end">
+                        <button
+                          type="button"
+                          className="px-4 py-2 bg-rose-500 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all"
+                        >
+                          {form.actionType === "Product" ? "Xem sản phẩm" : form.actionType === "Voucher" ? "Nhận Voucher ngay" : form.actionType === "Order" ? "Xem chi tiết đơn hàng" : form.actionType === "Membership" ? "Xem hạng thành viên" : form.actionType === "Promotion" ? "Xem chương trình khuyến mãi" : "Đi đến liên kết"}
+                          <span className="material-symbols-outlined text-[10px] font-bold">open_in_new</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-white flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all active:scale-95"
+              >
+                Đóng xem trước
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

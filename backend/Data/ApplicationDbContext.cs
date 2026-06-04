@@ -314,6 +314,14 @@ namespace PolyBabyAPI.Data
                 entity.HasIndex(nt => nt.TemplateCode).IsUnique();
             });
 
+            // User notification settings default values
+            builder.Entity<ApplicationUser>(entity =>
+            {
+                entity.Property(u => u.ReceiveEmailNotifications).HasDefaultValue(true);
+                entity.Property(u => u.ReceiveOrderUpdates).HasDefaultValue(true);
+                entity.Property(u => u.ReceivePromotions).HasDefaultValue(true);
+            });
+
             // Permission configurations
             ConfigurePermissionEntities(builder);
         }

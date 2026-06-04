@@ -35,6 +35,7 @@ import { OrdersSection } from "@/components/client/profile/OrdersSection";
 import { ReviewsSection } from "@/components/client/profile/ReviewsSection";
 import { PrivacySection } from "@/components/client/profile/PrivacySection";
 import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
+import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -49,6 +50,33 @@ export default function ProfilePage() {
   const [provinces, setProvinces] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
+  const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const idParam = params.get("id");
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+      if (idParam) {
+        const parsed = parseInt(idParam, 10);
+        if (!isNaN(parsed)) {
+          setInitialNotifId(parsed);
+        }
+      }
+    }
+  }, []);
+
+  const handleClearInitialId = () => {
+    setInitialNotifId(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("id");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  };
 
   // Modals States
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -553,6 +581,7 @@ export default function ProfilePage() {
                     { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                     { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                     { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                    { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
                     { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
                     { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
                   ] as const
@@ -583,6 +612,7 @@ export default function ProfilePage() {
                     { id: "address", label: "Địa chỉ", icon: "location_on" },
                     { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                     { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                    { id: "notifications", label: "Thông báo", icon: "notifications" },
                     { id: "reviews", label: "Đánh giá", icon: "reviews" },
                     { id: "privacy", label: "Bảo mật", icon: "policy" },
                   ] as const
@@ -648,6 +678,16 @@ export default function ProfilePage() {
               <OrdersSection 
                 userId={userProfile.userId} 
                 token={token} 
+                initialOrderId={initialNotifId}
+                onClearInitialOrderId={handleClearInitialId}
+              />
+            )}
+
+            {activeTab === "notifications" && (
+              <NotificationsSection 
+                token={token} 
+                initialSelectedId={initialNotifId}
+                onClearInitialId={handleClearInitialId}
               />
             )}
 

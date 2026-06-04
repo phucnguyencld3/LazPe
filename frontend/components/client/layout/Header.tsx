@@ -157,7 +157,7 @@ export default function Header() {
     if (notif.actionUrl) {
       window.location.href = notif.actionUrl;
     } else {
-      window.location.href = `/notifications?id=${notif.id}`;
+      window.location.href = `/profile?tab=notifications&id=${notif.id}`;
     }
   };
 
@@ -376,7 +376,7 @@ export default function Header() {
 
                     <div className="px-3 pt-2 mt-2 border-t border-slate-100">
                       <Link
-                        href="/notifications"
+                        href="/profile?tab=notifications"
                         className="block text-center w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 transition-colors"
                         onClick={() => setIsNotifDropdownOpen(false)}
                       >
