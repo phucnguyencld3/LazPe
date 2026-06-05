@@ -329,9 +329,9 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Ngày sinh */}
+                {/* Năm sinh */}
                 <div className="flex flex-col gap-1">
-                  <label className="font-label-md text-sm text-primary ml-3" htmlFor="dob">Ngày sinh của bé (hoặc dự sinh)</label>
+                  <label className="font-label-md text-sm text-primary ml-3" htmlFor="dob">Năm sinh</label>
                   <div className="relative">
                     <span className={getInputIconClass("dob")}>calendar_today</span>
                     <input 
