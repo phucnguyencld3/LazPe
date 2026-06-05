@@ -479,6 +479,26 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Test thử nghiệm gửi email hệ thống
+        /// </summary>
+        [HttpPost("test-send-email")]
+        public async Task<IActionResult> TestSendEmail([FromQuery] string email)
+        {
+            try
+            {
+                var subject = "Thử nghiệm gửi email hệ thống - LazPe";
+                var htmlBody = "<h3>Kết nối email hoạt động thành công!</h3><p>Đây là email tự động gửi từ hệ thống API LazPe.</p>";
+                await _emailSender.SendEmailAsync(email, subject, htmlBody);
+                return Ok(new { success = true, message = "Email đã được gửi đi thành công!" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chạy thử nghiệm gửi email");
+                return BadRequest(new { success = false, message = "Lỗi gửi email: " + ex.Message, details = ex.ToString() });
+            }
+        }
+
 
         /// <summary>
         /// Đăng xuất (chủ yếu để invalidate token ở client-side)
