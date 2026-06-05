@@ -826,30 +826,79 @@ namespace PolyBabyAPI.Controllers
                 var importedCount = 0;
                 var now = DateTime.Now;
 
+                var processedWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var emptyCount = 0;
+                var duplicateDbCount = 0;
+                var duplicateFileCount = 0;
+
+                var allowedSeverities = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Warning", "Medium", "Critical" };
+                var allowedCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Abuse", "Vulgarity", "Spam", "Phone", "Link", "Scam", "Violations" };
+
                 for (int row = 2; row <= rowCount; row++)
                 {
                     var word = worksheet.Cell(row, 1).GetString().Trim();
                     var severity = worksheet.Cell(row, 2).GetString().Trim();
                     var category = worksheet.Cell(row, 3).GetString().Trim();
 
-                    if (string.IsNullOrEmpty(word)) continue;
-
-                    if (string.IsNullOrEmpty(severity)) severity = "Warning";
-                    if (string.IsNullOrEmpty(category)) category = "Abuse";
-
-                    var exists = await _context.ReviewSensitiveKeywords.AnyAsync(k => k.Word == word);
-                    if (!exists)
+                    if (string.IsNullOrEmpty(word))
                     {
-                        var keyword = new ReviewSensitiveKeyword
-                        {
-                            Word = word,
-                            Severity = severity,
-                            Category = category,
-                            CreatedAt = now
-                        };
-                        _context.ReviewSensitiveKeywords.Add(keyword);
-                        importedCount++;
+                        emptyCount++;
+                        continue;
                     }
+
+                    // Check duplicate in the Excel file itself
+                    if (processedWords.Contains(word))
+                    {
+                        duplicateFileCount++;
+                        continue;
+                    }
+                    processedWords.Add(word);
+
+                    // Check duplicate in the database
+                    var exists = await _context.ReviewSensitiveKeywords.AnyAsync(k => k.Word == word);
+                    if (exists)
+                    {
+                        duplicateDbCount++;
+                        continue;
+                    }
+
+                    // Standardize severity
+                    if (string.IsNullOrEmpty(severity) || !allowedSeverities.Contains(severity))
+                    {
+                        severity = "Warning";
+                    }
+                    else
+                    {
+                        if (string.Equals(severity, "Warning", StringComparison.OrdinalIgnoreCase)) severity = "Warning";
+                        else if (string.Equals(severity, "Medium", StringComparison.OrdinalIgnoreCase)) severity = "Medium";
+                        else if (string.Equals(severity, "Critical", StringComparison.OrdinalIgnoreCase)) severity = "Critical";
+                    }
+
+                    // Standardize category
+                    if (string.IsNullOrEmpty(category) || !allowedCategories.Contains(category))
+                    {
+                        category = "Abuse";
+                    }
+                    else
+                    {
+                        if (string.Equals(category, "Abuse", StringComparison.OrdinalIgnoreCase)) category = "Abuse";
+                        else if (string.Equals(category, "Vulgarity", StringComparison.OrdinalIgnoreCase)) category = "Vulgarity";
+                        else if (string.Equals(category, "Spam", StringComparison.OrdinalIgnoreCase)) category = "Spam";
+                        else if (string.Equals(category, "Phone", StringComparison.OrdinalIgnoreCase)) category = "Phone";
+                        else if (string.Equals(category, "Link", StringComparison.OrdinalIgnoreCase)) category = "Link";
+                        else if (string.Equals(category, "Scam", StringComparison.OrdinalIgnoreCase)) category = "Scam";
+                        else if (string.Equals(category, "Violations", StringComparison.OrdinalIgnoreCase)) category = "Violations";
+                    }
+
+                    var keyword = new ReviewSensitiveKeyword
+                    {
+                        Word = word,
+                        Severity = severity,
+                        Category = category,
+                        CreatedAt = now
+                    };
+                    _context.ReviewSensitiveKeywords.Add(keyword);
+                    importedCount++;
                 }
 
                 if (importedCount > 0)
@@ -857,7 +906,18 @@ namespace PolyBabyAPI.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                return Ok(new { success = true, message = $"Import thành công {importedCount} từ khóa mới." });
+                var message = $"Import thành công {importedCount} từ khóa mới.";
+                var skippedDetails = new List<string>();
+                if (duplicateDbCount > 0) skippedDetails.Add($"{duplicateDbCount} từ đã tồn tại");
+                if (duplicateFileCount > 0) skippedDetails.Add($"{duplicateFileCount} từ trùng lặp trong file");
+                if (emptyCount > 0) skippedDetails.Add($"{emptyCount} dòng trống");
+
+                if (skippedDetails.Count > 0)
+                {
+                    message += $" Bỏ qua: {string.Join(", ", skippedDetails)}.";
+                }
+
+                return Ok(new { success = true, message = message });
             }
             catch (Exception ex)
             {
