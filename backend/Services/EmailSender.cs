@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using System.Net;
 using System.Net.Mail;
 
@@ -46,7 +46,8 @@ namespace PolyBabyAPI.Services
 
             using var client = new SmtpClient(smtpHost, smtpPort)
             {
-                EnableSsl = enableSsl
+                EnableSsl = enableSsl,
+                Timeout = 10000 // 10 seconds timeout
             };
 
             if (!string.IsNullOrWhiteSpace(smtpUser) && !string.IsNullOrWhiteSpace(smtpPassword))
