@@ -564,7 +564,8 @@ namespace PolyBabyAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating invoice from cart {CartId}", cartId);
-                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = ex.Message });
+                var errorMsg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
+                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = errorMsg });
             }
         }
 
@@ -829,10 +830,18 @@ namespace PolyBabyAPI.Controllers
                 if (user == null)
                     return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
 
-                var result = await _invoiceService.RequestCancelAsync(id, user.Id, request?.Reason);
-                if (!result)
-                    return BadRequest(new { message = "Không thể gửi yêu cầu hủy. Kiểm tra lại trạng thái đơn hàng." });
-                return Ok(new { message = "Gửi yêu cầu hủy thành công. Chúng tôi sẽ xem xét sớm nhất." });
+                var newStatus = await _invoiceService.RequestCancelAsync(id, user.Id, request?.Reason);
+                if (newStatus == null)
+                    return BadRequest(new { message = "Không thể hủy đơn hàng. Kiểm tra lại trạng thái đơn hàng." });
+
+                if (newStatus == OrderStatus.Cancelled)
+                {
+                    return Ok(new { success = true, message = "Hủy đơn hàng thành công!" });
+                }
+                else
+                {
+                    return Ok(new { success = true, message = "Gửi yêu cầu hủy thành công. Vui lòng chờ phê duyệt." });
+                }
             }
             catch (Exception ex)
             {

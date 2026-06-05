@@ -6,17 +6,12 @@ import Link from "next/link";
 import { Loader, Trash2, ShoppingBag, Plus, Minus, Tag, Check, X, AlertCircle } from "lucide-react";
 import { toast } from "@/lib/toast";
 import {
-  getCart,
-  updateCartItem,
-  removeFromCart,
-  clearCart,
-  applyVoucherToCart,
-  removeVoucherFromCart,
   getPublicVouchers,
   getProducts,
   CartInfo,
   CartDetailInfo
 } from "@/lib/api";
+import { useCart } from "@/context/CartContext";
 import { Product, Voucher } from "@/types";
 import ProductCard from "@/components/client/common/ProductCard";
 import { CartHeader } from "@/components/client/cart/CartHeader";
@@ -33,8 +28,16 @@ export default function CartPage() {
 
   // States
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<CartInfo | null>(null);
+  const {
+    cart,
+    loading,
+    refreshCart,
+    updateCartItem,
+    removeFromCart,
+    clearCart,
+    applyVoucher,
+    removeVoucher
+  } = useCart();
   const [checkedDetails, setCheckedDetails] = useState<Record<number, boolean>>({});
   
   // Voucher States
@@ -66,37 +69,31 @@ export default function CartPage() {
       return;
     }
     setToken(savedToken);
-    loadCartData(savedToken);
+    refreshCart();
     loadRecommendations();
   }, []);
 
-  const loadCartData = async (authToken: string) => {
-    setLoading(true);
-    try {
-      const cartData = await getCart(authToken);
-      if (cartData) {
-        setCart(cartData);
-        // Check all items by default
+  // Initialize checked items and voucher input when cart loads
+  useEffect(() => {
+    if (cart) {
+      if (Object.keys(checkedDetails).length === 0 && cart.cartDetails.length > 0) {
         const checks: Record<number, boolean> = {};
-        cartData.cartDetails.forEach((cd) => {
+        cart.cartDetails.forEach((cd) => {
           checks[cd.cartDetailID] = true;
         });
         setCheckedDetails(checks);
-        
-        if (cartData.voucher) {
-          setVoucherCodeInput(cartData.voucher.code);
-        } else {
-          setVoucherCodeInput("");
-        }
-      } else {
-        setCart(null);
       }
-    } catch (error) {
-      console.error("Error loading cart:", error);
-    } finally {
-      setLoading(false);
+      
+      if (cart.voucher) {
+        setVoucherCodeInput(cart.voucher.code);
+      } else {
+        setVoucherCodeInput("");
+      }
+    } else {
+      setCheckedDetails({});
+      setVoucherCodeInput("");
     }
-  };
+  }, [cart]);
 
   const loadRecommendations = async () => {
     setLoadingRecs(true);
@@ -141,13 +138,12 @@ export default function CartPage() {
     }
 
     try {
-      const res = await updateCartItem(token, {
+      const res = await updateCartItem({
         cartDetailID: detail.cartDetailID,
         quantity: newQty,
       });
 
-      if (res.success && res.data) {
-        setCart(res.data);
+      if (res.success) {
         showAlert("success", res.message || "Đã cập nhật số lượng sản phẩm");
       } else {
         showAlert("error", res.message || "Không thể cập nhật số lượng");
@@ -163,9 +159,8 @@ export default function CartPage() {
     if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?")) return;
 
     try {
-      const res = await removeFromCart(token, cartDetailId);
-      if (res.success && res.data) {
-        setCart(res.data);
+      const res = await removeFromCart(cartDetailId);
+      if (res.success) {
         showAlert("success", res.message || "Đã xóa sản phẩm khỏi giỏ hàng");
         
         // Remove item from checked state
@@ -188,9 +183,8 @@ export default function CartPage() {
     if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?")) return;
 
     try {
-      const res = await clearCart(token);
+      const res = await clearCart();
       if (res.success) {
-        setCart(null);
         setCheckedDetails({});
         showAlert("success", "Đã xóa sạch giỏ hàng!");
       } else {
@@ -213,17 +207,18 @@ export default function CartPage() {
     if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} sản phẩm đã chọn?`)) return;
 
     try {
-      setLoading(true);
-      // Remove one by one
       for (const id of selectedIds) {
-        await removeFromCart(token, Number(id));
+        await removeFromCart(Number(id));
       }
       showAlert("success", "Đã xóa các sản phẩm đã chọn");
-      loadCartData(token);
+      setCheckedDetails((prev) => {
+        const next = { ...prev };
+        selectedIds.forEach((id) => delete next[Number(id)]);
+        return next;
+      });
     } catch (error) {
       console.error(error);
       showAlert("error", "Có lỗi xảy ra khi xóa hàng loạt");
-      loadCartData(token);
     }
   };
 
@@ -233,9 +228,8 @@ export default function CartPage() {
 
     setApplyingCode(true);
     try {
-      const res = await applyVoucherToCart(token, voucherCodeInput);
-      if (res.success && res.data) {
-        setCart(res.data);
+      const res = await applyVoucher(voucherCodeInput);
+      if (res.success) {
         showAlert("success", res.message || "Áp dụng mã giảm giá thành công!");
       } else {
         showAlert("error", res.message || "Mã giảm giá không hợp lệ hoặc không đủ điều kiện");
@@ -254,9 +248,8 @@ export default function CartPage() {
     setVoucherCodeInput(code);
 
     try {
-      const res = await applyVoucherToCart(token, code);
-      if (res.success && res.data) {
-        setCart(res.data);
+      const res = await applyVoucher(code);
+      if (res.success) {
         showAlert("success", res.message || "Áp dụng mã giảm giá thành công!");
       } else {
         showAlert("error", res.message || "Áp dụng voucher thất bại");
@@ -271,9 +264,8 @@ export default function CartPage() {
     if (!token) return;
 
     try {
-      const res = await removeVoucherFromCart(token);
-      if (res.success && res.data) {
-        setCart(res.data);
+      const res = await removeVoucher();
+      if (res.success) {
         setVoucherCodeInput("");
         showAlert("success", "Đã hủy áp dụng mã giảm giá");
       } else {

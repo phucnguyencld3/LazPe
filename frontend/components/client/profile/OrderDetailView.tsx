@@ -91,7 +91,7 @@ export function OrderDetailView({
     try {
       const res = await requestCancelOrder(orderId, token, cancelReason);
       if (res.success) {
-        toast.success("Đã gửi yêu cầu hủy đơn hàng thành công!");
+        toast.success(res.message || "Hủy đơn hàng thành công!");
         setShowCancelModal(false);
         setCancelReason("");
         await fetchOrder();

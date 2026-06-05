@@ -826,7 +826,7 @@ export async function createInvoiceFromCart(
     const result = await response.json();
     return {
       success: response.ok && (result.success ?? true),
-      message: result.message || "Đặt hàng thành công",
+      message: result.error ? `${result.message || "Lỗi tạo hóa đơn"} (${result.error})` : (result.message || "Đặt hàng thành công"),
       paymentUrl: result.paymentUrl,
       data: result.data,
     };
