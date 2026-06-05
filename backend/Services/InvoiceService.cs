@@ -481,22 +481,67 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== Người dùng yêu cầu hủy ========
-        public async Task<bool> RequestCancelAsync(int invoiceId, string userId, string? reason)
+        public async Task<OrderStatus?> RequestCancelAsync(int invoiceId, string userId, string? reason)
         {
-            var invoice = await _context.Invoices.FirstOrDefaultAsync(i =>
-                i.InvoiceID == invoiceId && i.UserID == userId && !i.IsDeleted);
+            var invoice = await _context.Invoices
+                .AsSplitQuery()
+                .Include(i => i.InvoiceDetails)
+                    .ThenInclude(d => d.Variant)
+                .Include(i => i.InvoiceDetails)
+                    .ThenInclude(d => d.Bundle)
+                        .ThenInclude(b => b.BundleItems)
+                            .ThenInclude(bi => bi.Variant)
+                .Include(i => i.VoucherUsages)
+                .Include(i => i.Voucher)
+                .Include(i => i.PaymentTransactions)
+                .FirstOrDefaultAsync(i =>
+                    i.InvoiceID == invoiceId && i.UserID == userId && !i.IsDeleted);
 
-            if (invoice == null) return false;
+            if (invoice == null) return null;
             if (invoice.Status == OrderStatus.Shipped || invoice.Status == OrderStatus.Completed || invoice.Status == OrderStatus.Cancelled)
-                return false;
+                return null;
 
-            invoice.Status = OrderStatus.CancelRequested;
-            invoice.CancelReason = reason;
-            await _context.SaveChangesAsync();
+            if (invoice.Status == OrderStatus.Pending)
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    await RestoreStockAsync(invoice);
+                    await RestoreVoucherAsync(invoice);
+                    await HandleLoyaltyOnCancelAsync(invoice);
 
-            _logger.LogInformation("Người dùng {UserId} yêu cầu hủy đơn hàng {InvoiceId}. Lý do: {Reason}",
-                userId, invoiceId, reason);
-            return true;
+                    invoice.Status = OrderStatus.Cancelled;
+                    invoice.CancelReason = reason;
+                    invoice.CancelledAt = DateTime.Now;
+
+                    MarkPendingPaymentsAsFailed(invoice, "CANCELLED");
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("Người dùng {UserId} tự hủy đơn hàng {InvoiceId} thành công (đơn hàng ở trạng thái Chờ xác nhận). Hàng + Voucher đã được hoàn trả. Lý do: {Reason}",
+                        userId, invoiceId, reason);
+
+                    return OrderStatus.Cancelled;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Lỗi khi tự động hủy đơn hàng {InvoiceId} của người dùng", invoiceId);
+                    throw;
+                }
+            }
+            else
+            {
+                invoice.Status = OrderStatus.CancelRequested;
+                invoice.CancelReason = reason;
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Người dùng {UserId} yêu cầu hủy đơn hàng {InvoiceId} ở trạng thái Đã xác nhận (chờ Admin duyệt). Lý do: {Reason}",
+                    userId, invoiceId, reason);
+
+                return OrderStatus.CancelRequested;
+            }
         }
 
         // ======== Admin hủy đơn (CÓ HOÀN TRẢ KHO + VOUCHER) ========

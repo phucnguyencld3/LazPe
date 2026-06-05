@@ -133,7 +133,7 @@ export function OrdersSection({
       case 4:
         return (
           <span className="px-3 py-1 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full">
-            Yêu cầu hủy
+            Chờ duyệt hủy
           </span>
         );
       case 5:

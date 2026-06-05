@@ -31,7 +31,7 @@ namespace PolyBabyAPI.Interface
         Task<bool> ConfirmAsync(int invoiceId);
         Task<bool> MarkShippedAsync(int invoiceId);
         Task<bool> MarkCompletedByUserAsync(int invoiceId, string userId);
-        Task<bool> RequestCancelAsync(int invoiceId, string userId, string? reason);
+        Task<OrderStatus?> RequestCancelAsync(int invoiceId, string userId, string? reason);
         Task<bool> AdminCancelAsync(int invoiceId, string? reason);
         Task<bool> ApproveCancelAsync(int invoiceId, string? reason);
         Task<bool> RejectCancelAsync(int invoiceId);

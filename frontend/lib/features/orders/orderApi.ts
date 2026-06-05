@@ -31,8 +31,6 @@ import { formatCurrency, formatDateTime } from "@/lib/utils/formatters";
 export { formatCurrency, formatDateTime };
 
 export const getStatusBadgeColor = (statusCode: number) => {
-  // 0: Pending, 1: Confirmed, 2: Shipping, 3: Delivered, 4: Cancelled (just guessing standard flow)
-  // We map them based on the response structure
   switch (statusCode) {
     case 0:
       return 'bg-amber-50 text-amber-600 border border-amber-100'; // Pending
@@ -41,9 +39,9 @@ export const getStatusBadgeColor = (statusCode: number) => {
     case 2:
       return 'bg-purple-50 text-purple-600 border border-purple-100'; // Shipping
     case 3:
-      return 'bg-emerald-50 text-emerald-600 border border-emerald-100'; // Delivered / Received
+      return 'bg-emerald-50 text-emerald-600 border border-emerald-100'; // Completed
     case 4:
-      return 'bg-green-50 text-green-600 border border-green-100'; // Completed
+      return 'bg-rose-50 text-rose-600 border border-rose-100'; // Chờ duyệt hủy
     case 5:
       return 'bg-red-50 text-red-600 border border-red-100'; // Cancelled
     default:
@@ -56,8 +54,8 @@ export const getStatusLabel = (statusCode: number) => {
     case 0: return 'Chờ xử lý';
     case 1: return 'Đã xác nhận';
     case 2: return 'Đang giao';
-    case 3: return 'Đã giao / Nhận';
-    case 4: return 'Đã hoàn thành';
+    case 3: return 'Hoàn tất';
+    case 4: return 'Chờ duyệt hủy';
     case 5: return 'Đã hủy';
     default: return 'Không rõ';
   }

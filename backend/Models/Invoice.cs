@@ -31,7 +31,7 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Hoàn tất")]
         Completed = 3,
 
-        [Display(Name = "Yêu cầu hủy")]
+        [Display(Name = "Chờ duyệt hủy")]
         CancelRequested = 4,
 
         [Display(Name = "Đã hủy")]
