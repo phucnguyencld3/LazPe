@@ -83,6 +83,8 @@ export default function ProfilePage() {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
 
   // Forms States
   const [profileForm, setProfileForm] = useState({
@@ -485,10 +487,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDeleteAddressClick = async (addressId: number) => {
-    if (!token || !userProfile) return;
-    if (window.confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) {
-      const result = await deleteAddress(addressId, token);
+  const handleDeleteAddressClick = (addressId: number) => {
+    setAddressToDelete(addressId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDeleteAddress = async () => {
+    if (!token || !userProfile || addressToDelete === null) return;
+    try {
+      const result = await deleteAddress(addressToDelete, token);
       if (result.success) {
         toast.success("Xóa địa chỉ thành công");
         const addressList = await getUserAddresses(userProfile.userId, token);
@@ -496,6 +503,12 @@ export default function ProfilePage() {
       } else {
         toast.error(result.message || "Không thể xóa địa chỉ");
       }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối đến server");
+    } finally {
+      setDeleteConfirmOpen(false);
+      setAddressToDelete(null);
     }
   };
 
@@ -740,6 +753,43 @@ export default function ProfilePage() {
         setDistricts={setDistricts} 
         setWards={setWards} 
       />
+
+      {/* Confirm Delete Address Modal (Thay thế cho Modal mặc định của trình duyệt) */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div 
+            className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
+            style={{ width: '384px', maxWidth: 'calc(100vw - 32px)' }}
+          >
+            <div className="flex items-center gap-2 text-rose-600 font-bold">
+              <span className="material-symbols-outlined text-rose-500 shrink-0">delete</span>
+              <h3 className="text-base md:text-lg text-slate-800 font-bold">Xác nhận xóa địa chỉ</h3>
+            </div>
+            <p className="text-xs md:text-sm text-slate-500 font-semibold leading-relaxed">
+              Bạn có chắc chắn muốn xóa địa chỉ này? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setAddressToDelete(null);
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                type="button"
+                onClick={handleConfirmDeleteAddress}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
