@@ -332,6 +332,13 @@ namespace PolyBabyAPI.Services
                 }
                 else
                 {
+                    // Giải phóng tham chiếu từ VoucherUsages trước khi xóa giỏ hàng để tránh lỗi khóa ngoại
+                    var relatedUsages = await _context.VoucherUsages.Where(vu => vu.CartID == cart.CartID).ToListAsync();
+                    foreach (var usage in relatedUsages)
+                    {
+                        usage.CartID = null;
+                    }
+
                     // Hết items → xóa giỏ hàng
                     _context.Carts.Remove(cart);
                     _logger.LogInformation("Checkout toàn bộ: đã xóa giỏ hàng {CartId}", cartId);
