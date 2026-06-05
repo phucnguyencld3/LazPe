@@ -338,7 +338,7 @@ function InvoiceContent() {
           </Link>
           
           <Link
-            href="/profile"
+            href={`/profile?tab=orders${invoiceIdStr || invoice?.invoiceID ? `&id=${invoiceIdStr || invoice?.invoiceID}` : ""}`}
             className="flex items-center justify-center gap-2 px-6 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-rose-500/10 hover:shadow-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
           >
             <span>Xem đơn hàng của tôi</span>
