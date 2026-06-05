@@ -331,13 +331,27 @@ namespace PolyBabyAPI.Controllers
                         <p style='font-size: 12px; color: #999; text-align: center;'>Email này được gửi tự động từ hệ thống LazPe. Vui lòng không phản hồi trực tiếp email này.</p>
                     </div>";
 
-                await _emailSender.SendEmailAsync(model.Email, subject, htmlBody);
+                _logger.LogInformation("Mã OTP đăng ký cho email {Email} là: {Otp}", model.Email, otpCode);
 
-                return Ok(new
+                try
                 {
-                    success = true,
-                    message = "Mã OTP đã được gửi đến email của bạn."
-                });
+                    await _emailSender.SendEmailAsync(model.Email, subject, htmlBody);
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Mã OTP đã được gửi đến email của bạn."
+                    });
+                }
+                catch (Exception mailEx)
+                {
+                    _logger.LogWarning(mailEx, "Không gửi được email OTP đăng ký đến {Email} qua SMTP. Mã OTP vẫn được lưu nháp: {Otp}", model.Email, otpCode);
+                    
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Mã OTP đã được tạo (Lưu ý: Không gửi được email qua SMTP. Vui lòng kiểm tra Log Server của Render để lấy mã OTP)."
+                    });
+                }
             }
             catch (Exception ex)
             {
