@@ -564,7 +564,8 @@ namespace PolyBabyAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating invoice from cart {CartId}", cartId);
-                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = ex.Message });
+                var errorMsg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
+                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = errorMsg });
             }
         }
 

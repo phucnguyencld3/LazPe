@@ -301,7 +301,6 @@ namespace PolyBabyAPI.Services
                         VoucherID = appliedVoucher.VoucherID,
                         UserID = cart.UserID,
                         InvoiceID = invoice.InvoiceID,
-                        CartID = cart.CartID,
                         UsedAt = DateTime.Now,
                         DiscountAmount = discountAmount,
                         OrderValue = subTotal
