@@ -356,7 +356,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             return (
               <div
                 key={t.tierID}
-                className={`flex flex-col justify-between p-5 rounded-2xl border transition-all duration-300 bg-white group hover:shadow-lg ${
+                className={`flex flex-col justify-between p-5 rounded-[10px] border transition-all duration-300 bg-white group hover:shadow-lg ${
                   isUserTier
                     ? "ring-2 ring-offset-2 scale-[1.02] z-10"
                     : "border-slate-100 hover:border-slate-200"
@@ -391,7 +391,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
                     {isUserTier && (
                       <span
-                        className="text-[9px] text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse"
+                        className="text-[9px] text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse whitespace-nowrap"
                         style={{ backgroundColor: t.colorHex }}
                       >
                         Hạng của bạn
@@ -418,7 +418,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
                           return (
                             <div
                               key={p.privilegeID}
-                              className="bg-slate-50/50 rounded-xl p-3 border border-slate-100 hover:bg-slate-50 transition-colors space-y-1.5"
+                              className="bg-slate-50/50 rounded-[10px] p-3 border border-slate-100 hover:bg-slate-50 transition-colors space-y-1.5"
                             >
                               <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs">
                                 <div
