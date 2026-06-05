@@ -35,6 +35,12 @@ export default function RegisterPage() {
       return;
     }
 
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Email không đúng định dạng (ví dụ: example@gmail.com).");
+      return;
+    }
+
     setLoading(true);
 
     try {
