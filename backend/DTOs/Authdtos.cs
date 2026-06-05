@@ -160,4 +160,19 @@ namespace PolyBabyAPI.DTOs
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty;  
     }
+
+    /// <summary>
+    /// DTO xác thực OTP đăng ký tài khoản
+    /// </summary>
+    public class VerifyRegisterOtpDto
+    {
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Email không đúng định dạng (ví dụ: example@gmail.com)")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mã OTP là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã OTP phải gồm 6 chữ số")]
+        public string Otp { get; set; } = string.Empty;
+    }
 }

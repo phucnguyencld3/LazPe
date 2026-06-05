@@ -29,6 +29,8 @@ namespace PolyBabyAPI.Controllers
         private const int ResetOtpExpiredSeconds = 60;
         private const int ResetPasswordSessionExpiredMinutes = 10;
         private const int ResetOtpMaxAttempts = 5;
+        private const int RegisterOtpExpiredSeconds = 180;
+        private const int RegisterOtpMaxAttempts = 5;
 
         public AuthenticationController(
             UserManager<ApplicationUser> userManager,
@@ -60,6 +62,14 @@ namespace PolyBabyAPI.Controllers
             public string UserId { get; set; } = string.Empty;
             public string ResetToken { get; set; } = string.Empty;
             public DateTime ExpiredAtUtc { get; set; }
+        }
+
+        private sealed class RegisterOtpInfo
+        {
+            public RegisterDto Dto { get; set; } = null!;
+            public string Code { get; set; } = string.Empty;
+            public DateTime ExpiredAtUtc { get; set; }
+            public int FailedAttempts { get; set; }
         }
 
         /// <summary>
@@ -237,10 +247,20 @@ namespace PolyBabyAPI.Controllers
 
 
         /// <summary>
-        /// Đăng ký tài khoản mới
+        /// Đăng ký tài khoản mới (Legacy - Đã chuyển sang dùng OTP)
         /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto model)
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public IActionResult Register()
+        {
+            return BadRequest(new { success = false, message = "Đăng ký trực tiếp đã bị vô hiệu hóa. Vui lòng sử dụng luồng đăng ký qua OTP." });
+        }
+
+        /// <summary>
+        /// Gửi OTP xác thực đăng ký tài khoản mới
+        /// </summary>
+        [HttpPost("register-send-otp")]
+        public async Task<IActionResult> RegisterSendOtp([FromBody] RegisterDto model)
         {
             if (!ModelState.IsValid)
             {
@@ -267,40 +287,158 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Email này đã được sử dụng." });
                 }
 
-                var user = new ApplicationUser
+                var cacheKey = $"register-otp:{model.Email.Trim().ToLower()}";
+                
+                // Cooldown check (60 seconds)
+                if (_memoryCache.TryGetValue(cacheKey, out RegisterOtpInfo? existingOtp) && existingOtp != null)
                 {
-                    UserName = model.Email,
-                    Email = model.Email,
-                    FullName = model.FullName,
-                    PhoneNumber = model.PhoneNumber,
-                    DateOfBirth = model.DateOfBirth,
-                    RegisterDate = DateTime.Now,
-                    Status = true,
-                    EmailConfirmed = true
+                    var remainingSeconds = (existingOtp.ExpiredAtUtc - DateTime.UtcNow).TotalSeconds;
+                    // Expire time is 180s, if remainingSeconds > 120s, it means it's been less than 60s since generation.
+                    if (remainingSeconds > (RegisterOtpExpiredSeconds - 60))
+                    {
+                        var cooldownRemaining = (int)Math.Ceiling(remainingSeconds - (RegisterOtpExpiredSeconds - 60));
+                        return BadRequest(new { success = false, message = $"Vui lòng đợi {cooldownRemaining} giây trước khi yêu cầu gửi lại mã." });
+                    }
+                }
+
+                var otpCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                var expiredAtUtc = DateTime.UtcNow.AddSeconds(RegisterOtpExpiredSeconds);
+
+                var otpInfo = new RegisterOtpInfo
+                {
+                    Dto = model,
+                    Code = otpCode,
+                    ExpiredAtUtc = expiredAtUtc,
+                    FailedAttempts = 0
                 };
 
-                var result = await _userManager.CreateAsync(user, model.Password);
+                _memoryCache.Set(cacheKey, otpInfo, TimeSpan.FromSeconds(RegisterOtpExpiredSeconds));
+
+                var subject = "Mã OTP xác thực đăng ký tài khoản - LazPe";
+                var htmlBody = $@"
+                    <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;'>
+                        <h2 style='color: #696cff; text-align: center;'>Xác Thực Đăng Ký LazPe</h2>
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                        <p>Xin chào <strong>{WebUtility.HtmlEncode(model.FullName)}</strong>,</p>
+                        <p>Cảm ơn bạn đã lựa chọn đăng ký tài khoản tại cửa hàng LazPe của chúng tôi.</p>
+                        <p>Để hoàn tất quá trình đăng ký, vui lòng sử dụng mã xác thực OTP dưới đây:</p>
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <span style='font-size: 32px; font-weight: bold; color: #696cff; letter-spacing: 5px; padding: 10px 20px; background-color: #f0f1ff; border-radius: 6px; border: 1px dashed #696cff;'>{otpCode}</span>
+                        </div>
+                        <p>Mã OTP này có hiệu lực trong <strong>{RegisterOtpExpiredSeconds / 60} phút</strong>.</p>
+                        <p style='color: #ff3e1d;'><strong>Lưu ý:</strong> Vui lòng không chia sẻ mã này với bất kỳ ai để bảo vệ tài khoản của bạn.</p>
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                        <p style='font-size: 12px; color: #999; text-align: center;'>Email này được gửi tự động từ hệ thống LazPe. Vui lòng không phản hồi trực tiếp email này.</p>
+                    </div>";
+
+                await _emailSender.SendEmailAsync(model.Email, subject, htmlBody);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Mã OTP đã được gửi đến email của bạn."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi OTP đăng ký");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi gửi mã OTP." });
+            }
+        }
+
+        /// <summary>
+        /// Xác thực OTP và hoàn tất đăng ký tài khoản
+        /// </summary>
+        [HttpPost("register-verify-otp")]
+        public async Task<IActionResult> RegisterVerifyOtp([FromBody] VerifyRegisterOtpDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                var emailNormalized = model.Email.Trim().ToLower();
+                var cacheKey = $"register-otp:{emailNormalized}";
+
+                if (!_memoryCache.TryGetValue(cacheKey, out RegisterOtpInfo? otpInfo) || otpInfo == null)
+                {
+                    return BadRequest(new { success = false, message = "Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu mã mới." });
+                }
+
+                if (DateTime.UtcNow > otpInfo.ExpiredAtUtc)
+                {
+                    _memoryCache.Remove(cacheKey);
+                    return BadRequest(new { success = false, message = "Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới." });
+                }
+
+                if (!string.Equals(otpInfo.Code, model.Otp.Trim(), StringComparison.Ordinal))
+                {
+                    otpInfo.FailedAttempts++;
+                    if (otpInfo.FailedAttempts >= RegisterOtpMaxAttempts)
+                    {
+                        _memoryCache.Remove(cacheKey);
+                        return BadRequest(new { success = false, message = "Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới." });
+                    }
+
+                    var remainingTtl = otpInfo.ExpiredAtUtc - DateTime.UtcNow;
+                    if (remainingTtl <= TimeSpan.Zero)
+                    {
+                        _memoryCache.Remove(cacheKey);
+                        return BadRequest(new { success = false, message = "Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới." });
+                    }
+
+                    _memoryCache.Set(cacheKey, otpInfo, remainingTtl);
+                    return BadRequest(new { success = false, message = $"Mã OTP không chính xác. Bạn còn {RegisterOtpMaxAttempts - otpInfo.FailedAttempts} lần thử." });
+                }
+
+                // OTP is correct! Now create the user.
+                var registerDto = otpInfo.Dto;
+                
+                // Double check if email got registered in the meantime
+                var existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
+                if (existingUser != null)
+                {
+                    _memoryCache.Remove(cacheKey);
+                    return BadRequest(new { success = false, message = "Email này đã được sử dụng." });
+                }
+
+                var user = new ApplicationUser
+                {
+                    UserName = registerDto.Email,
+                    Email = registerDto.Email,
+                    FullName = registerDto.FullName,
+                    PhoneNumber = registerDto.PhoneNumber,
+                    DateOfBirth = registerDto.DateOfBirth,
+                    RegisterDate = DateTime.Now,
+                    Status = true,
+                    EmailConfirmed = true // Confirm email immediately since they verified with OTP
+                };
+
+                var result = await _userManager.CreateAsync(user, registerDto.Password);
 
                 if (result.Succeeded)
                 {
-                    // Gán role mặc định cho user mới
+                    _memoryCache.Remove(cacheKey);
+
+                    // Assign default role
                     await AssignDefaultRoleAsync(user);
 
-                    // ✅ THÊM: Load permissions cho user mới (có thể rỗng)
+                    // Load roles and permissions
                     var userRoles = await _userManager.GetRolesAsync(user);
                     var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id);
 
-                    // Tạo JWT token để user có thể đăng nhập ngay
+                    // Generate JWT token
                     var token = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
 
-                    _logger.LogInformation("Đăng ký thành công cho: {Email}, Email đã được xác nhận tự động", model.Email);
+                    _logger.LogInformation("Đăng ký thành công qua xác thực OTP cho: {Email}", user.Email);
 
                     return Ok(new
                     {
                         success = true,
-                        message = "Đăng ký thành công! Bạn đã được đăng nhập tự động.",
+                        message = "Xác thực thành công và đăng ký tài khoản hoàn tất!",
                         userId = user.Id,
-                        emailConfirmationRequired = false,
                         token = token ?? string.Empty,
                         user = new
                         {
@@ -311,19 +449,19 @@ namespace PolyBabyAPI.Controllers
                             phoneNumber = user.PhoneNumber ?? string.Empty,
                             avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                             roles = userRoles ?? new List<string>(),
-                            permissions = userPermissions.Select(p => p.Name).ToList(), // ✅ THÊM permissions
+                            permissions = userPermissions.Select(p => p.Name).ToList(),
                             isAdmin = userRoles?.Contains("Admin") ?? false
                         }
                     });
                 }
 
                 var errors = result.Errors.Select(e => e.Description).ToList();
-                return BadRequest(new { success = false, message = "Có lỗi xảy ra trong quá trình đăng ký.", errors });
+                return BadRequest(new { success = false, message = "Có lỗi xảy ra trong quá trình tạo tài khoản.", errors });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi trong quá trình đăng ký");
-                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra trong quá trình đăng ký." });
+                _logger.LogError(ex, "Lỗi trong quá trình xác thực OTP đăng ký");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra trong quá trình xác thực OTP." });
             }
         }
 
