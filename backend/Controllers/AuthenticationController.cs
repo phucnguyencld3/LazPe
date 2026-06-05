@@ -482,7 +482,7 @@ namespace PolyBabyAPI.Controllers
         /// <summary>
         /// Test thử nghiệm gửi email hệ thống
         /// </summary>
-        [HttpPost("test-send-email")]
+        [HttpGet("test-send-email")]
         public async Task<IActionResult> TestSendEmail([FromQuery] string email)
         {
             try
