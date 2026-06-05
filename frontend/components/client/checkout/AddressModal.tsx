@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Check, Plus, Pencil, AlertTriangle, Loader } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { SearchableSelect } from "@/components/client/common/SearchableSelect";
 import { 
   AddressItem, 
   getProvinces, 
@@ -138,6 +139,85 @@ export const AddressModal: React.FC<AddressModalProps> = ({
     const code = e.target.value;
     const name = e.target.options[e.target.selectedIndex].text;
 
+    setAddressForm((prev) => ({
+      ...prev,
+      wardCode: code,
+      wardName: name,
+    }));
+  };
+
+  // Handle Province Select
+  const onProvinceSelect = async (code: string, name: string) => {
+    setAddressForm((prev) => ({
+      ...prev,
+      provinceCode: code,
+      provinceName: name,
+      districtCode: "",
+      districtName: "",
+      wardCode: "",
+      wardName: "",
+    }));
+    setDistricts([]);
+    setWards([]);
+
+    if (!code) return;
+
+    try {
+      setLoadingGeoData(true);
+      const data = await getDistricts(code, addressForm.apiVersion);
+      if (data) {
+        const dists = data.districts || [];
+        setDistricts(dists);
+        if (dists.length === 1) {
+          const singleDist = dists[0];
+          setAddressForm((prev) => ({
+            ...prev,
+            districtCode: singleDist.code,
+            districtName: singleDist.name,
+          }));
+          
+          // Fetch wards immediately
+          const wardData = await getWards(singleDist.code, addressForm.apiVersion);
+          if (wardData) {
+            setWards(wardData.wards || []);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error loading districts:", err);
+    } finally {
+      setLoadingGeoData(false);
+    }
+  };
+
+  // Handle District Select
+  const onDistrictSelect = async (code: string, name: string) => {
+    setAddressForm((prev) => ({
+      ...prev,
+      districtCode: code,
+      districtName: name,
+      wardCode: "",
+      wardName: "",
+    }));
+    setWards([]);
+
+    if (!code) return;
+
+    try {
+      setLoadingGeoData(true);
+      const data = await getWards(code, addressForm.apiVersion);
+      if (data) {
+        setWards(data.wards || []);
+      }
+    } catch (err) {
+      console.error("Error loading wards:", err);
+    } finally {
+      setLoadingGeoData(false);
+    }
+  };
+
+  // Handle Ward Select
+  const onWardSelect = (code: string, name: string) => {
     setAddressForm((prev) => ({
       ...prev,
       wardCode: code,
@@ -450,19 +530,14 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
                     Tỉnh / Thành phố <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={provinces}
                     value={addressForm.provinceCode}
-                    onChange={handleProvinceChange}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-rose-500 focus:border-rose-500 bg-white outline-none"
-                  >
-                    <option value="">Chọn Tỉnh / Thành phố</option>
-                    {provinces.map((p) => (
-                      <option key={p.code} value={p.code}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={onProvinceSelect}
+                    placeholder="Chọn Tỉnh / Thành phố"
+                    searchPlaceholder="Tìm kiếm tỉnh/thành..."
+                    accentColor="rose"
+                  />
                 </div>
 
                 {/* District */}
@@ -471,20 +546,15 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
                       Quận / Huyện <span className="text-rose-500">*</span>
                     </label>
-                    <select
-                      required
+                    <SearchableSelect
+                      options={districts}
                       value={addressForm.districtCode}
-                      onChange={handleDistrictChange}
+                      onChange={onDistrictSelect}
+                      placeholder="Chọn Quận / Huyện"
+                      searchPlaceholder="Tìm kiếm quận/huyện..."
                       disabled={!addressForm.provinceCode}
-                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-rose-500 focus:border-rose-500 bg-white outline-none disabled:bg-slate-50 disabled:text-slate-400"
-                    >
-                      <option value="">Chọn Quận / Huyện</option>
-                      {districts.map((d) => (
-                        <option key={d.code} value={d.code}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
+                      accentColor="rose"
+                    />
                   </div>
                 )}
 
@@ -493,20 +563,15 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
                     Phường / Xã <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={wards}
                     value={addressForm.wardCode}
-                    onChange={handleWardChange}
+                    onChange={onWardSelect}
+                    placeholder="Chọn Phường / Xã"
+                    searchPlaceholder="Tìm kiếm phường/xã..."
                     disabled={!addressForm.districtCode}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-rose-500 focus:border-rose-500 bg-white outline-none disabled:bg-slate-50 disabled:text-slate-400"
-                  >
-                    <option value="">Chọn Phường / Xã</option>
-                    {wards.map((w) => (
-                      <option key={w.code} value={w.code}>
-                        {w.name}
-                      </option>
-                    ))}
-                  </select>
+                    accentColor="rose"
+                  />
                 </div>
               </div>
 

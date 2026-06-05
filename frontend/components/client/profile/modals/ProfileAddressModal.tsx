@@ -1,5 +1,6 @@
 import React from "react";
-import { getProvinces } from "@/lib/api";
+import { getProvinces, getDistricts, getWards } from "@/lib/api";
+import { SearchableSelect } from "@/components/client/common/SearchableSelect";
 
 interface ProfileAddressModalProps {
   isOpen: boolean;
@@ -38,6 +39,59 @@ export function ProfileAddressModal({
   setDistricts,
   setWards
 }: ProfileAddressModalProps) {
+  const onProvinceSelect = async (code: string, name: string) => {
+    setAddressForm((prev: any) => ({
+      ...prev,
+      provinceCode: code,
+      provinceName: name,
+      districtCode: "",
+      districtName: "",
+      wardCode: "",
+      wardName: "",
+    }));
+    setDistricts([]);
+    setWards([]);
+    if (code) {
+      try {
+        const data = await getDistricts(code, addressForm.apiVersion);
+        if (data && data.districts) {
+          setDistricts(data.districts);
+        }
+      } catch (err) {
+        console.error("Error loading districts:", err);
+      }
+    }
+  };
+
+  const onDistrictSelect = async (code: string, name: string) => {
+    setAddressForm((prev: any) => ({
+      ...prev,
+      districtCode: code,
+      districtName: name,
+      wardCode: "",
+      wardName: "",
+    }));
+    setWards([]);
+    if (code) {
+      try {
+        const data = await getWards(code, addressForm.apiVersion);
+        if (data && data.wards) {
+          setWards(data.wards);
+        }
+      } catch (err) {
+        console.error("Error loading wards:", err);
+      }
+    }
+  };
+
+  const onWardSelect = (code: string, name: string) => {
+    setAddressForm((prev: any) => ({
+      ...prev,
+      wardCode: code,
+      wardName: name,
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -127,52 +181,43 @@ export function ProfileAddressModal({
 
           <div className="space-y-1">
             <label className="font-bold text-sm text-slate-700 ml-1">Tỉnh / Thành phố</label>
-            <select
-              required
+            <SearchableSelect
+              options={provinces}
               value={addressForm.provinceCode}
-              onChange={handleProvinceChange}
-              className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none"
-            >
-              <option value="">-- Chọn Tỉnh/Thành --</option>
-              {provinces.map((prov) => (
-                <option key={prov.code} value={prov.code}>{prov.name}</option>
-              ))}
-            </select>
+              onChange={onProvinceSelect}
+              placeholder="-- Chọn Tỉnh/Thành --"
+              searchPlaceholder="Tìm kiếm tỉnh/thành..."
+              accentColor="primary"
+            />
           </div>
 
           {districts.length > 0 && (
             <div className="space-y-1">
               <label className="font-bold text-sm text-slate-700 ml-1">Quận / Huyện</label>
-              <select
-                required
-                disabled={!addressForm.provinceCode}
+              <SearchableSelect
+                options={districts}
                 value={addressForm.districtCode}
-                onChange={handleDistrictChange}
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none disabled:opacity-60"
-              >
-                <option value="">-- Chọn Quận/Huyện --</option>
-                {districts.map((dist) => (
-                  <option key={dist.code} value={dist.code}>{dist.name}</option>
-                ))}
-              </select>
+                onChange={onDistrictSelect}
+                placeholder="-- Chọn Quận/Huyện --"
+                searchPlaceholder="Tìm kiếm quận/huyện..."
+                disabled={!addressForm.provinceCode}
+                accentColor="primary"
+              />
             </div>
           )}
 
           {wards.length > 0 && (
             <div className="space-y-1">
               <label className="font-bold text-sm text-slate-700 ml-1">Phường / Xã</label>
-              <select
-                required
-                disabled={!addressForm.districtCode}
+              <SearchableSelect
+                options={wards}
                 value={addressForm.wardCode}
-                onChange={handleWardChange}
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none disabled:opacity-60"
-              >
-                <option value="">-- Chọn Phường/Xã --</option>
-                {wards.map((ward) => (
-                  <option key={ward.code} value={ward.code}>{ward.name}</option>
-                ))}
-              </select>
+                onChange={onWardSelect}
+                placeholder="-- Chọn Phường/Xã --"
+                searchPlaceholder="Tìm kiếm phường/xã..."
+                disabled={!addressForm.districtCode}
+                accentColor="primary"
+              />
             </div>
           )}
 
