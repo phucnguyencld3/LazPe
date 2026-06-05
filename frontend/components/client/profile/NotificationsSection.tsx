@@ -304,7 +304,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
   if (selectedNotif) {
     const isHtml = selectedNotif.content?.trim().startsWith("<");
     return (
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] overflow-hidden">
+      <div className="bg-white rounded-[10px] border border-slate-100 shadow-[0_20px_40px_rgba(135,78,88,0.06)] overflow-hidden">
         {/* Banner Image */}
         {selectedNotif.bannerImage && (
           <div className="w-full h-48 md:h-64 bg-slate-100 overflow-hidden relative border-b border-slate-100">
@@ -357,7 +357,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
           </div>
 
           {/* Short description */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100/50">
+          <div className="p-4 bg-slate-50 rounded-[10px] border border-slate-100/50">
             <p className="text-slate-600 text-xs font-semibold leading-relaxed">
               {selectedNotif.shortDescription}
             </p>
@@ -374,7 +374,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
             <div className="pt-4 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => handleActionClick(selectedNotif)}
-                className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-md shadow-rose-500/10 transition-all"
+                className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-md shadow-rose-500/10 transition-all"
               >
                 {getActionLabel(selectedNotif.actionType)}
                 <ExternalLink size={12} />
@@ -390,7 +390,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
               className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
               onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
             />
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 max-w-[380px] w-full relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
+            <div className="bg-white rounded-[10px] p-6 shadow-xl border border-slate-100 max-w-[380px] w-full relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
               <h3 className="text-sm font-bold text-slate-800 mb-2">
                 {confirmModal.title}
               </h3>
@@ -400,13 +400,13 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
-                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-[11px] font-bold text-slate-600 transition-colors"
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-[11px] font-bold text-slate-600 transition-colors"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={confirmModal.onConfirm}
-                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold transition-all shadow-md shadow-rose-500/10 active:scale-95"
+                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold transition-all shadow-md shadow-rose-500/10 active:scale-95"
                 >
                   Xác nhận
                 </button>
@@ -422,92 +422,86 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
   // List View Rendering
   // ----------------------------------------------------
   return (
-    <div className="space-y-6">
+    <section className="bg-white rounded-[10px] p-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
       {/* Title & Actions */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
-            <Bell size={20} />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-800">Hộp thư thông báo</h2>
-            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Cập nhật khuyến mãi, trạng thái đơn hàng & tài khoản của bạn</p>
-          </div>
-        </div>
-
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-3 border-b border-slate-100">
+        <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-xl">notifications</span> Hộp thư thông báo
+        </h2>
         <button
           onClick={handleMarkAllRead}
-          className="px-4 py-2 border border-slate-200 hover:border-rose-200 hover:text-rose-500 rounded-xl text-xs font-bold text-slate-600 bg-white transition-all flex items-center gap-1.5 active:scale-95 shadow-sm w-fit"
+          className="border border-primary text-primary hover:bg-primary/5 px-4 py-2 rounded-lg font-bold text-xs transition-colors flex items-center gap-1.5 active:scale-95 shadow-sm"
         >
           <Check size={14} />
           Đọc tất cả
         </button>
       </div>
 
-      {/* Tabs and Search */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] space-y-4">
-        {/* Tab filters */}
-        <div className="flex overflow-x-auto gap-1.5 pb-1 scrollbar-none">
-          {(
-            [
-              { key: "ALL", label: "Tất cả" },
-              { key: "UNREAD", label: "Chưa đọc" },
-              { key: "PROMOTION", label: "Khuyến mãi" },
-              { key: "ORDER", label: "Đơn hàng" },
-              { key: "SYSTEM", label: "Hệ thống" },
-              { key: "ACCOUNT", label: "Tài khoản & Điểm" },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-3 py-1.5 rounded-full font-bold text-[11px] whitespace-nowrap transition-all ${activeTab === tab.key
-                ? "bg-rose-500 text-white shadow-sm"
-                : "bg-slate-50 text-slate-600 hover:text-rose-500 hover:bg-slate-100"
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Search Input */}
+      <div className="mb-6 relative">
+        <input
+          type="text"
+          placeholder="Tìm kiếm tiêu đề hoặc tóm tắt thông báo..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 rounded-[10px] border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
+        />
+        <span className="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-lg">
+          search
+        </span>
+      </div>
 
-        {/* Search */}
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Tìm kiếm tiêu đề hoặc tóm tắt thông báo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white transition-all text-slate-800"
-          />
-        </div>
+      {/* Tabs */}
+      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none gap-2">
+        {(
+          [
+            { key: "ALL", label: "Tất cả" },
+            { key: "UNREAD", label: "Chưa đọc" },
+            { key: "PROMOTION", label: "Khuyến mãi" },
+            { key: "ORDER", label: "Đơn hàng" },
+            { key: "SYSTEM", label: "Hệ thống" },
+            { key: "ACCOUNT", label: "Tài khoản & Điểm" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`py-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+              activeTab === tab.key
+                ? "border-primary text-primary"
+                : "border-transparent text-slate-500 hover:text-primary"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Notifications List */}
       {detailLoading || loading ? (
-        <div className="bg-white rounded-2xl p-12 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] flex flex-col items-center justify-center">
-          <Loader className="animate-spin text-rose-500 mb-3" size={28} />
-          <p className="text-xs text-slate-500 font-semibold">Đang tải thông báo...</p>
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[10px] border border-slate-100 shadow-sm">
+          <Loader className="animate-spin text-primary mb-4" size={36} />
+          <p className="text-slate-500 font-medium">Đang tải thông báo...</p>
         </div>
       ) : filteredNotifications.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] text-center">
-          <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-400">
+        <div className="text-center py-12 bg-slate-50 rounded-[10px] border border-dashed border-slate-200">
+          <div className="w-14 h-14 bg-slate-100/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-400">
             <span className="material-symbols-outlined text-3xl">mail_lock</span>
           </div>
           <h3 className="text-xs font-bold text-slate-700">Hộp thư trống</h3>
           <p className="text-[10px] text-slate-400 mt-1 max-w-[20rem] mx-auto">Không tìm thấy thông báo nào phù hợp với bộ lọc hiện tại.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filteredNotifications.map((notif) => (
             <div
               key={notif.id}
               onClick={() => handleRowClick(notif)}
-              className={`bg-white rounded-2xl p-4 border transition-all duration-200 cursor-pointer hover:shadow-md hover:border-slate-300 relative group flex gap-4 ${!notif.isRead ? "border-rose-200 bg-rose-50/10" : "border-slate-100 shadow-[0_4px_12px_rgba(135,78,88,0.02)]"
-                } ${notif.isPinned ? "ring-1 ring-rose-400" : ""}`}
+              className={`bg-white rounded-[10px] p-4 border transition-all duration-200 cursor-pointer hover:shadow-md hover:border-slate-300 relative group flex gap-4 ${
+                !notif.isRead
+                  ? "border-rose-200 bg-rose-50/10"
+                  : "border-slate-100 shadow-[0_4px_12px_rgba(135,78,88,0.02)]"
+              } ${notif.isPinned ? "ring-1 ring-rose-400" : ""}`}
             >
               {/* Pin badge */}
               {notif.isPinned && (
@@ -587,7 +581,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
           />
-          <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 max-w-[380px] w-full relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-[10px] p-6 shadow-xl border border-slate-100 max-w-[380px] w-full relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
             <h3 className="text-sm font-bold text-slate-800 mb-2">
               {confirmModal.title}
             </h3>
@@ -597,13 +591,13 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-[11px] font-bold text-slate-600 transition-colors"
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-[11px] font-bold text-slate-600 transition-colors"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={confirmModal.onConfirm}
-                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold transition-all shadow-md shadow-rose-500/10 active:scale-95"
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold transition-all shadow-md shadow-rose-500/10 active:scale-95"
               >
                 Xác nhận
               </button>
@@ -611,6 +605,6 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -280,7 +280,7 @@ export default function ProfilePage() {
   const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
     if (!userProfile || !token) return;
     const updated = { ...notificationSettings, [key]: !notificationSettings[key] };
-    
+
     setNotificationSettings(updated);
     try {
       const result = await updateNotificationSettings(userProfile.userId, token, updated);
@@ -322,7 +322,7 @@ export default function ProfilePage() {
     });
     setDistricts([]);
     setWards([]);
-    
+
     try {
       const provList = await getProvinces("v2");
       if (provList) setProvinces(provList);
@@ -357,7 +357,7 @@ export default function ProfilePage() {
         const distData = await getDistricts(provCode, apiVer);
         distList = distData?.districts || [];
         setDistricts(distList);
-        
+
         if (distList.length === 1) {
           matchedDistrict = distList[0];
         } else {
@@ -379,7 +379,7 @@ export default function ProfilePage() {
         const wardData = await getWards(wardFetchCode, apiVer);
         wardList = wardData?.wards || [];
         setWards(wardList);
-        
+
         if (address.wardCode) {
           matchedWard = wardList.find((w: any) => String(w.code) === String(address.wardCode));
         }
@@ -415,7 +415,7 @@ export default function ProfilePage() {
     setAddressForm({ ...addressForm, provinceCode: code, provinceName: name, districtCode: "", districtName: "", wardCode: "", wardName: "" });
     setDistricts([]);
     setWards([]);
-    
+
     if (code) {
       const data = await getDistricts(code, addressForm.apiVersion);
       if (data && data.districts) setDistricts(data.districts);
@@ -427,7 +427,7 @@ export default function ProfilePage() {
     const name = e.target.options[e.target.selectedIndex].text;
     setAddressForm({ ...addressForm, districtCode: code, districtName: name, wardCode: "", wardName: "" });
     setWards([]);
-    
+
     if (code) {
       const data = await getWards(code, addressForm.apiVersion);
       if (data && data.wards) setWards(data.wards);
@@ -547,105 +547,105 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface py-lg">
+    <div className="min-h-screen bg-surface py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-lg items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
           {/* Left Sidebar Menu */}
-          <aside className="lg:col-span-1 space-y-md">
-            {/* Quick User Card */}
-            <div className="bg-white rounded-2xl p-md border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] flex lg:flex-col items-center lg:items-start gap-4">
-              <div 
-                className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container relative bg-slate-100 flex-shrink-0 flex items-center justify-center cursor-pointer group"
-                onClick={() => setActiveTab("profile")}
-                title="Quản lý thông tin tài khoản"
-              >
-                {userProfile.avatar ? (
-                  <img
-                    className="w-full h-full object-cover"
-                    alt="Avatar"
-                    src={userProfile.avatar}
-                  />
-                ) : (
-                  <span className="material-symbols-outlined text-slate-400 text-3xl">person</span>
-                )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <span className="material-symbols-outlined text-white text-xs">edit</span>
+          <aside className="lg:col-span-1 lg:sticky lg:top-6">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] overflow-hidden">
+              {/* Quick User Section */}
+              <div className="p-5 border-b border-slate-100 flex lg:flex-col items-center lg:items-start gap-4">
+                <div
+                  className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container relative bg-slate-100 flex-shrink-0 flex items-center justify-center cursor-pointer group"
+                  onClick={() => setActiveTab("profile")}
+                  title="Quản lý thông tin tài khoản"
+                >
+                  {userProfile.avatar ? (
+                    <img
+                      className="w-full h-full object-cover"
+                      alt="Avatar"
+                      src={userProfile.avatar}
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-slate-400 text-3xl">person</span>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <span className="material-symbols-outlined text-white text-xs">edit</span>
+                  </div>
+                </div>
+                <div className="text-left space-y-0.5 min-w-0">
+                  <h3 className="font-bold text-slate-800 text-base line-clamp-1 leading-snug">{userProfile.fullName}</h3>
+                  <p className="text-xs text-slate-400 font-semibold truncate">{userProfile.email}</p>
+                  <div className="flex gap-1.5 pt-1.5">
+                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[10px] font-bold border border-rose-100 flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-[10px] font-bold">military_tech</span>
+                      Thành viên {loyaltyProfile?.currentTierName || "Standard"}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="text-left space-y-0.5 min-w-0">
-                <h3 className="font-bold text-slate-800 text-base line-clamp-1 leading-snug">{userProfile.fullName}</h3>
-                <p className="text-xs text-slate-400 font-semibold truncate">{userProfile.email}</p>
-                <div className="flex gap-1.5 pt-1.5">
-                  <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[10px] font-bold border border-rose-100 flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-[10px] font-bold">military_tech</span>
-                    Thành viên {loyaltyProfile?.currentTierName || "Standard"}
-                  </span>
-                </div>
-              </div>
-            </div>
 
-            {/* Menu List */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)]">
-              {/* Desktop view */}
-              <nav className="hidden lg:flex flex-col gap-1.5">
-                {(
-                  [
-                    { id: "profile", label: "Thông tin tài khoản", icon: "person" },
-                    { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
-                    { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
-                    { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
-                    { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
-                    { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
-                    { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
-                    { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left transition-all ${
-                      activeTab === item.id
+              {/* Menu List Section */}
+              <div className="p-4">
+                {/* Desktop view */}
+                <nav className="hidden lg:flex flex-col gap-1.5">
+                  {(
+                    [
+                      { id: "profile", label: "Thông tin tài khoản", icon: "person" },
+                      { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
+                      { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
+                      { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
+                      { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
+                      { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
+                      { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left transition-all ${activeTab === item.id
                         ? "bg-primary/5 text-primary border-l-4 border-primary pl-3"
                         : "text-slate-600 hover:text-primary hover:bg-slate-50 border-l-4 border-transparent"
-                    }`}
-                  >
-                    <span className={`material-symbols-outlined text-lg ${activeTab === item.id ? "text-primary" : "text-slate-400"}`}>
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
+                        }`}
+                    >
+                      <span className={`material-symbols-outlined text-lg ${activeTab === item.id ? "text-primary" : "text-slate-400"}`}>
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
 
-              {/* Mobile view */}
-              <div className="lg:hidden flex overflow-x-auto gap-2 pb-1 scrollbar-none">
-                {(
-                  [
-                    { id: "profile", label: "Tài khoản", icon: "person" },
-                    { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
-                    { id: "address", label: "Địa chỉ", icon: "location_on" },
-                    { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
-                    { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
-                    { id: "notifications", label: "Thông báo", icon: "notifications" },
-                    { id: "reviews", label: "Đánh giá", icon: "reviews" },
-                    { id: "privacy", label: "Bảo mật", icon: "policy" },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all ${
-                      activeTab === item.id
+                {/* Mobile view */}
+                <div className="lg:hidden flex overflow-x-auto gap-2 pb-1 scrollbar-none">
+                  {(
+                    [
+                      { id: "profile", label: "Tài khoản", icon: "person" },
+                      { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
+                      { id: "address", label: "Địa chỉ", icon: "location_on" },
+                      { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
+                      { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "notifications", label: "Thông báo", icon: "notifications" },
+                      { id: "reviews", label: "Đánh giá", icon: "reviews" },
+                      { id: "privacy", label: "Bảo mật", icon: "policy" },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all ${activeTab === item.id
                         ? "bg-primary text-white shadow-sm"
                         : "bg-slate-100 text-slate-600 hover:text-primary hover:bg-slate-200"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </button>
-                ))}
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </aside>
@@ -653,32 +653,32 @@ export default function ProfilePage() {
           {/* Right Content Area */}
           <main className="lg:col-span-3 min-w-0">
             {activeTab === "profile" && (
-              <div className="space-y-lg">
-                <ProfileHeader 
-                  userProfile={userProfile} 
-                  token={token} 
+              <div className="space-y-4">
+                <ProfileHeader
+                  userProfile={userProfile}
+                  token={token}
                   onAvatarUpdated={handleAvatarUpdated}
                   loyaltyProfile={loyaltyProfile}
                 />
-                <PersonalInfo 
-                  userProfile={userProfile} 
-                  onEditClick={() => setEditProfileOpen(true)} 
+                <PersonalInfo
+                  userProfile={userProfile}
+                  onEditClick={() => setEditProfileOpen(true)}
                 />
-                <SecurityAndSettings 
-                  onChangePasswordClick={() => setChangePasswordOpen(true)} 
-                  notificationSettings={notificationSettings} 
-                  onNotificationToggle={handleNotificationToggle} 
+                <SecurityAndSettings
+                  onChangePasswordClick={() => setChangePasswordOpen(true)}
+                  notificationSettings={notificationSettings}
+                  onNotificationToggle={handleNotificationToggle}
                 />
               </div>
             )}
 
             {activeTab === "address" && (
-              <AddressList 
-                addresses={addresses} 
-                onAddClick={openNewAddressModal} 
-                onEditClick={handleOpenEditAddressForm} 
-                onDeleteClick={handleDeleteAddressClick} 
-                onSetDefaultClick={handleSetDefaultAddressClick} 
+              <AddressList
+                addresses={addresses}
+                onAddClick={openNewAddressModal}
+                onEditClick={handleOpenEditAddressForm}
+                onDeleteClick={handleDeleteAddressClick}
+                onSetDefaultClick={handleSetDefaultAddressClick}
               />
             )}
 
@@ -689,26 +689,26 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "orders" && (
-              <OrdersSection 
-                userId={userProfile.userId} 
-                token={token} 
+              <OrdersSection
+                userId={userProfile.userId}
+                token={token}
                 initialOrderId={initialNotifId}
                 onClearInitialOrderId={handleClearInitialId}
               />
             )}
 
             {activeTab === "notifications" && (
-              <NotificationsSection 
-                token={token} 
+              <NotificationsSection
+                token={token}
                 initialSelectedId={initialNotifId}
                 onClearInitialId={handleClearInitialId}
               />
             )}
 
             {activeTab === "reviews" && (
-              <ReviewsSection 
-                userId={userProfile.userId} 
-                token={token} 
+              <ReviewsSection
+                userId={userProfile.userId}
+                token={token}
               />
             )}
 
@@ -717,47 +717,47 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <EditProfileModal 
-        isOpen={editProfileOpen} 
-        onClose={() => setEditProfileOpen(false)} 
-        onSubmit={handleProfileUpdate} 
-        profileForm={profileForm} 
-        setProfileForm={setProfileForm} 
-        profileError={profileError} 
+      <EditProfileModal
+        isOpen={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+        onSubmit={handleProfileUpdate}
+        profileForm={profileForm}
+        setProfileForm={setProfileForm}
+        profileError={profileError}
       />
 
-      <ChangePasswordModal 
-        isOpen={changePasswordOpen} 
-        onClose={() => setChangePasswordOpen(false)} 
-        onSubmit={handlePasswordChange} 
-        passwordForm={passwordForm} 
-        setPasswordForm={setPasswordForm} 
-        passwordError={passwordError} 
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+        onSubmit={handlePasswordChange}
+        passwordForm={passwordForm}
+        setPasswordForm={setPasswordForm}
+        passwordError={passwordError}
       />
 
-      <ProfileAddressModal 
-        isOpen={addressModalOpen} 
-        onClose={() => setAddressModalOpen(false)} 
-        onSubmit={handleAddressSubmit} 
-        isEditing={!!editingAddress} 
-        addressForm={addressForm} 
-        setAddressForm={setAddressForm} 
-        addressError={addressError} 
-        provinces={provinces} 
-        setProvinces={setProvinces} 
-        districts={districts} 
-        wards={wards} 
-        handleProvinceChange={handleProvinceChange} 
-        handleDistrictChange={handleDistrictChange} 
-        handleWardChange={handleWardChange} 
-        setDistricts={setDistricts} 
-        setWards={setWards} 
+      <ProfileAddressModal
+        isOpen={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        onSubmit={handleAddressSubmit}
+        isEditing={!!editingAddress}
+        addressForm={addressForm}
+        setAddressForm={setAddressForm}
+        addressError={addressError}
+        provinces={provinces}
+        setProvinces={setProvinces}
+        districts={districts}
+        wards={wards}
+        handleProvinceChange={handleProvinceChange}
+        handleDistrictChange={handleDistrictChange}
+        handleWardChange={handleWardChange}
+        setDistricts={setDistricts}
+        setWards={setWards}
       />
 
       {/* Confirm Delete Address Modal (Thay thế cho Modal mặc định của trình duyệt) */}
       {deleteConfirmOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div 
+          <div
             className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
             style={{ width: '384px', maxWidth: 'calc(100vw - 32px)' }}
           >
@@ -769,7 +769,7 @@ export default function ProfilePage() {
               Bạn có chắc chắn muốn xóa địa chỉ này? Hành động này không thể hoàn tác.
             </p>
             <div className="flex gap-3 justify-end pt-2">
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   setDeleteConfirmOpen(false);
@@ -779,7 +779,7 @@ export default function ProfilePage() {
               >
                 Hủy bỏ
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={handleConfirmDeleteAddress}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"

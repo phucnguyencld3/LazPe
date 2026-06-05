@@ -271,7 +271,7 @@ try
                 factory: partition => new FixedWindowRateLimiterOptions
                 {
                     AutoReplenishment = true,
-                    PermitLimit = 100, // Tối đa 100 request
+                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 100, // Tối đa 1000 request ở dev, 100 ở prod
                     QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
                     Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
                 }));

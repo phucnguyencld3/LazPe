@@ -208,8 +208,8 @@ export function VoucherSection({ token }: VoucherSectionProps) {
   }
 
   return (
-    <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-md pb-3 border-b border-slate-100">
+    <section className="bg-white rounded-[10px] p-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-3 border-b border-slate-100">
         <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">confirmation_number</span> Voucher của tôi
         </h2>
@@ -222,11 +222,11 @@ export function VoucherSection({ token }: VoucherSectionProps) {
           placeholder="Nhập mã voucher tại đây..."
           value={searchCode}
           onChange={(e) => setSearchCode(e.target.value)}
-          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
+          className="flex-1 px-4 py-2.5 rounded-[10px] border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
         />
         <button
           type="submit"
-          className="bg-primary hover:bg-primary/95 text-white px-6 py-2.5 rounded-xl font-bold text-sm bouncy-hover active:scale-95 transition-transform flex-shrink-0 whitespace-nowrap"
+          className="bg-primary hover:bg-primary/95 text-white px-6 py-2.5 rounded-[10px] font-bold text-sm bouncy-hover active:scale-95 transition-transform flex-shrink-0 whitespace-nowrap"
         >
           Áp dụng
         </button>
@@ -257,12 +257,12 @@ export function VoucherSection({ token }: VoucherSectionProps) {
       </div>
 
       {/* Voucher List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredVouchers.length > 0 ? (
           filteredVouchers.map((voucher) => (
             <div
               key={voucher.id}
-              className={`flex border rounded-2xl overflow-hidden relative group transition-all duration-200 ${
+              className={`flex border rounded-[10px] overflow-hidden relative group transition-all duration-200 ${
                 voucher.status === "unused"
                   ? "border-slate-200 hover:border-primary/50 hover:shadow-md"
                   : "border-slate-100 bg-slate-50/50 opacity-60"
@@ -270,7 +270,7 @@ export function VoucherSection({ token }: VoucherSectionProps) {
             >
               {/* Left Wing (Coupon Head) */}
               <div
-                className={`w-24 flex flex-col items-center justify-center border-r border-dashed border-slate-200 relative ${
+                className={`w-24 flex flex-col items-center justify-center border-r border-dashed border-slate-200 relative flex-shrink-0 ${
                   voucher.status === "unused"
                     ? voucher.type === "shipping"
                       ? "bg-secondary/5"
@@ -291,15 +291,15 @@ export function VoucherSection({ token }: VoucherSectionProps) {
               </div>
 
               {/* Right Wing (Coupon Body) */}
-              <div className="flex-1 p-4 flex flex-col justify-between">
+              <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                 <div>
-                  <div className="flex justify-between items-start">
-                    <span className="font-bold text-slate-800 text-sm md:text-base pr-2 line-clamp-1">
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="font-bold text-slate-800 text-sm md:text-base pr-2 line-clamp-1 flex-1" title={voucher.title}>
                       {voucher.title}
                     </span>
                     <span
                       onClick={() => voucher.status === "unused" && handleCopyCode(voucher.code)}
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer select-none transition-colors border ${
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer select-none transition-colors border flex-shrink-0 ${
                         voucher.status === "unused"
                           ? "bg-primary-container text-on-primary-container border-primary-container hover:bg-primary hover:text-white"
                           : "bg-slate-200 text-slate-500 border-slate-200"
@@ -308,28 +308,31 @@ export function VoucherSection({ token }: VoucherSectionProps) {
                       {voucher.code}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed min-h-[36px]">
                     {voucher.description}
                   </p>
                 </div>
 
-                <div className="mt-4 flex justify-between items-end">
-                  <div className="text-[10px] text-slate-400 space-y-0.5">
-                    {voucher.minSpend > 0 && (
-                      <p>Đơn tối thiểu: {formatPrice(voucher.minSpend)}</p>
-                    )}
-                    <p>HSD: {formatDate(voucher.expiryDate)}</p>
+                <div className="mt-4 flex justify-between items-end gap-2">
+                  <div className="text-[10px] text-slate-400 space-y-0.5 flex-1 min-w-0">
+                    <p className="truncate">
+                      Đơn tối thiểu:{" "}
+                      {voucher.minSpend > 0
+                        ? formatPrice(voucher.minSpend)
+                        : "Không giới hạn"}
+                    </p>
+                    <p className="truncate">HSD: {formatDate(voucher.expiryDate)}</p>
                   </div>
 
                   {voucher.status === "unused" ? (
                     <button
                       onClick={() => handleCopyCode(voucher.code)}
-                      className="text-xs font-bold text-primary border border-primary px-3.5 py-1.5 rounded-full hover:bg-primary hover:text-white transition-colors"
+                      className="text-xs font-bold text-primary border border-primary px-3.5 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-colors flex-shrink-0"
                     >
                       Dùng Ngay
                     </button>
                   ) : (
-                    <span className="text-xs font-bold text-slate-400 uppercase">
+                    <span className="text-xs font-bold text-slate-400 uppercase flex-shrink-0">
                       {voucher.status === "used" ? "Đã dùng" : "Hết hạn"}
                     </span>
                   )}
@@ -338,7 +341,7 @@ export function VoucherSection({ token }: VoucherSectionProps) {
             </div>
           ))
         ) : (
-          <div className="col-span-2 text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <div className="col-span-2 text-center py-12 bg-slate-50 rounded-[10px] border border-dashed border-slate-200">
             <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">confirmation_number</span>
             <p className="text-slate-500 font-semibold text-sm">Không tìm thấy voucher phù hợp.</p>
           </div>

@@ -20,21 +20,21 @@ export function SecurityAndSettings({
     <aside className="space-y-lg">
       
       {/* Security Section */}
-      <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
-        <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2 mb-md pb-2 border-b border-slate-100">
+      <section className="bg-white rounded-xl py-5 px-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
+        <h2 className="font-headline-md text-lg font-bold text-primary flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
           <span className="material-symbols-outlined text-primary text-xl">shield</span> Bảo mật
         </h2>
         
         <button
           onClick={onChangePasswordClick}
-          className="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors group border border-slate-100"
+          className="w-full flex items-center justify-between py-3 px-4 bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors group border border-slate-100"
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined">lock</span>
             </div>
             <div className="text-left min-w-0">
-              <p className="font-bold text-slate-800 whitespace-nowrap">Đổi mật khẩu</p>
+              <p className="font-bold text-slate-800 whitespace-nowrap text-sm">Đổi mật khẩu</p>
               <p className="text-xs text-slate-500 whitespace-nowrap">Bảo vệ tài khoản của bạn</p>
             </div>
           </div>
@@ -44,8 +44,8 @@ export function SecurityAndSettings({
         </button>
 
         {/* Notification Toggles */}
-        <div className="mt-lg pt-lg border-t border-slate-100 space-y-4">
-          <h3 className="font-bold text-primary uppercase tracking-wider text-[11px] mb-2">Cài đặt nhận thông báo</h3>
+        <div className="mt-5 pt-5 border-t border-slate-100 space-y-3">
+          <h3 className="font-bold text-primary uppercase tracking-wider text-[11px] mb-1.5">Cài đặt nhận thông báo</h3>
           
           {/* Email Toggle */}
           <div className="flex items-center justify-between">
