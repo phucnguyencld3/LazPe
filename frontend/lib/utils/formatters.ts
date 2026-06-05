@@ -25,7 +25,7 @@ export function formatPrivilegeDetailLines(type: string, valueStr?: string): str
             ? `Giảm ${val.discountValue || 0}% (Tối đa ${(val.maxDiscount || 0).toLocaleString()}đ)`
             : `Giảm ${(val.discountValue || 0).toLocaleString()}đ`;
           return [
-            `Voucher riêng: ${val.voucherCode || "N/A"}_M[Tháng][Năm] × ${val.quantity || 0} voucher/tháng`,
+            `Voucher riêng × ${val.quantity || 0} voucher/tháng`,
             `Chi tiết: ${discountDesc}, Đơn tối thiểu từ ${(val.minOrderValue || 0).toLocaleString()}đ`,
             `Hạn sử dụng: ${val.validityDays || 30} ngày`
           ];
