@@ -2309,10 +2309,10 @@ export async function importReviewSensitiveKeywords(file: File): Promise<{ succe
     const formData = new FormData();
     formData.append("file", file);
 
-    const headers = getHeaders();
-    // Delete Content-Type to let the browser set it with boundary
-    if (headers["Content-Type"]) {
-      delete headers["Content-Type"];
+    const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const response = await fetch(`${API_BASE_URL}/review/keywords/import`, {
