@@ -259,7 +259,8 @@ export default function ProfilePage() {
     try {
       const result = await changePassword(userProfile.userId, token, {
         currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
+        newPassword: passwordForm.newPassword,
+        confirmNewPassword: passwordForm.confirmNewPassword
       });
       if (result.success) {
         toast.success("Đổi mật khẩu thành công!");
