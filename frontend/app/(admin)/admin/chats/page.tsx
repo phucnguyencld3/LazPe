@@ -86,7 +86,7 @@ export default function AdminChatsPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
 
-  const API_BASE = "http://localhost:5101";
+  const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101").replace(/\/api$/, "");
 
   // Auto scroll
   useEffect(() => {

@@ -58,10 +58,10 @@ export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
   
   return (
-    <main className="px-margin-mobile md:px-margin-desktop py-lg max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Welcome Banner */}
       <section 
-        className="relative rounded-xl overflow-hidden mb-lg soft-shadow min-h-[220px] flex items-center bg-cover bg-center"
+        className="relative rounded-xl overflow-hidden mb-lg soft-shadow min-h-[320px] flex items-center bg-cover bg-center"
         style={{ backgroundImage: `url('/Dashboard-page-img/Dashboard-page-banner.png')` }}
       >
         {/* Gradient Overlay to improve text readability */}
@@ -263,6 +263,11 @@ export default async function AdminDashboardPage() {
                   <span className="material-symbols-outlined">person_search</span> Quản lý khách hàng
                 </button>
               </Link>
+              <Link href="/admin/statistics">
+                <button className="mt-2 w-full bg-[#9c27b0] text-white py-sm rounded-lg font-label-md flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+                  <span className="material-symbols-outlined">bar_chart</span> Xem báo cáo thống kê
+                </button>
+              </Link>
             </div>
           </section>
 
@@ -313,16 +318,6 @@ export default async function AdminDashboardPage() {
           </section>
         </div>
       </div>
-      
-      {/* Footer */}
-      <footer className="mt-xl text-center text-on-surface-variant font-label-sm pb-lg border-t border-outline-variant pt-lg">
-        <p>© 2024 Cổng quản trị LazPe. Bảo lưu mọi quyền.</p>
-        <div className="mt-sm flex justify-center gap-md">
-          <Link className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</Link>
-          <Link className="hover:text-primary transition-colors" href="#">Liên hệ hỗ trợ</Link>
-          <Link className="hover:text-primary transition-colors" href="#">Hướng dẫn sử dụng</Link>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }
