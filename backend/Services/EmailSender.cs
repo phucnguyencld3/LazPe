@@ -24,6 +24,7 @@ namespace PolyBabyAPI.Services
         {
             var sendGridApiKey = _configuration["EmailSettings:SendGridApiKey"];
             var resendApiKey = _configuration["EmailSettings:ResendApiKey"];
+            var brevoApiKey = _configuration["EmailSettings:BrevoApiKey"];
 
             if (!string.IsNullOrWhiteSpace(sendGridApiKey))
             {
@@ -35,11 +36,52 @@ namespace PolyBabyAPI.Services
                 _logger.LogInformation("Attempting to send email via Resend API...");
                 await SendResendEmailAsync(resendApiKey, email, subject, htmlMessage);
             }
+            else if (!string.IsNullOrWhiteSpace(brevoApiKey))
+            {
+                _logger.LogInformation("Attempting to send email via Brevo API...");
+                await SendBrevoEmailAsync(brevoApiKey, email, subject, htmlMessage);
+            }
             else
             {
                 _logger.LogInformation("Attempting to send email via SmtpClient...");
                 await SendSmtpEmailAsync(email, subject, htmlMessage);
             }
+        }
+
+        private async Task SendBrevoEmailAsync(string apiKey, string email, string subject, string htmlMessage)
+        {
+            var fromEmail = _configuration["EmailSettings:FromEmail"] ?? "lazpevn@gmail.com";
+            var fromName = _configuration["EmailSettings:FromName"] ?? "LazPe";
+
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("api-key", apiKey);
+
+            var payload = new
+            {
+                sender = new
+                {
+                    name = fromName,
+                    email = fromEmail
+                },
+                to = new[]
+                {
+                    new { email = email }
+                },
+                subject = subject,
+                htmlContent = htmlMessage
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var responseBody = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Brevo API returned error {response.StatusCode}: {responseBody}");
+            }
+
+            _logger.LogInformation("Email sent successfully to {Email} via Brevo API", email);
         }
 
         private async Task SendSendGridEmailAsync(string apiKey, string email, string subject, string htmlMessage)
