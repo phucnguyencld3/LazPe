@@ -133,54 +133,58 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
     const nameUpper = tierName?.toUpperCase();
     if (nameUpper === "SILVER" || nameUpper === "BẠC") {
       return {
-        bg: "bg-gradient-to-br from-slate-300 via-zinc-400 to-slate-500",
-        badgeBg: "bg-slate-100 text-slate-700",
-        textColor: "text-slate-100",
-        glow: "shadow-slate-400/20",
-        subTextColor: "text-slate-200",
-        accentColor: "text-slate-300"
+        bg: "bg-gradient-to-br from-[#f1f5f9] via-[#cbd5e1] to-[#94a3b8]", // metallic silver
+        badgeBg: "bg-slate-800/10 text-slate-800 border border-slate-800/10",
+        textColor: "text-slate-900",
+        glow: "shadow-lg shadow-slate-300/60 border border-slate-200",
+        subTextColor: "text-slate-600 font-bold",
+        dividerColor: "border-slate-800/10",
+        style: undefined
       };
     }
     if (nameUpper === "GOLD" || nameUpper === "VÀNG") {
       return {
-        bg: "bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600",
-        badgeBg: "bg-amber-100 text-amber-800",
-        textColor: "text-amber-50",
-        glow: "shadow-amber-500/20",
-        subTextColor: "text-amber-100/90",
-        accentColor: "text-amber-200"
+        bg: "bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#854d0e]", // metallic gold
+        badgeBg: "bg-amber-950/20 text-amber-950 border border-amber-950/10",
+        textColor: "text-amber-950",
+        glow: "shadow-lg shadow-amber-500/50 border border-amber-400/30",
+        subTextColor: "text-amber-900/80 font-bold",
+        dividerColor: "border-amber-950/10",
+        style: undefined
       };
     }
     if (nameUpper === "DIAMOND" || nameUpper === "KIM CƯƠNG") {
       return {
-        bg: "bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500",
-        badgeBg: "bg-indigo-100 text-indigo-800",
-        textColor: "text-indigo-50",
-        glow: "shadow-purple-500/20",
-        subTextColor: "text-indigo-100/90",
-        accentColor: "text-indigo-200"
+        bg: "bg-gradient-to-br from-[#22d3ee] via-[#6366f1] to-[#d946ef]", // metallic holographic diamond
+        badgeBg: "bg-white/20 text-white border border-white/20",
+        textColor: "text-white",
+        glow: "shadow-lg shadow-indigo-500/50 border border-indigo-400/20",
+        subTextColor: "text-indigo-100/90 font-bold",
+        dividerColor: "border-white/10",
+        style: undefined
       };
     }
     if (nameUpper === "STANDARD" || nameUpper === "THƯỜNG" || nameUpper === "MẶC ĐỊNH") {
       return {
-        bg: "bg-gradient-to-br from-slate-600 to-slate-800",
-        badgeBg: "bg-slate-700 text-slate-100",
-        textColor: "text-slate-300",
-        glow: "shadow-slate-800/20",
-        subTextColor: "text-slate-400",
-        accentColor: "text-slate-500"
+        bg: "bg-gradient-to-br from-[#4b5563] via-[#1f2937] to-[#111827]", // metallic dark titanium/steel
+        badgeBg: "bg-white/10 text-zinc-100 border border-white/10",
+        textColor: "text-zinc-100",
+        glow: "shadow-lg shadow-zinc-800/60 border border-zinc-700/30",
+        subTextColor: "text-zinc-400 font-bold",
+        dividerColor: "border-zinc-800",
+        style: undefined
       };
     }
 
     const safeColor = colorHex || "#64748b";
     return {
-      bg: "",
+      bg: "bg-gradient-to-br from-slate-600 to-slate-800",
       style: { backgroundColor: safeColor },
       badgeBg: "bg-white/20 text-white",
       textColor: "text-white",
       glow: "shadow-slate-500/20",
-      subTextColor: "text-white/80",
-      accentColor: "text-white/50"
+      subTextColor: "text-white/80 font-bold",
+      dividerColor: "border-white/10"
     };
   };
 
@@ -237,13 +241,28 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes active-card-pulse {
+          0%, 100% {
+            box-shadow: 0 0 0 2px var(--pulse-color), 0 10px 20px -10px var(--pulse-color);
+            border-color: var(--pulse-color);
+          }
+          50% {
+            box-shadow: 0 0 0 4px var(--pulse-color), 0 15px 25px -5px var(--pulse-color);
+            border-color: transparent;
+          }
+        }
+        .active-card-pulse {
+          animation: active-card-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+      `}</style>
 
       {/* 1. MEMBERSHIP CARD & POINTS BANNER */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {/* Virtual Membership Card */}
         <div
-          className={"md:col-span-2 relative " + styles.bg + " rounded-2xl p-6 text-white overflow-hidden shadow-xl " + styles.glow + " flex flex-col justify-between min-h-[220px] transition-all hover:scale-[1.01]"}
+          className={`md:col-span-2 relative ${styles.bg} rounded-[10px] p-6 ${styles.textColor} overflow-hidden shadow-xl ${styles.glow} flex flex-col justify-between min-h-[220px] transition-all hover:scale-[1.01]`}
           style={styles.style}
         >
           {/* Card background decoration */}
@@ -251,7 +270,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             <span className="material-symbols-outlined text-[260px] font-bold">military_tech</span>
           </div>
           <div className="absolute top-0 right-0 p-6 flex flex-col items-end">
-            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
+            <div className={`flex items-center gap-1.5 ${styles.badgeBg} backdrop-blur-md px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase`}>
               <Sparkles className="h-3 w-3" />
               <span>Hạng {profile?.currentTierName}</span>
             </div>
@@ -262,18 +281,18 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             <p className="text-2xl font-black tracking-widest">{profile?.fullName}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/10">
+          <div className={`grid grid-cols-2 gap-4 mt-6 pt-4 border-t ${styles.dividerColor || "border-white/10"}`}>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Điểm hiện có</p>
+              <p className={`text-[10px] font-bold uppercase tracking-wider ${styles.subTextColor}`}>Điểm hiện có</p>
               <p className="text-3xl font-black tracking-tight flex items-baseline gap-1">
                 {profile?.availablePoints.toLocaleString("vi-VN")}
-                <span className="text-xs font-bold opacity-80">điểm</span>
+                <span className={`text-xs font-bold ${styles.subTextColor}`}>điểm</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Tích lũy xét hạng</p>
-              <p className="text-xl font-bold opacity-90">
-                {profile?.totalPoints.toLocaleString("vi-VN")} <span className="text-xs">điểm</span>
+              <p className={`text-[10px] font-bold uppercase tracking-wider ${styles.subTextColor}`}>Tích lũy xét hạng</p>
+              <p className="text-xl font-bold">
+                {profile?.totalPoints.toLocaleString("vi-VN")} <span className={`text-xs ${styles.subTextColor}`}>điểm</span>
               </p>
             </div>
           </div>
@@ -356,47 +375,46 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             return (
               <div
                 key={t.tierID}
-                className={`flex flex-col justify-between p-5 rounded-[10px] border transition-all duration-300 bg-white group hover:shadow-lg ${
-                  isUserTier
-                    ? "ring-2 ring-offset-2 scale-[1.02] z-10"
-                    : "border-slate-100 hover:border-slate-200"
-                }`}
+                className={`flex flex-col justify-between p-5 rounded-[10px] border transition-all duration-300 bg-white group hover:shadow-lg relative ${isUserTier
+                  ? "ring-offset-2 scale-[1.02] z-10 active-card-pulse"
+                  : "border-slate-100 hover:border-slate-200"
+                  }`}
                 style={
                   isUserTier
                     ? {
-                        borderColor: t.colorHex,
-                        boxShadow: `0 12px 30px -10px ${t.colorHex}40`,
-                        // @ts-ignore
-                        "--tw-ring-color": t.colorHex,
-                      }
+                      borderColor: t.colorHex,
+                      // @ts-ignore
+                      "--pulse-color": t.colorHex,
+                    }
                     : undefined
                 }
               >
+                {isUserTier && (
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+                    <span
+                      className="text-[9px] text-white font-extrabold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm"
+                      style={{ backgroundColor: t.colorHex }}
+                    >
+                      Hạng của bạn
+                    </span>
+                  </div>
+                )}
                 <div className="space-y-4">
                   {/* Card Header */}
                   <div className="flex items-start justify-between">
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 w-full">
                       <div className="flex items-center gap-2">
                         {tierIcon}
                         <h4 className="font-extrabold text-slate-800 text-sm tracking-tight">
                           {t.tierName}
                         </h4>
                       </div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
                         {index === sortedTiers.length - 1
                           ? `Từ ${t.minPoints.toLocaleString("vi-VN")} điểm`
                           : `${t.minPoints.toLocaleString("vi-VN")} - ${(sortedTiers[index + 1].minPoints - 1).toLocaleString("vi-VN")} điểm`}
                       </p>
                     </div>
-
-                    {isUserTier && (
-                      <span
-                        className="text-[9px] text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse whitespace-nowrap"
-                        style={{ backgroundColor: t.colorHex }}
-                      >
-                        Hạng của bạn
-                      </span>
-                    )}
                   </div>
 
                   {/* Divider */}
