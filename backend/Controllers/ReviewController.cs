@@ -4,6 +4,8 @@ using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 using System.Security.Claims;
+using PolyBabyAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace PolyBabyAPI.Controllers
 {
@@ -12,11 +14,13 @@ namespace PolyBabyAPI.Controllers
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _reviewService;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(IReviewService reviewService, ILogger<ReviewController> logger)
+        public ReviewController(IReviewService reviewService, ApplicationDbContext context, ILogger<ReviewController> logger)
         {
             _reviewService = reviewService;
+            _context = context;
             _logger = logger;
         }
 
@@ -625,6 +629,261 @@ namespace PolyBabyAPI.Controllers
 
         #endregion
 
+        #region Auto Moderation
+
+        [HttpGet("keywords")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetKeywords()
+        {
+            try
+            {
+                var keywords = await _context.ReviewSensitiveKeywords
+                    .OrderByDescending(k => k.CreatedAt)
+                    .ToListAsync();
+                return Ok(new { success = true, data = keywords });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting sensitive keywords");
+                return StatusCode(500, new { success = false, message = "Lỗi khi tải danh sách từ khóa." });
+            }
+        }
+
+        [HttpPost("keywords")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateKeyword([FromBody] CreateSensitiveKeywordDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                var keyword = new ReviewSensitiveKeyword
+                {
+                    Word = dto.Word.Trim(),
+                    Severity = dto.Severity,
+                    Category = dto.Category,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.ReviewSensitiveKeywords.Add(keyword);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Thêm từ khóa thành công", data = keyword });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating sensitive keyword");
+                return StatusCode(500, new { success = false, message = "Lỗi khi thêm từ khóa." });
+            }
+        }
+
+        [HttpPut("keywords/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateKeyword(int id, [FromBody] CreateSensitiveKeywordDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                var keyword = await _context.ReviewSensitiveKeywords.FindAsync(id);
+                if (keyword == null)
+                {
+                    return NotFound(new { success = false, message = "Không tìm thấy từ khóa" });
+                }
+
+                keyword.Word = dto.Word.Trim();
+                keyword.Severity = dto.Severity;
+                keyword.Category = dto.Category;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Cập nhật từ khóa thành công", data = keyword });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating sensitive keyword");
+                return StatusCode(500, new { success = false, message = "Lỗi khi cập nhật từ khóa." });
+            }
+        }
+
+        [HttpDelete("keywords/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteKeyword(int id)
+        {
+            try
+            {
+                var keyword = await _context.ReviewSensitiveKeywords.FindAsync(id);
+                if (keyword == null)
+                {
+                    return NotFound(new { success = false, message = "Không tìm thấy từ khóa" });
+                }
+
+                _context.ReviewSensitiveKeywords.Remove(keyword);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Xóa từ khóa thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting sensitive keyword");
+                return StatusCode(500, new { success = false, message = "Lỗi khi xóa từ khóa." });
+            }
+        }
+
+        [HttpGet("keywords/sample")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetSampleKeywordsExcel()
+        {
+            try
+            {
+                using var workbook = new ClosedXML.Excel.XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Keywords Sample");
+
+                // Headers
+                worksheet.Cell(1, 1).Value = "Từ khóa";
+                worksheet.Cell(1, 2).Value = "Mức độ (Warning, Medium, Critical)";
+                worksheet.Cell(1, 3).Value = "Phân loại (Abuse, Vulgarity, Spam, Phone, Link, Scam, Violations)";
+
+                // Style headers
+                var headerRange = worksheet.Range("A1:C1");
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#4F46E5"); // Indigo
+                headerRange.Style.Font.FontColor = ClosedXML.Excel.XLColor.White;
+
+                // Sample data
+                worksheet.Cell(2, 1).Value = "dm";
+                worksheet.Cell(2, 2).Value = "Critical";
+                worksheet.Cell(2, 3).Value = "Vulgarity";
+
+                worksheet.Cell(3, 1).Value = "0901234567";
+                worksheet.Cell(3, 2).Value = "Warning";
+                worksheet.Cell(3, 3).Value = "Phone";
+
+                worksheet.Cell(4, 1).Value = "lừa đảo";
+                worksheet.Cell(4, 2).Value = "Medium";
+                worksheet.Cell(4, 3).Value = "Scam";
+
+                worksheet.Cell(5, 1).Value = "http://";
+                worksheet.Cell(5, 2).Value = "Medium";
+                worksheet.Cell(5, 3).Value = "Link";
+
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new System.IO.MemoryStream();
+                workbook.SaveAs(stream);
+                var content = stream.ToArray();
+
+                return File(
+                    content,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "TuKhoaMau.xlsx"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating sample keywords excel file");
+                return StatusCode(500, new { success = false, message = "Lỗi khi tải file mẫu." });
+            }
+        }
+
+        [HttpPost("keywords/import")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ImportKeywordsExcel([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { success = false, message = "Vui lòng chọn file Excel" });
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            if (!".xlsx".Equals(ext, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Chỉ hỗ trợ file .xlsx" });
+            }
+
+            try
+            {
+                using var stream = file.OpenReadStream();
+                using var workbook = new ClosedXML.Excel.XLWorkbook(stream);
+                var worksheet = workbook.Worksheets.FirstOrDefault();
+                if (worksheet == null)
+                {
+                    return BadRequest(new { success = false, message = "File Excel trống" });
+                }
+
+                var rowCount = worksheet.LastRowUsed()?.RowNumber() ?? 0;
+                if (rowCount < 2)
+                {
+                    return BadRequest(new { success = false, message = "File Excel không có dữ liệu để import" });
+                }
+
+                var importedCount = 0;
+                var now = DateTime.Now;
+
+                for (int row = 2; row <= rowCount; row++)
+                {
+                    var word = worksheet.Cell(row, 1).GetString().Trim();
+                    var severity = worksheet.Cell(row, 2).GetString().Trim();
+                    var category = worksheet.Cell(row, 3).GetString().Trim();
+
+                    if (string.IsNullOrEmpty(word)) continue;
+
+                    if (string.IsNullOrEmpty(severity)) severity = "Warning";
+                    if (string.IsNullOrEmpty(category)) category = "Abuse";
+
+                    var exists = await _context.ReviewSensitiveKeywords.AnyAsync(k => k.Word == word);
+                    if (!exists)
+                    {
+                        var keyword = new ReviewSensitiveKeyword
+                        {
+                            Word = word,
+                            Severity = severity,
+                            Category = category,
+                            CreatedAt = now
+                        };
+                        _context.ReviewSensitiveKeywords.Add(keyword);
+                        importedCount++;
+                    }
+                }
+
+                if (importedCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { success = true, message = $"Import thành công {importedCount} từ khóa mới." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing sensitive keywords excel file");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi import file Excel" });
+            }
+        }
+
+        [HttpGet("moderation/dashboard")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetModerationDashboard()
+        {
+            try
+            {
+                var stats = await _reviewService.GetModerationDashboardAsync();
+                return Ok(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting moderation dashboard stats");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy số liệu thống kê." });
+            }
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private string GetCurrentUserId()
@@ -648,6 +907,9 @@ namespace PolyBabyAPI.Controllers
                 LoyaltyPointsEarned = review.LoyaltyPointsEarned,
                 UpdatedAt = review.UpdatedAt,
                 CensorshipReason = review.CensorshipReason,
+                AutoModerationStatus = review.AutoModerationStatus,
+                FlaggedReason = review.FlaggedReason,
+                ViolationScore = review.ViolationScore,
                 User = review.User != null ? new ReviewUserDto
                 {
                     UserID = review.User.Id,

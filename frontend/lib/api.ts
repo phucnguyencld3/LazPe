@@ -89,12 +89,12 @@ export async function getProductDetail(id: number): Promise<Product | null> {
     if (result.success && result.data) {
       const item = result.data;
       const variants = item.variants ?? [];
-      
+
       // Calculate total stock from variants if variants exist, otherwise use parent stock
       const totalStock = variants.reduce((sum: number, v: any) => sum + (v.stock ?? 0), 0);
       const parentStock = item.stock ?? 0;
       const finalStock = variants.length > 0 ? totalStock : parentStock;
-      
+
       // Fallback to first variant image if parent image is empty
       const firstVariantImage = variants.find((v: any) => v.imageUrl)?.imageUrl;
       const finalImage = item.imageUrl ?? item.image ?? firstVariantImage ?? "";
@@ -1894,6 +1894,9 @@ export interface ReviewItem {
   variantName?: string;
   bundleName?: string;
   imageUrl?: string;
+  autoModerationStatus?: string;
+  flaggedReason?: string;
+  violationScore?: number;
 }
 
 export interface ReviewStats {
@@ -2202,4 +2205,158 @@ export async function getReviewCensorshipLogs(reviewId: number): Promise<ReviewC
   }
 }
 
+// SENSITIVE KEYWORDS & MODERATION DASHBOARD APIS
+export interface ReviewSensitiveKeyword {
+  keywordID: number;
+  word: string;
+  severity: string;
+  category: string;
+  createdAt: string;
+}
+
+export interface ModerationDashboard {
+  totalNeedsReview: number;
+  totalFlagged: number;
+  totalAutoHidden: number;
+  topKeywords: { keyword: string; count: number }[];
+  topProducts: { productName: string; count: number }[];
+  topUsers: { userFullName: string; count: number }[];
+}
+
+export async function getReviewSensitiveKeywords(): Promise<ReviewSensitiveKeyword[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/keywords`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching sensitive keywords:", error);
+    return null;
+  }
+}
+
+export async function createReviewSensitiveKeyword(data: {
+  word: string;
+  severity: string;
+  category: string;
+}): Promise<{ success: boolean; message: string; data?: ReviewSensitiveKeyword }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/keywords`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Thêm từ khóa thành công",
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error creating sensitive keyword:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function updateReviewSensitiveKeyword(
+  id: number,
+  data: {
+    word: string;
+    severity: string;
+    category: string;
+  }
+): Promise<{ success: boolean; message: string; data?: ReviewSensitiveKeyword }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/keywords/${id}`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Cập nhật từ khóa thành công",
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error updating sensitive keyword:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function deleteReviewSensitiveKeyword(id: number): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/keywords/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Xóa từ khóa thành công",
+    };
+  } catch (error) {
+    console.error("Error deleting sensitive keyword:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function importReviewSensitiveKeywords(file: File): Promise<{ success: boolean; message: string }> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const headers = getHeaders();
+    // Delete Content-Type to let the browser set it with boundary
+    if (headers["Content-Type"]) {
+      delete headers["Content-Type"];
+    }
+
+    const response = await fetch(`${API_BASE_URL}/review/keywords/import`, {
+      method: "POST",
+      headers: headers,
+      body: formData,
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Import từ khóa thành công",
+    };
+  } catch (error) {
+    console.error("Error importing sensitive keywords:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function getModerationDashboard(): Promise<ModerationDashboard | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/moderation/dashboard`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching moderation dashboard:", error);
+    return null;
+  }
+}
+
+export async function downloadSampleKeywordsExcel(): Promise<Blob | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/keywords/sample`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    return await response.blob();
+  } catch (error) {
+    console.error("Error downloading sample keywords excel:", error);
+    return null;
+  }
+}
 

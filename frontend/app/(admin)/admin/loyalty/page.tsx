@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
+import { Loader } from "lucide-react";
 import { Pagination } from "@/components/admin/shared/Pagination";
 import { formatCurrency, formatPrivilegeDetailLines } from "@/lib/utils/formatters";
 
@@ -167,18 +168,18 @@ export default function AdminLoyaltyPage() {
   const [loadingStats, setLoadingStats] = useState(true);
 
   // States for Settings Tab
-  const [loyaltySettings, setLoyaltySettings] = useState<{
-    enableReviewReward: boolean;
-    reviewRewardPoints: number;
-    minimumReviewWords: number;
-    requiredRatingForReward: number;
-    allowMultipleRewardsPerProduct: boolean;
-  }>({
+  const [loyaltySettings, setLoyaltySettings] = useState<any>({
     enableReviewReward: true,
     reviewRewardPoints: 200,
     minimumReviewWords: 50,
     requiredRatingForReward: 5,
-    allowMultipleRewardsPerProduct: false
+    allowMultipleRewardsPerProduct: false,
+    reviewWithImageRewardPoints: 300,
+    reviewWithVideoRewardPoints: 500,
+    minimumReviewChars: 100,
+    allowEditReviewTimeLimitMinutes: 30,
+    maxReviewDaysAfterReceipt: 30,
+    requireDeliveryToReview: true
   });
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -2248,29 +2249,20 @@ export default function AdminLoyaltyPage() {
       {activeTab === "settings" && (
         <section className="space-y-md animate-in fade-in duration-200">
           {loadingSettings ? (
-            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
+            <div className="p-8 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-slate-100 shadow-sm max-w-3xl">
+              <Loader className="animate-spin text-primary mb-2" size={24} />
+              <span className="text-slate-400 font-bold text-xs">Đang tải cấu hình...</span>
             </div>
           ) : (
-            <form onSubmit={handleSaveSettings} className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest max-w-3xl">
-              <div className="p-md border-b border-outline-variant/20 bg-primary-container/5 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-primary">reviews</span>
-                </div>
-                <div>
-                  <h3 className="font-headline-md text-on-surface font-bold text-lg">Cấu hình thưởng điểm Đánh giá</h3>
-                  <p className="text-xs text-on-surface-variant/70 font-semibold">Quy định điểm thưởng khi khách hàng đánh giá sản phẩm</p>
-                </div>
-              </div>
-
-              <div className="p-md space-y-lg">
-                {/* Enable Switch */}
-                <div className="flex items-center justify-between p-md bg-surface-container-low/30 rounded-xl border border-outline-variant/20">
-                  <div className="space-y-1">
-                    <span className="font-label-lg text-on-surface font-bold text-sm block">Kích hoạt chương trình thưởng đánh giá</span>
-                    <span className="text-xs text-on-surface-variant/70 font-semibold">Bật/tắt việc cộng điểm thưởng khi khách hàng viết đánh giá sản phẩm</span>
+            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 max-w-3xl animate-in fade-in duration-200">
+              <form onSubmit={handleSaveSettings} className="space-y-6">
+                {/* Reward Point Enable Toggle */}
+                <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-slate-700 block">Kích hoạt tặng điểm thưởng Loyalty</span>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Tự động tặng điểm khi người dùng viết đánh giá chất lượng sản phẩm</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={loyaltySettings.enableReviewReward}
@@ -2282,90 +2274,136 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {loyaltySettings.enableReviewReward && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-md animate-in fade-in duration-200">
-                    {/* Points */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Số điểm thưởng</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={loyaltySettings.reviewRewardPoints}
-                        onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewRewardPoints: parseInt(e.target.value) || 0 })}
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface font-semibold"
-                        required
-                      />
-                      <p className="text-[10px] text-on-surface-variant/60 font-semibold">Số điểm Loyalty cộng vào ví khách hàng</p>
-                    </div>
+                  <>
+                    {/* Settings parameters */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Basic Review Points */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Thưởng đánh giá cơ bản (chỉ có chữ)</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={loyaltySettings.reviewRewardPoints}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewRewardPoints: parseInt(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          />
+                          <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">điểm</span>
+                        </div>
+                      </div>
 
-                    {/* Minimum Words */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Số từ tối thiểu</label>
-                      <input
-                        type="number"
-                        min="10"
-                        value={loyaltySettings.minimumReviewWords}
-                        onChange={(e) => setLoyaltySettings({ ...loyaltySettings, minimumReviewWords: parseInt(e.target.value) || 0 })}
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface font-semibold"
-                        required
-                      />
-                      <p className="text-[10px] text-on-surface-variant/60 font-semibold">Chiều dài tối thiểu của bình luận (chuẩn tiếng Việt)</p>
-                    </div>
+                      {/* Review with Image Points */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Thưởng đánh giá có kèm HÌNH ẢNH</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={loyaltySettings.reviewWithImageRewardPoints}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewWithImageRewardPoints: parseInt(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          />
+                          <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">điểm</span>
+                        </div>
+                      </div>
 
-                    {/* Required Rating */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Yêu cầu số sao tối thiểu</label>
-                      <select
-                        value={loyaltySettings.requiredRatingForReward}
-                        onChange={(e) => setLoyaltySettings({ ...loyaltySettings, requiredRatingForReward: parseInt(e.target.value) || 5 })}
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface font-semibold"
-                      >
-                        <option value={5}>⭐⭐⭐⭐⭐ 5 Sao</option>
-                        <option value={4}>⭐⭐⭐⭐ 4 Sao hoặc hơn</option>
-                        <option value={3}>⭐⭐⭐ 3 Sao hoặc hơn</option>
-                        <option value={2}>⭐⭐ 2 Sao hoặc hơn</option>
-                        <option value={1}>⭐ 1 Sao hoặc hơn</option>
-                      </select>
-                      <p className="text-[10px] text-on-surface-variant/60 font-semibold">Chỉ cộng điểm khi đạt mức sao tối thiểu này</p>
-                    </div>
+                      {/* Review with Video Points */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Thưởng đánh giá có kèm VIDEO</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={loyaltySettings.reviewWithVideoRewardPoints}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewWithVideoRewardPoints: parseInt(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          />
+                          <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">điểm</span>
+                        </div>
+                      </div>
 
-                    {/* Allow Multiple Rewards */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Cơ chế nhận thưởng nhiều lần</label>
-                      <div className="flex items-center gap-3 p-3 bg-surface-container-low/50 rounded-lg border border-outline-variant/20 mt-1">
-                        <input
-                          type="checkbox"
-                          id="allowMultipleRewards"
-                          checked={loyaltySettings.allowMultipleRewardsPerProduct}
-                          onChange={(e) => setLoyaltySettings({ ...loyaltySettings, allowMultipleRewardsPerProduct: e.target.checked })}
-                          className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary rounded cursor-pointer"
-                        />
-                        <label htmlFor="allowMultipleRewards" className="text-xs font-bold text-on-surface cursor-pointer select-none">
-                          Nhận thưởng nhiều lần trên 1 sản phẩm
+                      {/* Minimum Character count */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Số ký tự tối thiểu để nhận quà</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={loyaltySettings.minimumReviewChars}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, minimumReviewChars: parseInt(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          />
+                          <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">ký tự</span>
+                        </div>
+                      </div>
+
+                      {/* Required Rating stars */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Số sao tối thiểu để nhận quà</label>
+                        <select
+                          value={loyaltySettings.requiredRatingForReward}
+                          onChange={(e) => setLoyaltySettings({ ...loyaltySettings, requiredRatingForReward: parseInt(e.target.value) })}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                        >
+                          <option value="5">⭐ 5 Sao</option>
+                          <option value="4">⭐ 4 Sao</option>
+                          <option value="3">⭐ 3 Sao</option>
+                          <option value="2">⭐ 2 Sao</option>
+                          <option value="1">⭐ 1 Sao</option>
+                        </select>
+                      </div>
+
+                      {/* Edit Time limit */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Thời gian tối đa để chỉnh sửa đánh giá</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={loyaltySettings.allowEditReviewTimeLimitMinutes}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, allowEditReviewTimeLimitMinutes: parseInt(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          />
+                          <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">phút</span>
+                        </div>
+                      </div>
+
+                      {/* Max Review days limit after order receipt */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase block tracking-wider">Số ngày tối đa để đánh giá sau khi mua</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={loyaltySettings.maxReviewDaysAfterReceipt}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, maxReviewDaysAfterReceipt: parseInt(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          />
+                          <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">ngày</span>
+                        </div>
+                      </div>
+
+                      {/* Require Delivery Verification */}
+                      <div className="space-y-2 flex flex-col justify-end">
+                        <label className="flex items-center gap-2 select-none cursor-pointer border border-slate-200 p-3.5 rounded-2xl bg-white hover:bg-slate-50 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={loyaltySettings.requireDeliveryToReview}
+                            onChange={(e) => setLoyaltySettings({ ...loyaltySettings, requireDeliveryToReview: e.target.checked })}
+                            className="rounded border-slate-300 text-primary focus:ring-primary/20"
+                          />
+                          <span className="text-xs font-bold text-slate-600">Yêu cầu hoàn thành giao hàng mới được đánh giá</span>
                         </label>
                       </div>
-                      <p className="text-[10px] text-on-surface-variant/60 font-semibold mt-1">Nếu tắt, mỗi sản phẩm trong lịch sử mua hàng chỉ được cộng thưởng đánh giá 1 lần duy nhất</p>
                     </div>
-                  </div>
+                  </>
                 )}
-              </div>
 
-              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest">
+                {/* Save Button */}
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="w-full bg-primary hover:bg-primary/95 text-white py-3 rounded-full font-bold text-sm hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 mt-6 cursor-pointer"
                 >
-                  {savingSettings ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-on-primary"></div>
-                      Đang lưu cấu hình...
-                    </>
-                  ) : (
-                    "Lưu cấu hình"
-                  )}
+                  {savingSettings && <Loader className="animate-spin" size={16} />}
+                  Lưu cấu hình cài đặt
                 </button>
-              </div>
-            </form>
+              </form>
+            </div>
           )}
         </section>
       )}

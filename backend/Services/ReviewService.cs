@@ -38,6 +38,12 @@ namespace PolyBabyAPI.Services
                 throw new InvalidOperationException("Bạn đã đánh giá sản phẩm này rồi");
             }
 
+            var moderationResult = await PerformAutoModerationAsync(dto.Content ?? "");
+            if (moderationResult.Status == "Rejected")
+            {
+                throw new InvalidOperationException("Nội dung đánh giá chứa từ ngữ hoặc thông tin vi phạm chính sách cộng đồng. Vui lòng chỉnh sửa và gửi lại.");
+            }
+
             var review = new Review
             {
                 UserID = userId,
@@ -46,9 +52,12 @@ namespace PolyBabyAPI.Services
                 Rating = dto.Rating,
                 Content = dto.Content ?? "",
                 CreatedAt = DateTime.Now,
-                IsHidden = false,
+                IsHidden = moderationResult.Status == "AutoHidden",
                 HasEarnedRewardPoints = false,
-                LoyaltyPointsEarned = 0
+                LoyaltyPointsEarned = 0,
+                AutoModerationStatus = moderationResult.Status,
+                FlaggedReason = moderationResult.FlaggedReason,
+                ViolationScore = moderationResult.ViolationScore
             };
 
             // Parse Media
@@ -67,6 +76,31 @@ namespace PolyBabyAPI.Services
 
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
+
+            if (moderationResult.Status == "AutoHidden")
+            {
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Cảnh báo đánh giá vi phạm",
+                        ShortDescription = $"Một đánh giá đã bị tự động ẩn do chứa từ khóa vi phạm: {moderationResult.FlaggedReason}.",
+                        Content = $"<p>Hệ thống tự động phát hiện đánh giá vi phạm của người dùng. Trạng thái: <strong>Tự động ẩn</strong>. Lý do: {moderationResult.FlaggedReason}.</p>",
+                        Type = NotificationType.System,
+                        Priority = NotificationPriority.High,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = "/admin/reviews",
+                        TargetType = TargetType.Role,
+                        TargetValue = "Admin",
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi gửi thông báo cho Admin về đánh giá bị tự động ẩn.");
+                }
+            }
 
             return await GetReviewByIdAsync(review.ReviewID) ?? review;
         }
@@ -110,6 +144,13 @@ namespace PolyBabyAPI.Services
                 throw new InvalidOperationException("Đánh giá đã bị kiểm duyệt và ẩn bởi quản trị viên, không thể chỉnh sửa.");
             }
 
+            var reviewContent = (dto.Content ?? string.Empty).Trim();
+            var moderationResult = await PerformAutoModerationAsync(reviewContent);
+            if (moderationResult.Status == "Rejected")
+            {
+                throw new InvalidOperationException("Nội dung đánh giá chứa từ ngữ hoặc thông tin vi phạm chính sách cộng đồng. Vui lòng chỉnh sửa và gửi lại.");
+            }
+
             review.Rating = dto.Rating;
             
             // Retain the invoice marker prefix if present
@@ -124,7 +165,6 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            var reviewContent = (dto.Content ?? string.Empty).Trim();
             if (!string.IsNullOrEmpty(marker))
             {
                 review.Content = string.IsNullOrWhiteSpace(reviewContent) ? marker : $"{marker}\n{reviewContent}";
@@ -135,6 +175,10 @@ namespace PolyBabyAPI.Services
             }
 
             review.UpdatedAt = DateTime.Now;
+            review.AutoModerationStatus = moderationResult.Status;
+            review.FlaggedReason = moderationResult.FlaggedReason;
+            review.ViolationScore = moderationResult.ViolationScore;
+            review.IsHidden = moderationResult.Status == "AutoHidden";
 
             // Update Media
             _context.ReviewMedia.RemoveRange(review.ReviewMedia);
@@ -154,6 +198,32 @@ namespace PolyBabyAPI.Services
             }
 
             await _context.SaveChangesAsync();
+
+            if (moderationResult.Status == "AutoHidden")
+            {
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Cảnh báo đánh giá vi phạm",
+                        ShortDescription = $"Một đánh giá đã bị tự động ẩn do chứa từ khóa vi phạm: {moderationResult.FlaggedReason}.",
+                        Content = $"<p>Hệ thống tự động phát hiện đánh giá vi phạm được chỉnh sửa. Trạng thái: <strong>Tự động ẩn</strong>. Lý do: {moderationResult.FlaggedReason}.</p>",
+                        Type = NotificationType.System,
+                        Priority = NotificationPriority.High,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = "/admin/reviews",
+                        TargetType = TargetType.Role,
+                        TargetValue = "Admin",
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi gửi thông báo cho Admin về đánh giá bị tự động ẩn.");
+                }
+            }
+
             return true;
         }
 
@@ -271,6 +341,12 @@ namespace PolyBabyAPI.Services
             }
 
             var reviewContent = (dto.Content ?? string.Empty).Trim();
+            var moderationResult = await PerformAutoModerationAsync(reviewContent);
+            if (moderationResult.Status == "Rejected")
+            {
+                throw new InvalidOperationException("Nội dung đánh giá chứa từ ngữ hoặc thông tin vi phạm chính sách cộng đồng. Vui lòng chỉnh sửa và gửi lại.");
+            }
+
             var storedContent = string.IsNullOrWhiteSpace(reviewContent)
                 ? marker
                 : $"{marker}\n{reviewContent}";
@@ -283,9 +359,12 @@ namespace PolyBabyAPI.Services
                 Rating = dto.Rating,
                 Content = storedContent,
                 CreatedAt = DateTime.Now,
-                IsHidden = false,
+                IsHidden = moderationResult.Status == "AutoHidden",
                 HasEarnedRewardPoints = false,
-                LoyaltyPointsEarned = 0
+                LoyaltyPointsEarned = 0,
+                AutoModerationStatus = moderationResult.Status,
+                FlaggedReason = moderationResult.FlaggedReason,
+                ViolationScore = moderationResult.ViolationScore
             };
 
             // Parse media
@@ -321,7 +400,8 @@ namespace PolyBabyAPI.Services
             // Check eligibility for loyalty reward
             bool qualifyForReward = settings.EnableReviewReward
                 && dto.Rating >= settings.RequiredRatingForReward
-                && (charCount >= settings.MinimumReviewChars || wordCount >= settings.MinimumReviewWords);
+                && (charCount >= settings.MinimumReviewChars || wordCount >= settings.MinimumReviewWords)
+                && moderationResult.Status != "AutoHidden";
 
             // Check if already rewarded for the product
             bool alreadyRewarded = false;
@@ -367,6 +447,31 @@ namespace PolyBabyAPI.Services
 
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
+
+            if (moderationResult.Status == "AutoHidden")
+            {
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Cảnh báo đánh giá vi phạm",
+                        ShortDescription = $"Một đánh giá đã bị tự động ẩn do chứa từ khóa vi phạm: {moderationResult.FlaggedReason}.",
+                        Content = $"<p>Hệ thống tự động phát hiện đánh giá vi phạm của người dùng. Trạng thái: <strong>Tự động ẩn</strong>. Lý do: {moderationResult.FlaggedReason}.</p>",
+                        Type = NotificationType.System,
+                        Priority = NotificationPriority.High,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = "/admin/reviews",
+                        TargetType = TargetType.Role,
+                        TargetValue = "Admin",
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi gửi thông báo cho Admin về đánh giá bị tự động ẩn.");
+                }
+            }
 
             // Reward loyalty points
             if (review.HasEarnedRewardPoints && review.LoyaltyPointsEarned > 0)
@@ -451,10 +556,6 @@ namespace PolyBabyAPI.Services
             if (searchDto.IsHidden.HasValue)
             {
                 query = query.Where(r => r.IsHidden == searchDto.IsHidden.Value);
-            }
-            else
-            {
-                query = query.Where(r => !r.IsHidden);
             }
 
             // Apply media filter
@@ -744,7 +845,7 @@ namespace PolyBabyAPI.Services
                 .Include(r => r.ReviewMedia)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
-                .Where(r => r.UserID == userId && !r.IsHidden)
+                .Where(r => r.UserID == userId)
                 .OrderByDescending(r => r.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -754,7 +855,7 @@ namespace PolyBabyAPI.Services
         public async Task<int> GetUserReviewCountAsync(string userId)
         {
             return await _context.Reviews
-                .CountAsync(r => r.UserID == userId && !r.IsHidden);
+                .CountAsync(r => r.UserID == userId);
         }
 
         public async Task<IEnumerable<PendingReviewItemDto>> GetPendingReviewsAsync(string userId)
@@ -870,6 +971,9 @@ namespace PolyBabyAPI.Services
         {
             var review = await _context.Reviews
                 .Include(r => r.CensorshipLogs)
+                .Include(r => r.Variant)
+                    .ThenInclude(v => v.Product)
+                .Include(r => r.Bundle)
                 .FirstOrDefaultAsync(r => r.ReviewID == dto.ReviewID);
 
             if (review == null) return false;
@@ -879,11 +983,99 @@ namespace PolyBabyAPI.Services
             {
                 review.IsHidden = true;
                 review.CensorshipReason = dto.Reason;
+                review.AutoModerationStatus = "Rejected";
+
+                // Revoke loyalty points if earned
+                if (review.HasEarnedRewardPoints && review.LoyaltyPointsEarned > 0)
+                {
+                    try
+                    {
+                        await _loyaltyService.AddPointsAsync(review.UserID, -review.LoyaltyPointsEarned, "REVOKE", $"Thu hồi điểm do đánh giá ID {review.ReviewID} bị ẩn bởi kiểm duyệt: {dto.Reason}", null);
+                        review.HasEarnedRewardPoints = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Lỗi khi thu hồi điểm loyalty cho user {UserId} khi ẩn review {ReviewId}", review.UserID, review.ReviewID);
+                    }
+                }
             }
             else if (actionUpper == "RESTORE")
             {
+                bool wasHidden = review.IsHidden;
                 review.IsHidden = false;
                 review.CensorshipReason = null;
+                review.AutoModerationStatus = "Approved";
+
+                // If restored, check if we should award/restore loyalty points
+                if (wasHidden && !review.HasEarnedRewardPoints)
+                {
+                    var settings = await _context.LoyaltySettings.FirstOrDefaultAsync() ?? new LoyaltySetting();
+                    if (settings.EnableReviewReward && review.Rating >= settings.RequiredRatingForReward)
+                    {
+                        // Calculate word/char count, ignoring the invoice marker prefix
+                        var reviewContent = review.Content ?? "";
+                        if (reviewContent.StartsWith(InvoiceReviewPrefix))
+                        {
+                            var endIndex = reviewContent.IndexOf(']');
+                            if (endIndex != -1)
+                            {
+                                reviewContent = reviewContent.Substring(endIndex + 1).Trim();
+                            }
+                        }
+                        var charCount = reviewContent.Length;
+                        var wordCount = string.IsNullOrWhiteSpace(reviewContent) ? 0 : reviewContent.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+                        if (charCount >= settings.MinimumReviewChars || wordCount >= settings.MinimumReviewWords)
+                        {
+                            // Determine reward points amount
+                            int rewardPoints = settings.ReviewRewardPoints;
+                            // Load media to check
+                            var media = await _context.ReviewMedia.Where(m => m.ReviewID == review.ReviewID).ToListAsync();
+                            if (media.Any(m => m.MediaType == "VIDEO"))
+                            {
+                                rewardPoints = settings.ReviewWithVideoRewardPoints;
+                            }
+                            else if (media.Any(m => m.MediaType == "IMAGE"))
+                            {
+                                rewardPoints = settings.ReviewWithImageRewardPoints;
+                            }
+
+                            review.HasEarnedRewardPoints = true;
+                            review.LoyaltyPointsEarned = rewardPoints;
+
+                            // Award points
+                            var productName = review.Variant?.Product?.ProductName
+                                ?? review.Bundle?.Name
+                                ?? "sản phẩm";
+                            var description = $"Thưởng điểm đánh giá sản phẩm {productName} (Phục hồi sau kiểm duyệt)";
+
+                            try
+                            {
+                                await _loyaltyService.AddPointsAsync(review.UserID, rewardPoints, "EARN", description, null);
+
+                                // Send notification to user about points
+                                var rewardNotifDto = new CreateNotificationDto
+                                {
+                                    Title = "Nhận điểm thưởng đánh giá",
+                                    ShortDescription = $"Bạn đã nhận được {rewardPoints} điểm thưởng từ chương trình đánh giá sản phẩm sau khi duyệt.",
+                                    Content = $"<p>Đánh giá của bạn đã được kiểm duyệt và hiển thị lại. Bạn đã được cộng <strong>{rewardPoints} điểm</strong> vào tài khoản Loyalty.</p>",
+                                    Type = NotificationType.RewardPoints,
+                                    Priority = NotificationPriority.Medium,
+                                    ActionType = ActionType.CustomUrl,
+                                    ActionUrl = "/profile?tab=loyalty",
+                                    TargetType = TargetType.SpecificUsers,
+                                    TargetValue = review.UserID,
+                                    PublishedAt = DateTime.UtcNow
+                                };
+                                await _notificationService.CreateNotificationAsync(rewardNotifDto, "System");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Lỗi khi cộng điểm thưởng loyalty khi khôi phục review {ReviewId} cho user {UserId}", review.ReviewID, review.UserID);
+                            }
+                        }
+                    }
+                }
             }
             else
             {
@@ -1018,6 +1210,121 @@ namespace PolyBabyAPI.Services
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<ModerationDashboardDto> GetModerationDashboardAsync()
+        {
+            var reviews = await _context.Reviews
+                .Include(r => r.User)
+                .Include(r => r.Variant)
+                    .ThenInclude(v => v.Product)
+                .ToListAsync();
+
+            var result = new ModerationDashboardDto
+            {
+                TotalNeedsReview = reviews.Count(r => r.AutoModerationStatus == "NeedsReview"),
+                TotalFlagged = reviews.Count(r => r.ViolationScore > 0),
+                TotalAutoHidden = reviews.Count(r => r.AutoModerationStatus == "AutoHidden")
+            };
+
+            // Calculate Top Keywords
+            var keywordCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var flaggedReviews = reviews.Where(r => r.ViolationScore > 0 && !string.IsNullOrEmpty(r.FlaggedReason)).ToList();
+
+            foreach (var r in flaggedReviews)
+            {
+                var reason = r.FlaggedReason!;
+                var colonIndex = reason.IndexOf(':');
+                if (colonIndex != -1)
+                {
+                    var wordListStr = reason[(colonIndex + 1)..].Trim();
+                    var words = wordListStr.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var word in words)
+                    {
+                        if (keywordCounts.ContainsKey(word))
+                            keywordCounts[word]++;
+                        else
+                            keywordCounts[word] = 1;
+                    }
+                }
+            }
+
+            result.TopKeywords = keywordCounts
+                .OrderByDescending(kv => kv.Value)
+                .Take(5)
+                .Select(kv => new KeywordCountDto { Keyword = kv.Key, Count = kv.Value })
+                .ToList();
+
+            // Calculate Top Products
+            result.TopProducts = reviews
+                .Where(r => r.ViolationScore > 0 && r.Variant?.Product != null)
+                .GroupBy(r => r.Variant.Product.ProductName)
+                .OrderByDescending(g => g.Count())
+                .Take(5)
+                .Select(g => new ProductCountDto { ProductName = g.Key, Count = g.Count() })
+                .ToList();
+
+            // Calculate Top Users
+            result.TopUsers = reviews
+                .Where(r => r.ViolationScore > 0 && r.User != null)
+                .GroupBy(r => r.User.FullName)
+                .OrderByDescending(g => g.Count())
+                .Take(5)
+                .Select(g => new UserCountDto { UserFullName = g.Key, Count = g.Count() })
+                .ToList();
+
+            return result;
+        }
+
+        private async Task<AutoModerationResult> PerformAutoModerationAsync(string content)
+        {
+            var result = new AutoModerationResult();
+            if (string.IsNullOrWhiteSpace(content)) return result;
+
+            var keywords = await _context.ReviewSensitiveKeywords.ToListAsync();
+            var matchedKeywords = new List<ReviewSensitiveKeyword>();
+
+            foreach (var kw in keywords)
+            {
+                if (content.Contains(kw.Word, StringComparison.OrdinalIgnoreCase))
+                {
+                    matchedKeywords.Add(kw);
+                }
+            }
+
+            if (!matchedKeywords.Any()) return result;
+
+            var criticalMatches = matchedKeywords.Where(k => k.Severity.Equals("Critical", StringComparison.OrdinalIgnoreCase)).ToList();
+            var mediumMatches = matchedKeywords.Where(k => k.Severity.Equals("Medium", StringComparison.OrdinalIgnoreCase)).ToList();
+            var warningMatches = matchedKeywords.Where(k => k.Severity.Equals("Warning", StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (criticalMatches.Any())
+            {
+                result.Status = "Rejected";
+                result.FlaggedReason = $"Vi phạm nghiêm trọng: {string.Join(", ", criticalMatches.Select(m => m.Word))}";
+                result.ViolationScore = 3;
+            }
+            else if (mediumMatches.Any())
+            {
+                result.Status = "AutoHidden";
+                result.FlaggedReason = $"Tự động ẩn: {string.Join(", ", mediumMatches.Select(m => m.Word))}";
+                result.ViolationScore = 2;
+            }
+            else if (warningMatches.Any())
+            {
+                result.Status = "NeedsReview";
+                result.FlaggedReason = $"Cần xem xét: {string.Join(", ", warningMatches.Select(m => m.Word))}";
+                result.ViolationScore = 1;
+            }
+
+            return result;
+        }
+
+        private class AutoModerationResult
+        {
+            public string Status { get; set; } = "Approved";
+            public string? FlaggedReason { get; set; }
+            public int ViolationScore { get; set; }
         }
 
         #endregion

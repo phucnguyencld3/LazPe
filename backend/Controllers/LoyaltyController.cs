@@ -467,7 +467,7 @@ namespace PolyBabyAPI.Controllers
                 }
                 else
                 {
-                    oldValue = $"Enable: {settings.EnableReviewReward}, Points: {settings.ReviewRewardPoints}, MinWords: {settings.MinimumReviewWords}, Rating: {settings.RequiredRatingForReward}, Multiple: {settings.AllowMultipleRewardsPerProduct}";
+                    oldValue = $"Enable: {settings.EnableReviewReward}, Points: {settings.ReviewRewardPoints}, MinWords: {settings.MinimumReviewWords}, Rating: {settings.RequiredRatingForReward}, Multiple: {settings.AllowMultipleRewardsPerProduct}, ImagePoints: {settings.ReviewWithImageRewardPoints}, VideoPoints: {settings.ReviewWithVideoRewardPoints}, MinChars: {settings.MinimumReviewChars}, EditLimit: {settings.AllowEditReviewTimeLimitMinutes}, MaxDays: {settings.MaxReviewDaysAfterReceipt}, RequireDelivery: {settings.RequireDeliveryToReview}";
                 }
 
                 settings.EnableReviewReward = request.EnableReviewReward;
@@ -475,6 +475,13 @@ namespace PolyBabyAPI.Controllers
                 settings.MinimumReviewWords = request.MinimumReviewWords;
                 settings.RequiredRatingForReward = request.RequiredRatingForReward;
                 settings.AllowMultipleRewardsPerProduct = request.AllowMultipleRewardsPerProduct;
+
+                settings.ReviewWithImageRewardPoints = request.ReviewWithImageRewardPoints;
+                settings.ReviewWithVideoRewardPoints = request.ReviewWithVideoRewardPoints;
+                settings.MinimumReviewChars = request.MinimumReviewChars;
+                settings.AllowEditReviewTimeLimitMinutes = request.AllowEditReviewTimeLimitMinutes;
+                settings.MaxReviewDaysAfterReceipt = request.MaxReviewDaysAfterReceipt;
+                settings.RequireDeliveryToReview = request.RequireDeliveryToReview;
                 settings.UpdatedAt = DateTime.Now;
 
                 if (isNew)
@@ -486,7 +493,7 @@ namespace PolyBabyAPI.Controllers
                     _context.LoyaltySettings.Update(settings);
                 }
 
-                var newValue = $"Enable: {settings.EnableReviewReward}, Points: {settings.ReviewRewardPoints}, MinWords: {settings.MinimumReviewWords}, Rating: {settings.RequiredRatingForReward}, Multiple: {settings.AllowMultipleRewardsPerProduct}";
+                var newValue = $"Enable: {settings.EnableReviewReward}, Points: {settings.ReviewRewardPoints}, MinWords: {settings.MinimumReviewWords}, Rating: {settings.RequiredRatingForReward}, Multiple: {settings.AllowMultipleRewardsPerProduct}, ImagePoints: {settings.ReviewWithImageRewardPoints}, VideoPoints: {settings.ReviewWithVideoRewardPoints}, MinChars: {settings.MinimumReviewChars}, EditLimit: {settings.AllowEditReviewTimeLimitMinutes}, MaxDays: {settings.MaxReviewDaysAfterReceipt}, RequireDelivery: {settings.RequireDeliveryToReview}";
                 
                 await LogAuditAsync("UPDATE_LOYALTY_SETTINGS", "LoyaltySettings", "1", oldValue, newValue);
 

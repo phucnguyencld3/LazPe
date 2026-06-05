@@ -48,6 +48,7 @@ namespace PolyBabyAPI.Data
         public DbSet<ReviewComment> ReviewComments { get; set; }
         public DbSet<ReviewMedia> ReviewMedia { get; set; }
         public DbSet<ReviewCensorshipLog> ReviewCensorshipLogs { get; set; }
+        public DbSet<ReviewSensitiveKeyword> ReviewSensitiveKeywords { get; set; }
 
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
@@ -361,6 +362,21 @@ namespace PolyBabyAPI.Data
                     RequireDeliveryToReview = true,
                     UpdatedAt = new DateTime(2026, 6, 4, 17, 0, 0, DateTimeKind.Utc)
                 });
+            });
+
+            // ===== Sensitive Keywords Seed =====
+            builder.Entity<ReviewSensitiveKeyword>(entity =>
+            {
+                entity.HasKey(k => k.KeywordID);
+                entity.HasData(
+                    new ReviewSensitiveKeyword { KeywordID = 1, Word = "ngu", Severity = "Warning", Category = "Abuse", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) },
+                    new ReviewSensitiveKeyword { KeywordID = 2, Word = "lừa đảo", Severity = "Warning", Category = "Scam", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) },
+                    new ReviewSensitiveKeyword { KeywordID = 3, Word = "số điện thoại", Severity = "Medium", Category = "Phone", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) },
+                    new ReviewSensitiveKeyword { KeywordID = 4, Word = "zalo", Severity = "Medium", Category = "Link", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) },
+                    new ReviewSensitiveKeyword { KeywordID = 5, Word = "telegram", Severity = "Medium", Category = "Link", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) },
+                    new ReviewSensitiveKeyword { KeywordID = 6, Word = "tục tĩu", Severity = "Critical", Category = "Vulgarity", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) },
+                    new ReviewSensitiveKeyword { KeywordID = 7, Word = "xúc phạm", Severity = "Critical", Category = "Abuse", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc) }
+                );
             });
 
             // User notification settings default values

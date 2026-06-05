@@ -660,6 +660,27 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
                           {new Date(item.createdAt).toLocaleDateString("vi-VN")}
                         </span>
                       </div>
+
+                      {item.isHidden && item.autoModerationStatus === "AutoHidden" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 shadow-sm animate-pulse">
+                          <ShieldAlert size={12} className="text-rose-500" />
+                          Tạm ẩn (Kiểm duyệt)
+                        </span>
+                      )}
+
+                      {item.isHidden && item.autoModerationStatus !== "AutoHidden" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-650 border border-red-100 shadow-sm">
+                          <ShieldAlert size={12} className="text-red-500" />
+                          Đã bị ẩn
+                        </span>
+                      )}
+
+                      {!item.isHidden && item.autoModerationStatus === "NeedsReview" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
+                          <ShieldAlert size={12} className="text-amber-500" />
+                          Chờ xem xét
+                        </span>
+                      )}
                       
                       {item.hasEarnedRewardPoints && (
                         <span className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
@@ -719,14 +740,41 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
                     </div>
                   )}
 
-                  {/* Hidden Censorship Warning */}
-                  {item.isHidden && (
-                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-2.5 text-xs text-red-800 font-semibold">
+                  {/* Detailed Moderation Warnings */}
+                  {item.isHidden && item.autoModerationStatus === "AutoHidden" && (
+                    <div className="bg-rose-50 border border-rose-100 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-rose-800 font-semibold">
+                      <ShieldAlert size={16} className="text-rose-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-rose-900 block mb-0.5">Đánh giá của bạn tạm thời bị ẩn.</span>
+                        Nội dung chứa từ ngữ nhạy cảm hoặc vi phạm nguyên tắc cộng đồng (Hệ thống tự động phát hiện). Ban quản trị đang xem xét đánh giá này.
+                        {item.flaggedReason && (
+                          <span className="block mt-1.5 font-bold text-rose-600/95 text-[11px]">Chi tiết từ khóa: {item.flaggedReason}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {item.isHidden && item.autoModerationStatus !== "AutoHidden" && (
+                    <div className="bg-red-50 border border-red-100 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-red-800 font-semibold">
                       <ShieldAlert size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        Đánh giá này đã bị ẩn bởi quản trị viên.
+                        <span className="font-bold text-red-900 block mb-0.5">Đánh giá đã bị ẩn bởi Quản trị viên.</span>
+                        Nội dung không tuân thủ quy chuẩn của hệ thống và điểm thưởng Loyalty (nếu có) đã bị thu hồi.
                         {item.censorshipReason && (
-                          <span className="block mt-1 font-bold text-red-600/90 text-[11px]">Lý do: {item.censorshipReason}</span>
+                          <span className="block mt-1.5 font-bold text-red-600/95 text-[11px]">Lý do kiểm duyệt: {item.censorshipReason}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!item.isHidden && item.autoModerationStatus === "NeedsReview" && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-amber-800 font-semibold">
+                      <ShieldAlert size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-amber-900 block mb-0.5">Đang chờ Quản trị viên duyệt duyệt lại.</span>
+                        Hệ thống phát hiện một số từ khóa cần xem xét lại, tuy nhiên đánh giá vẫn đang được tạm thời hiển thị.
+                        {item.flaggedReason && (
+                          <span className="block mt-1.5 font-bold text-amber-700 text-[11px]">Nghi vấn: {item.flaggedReason}</span>
                         )}
                       </div>
                     </div>

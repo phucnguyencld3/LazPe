@@ -51,6 +51,10 @@ namespace PolyBabyAPI.DTOs
         public string? VariantName { get; set; }
         public string? BundleName { get; set; }
         public string? ImageUrl { get; set; }
+
+        public string? AutoModerationStatus { get; set; }
+        public string? FlaggedReason { get; set; }
+        public int ViolationScore { get; set; }
     }
 
     /// <summary>
@@ -278,5 +282,61 @@ namespace PolyBabyAPI.DTOs
         public string VariantName { get; set; } = string.Empty;
         public string ImageUrl { get; set; } = string.Empty;
         public DateTime PurchaseDate { get; set; }
+    }
+
+    // =============================================
+    // AUTO MODERATION & KEYWORD DTOs
+    // =============================================
+
+    public class ReviewSensitiveKeywordDto
+    {
+        public int KeywordID { get; set; }
+        public string Word { get; set; } = string.Empty;
+        public string Severity { get; set; } = "Warning";
+        public string Category { get; set; } = "Abuse";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class CreateSensitiveKeywordDto
+    {
+        [Required(ErrorMessage = "Từ khóa là bắt buộc")]
+        [StringLength(100)]
+        public string Word { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20)]
+        public string Severity { get; set; } = "Warning";
+
+        [Required]
+        [StringLength(50)]
+        public string Category { get; set; } = "Abuse";
+    }
+
+    public class ModerationDashboardDto
+    {
+        public int TotalNeedsReview { get; set; }
+        public int TotalFlagged { get; set; }
+        public int TotalAutoHidden { get; set; }
+        public List<KeywordCountDto> TopKeywords { get; set; } = new();
+        public List<ProductCountDto> TopProducts { get; set; } = new();
+        public List<UserCountDto> TopUsers { get; set; } = new();
+    }
+
+    public class KeywordCountDto
+    {
+        public string Keyword { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
+
+    public class ProductCountDto
+    {
+        public string ProductName { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
+
+    public class UserCountDto
+    {
+        public string UserFullName { get; set; } = string.Empty;
+        public int Count { get; set; }
     }
 }

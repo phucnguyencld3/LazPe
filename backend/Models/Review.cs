@@ -32,6 +32,10 @@ namespace PolyBabyAPI.Models
         public DateTime? UpdatedAt { get; set; }
         public string? CensorshipReason { get; set; }
 
+        public string? AutoModerationStatus { get; set; } = "Approved";
+        public string? FlaggedReason { get; set; }
+        public int ViolationScore { get; set; } = 0;
+
         // Navigation
         public virtual ApplicationUser User { get; set; }
         public virtual Variant Variant { get; set; }
