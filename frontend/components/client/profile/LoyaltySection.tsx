@@ -8,7 +8,12 @@ import {
   Loader2,
   Info,
   Calendar,
-  Sparkles
+  Sparkles,
+  Shield,
+  Award,
+  Crown,
+  Gem,
+  CheckCircle2
 } from "lucide-react";
 import { getLoyaltyProfile, getLoyaltyHistory, getLoyaltyTiers, LoyaltyProfileResponse, LoyaltyPointHistoryItem, LoyaltyTierClientResponse } from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -17,6 +22,20 @@ import { formatPrivilegeDetailLines } from "@/lib/utils/formatters";
 interface LoyaltySectionProps {
   token: string;
 }
+
+const getTierIcon = (tierName: string) => {
+  const nameUpper = tierName?.toUpperCase();
+  if (nameUpper === "SILVER" || nameUpper === "BẠC") {
+    return <Award className="h-5 w-5 text-slate-400" />;
+  }
+  if (nameUpper === "GOLD" || nameUpper === "VÀNG") {
+    return <Crown className="h-5 w-5 text-amber-500" />;
+  }
+  if (nameUpper === "DIAMOND" || nameUpper === "KIM CƯƠNG") {
+    return <Gem className="h-5 w-5 text-indigo-500 animate-pulse" />;
+  }
+  return <Shield className="h-5 w-5 text-slate-500" />;
+};
 
 export function LoyaltySection({ token }: LoyaltySectionProps) {
   const [profile, setProfile] = useState<LoyaltyProfileResponse | null>(null);
@@ -329,51 +348,118 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
           Đặc quyền VIP & Hạng thành viên
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {sortedTiers.map((t, index) => {
             const isUserTier = profile?.currentTierID === t.tierID;
+            const tierIcon = getTierIcon(t.tierName);
 
             return (
               <div
                 key={t.tierID}
-                className={"p-4 rounded-[10px] border border-slate-100 space-y-2 relative overflow-hidden transition-all bg-white"}
-                style={isUserTier ? { borderColor: t.colorHex, boxShadow: "0 0 0 2px " + t.colorHex } : undefined}
+                className={`flex flex-col justify-between p-5 rounded-2xl border transition-all duration-300 bg-white group hover:shadow-lg ${
+                  isUserTier
+                    ? "ring-2 ring-offset-2 scale-[1.02] z-10"
+                    : "border-slate-100 hover:border-slate-200"
+                }`}
+                style={
+                  isUserTier
+                    ? {
+                        borderColor: t.colorHex,
+                        boxShadow: `0 12px 30px -10px ${t.colorHex}40`,
+                        // @ts-ignore
+                        "--tw-ring-color": t.colorHex,
+                      }
+                    : undefined
+                }
               >
-                {isUserTier && (
-                  <span
-                    className="absolute top-2 right-2 text-[8px] text-white font-extrabold px-1.5 py-0.5 rounded-full uppercase"
-                    style={{ backgroundColor: t.colorHex }}
-                  >
-                    Hạng của bạn
-                  </span>
+                <div className="space-y-4">
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        {tierIcon}
+                        <h4 className="font-extrabold text-slate-800 text-sm tracking-tight">
+                          {t.tierName}
+                        </h4>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        {index === sortedTiers.length - 1
+                          ? `Từ ${t.minPoints.toLocaleString("vi-VN")} điểm`
+                          : `${t.minPoints.toLocaleString("vi-VN")} - ${(sortedTiers[index + 1].minPoints - 1).toLocaleString("vi-VN")} điểm`}
+                      </p>
+                    </div>
+
+                    {isUserTier && (
+                      <span
+                        className="text-[9px] text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse"
+                        style={{ backgroundColor: t.colorHex }}
+                      >
+                        Hạng của bạn
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-[1px] w-full bg-slate-100 group-hover:bg-slate-200/60 transition-colors" />
+
+                  {/* Privileges List */}
+                  <div className="space-y-3">
+                    {t.privileges.length === 0 ? (
+                      <div className="py-6 text-center space-y-2">
+                        <span className="material-symbols-outlined text-slate-300 text-3xl block">lock_open</span>
+                        <p className="text-slate-400 italic text-[11px] font-medium leading-relaxed px-2">
+                          Hạng thành viên cơ bản. Tích luỹ thêm điểm để nhận quà và ưu đãi.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {t.privileges.map((p) => {
+                          const lines = formatPrivilegeDetailLines(p.privilegeType, p.value);
+                          return (
+                            <div
+                              key={p.privilegeID}
+                              className="bg-slate-50/50 rounded-xl p-3 border border-slate-100 hover:bg-slate-50 transition-colors space-y-1.5"
+                            >
+                              <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs">
+                                <div
+                                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: t.colorHex }}
+                                />
+                                <span>{p.name}</span>
+                              </div>
+                              {lines.length > 0 && (
+                                <ul className="pl-3.5 space-y-1 list-disc text-slate-500/80 text-[10px] font-semibold leading-relaxed">
+                                  {lines.map((line, idx) => (
+                                    <li key={idx} className="marker:text-slate-300">
+                                      {line}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer status / button hint if not user tier */}
+                {!isUserTier && (
+                  <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                    {profile && profile.totalPoints >= t.minPoints ? (
+                      <span className="text-emerald-500 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Đã đạt mức điểm
+                      </span>
+                    ) : (
+                      profile && (
+                        <span>
+                          Cần thêm {(t.minPoints - profile.totalPoints).toLocaleString("vi-VN")} điểm
+                        </span>
+                      )
+                    )}
+                  </div>
                 )}
-                <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.colorHex }} /> {t.tierName}
-                </h4>
-                <p className="text-[10px] text-slate-400 font-bold">
-                  {index === sortedTiers.length - 1
-                    ? "≥ " + t.minPoints.toLocaleString("vi-VN") + " điểm"
-                    : t.minPoints.toLocaleString("vi-VN") + " - " + (sortedTiers[index + 1].minPoints - 1).toLocaleString("vi-VN") + " điểm"}
-                </p>
-                <ul className="text-[11px] text-slate-500 leading-relaxed font-semibold space-y-2 pl-1">
-                  {t.privileges.length === 0 ? (
-                    <li className="text-slate-400 italic">Không có đặc quyền nào.</li>
-                  ) : (
-                    t.privileges.map((p) => {
-                      const lines = formatPrivilegeDetailLines(p.privilegeType, p.value);
-                      return (
-                        <li key={p.privilegeID} className="space-y-0.5">
-                          <span className="text-slate-700 font-bold block">{p.name}</span>
-                          <ul className="pl-3 space-y-0.5 list-disc text-slate-500/80">
-                            {lines.map((line, idx) => (
-                              <li key={idx} className="font-medium">{line}</li>
-                            ))}
-                          </ul>
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
               </div>
             );
           })}
