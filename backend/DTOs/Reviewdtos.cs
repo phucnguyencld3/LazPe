@@ -25,6 +25,8 @@ namespace PolyBabyAPI.DTOs
         public bool IsHidden { get; set; }
         public bool HasEarnedRewardPoints { get; set; }
         public int LoyaltyPointsEarned { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string? CensorshipReason { get; set; }
 
         /// <summary>Thông tin tóm tắt người viết đánh giá</summary>
         public ReviewUserDto? User { get; set; }
@@ -37,6 +39,12 @@ namespace PolyBabyAPI.DTOs
 
         /// <summary>Chỉ chứa top-level comments (ParentCommentID = null)</summary>
         public List<ReviewCommentDto> Comments { get; set; } = new();
+
+        /// <summary>Danh sách hình ảnh/video đi kèm</summary>
+        public List<ReviewMediaDto> ReviewMedia { get; set; } = new();
+
+        /// <summary>Lịch sử kiểm duyệt (chỉ admin xem được)</summary>
+        public List<ReviewCensorshipLogDto> CensorshipLogs { get; set; } = new();
 
         // Context — tên sản phẩm/biến thể/combo để hiển thị trong trang quản lý
         public string? ProductName { get; set; }
@@ -123,11 +131,60 @@ namespace PolyBabyAPI.DTOs
 
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+        public bool? IsHidden { get; set; } // Hỗ trợ lọc cho admin
+        public bool? HasMedia { get; set; } // Hỗ trợ lọc theo file ảnh/video
     }
 
     // =============================================
     // REVIEW — WRITE DTOs
     // =============================================
+
+    public class ReviewMediaInputDto
+    {
+        [Required]
+        public string Url { get; set; } = string.Empty;
+        public string MediaType { get; set; } = "IMAGE"; // IMAGE, VIDEO
+    }
+
+    public class ReviewMediaDto
+    {
+        public int MediaID { get; set; }
+        public int ReviewID { get; set; }
+        public string Url { get; set; } = string.Empty;
+        public string MediaType { get; set; } = "IMAGE";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class ReviewCensorshipLogDto
+    {
+        public int LogID { get; set; }
+        public int ReviewID { get; set; }
+        public string ActorID { get; set; } = string.Empty;
+        public string ActorName { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty; // HIDE, RESTORE
+        public string Reason { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+
+    public class CensorReviewDto
+    {
+        [Required]
+        public int ReviewID { get; set; }
+        [Required]
+        public string Action { get; set; } = string.Empty; // HIDE, RESTORE
+        [Required(ErrorMessage = "Lý do là bắt buộc")]
+        [StringLength(500)]
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class ReviewAdminStatsDto
+    {
+        public int TotalReviews { get; set; }
+        public int HiddenReviews { get; set; }
+        public int VisibleReviews { get; set; }
+        public double AverageRating { get; set; }
+        public Dictionary<int, int> RatingDistribution { get; set; } = new();
+    }
 
     /// <summary>
     /// DTO tạo đánh giá mới — phải có ít nhất VariantID hoặc BundleID
@@ -143,6 +200,8 @@ namespace PolyBabyAPI.DTOs
 
         [StringLength(500, ErrorMessage = "Nội dung tối đa 500 ký tự")]
         public string? Content { get; set; }
+
+        public List<ReviewMediaInputDto> Media { get; set; } = new();
 
         /// <summary>Hợp lệ khi có đúng một trong VariantID hoặc BundleID</summary>
         public bool IsValid => VariantID.HasValue ^ BundleID.HasValue;
@@ -162,6 +221,8 @@ namespace PolyBabyAPI.DTOs
 
         [StringLength(500, ErrorMessage = "Nội dung tối đa 500 ký tự")]
         public string? Content { get; set; }
+
+        public List<ReviewMediaInputDto> Media { get; set; } = new();
     }
 
     public class ReviewableInvoiceItemDto
@@ -187,6 +248,8 @@ namespace PolyBabyAPI.DTOs
 
         [StringLength(500, ErrorMessage = "Nội dung tối đa 500 ký tự")]
         public string? Content { get; set; }
+
+        public List<ReviewMediaInputDto> Media { get; set; } = new();
     }
 
     /// <summary>

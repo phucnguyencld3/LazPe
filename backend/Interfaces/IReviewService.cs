@@ -46,6 +46,10 @@ namespace PolyBabyAPI.Interfaces
         Task<bool> HideReviewAsync(int reviewId);
         Task<bool> ShowReviewAsync(int reviewId);
         Task<bool> HideCommentAsync(int commentId);
+        Task<bool> CensorReviewAsync(string actorId, CensorReviewDto dto);
+        Task<ReviewAdminStatsDto> GetReviewAdminStatsAsync();
+        Task<IEnumerable<ReviewCensorshipLogDto>> GetCensorshipLogsAsync(int reviewId);
+        Task<LoyaltySetting> GetLoyaltySettingAsync();
+        Task<bool> UpdateLoyaltySettingAsync(LoyaltySetting setting);
     }
 }
-

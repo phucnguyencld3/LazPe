@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Filters;
 using PolyBabyAPI.Interface;
@@ -177,6 +177,56 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error deleting image {ImageUrl}", imageUrl);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi xóa ảnh" });
+            }
+        }
+
+        /// <summary>
+        /// Upload review media (hình ảnh/video) lên Cloudinary
+        /// </summary>
+        [HttpPost("review-media")]
+        public async Task<IActionResult> UploadReviewMedia([FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "Không có file được chọn" });
+                }
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".mov", ".avi", ".mkv" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh hoặc video" });
+                }
+
+                const long maxFileSize = 20 * 1024 * 1024;
+                if (file.Length > maxFileSize)
+                {
+                    return BadRequest(new { success = false, message = "File không được vượt quá 20MB" });
+                }
+
+                var mediaType = new[] { ".mp4", ".mov", ".avi", ".mkv" }.Contains(fileExtension) ? "VIDEO" : "IMAGE";
+                var uploadResult = await _cloudinaryService.UploadImageAsync(file, "Reviews");
+
+                if (!string.IsNullOrEmpty(uploadResult))
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        url = uploadResult,
+                        mediaType = mediaType,
+                        message = "Upload thành công!"
+                    });
+                }
+
+                return BadRequest(new { success = false, message = "Không thể upload file lên Cloudinary" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading review media");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi upload file: " + ex.Message });
             }
         }
     }

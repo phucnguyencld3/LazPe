@@ -46,6 +46,8 @@ namespace PolyBabyAPI.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<ReviewLike> ReviewLikes { get; set; }
         public DbSet<ReviewComment> ReviewComments { get; set; }
+        public DbSet<ReviewMedia> ReviewMedia { get; set; }
+        public DbSet<ReviewCensorshipLog> ReviewCensorshipLogs { get; set; }
 
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
@@ -175,6 +177,30 @@ namespace PolyBabyAPI.Data
                 .WithMany(u => u.ReviewComments)
                 .HasForeignKey(rc => rc.UserID)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ===== Review Media & Censorship Log =====
+            builder.Entity<ReviewMedia>(entity =>
+            {
+                entity.HasKey(m => m.MediaID);
+                entity.HasOne(m => m.Review)
+                      .WithMany(r => r.ReviewMedia)
+                      .HasForeignKey(m => m.ReviewID)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<ReviewCensorshipLog>(entity =>
+            {
+                entity.HasKey(l => l.LogID);
+                entity.HasOne(l => l.Review)
+                      .WithMany(r => r.CensorshipLogs)
+                      .HasForeignKey(l => l.ReviewID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(l => l.Actor)
+                      .WithMany()
+                      .HasForeignKey(l => l.ActorID)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
 
             // ===== Voucher =====
             builder.Entity<VoucherUsage>()
@@ -327,6 +353,12 @@ namespace PolyBabyAPI.Data
                     MinimumReviewWords = 50,
                     RequiredRatingForReward = 5,
                     AllowMultipleRewardsPerProduct = false,
+                    ReviewWithImageRewardPoints = 300,
+                    ReviewWithVideoRewardPoints = 500,
+                    MinimumReviewChars = 100,
+                    AllowEditReviewTimeLimitMinutes = 30,
+                    MaxReviewDaysAfterReceipt = 30,
+                    RequireDeliveryToReview = true,
                     UpdatedAt = new DateTime(2026, 6, 4, 17, 0, 0, DateTimeKind.Utc)
                 });
             });

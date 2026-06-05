@@ -408,6 +408,18 @@ export default function AdminLayout({
               </Link>
             </div>
 
+            {/* Đánh giá */}
+            <div className="space-y-1">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đánh giá sản phẩm</span>
+              <Link
+                href="/admin/reviews"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">gavel</span>
+                <span className="font-label-md">Kiểm duyệt đánh giá</span>
+              </Link>
+            </div>
+
             {/* Thông báo */}
             <div className="space-y-1">
               <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thông báo</span>

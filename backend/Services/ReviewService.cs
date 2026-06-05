@@ -32,7 +32,6 @@ namespace PolyBabyAPI.Services
 
         public async Task<Review> CreateReviewAsync(string userId, CreateReviewDto dto)
         {
-            // Check if user already reviewed this item
             var existingReview = await GetUserReviewAsync(userId, dto.VariantID, dto.BundleID);
             if (existingReview != null)
             {
@@ -42,13 +41,29 @@ namespace PolyBabyAPI.Services
             var review = new Review
             {
                 UserID = userId,
-                VariantID = dto.VariantID.HasValue ? dto.VariantID.Value : 0, 
+                VariantID = dto.VariantID ?? 0,
                 BundleID = dto.BundleID,
                 Rating = dto.Rating,
                 Content = dto.Content ?? "",
                 CreatedAt = DateTime.Now,
-                IsHidden = false
+                IsHidden = false,
+                HasEarnedRewardPoints = false,
+                LoyaltyPointsEarned = 0
             };
+
+            // Parse Media
+            if (dto.Media != null && dto.Media.Any())
+            {
+                foreach (var mediaDto in dto.Media)
+                {
+                    review.ReviewMedia.Add(new ReviewMedia
+                    {
+                        Url = mediaDto.Url,
+                        MediaType = mediaDto.MediaType.ToUpper(),
+                        CreatedAt = DateTime.Now
+                    });
+                }
+            }
 
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
@@ -64,6 +79,9 @@ namespace PolyBabyAPI.Services
                     .ThenInclude(v => v.Product)
                 .Include(r => r.Bundle)
                 .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewMedia)
+                .Include(r => r.CensorshipLogs)
+                    .ThenInclude(l => l.Actor)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
                 .FirstOrDefaultAsync(r => r.ReviewID == reviewId);
@@ -72,12 +90,68 @@ namespace PolyBabyAPI.Services
         public async Task<bool> UpdateReviewAsync(int reviewId, string userId, UpdateReviewDto dto)
         {
             var review = await _context.Reviews
+                .Include(r => r.ReviewMedia)
+                .Include(r => r.CensorshipLogs)
                 .FirstOrDefaultAsync(r => r.ReviewID == reviewId && r.UserID == userId);
 
             if (review == null) return false;
 
+            var settings = await _context.LoyaltySettings.FirstOrDefaultAsync() ?? new LoyaltySetting();
+
+            // Time limit validation
+            if (DateTime.Now - review.CreatedAt > TimeSpan.FromMinutes(settings.AllowEditReviewTimeLimitMinutes))
+            {
+                throw new InvalidOperationException($"Không thể chỉnh sửa đánh giá quá {settings.AllowEditReviewTimeLimitMinutes} phút kể từ khi tạo.");
+            }
+
+            // Censorship validation - cannot edit if censored by Admin
+            if (review.IsHidden || review.CensorshipLogs.Any(l => l.Action == "HIDE"))
+            {
+                throw new InvalidOperationException("Đánh giá đã bị kiểm duyệt và ẩn bởi quản trị viên, không thể chỉnh sửa.");
+            }
+
             review.Rating = dto.Rating;
-            review.Content = dto.Content ?? "";
+            
+            // Retain the invoice marker prefix if present
+            var marker = "";
+            var originalContent = review.Content ?? "";
+            if (originalContent.StartsWith(InvoiceReviewPrefix))
+            {
+                var endIndex = originalContent.IndexOf(']');
+                if (endIndex != -1)
+                {
+                    marker = originalContent.Substring(0, endIndex + 1);
+                }
+            }
+
+            var reviewContent = (dto.Content ?? string.Empty).Trim();
+            if (!string.IsNullOrEmpty(marker))
+            {
+                review.Content = string.IsNullOrWhiteSpace(reviewContent) ? marker : $"{marker}\n{reviewContent}";
+            }
+            else
+            {
+                review.Content = reviewContent;
+            }
+
+            review.UpdatedAt = DateTime.Now;
+
+            // Update Media
+            _context.ReviewMedia.RemoveRange(review.ReviewMedia);
+            review.ReviewMedia.Clear();
+
+            if (dto.Media != null && dto.Media.Any())
+            {
+                foreach (var mediaDto in dto.Media)
+                {
+                    review.ReviewMedia.Add(new ReviewMedia
+                    {
+                        Url = mediaDto.Url,
+                        MediaType = mediaDto.MediaType.ToUpper(),
+                        CreatedAt = DateTime.Now
+                    });
+                }
+            }
 
             await _context.SaveChangesAsync();
             return true;
@@ -88,13 +162,35 @@ namespace PolyBabyAPI.Services
             var review = await _context.Reviews
                 .Include(r => r.ReviewLikes)
                 .Include(r => r.ReviewComments)
+                .Include(r => r.ReviewMedia)
+                .Include(r => r.CensorshipLogs)
                 .FirstOrDefaultAsync(r => r.ReviewID == reviewId && r.UserID == userId);
 
             if (review == null) return false;
 
-            // Delete related data
+            // Check if review has already been censored/processed by admin
+            if (review.IsHidden || review.CensorshipLogs.Any())
+            {
+                throw new InvalidOperationException("Không thể xóa đánh giá đã bị kiểm duyệt bởi quản trị viên.");
+            }
+
+            // Revoke loyalty points if earned
+            if (review.HasEarnedRewardPoints && review.LoyaltyPointsEarned > 0)
+            {
+                try
+                {
+                    await _loyaltyService.AddPointsAsync(userId, -review.LoyaltyPointsEarned, "REVOKE", $"Thu hồi điểm do xóa đánh giá ID {review.ReviewID}", null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi khi thu hồi điểm loyalty cho user {UserId} khi xóa review {ReviewId}", userId, reviewId);
+                }
+            }
+
+            // Delete related records
             _context.ReviewLikes.RemoveRange(review.ReviewLikes);
             _context.ReviewComments.RemoveRange(review.ReviewComments);
+            _context.ReviewMedia.RemoveRange(review.ReviewMedia);
             _context.Reviews.Remove(review);
 
             await _context.SaveChangesAsync();
@@ -192,22 +288,42 @@ namespace PolyBabyAPI.Services
                 LoyaltyPointsEarned = 0
             };
 
-            // Word counter
-            var wordCount = 0;
-            if (!string.IsNullOrWhiteSpace(dto.Content))
+            // Parse media
+            if (dto.Media != null && dto.Media.Any())
             {
-                wordCount = dto.Content.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                foreach (var mediaDto in dto.Media)
+                {
+                    review.ReviewMedia.Add(new ReviewMedia
+                    {
+                        Url = mediaDto.Url,
+                        MediaType = mediaDto.MediaType.ToUpper(),
+                        CreatedAt = DateTime.Now
+                    });
+                }
             }
 
-            // Load configurations
+            // Word and Char counts (exclude prefix marker)
+            var charCount = reviewContent.Length;
+            var wordCount = string.IsNullOrWhiteSpace(reviewContent) ? 0 : reviewContent.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+            // Load configuration
             var settings = await _context.LoyaltySettings.FirstOrDefaultAsync() ?? new LoyaltySetting();
 
-            // Check eligibility
-            bool qualifyForReward = settings.EnableReviewReward 
-                && dto.Rating >= settings.RequiredRatingForReward 
-                && wordCount >= settings.MinimumReviewWords;
+            // Date validation (must review within configured days after receipt)
+            if (settings.MaxReviewDaysAfterReceipt > 0 && invoice.CreatedAt.HasValue)
+            {
+                if (DateTime.Now - invoice.CreatedAt.Value > TimeSpan.FromDays(settings.MaxReviewDaysAfterReceipt))
+                {
+                    throw new InvalidOperationException($"Thời gian đánh giá sản phẩm đã hết hạn (Giới hạn trong vòng {settings.MaxReviewDaysAfterReceipt} ngày kể từ khi mua).");
+                }
+            }
 
-            // Check if already rewarded
+            // Check eligibility for loyalty reward
+            bool qualifyForReward = settings.EnableReviewReward
+                && dto.Rating >= settings.RequiredRatingForReward
+                && (charCount >= settings.MinimumReviewChars || wordCount >= settings.MinimumReviewWords);
+
+            // Check if already rewarded for the product
             bool alreadyRewarded = false;
             if (qualifyForReward && !settings.AllowMultipleRewardsPerProduct)
             {
@@ -219,48 +335,56 @@ namespace PolyBabyAPI.Services
                         .FirstOrDefaultAsync();
 
                     alreadyRewarded = await _context.Reviews
-                        .AnyAsync(r => r.UserID == userId 
-                            && r.HasEarnedRewardPoints 
+                        .AnyAsync(r => r.UserID == userId
+                            && r.HasEarnedRewardPoints
                             && _context.Variants.Any(v => v.VariantID == r.VariantID && v.ProductID == productID));
                 }
                 else if (invoiceItem.BundleID.HasValue)
                 {
                     alreadyRewarded = await _context.Reviews
-                        .AnyAsync(r => r.UserID == userId 
-                            && r.HasEarnedRewardPoints 
+                        .AnyAsync(r => r.UserID == userId
+                            && r.HasEarnedRewardPoints
                             && r.BundleID == invoiceItem.BundleID.Value);
                 }
             }
 
             if (qualifyForReward && !alreadyRewarded)
             {
+                // Determine reward amount based on media content type
+                int rewardPoints = settings.ReviewRewardPoints;
+                if (review.ReviewMedia.Any(m => m.MediaType == "VIDEO"))
+                {
+                    rewardPoints = settings.ReviewWithVideoRewardPoints;
+                }
+                else if (review.ReviewMedia.Any(m => m.MediaType == "IMAGE"))
+                {
+                    rewardPoints = settings.ReviewWithImageRewardPoints;
+                }
+
                 review.HasEarnedRewardPoints = true;
-                review.LoyaltyPointsEarned = settings.ReviewRewardPoints;
+                review.LoyaltyPointsEarned = rewardPoints;
             }
 
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
 
-            // Reward points & Send notifications AFTER review is saved
-            if (qualifyForReward && !alreadyRewarded)
+            // Reward loyalty points
+            if (review.HasEarnedRewardPoints && review.LoyaltyPointsEarned > 0)
             {
-                var productName = invoiceItem.Variant?.Product?.ProductName 
-                    ?? invoiceItem.Bundle?.Name 
+                var productName = invoiceItem.Variant?.Product?.ProductName
+                    ?? invoiceItem.Bundle?.Name
                     ?? "sản phẩm";
-                var description = $"Thưởng điểm khi đánh giá sản phẩm {settings.RequiredRatingForReward} sao";
+                var description = $"Thưởng điểm đánh giá sản phẩm {productName}";
 
-                _logger.LogInformation("Cộng {Points} điểm thưởng review cho user {UserId} (Sản phẩm: {ProductName}, Đơn hàng: #{InvoiceId})", 
-                    settings.ReviewRewardPoints, userId, productName, dto.InvoiceID);
-
-                await _loyaltyService.AddPointsAsync(userId, settings.ReviewRewardPoints, "EARN", description, dto.InvoiceID);
+                await _loyaltyService.AddPointsAsync(userId, review.LoyaltyPointsEarned, "EARN", description, dto.InvoiceID);
 
                 try
                 {
                     var notifDto = new CreateNotificationDto
                     {
                         Title = "Nhận điểm thưởng đánh giá",
-                        ShortDescription = $"Bạn đã nhận được {settings.ReviewRewardPoints} điểm thưởng từ chương trình đánh giá sản phẩm.",
-                        Content = $"<p>Cảm ơn bạn đã đóng góp đánh giá chi tiết cho sản phẩm. Bạn đã được cộng <strong>{settings.ReviewRewardPoints} điểm</strong> vào tài khoản Loyalty.</p>",
+                        ShortDescription = $"Bạn đã nhận được {review.LoyaltyPointsEarned} điểm thưởng từ chương trình đánh giá sản phẩm.",
+                        Content = $"<p>Cảm ơn bạn đã đóng góp đánh giá sản phẩm. Bạn đã được cộng <strong>{review.LoyaltyPointsEarned} điểm</strong> vào tài khoản Loyalty.</p>",
                         Type = NotificationType.RewardPoints,
                         Priority = NotificationPriority.Medium,
                         ActionType = ActionType.CustomUrl,
@@ -283,8 +407,8 @@ namespace PolyBabyAPI.Services
                     var notifDto = new CreateNotificationDto
                     {
                         Title = "Đánh giá chưa đủ điều kiện nhận thưởng",
-                        ShortDescription = $"Đánh giá cần tối thiểu {settings.MinimumReviewWords} từ và đạt {settings.RequiredRatingForReward} sao để nhận điểm thưởng.",
-                        Content = $"<p>Đánh giá của bạn chưa đủ điều kiện nhận điểm thưởng. Để nhận điểm thưởng từ hệ thống Loyalty, đánh giá cần có tối thiểu <strong>{settings.MinimumReviewWords} từ</strong> và đạt mức đánh giá <strong>{settings.RequiredRatingForReward} sao</strong>.</p>",
+                        ShortDescription = $"Đánh giá cần tối thiểu {settings.MinimumReviewChars} ký tự và đạt {settings.RequiredRatingForReward} sao để nhận điểm thưởng.",
+                        Content = $"<p>Đánh giá của bạn chưa đủ điều kiện nhận điểm thưởng Loyalty. Để nhận điểm thưởng, đánh giá cần có tối thiểu <strong>{settings.MinimumReviewChars} ký tự</strong> và đạt mức đánh giá <strong>{settings.RequiredRatingForReward} sao</strong>.</p>",
                         Type = NotificationType.RewardPoints,
                         Priority = NotificationPriority.Low,
                         ActionType = ActionType.CustomUrl,
@@ -316,9 +440,31 @@ namespace PolyBabyAPI.Services
                     .ThenInclude(v => v.Product)
                 .Include(r => r.Bundle)
                 .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewMedia)
+                .Include(r => r.CensorshipLogs)
+                    .ThenInclude(l => l.Actor)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
-                .Where(r => !r.IsHidden);
+                .AsQueryable();
+
+            // Apply Hide status filter (for Admin view)
+            if (searchDto.IsHidden.HasValue)
+            {
+                query = query.Where(r => r.IsHidden == searchDto.IsHidden.Value);
+            }
+            else
+            {
+                query = query.Where(r => !r.IsHidden);
+            }
+
+            // Apply media filter
+            if (searchDto.HasMedia.HasValue)
+            {
+                if (searchDto.HasMedia.Value)
+                    query = query.Where(r => r.ReviewMedia.Any());
+                else
+                    query = query.Where(r => !r.ReviewMedia.Any());
+            }
 
             // Apply filters
             if (searchDto.BundleID.HasValue)
@@ -331,7 +477,7 @@ namespace PolyBabyAPI.Services
                 query = query.Where(r => r.Rating == searchDto.Rating.Value);
 
             if (!string.IsNullOrEmpty(searchDto.SearchTerm))
-                query = query.Where(r => r.Content.Contains(searchDto.SearchTerm));
+                query = query.Where(r => r.Content.Contains(searchDto.SearchTerm) || (r.User != null && r.User.FullName.Contains(searchDto.SearchTerm)));
 
             // Apply sorting
             switch (searchDto.SortBy.ToLower())
@@ -365,6 +511,7 @@ namespace PolyBabyAPI.Services
             return await _context.Reviews
                 .Include(r => r.User)
                 .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewMedia)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
                 .Where(r => r.BundleID == bundleId && !r.IsHidden)
@@ -380,6 +527,7 @@ namespace PolyBabyAPI.Services
                 .Include(r => r.User)
                 .Include(r => r.Variant)
                 .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewMedia)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
                 .Where(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == productId)
@@ -410,6 +558,7 @@ namespace PolyBabyAPI.Services
             return await _context.Reviews
                 .Include(r => r.User)
                 .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewMedia)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
                 .Where(r => r.VariantID == variantId && !r.IsHidden)
@@ -497,14 +646,12 @@ namespace PolyBabyAPI.Services
 
             if (existingLike != null)
             {
-                // Unlike
                 _context.ReviewLikes.Remove(existingLike);
                 await _context.SaveChangesAsync();
-                return false; // Unliked
+                return false;
             }
             else
             {
-                // Like
                 var like = new ReviewLike
                 {
                     ReviewID = reviewId,
@@ -513,7 +660,7 @@ namespace PolyBabyAPI.Services
                 };
                 _context.ReviewLikes.Add(like);
                 await _context.SaveChangesAsync();
-                return true; // Liked
+                return true;
             }
         }
 
@@ -574,7 +721,6 @@ namespace PolyBabyAPI.Services
 
             if (comment == null) return false;
 
-            // Delete child comments too
             _context.ReviewComments.RemoveRange(comment.ChildComments);
             _context.ReviewComments.Remove(comment);
 
@@ -595,6 +741,7 @@ namespace PolyBabyAPI.Services
                         .ThenInclude(p => p.Variants)
                 .Include(r => r.Bundle)
                 .Include(r => r.ReviewLikes)
+                .Include(r => r.ReviewMedia)
                 .Include(r => r.ReviewComments)
                     .ThenInclude(rc => rc.User)
                 .Where(r => r.UserID == userId && !r.IsHidden)
@@ -630,7 +777,6 @@ namespace PolyBabyAPI.Services
 
             var pendingItems = new List<PendingReviewItemDto>();
 
-            // Fetch fallback images for variants that have no ImageUrl
             var productIdsForFallback = completedInvoices
                 .SelectMany(i => i.InvoiceDetails)
                 .Where(d => d.Variant != null && string.IsNullOrEmpty(d.Variant.ImageUrl) && d.Variant.ProductID > 0)
@@ -720,7 +866,160 @@ namespace PolyBabyAPI.Services
             return true;
         }
 
+        public async Task<bool> CensorReviewAsync(string actorId, CensorReviewDto dto)
+        {
+            var review = await _context.Reviews
+                .Include(r => r.CensorshipLogs)
+                .FirstOrDefaultAsync(r => r.ReviewID == dto.ReviewID);
+
+            if (review == null) return false;
+
+            var actionUpper = dto.Action.ToUpper();
+            if (actionUpper == "HIDE")
+            {
+                review.IsHidden = true;
+                review.CensorshipReason = dto.Reason;
+            }
+            else if (actionUpper == "RESTORE")
+            {
+                review.IsHidden = false;
+                review.CensorshipReason = null;
+            }
+            else
+            {
+                throw new ArgumentException("Hành động kiểm duyệt không hợp lệ (Chỉ chấp nhận HIDE hoặc RESTORE).");
+            }
+
+            // Create Log
+            var log = new ReviewCensorshipLog
+            {
+                ReviewID = review.ReviewID,
+                ActorID = actorId,
+                Action = actionUpper,
+                Reason = dto.Reason,
+                Timestamp = DateTime.Now
+            };
+
+            _context.ReviewCensorshipLogs.Add(log);
+            await _context.SaveChangesAsync();
+
+            // Send notification to user about censorship
+            try
+            {
+                var title = actionUpper == "HIDE" ? "Đánh giá của bạn đã bị ẩn" : "Đánh giá của bạn đã được hiển thị lại";
+                var description = actionUpper == "HIDE" 
+                    ? $"Đánh giá của bạn đã bị quản trị viên ẩn do vi phạm quy chuẩn. Lý do: {dto.Reason}"
+                    : "Đánh giá của bạn đã được quản trị viên duyệt hiển thị lại.";
+
+                var notifDto = new CreateNotificationDto
+                {
+                    Title = title,
+                    ShortDescription = description,
+                    Content = $"<p>{description}</p>",
+                    Type = NotificationType.System,
+                    Priority = NotificationPriority.Medium,
+                    ActionType = ActionType.CustomUrl,
+                    ActionUrl = "/profile?tab=reviews",
+                    TargetType = TargetType.SpecificUsers,
+                    TargetValue = review.UserID,
+                    PublishedAt = DateTime.UtcNow
+                };
+                await _notificationService.CreateNotificationAsync(notifDto, "System");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi thông báo kiểm duyệt cho user {UserId}", review.UserID);
+            }
+
+            return true;
+        }
+
+        public async Task<ReviewAdminStatsDto> GetReviewAdminStatsAsync()
+        {
+            var reviews = await _context.Reviews.AsNoTracking().ToListAsync();
+
+            var totalReviews = reviews.Count;
+            var hiddenReviews = reviews.Count(r => r.IsHidden);
+            var visibleReviews = totalReviews - hiddenReviews;
+
+            var activeReviews = reviews.Where(r => !r.IsHidden).ToList();
+            var averageRating = activeReviews.Any() ? activeReviews.Average(r => r.Rating) : 0;
+
+            var ratingDistribution = reviews
+                .GroupBy(r => r.Rating)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Fill missing keys 1 to 5
+            for (int i = 1; i <= 5; i++)
+            {
+                if (!ratingDistribution.ContainsKey(i))
+                {
+                    ratingDistribution[i] = 0;
+                }
+            }
+
+            return new ReviewAdminStatsDto
+            {
+                TotalReviews = totalReviews,
+                HiddenReviews = hiddenReviews,
+                VisibleReviews = visibleReviews,
+                AverageRating = Math.Round(averageRating, 1),
+                RatingDistribution = ratingDistribution
+            };
+        }
+
+        public async Task<IEnumerable<ReviewCensorshipLogDto>> GetCensorshipLogsAsync(int reviewId)
+        {
+            return await _context.ReviewCensorshipLogs
+                .Include(l => l.Actor)
+                .Where(l => l.ReviewID == reviewId)
+                .OrderByDescending(l => l.Timestamp)
+                .Select(l => new ReviewCensorshipLogDto
+                {
+                    LogID = l.LogID,
+                    ReviewID = l.ReviewID,
+                    ActorID = l.ActorID,
+                    ActorName = l.Actor != null ? l.Actor.FullName : "Quản trị viên",
+                    Action = l.Action,
+                    Reason = l.Reason,
+                    Timestamp = l.Timestamp
+                })
+                .ToListAsync();
+        }
+
+        public async Task<LoyaltySetting> GetLoyaltySettingAsync()
+        {
+            return await _context.LoyaltySettings.FirstOrDefaultAsync() ?? new LoyaltySetting();
+        }
+
+        public async Task<bool> UpdateLoyaltySettingAsync(LoyaltySetting setting)
+        {
+            var existing = await _context.LoyaltySettings.FirstOrDefaultAsync(s => s.Id == setting.Id);
+            if (existing == null)
+            {
+                _context.LoyaltySettings.Add(setting);
+            }
+            else
+            {
+                existing.EnableReviewReward = setting.EnableReviewReward;
+                existing.ReviewRewardPoints = setting.ReviewRewardPoints;
+                existing.MinimumReviewWords = setting.MinimumReviewWords;
+                existing.RequiredRatingForReward = setting.RequiredRatingForReward;
+                existing.AllowMultipleRewardsPerProduct = setting.AllowMultipleRewardsPerProduct;
+
+                existing.ReviewWithImageRewardPoints = setting.ReviewWithImageRewardPoints;
+                existing.ReviewWithVideoRewardPoints = setting.ReviewWithVideoRewardPoints;
+                existing.MinimumReviewChars = setting.MinimumReviewChars;
+                existing.AllowEditReviewTimeLimitMinutes = setting.AllowEditReviewTimeLimitMinutes;
+                existing.MaxReviewDaysAfterReceipt = setting.MaxReviewDaysAfterReceipt;
+                existing.RequireDeliveryToReview = setting.RequireDeliveryToReview;
+                existing.UpdatedAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         #endregion
     }
 }
-

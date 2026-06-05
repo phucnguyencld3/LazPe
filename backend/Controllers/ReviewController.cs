@@ -126,7 +126,6 @@ namespace PolyBabyAPI.Controllers
                     return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
                 }
 
-                // Check if user can review
                 if (!await _reviewService.CanUserReviewAsync(userId, dto.VariantID, dto.BundleID))
                 {
                     return BadRequest(new { success = false, message = "Bạn đã đánh giá sản phẩm này rồi" });
@@ -160,7 +159,7 @@ namespace PolyBabyAPI.Controllers
             try
             {
                 var review = await _reviewService.GetReviewByIdAsync(id);
-                if (review == null || review.IsHidden)
+                if (review == null || (review.IsHidden && !User.IsInRole("Admin")))
                 {
                     return NotFound(new { success = false, message = "Không tìm thấy đánh giá" });
                 }
@@ -213,6 +212,10 @@ namespace PolyBabyAPI.Controllers
 
                 return Ok(new { success = true, message = "Cập nhật đánh giá thành công", data = reviewDto });
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating review {ReviewId}", id);
@@ -243,6 +246,10 @@ namespace PolyBabyAPI.Controllers
 
                 return Ok(new { success = true, message = "Xóa đánh giá thành công" });
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting review {ReviewId}", id);
@@ -262,14 +269,16 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
+                if (!User.IsInRole("Admin"))
+                {
+                    searchDto.IsHidden = false;
+                }
+
                 var reviews = await _reviewService.GetReviewsAsync(searchDto);
                 var userId = GetCurrentUserId();
                 var reviewDtos = reviews.Select(r => MapReviewToDto(r, userId)).ToList();
 
-                // Get total count for pagination
                 var totalCount = await _reviewService.GetReviewCountAsync(searchDto.BundleID, searchDto.VariantID);
-
-                // Get stats
                 var stats = await _reviewService.GetReviewStatsAsync(searchDto.BundleID, searchDto.VariantID);
 
                 var response = new ReviewListResponseDto
@@ -517,6 +526,105 @@ namespace PolyBabyAPI.Controllers
 
         #endregion
 
+        #region Admin & Censorship Endpoints
+
+        [HttpPost("censor")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CensorReview([FromBody] CensorReviewDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                var actorId = GetCurrentUserId();
+                var success = await _reviewService.CensorReviewAsync(actorId, dto);
+                if (!success)
+                {
+                    return NotFound(new { success = false, message = "Không tìm thấy đánh giá" });
+                }
+
+                return Ok(new { success = true, message = dto.Action.ToUpper() == "HIDE" ? "Đã ẩn đánh giá thành công." : "Đã hiển thị lại đánh giá thành công." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error censoring review {ReviewId}", dto.ReviewID);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi kiểm duyệt đánh giá." });
+            }
+        }
+
+        [HttpGet("admin/stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReviewAdminStats()
+        {
+            try
+            {
+                var stats = await _reviewService.GetReviewAdminStatsAsync();
+                return Ok(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting review admin stats");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy thống kê kiểm duyệt." });
+            }
+        }
+
+        [HttpGet("{reviewId}/logs")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetCensorshipLogs(int reviewId)
+        {
+            try
+            {
+                var logs = await _reviewService.GetCensorshipLogsAsync(reviewId);
+                return Ok(new { success = true, data = logs });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting censorship logs for review {ReviewId}", reviewId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy lịch sử kiểm duyệt." });
+            }
+        }
+
+        [HttpGet("settings")]
+        public async Task<IActionResult> GetReviewLoyaltySettings()
+        {
+            try
+            {
+                var settings = await _reviewService.GetLoyaltySettingAsync();
+                return Ok(new { success = true, data = settings });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting loyalty settings for reviews");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy cấu hình thưởng điểm." });
+            }
+        }
+
+        [HttpPut("settings")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateReviewLoyaltySettings([FromBody] LoyaltySetting setting)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                var success = await _reviewService.UpdateLoyaltySettingAsync(setting);
+                return Ok(new { success = true, message = "Cập nhật cấu hình thành công." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating loyalty settings for reviews");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật cấu hình thưởng điểm." });
+            }
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private string GetCurrentUserId()
@@ -538,6 +646,8 @@ namespace PolyBabyAPI.Controllers
                 IsHidden = review.IsHidden,
                 HasEarnedRewardPoints = review.HasEarnedRewardPoints,
                 LoyaltyPointsEarned = review.LoyaltyPointsEarned,
+                UpdatedAt = review.UpdatedAt,
+                CensorshipReason = review.CensorshipReason,
                 User = review.User != null ? new ReviewUserDto
                 {
                     UserID = review.User.Id,
@@ -551,6 +661,24 @@ namespace PolyBabyAPI.Controllers
                 Comments = review.ReviewComments?
                     .Where(rc => !rc.IsHidden && rc.ParentCommentID == null)
                     .Select(MapCommentToDto).ToList() ?? new List<ReviewCommentDto>(),
+                ReviewMedia = review.ReviewMedia?.Select(m => new ReviewMediaDto
+                {
+                    MediaID = m.MediaID,
+                    ReviewID = m.ReviewID,
+                    Url = m.Url,
+                    MediaType = m.MediaType,
+                    CreatedAt = m.CreatedAt
+                }).ToList() ?? new List<ReviewMediaDto>(),
+                CensorshipLogs = review.CensorshipLogs?.Select(l => new ReviewCensorshipLogDto
+                {
+                    LogID = l.LogID,
+                    ReviewID = l.ReviewID,
+                    ActorID = l.ActorID,
+                    ActorName = l.Actor != null ? l.Actor.FullName : "Quản trị viên",
+                    Action = l.Action,
+                    Reason = l.Reason,
+                    Timestamp = l.Timestamp
+                }).ToList() ?? new List<ReviewCensorshipLogDto>(),
                 ProductName = review.Variant?.Product?.ProductName,
                 VariantName = review.Variant?.VariantName,
                 BundleName = review.Bundle?.Name,
@@ -609,4 +737,3 @@ namespace PolyBabyAPI.Controllers
         #endregion
     }
 }
-

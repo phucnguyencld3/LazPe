@@ -1152,15 +1152,20 @@ export async function getUserReviews(
 
 export async function getPendingReviews(
   userId: string,
-  token: string
+  token?: string
 ): Promise<any[] | null> {
   try {
+    const activeToken = token || (typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null);
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (activeToken) {
+      headers["Authorization"] = `Bearer ${activeToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/Review/pending/${userId}`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -1822,6 +1827,378 @@ export async function adminDeleteTemplate(token: string, id: number): Promise<{ 
   } catch (error) {
     console.error("Error deleting template:", error);
     return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+// =============================================
+// PRODUCT REVIEW APIs
+// =============================================
+
+export interface ReviewMedia {
+  mediaID: number;
+  reviewID: number;
+  url: string;
+  mediaType: 'IMAGE' | 'VIDEO';
+  createdAt: string;
+}
+
+export interface ReviewCensorshipLog {
+  logID: number;
+  reviewID: number;
+  actorID: string;
+  actorName: string;
+  action: 'HIDE' | 'RESTORE';
+  reason: string;
+  timestamp: string;
+}
+
+export interface ReviewUser {
+  userID: string;
+  fullName: string;
+  avatar?: string;
+}
+
+export interface ReviewComment {
+  commentID: number;
+  reviewID: number;
+  userID: string;
+  parentCommentID?: number | null;
+  content: string;
+  createdAt: string;
+  isHidden: boolean;
+  user?: ReviewUser;
+  childComments: ReviewComment[];
+}
+
+export interface ReviewItem {
+  reviewID: number;
+  userID: string;
+  variantID?: number | null;
+  bundleID?: number | null;
+  rating: number;
+  content: string;
+  createdAt: string;
+  isHidden: boolean;
+  hasEarnedRewardPoints: boolean;
+  loyaltyPointsEarned: number;
+  updatedAt?: string | null;
+  censorshipReason?: string | null;
+  user?: ReviewUser;
+  likeCount: number;
+  commentCount: number;
+  isLikedByCurrentUser: boolean;
+  comments: ReviewComment[];
+  reviewMedia: ReviewMedia[];
+  censorshipLogs: ReviewCensorshipLog[];
+  productName?: string;
+  variantName?: string;
+  bundleName?: string;
+  imageUrl?: string;
+}
+
+export interface ReviewStats {
+  totalReviews: number;
+  averageRating: number;
+  ratingDistribution: Record<number, number>;
+}
+
+export interface ReviewListResponse {
+  reviews: ReviewItem[];
+  stats: ReviewStats | null;
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+const getHeaders = (token?: string | null) => {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  const activeToken = token || (typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null);
+  if (activeToken) {
+    headers["Authorization"] = `Bearer ${activeToken}`;
+  }
+  return headers;
+};
+
+export async function getProductReviews(
+  productId: number,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ReviewListResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/product/${productId}?page=${page}&pageSize=${pageSize}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching product reviews:", error);
+    return null;
+  }
+}
+
+export async function getReviewableItems(invoiceId: number): Promise<any[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/reviewable-items/${invoiceId}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching reviewable items:", error);
+    return null;
+  }
+}
+
+export async function createReviewFromInvoice(data: {
+  invoiceID: number;
+  invoiceDetailID: number;
+  rating: number;
+  content?: string;
+  media?: { url: string; mediaType: string }[];
+}): Promise<{ success: boolean; message: string; data?: ReviewItem }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/from-invoice`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || (response.ok ? "Đánh giá thành công" : "Đánh giá thất bại"),
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function updateReview(
+  reviewId: number,
+  data: {
+    reviewID: number;
+    rating: number;
+    content?: string;
+    media?: { url: string; mediaType: string }[];
+  }
+): Promise<{ success: boolean; message: string; data?: ReviewItem }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/${reviewId}`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || (response.ok ? "Cập nhật thành công" : "Cập nhật thất bại"),
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error updating review:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function deleteReview(reviewId: number): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/${reviewId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || (response.ok ? "Xóa thành công" : "Xóa thất bại"),
+    };
+  } catch (error) {
+    console.error("Error deleting review:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function searchReviews(params: {
+  variantID?: number;
+  bundleID?: number;
+  rating?: number;
+  searchTerm?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  page?: number;
+  pageSize?: number;
+  isHidden?: boolean;
+  hasMedia?: boolean;
+}): Promise<ReviewListResponse | null> {
+  try {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const response = await fetch(`${API_BASE_URL}/review?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error searching reviews:", error);
+    return null;
+  }
+}
+
+export async function toggleReviewLike(reviewId: number): Promise<{ success: boolean; isLiked: boolean; likeCount: number }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/${reviewId}/like`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      isLiked: result.data?.isLiked ?? false,
+      likeCount: result.data?.likeCount ?? 0,
+    };
+  } catch (error) {
+    console.error("Error toggling like:", error);
+    return { success: false, isLiked: false, likeCount: 0 };
+  }
+}
+
+export async function createReviewComment(data: {
+  reviewID: number;
+  parentCommentID?: number | null;
+  content: string;
+}): Promise<{ success: boolean; message: string; data?: ReviewComment }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/${data.reviewID}/comments`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Bình luận thành công",
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error creating comment:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function deleteReviewComment(commentId: number): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/comments/${commentId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Xóa bình luận thành công",
+    };
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+// ADMIN APIS
+export async function getReviewLoyaltySettings(): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/settings`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching loyalty settings:", error);
+    return null;
+  }
+}
+
+export async function updateReviewLoyaltySettings(settings: any): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/settings`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(settings),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Cập nhật thành công",
+    };
+  } catch (error) {
+    console.error("Error updating loyalty settings:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function getReviewAdminStats(): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/admin/stats`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching review admin stats:", error);
+    return null;
+  }
+}
+
+export async function censorReview(data: {
+  reviewID: number;
+  action: 'HIDE' | 'RESTORE';
+  reason: string;
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/censor`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "Kiểm duyệt thành công",
+    };
+  } catch (error) {
+    console.error("Error censoring review:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function getReviewCensorshipLogs(reviewId: number): Promise<ReviewCensorshipLog[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/review/${reviewId}/logs`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.error("Error fetching censorship logs:", error);
+    return null;
   }
 }
 

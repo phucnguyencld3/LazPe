@@ -342,6 +342,13 @@ namespace PolyBabyAPI.Models
         public int RequiredRatingForReward { get; set; } = 5;
         public bool AllowMultipleRewardsPerProduct { get; set; } = false;
 
+        public int ReviewWithImageRewardPoints { get; set; } = 300;
+        public int ReviewWithVideoRewardPoints { get; set; } = 500;
+        public int MinimumReviewChars { get; set; } = 100;
+        public int AllowEditReviewTimeLimitMinutes { get; set; } = 30;
+        public int MaxReviewDaysAfterReceipt { get; set; } = 30;
+        public bool RequireDeliveryToReview { get; set; } = true;
+
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 }
