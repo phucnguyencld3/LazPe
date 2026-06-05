@@ -4,15 +4,16 @@ import Link from "next/link";
 import { ShoppingCart, User, Menu, ChevronDown, Heart, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Category } from "@/types";
-import { getCategories, getCart, getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, UserNotificationItem } from "@/lib/api";
+import { getCategories, getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, UserNotificationItem } from "@/lib/api";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import { toast } from "@/lib/toast";
 import * as signalR from "@microsoft/signalr";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+  const { cartCount } = useCart();
   
   // Notifications states
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
@@ -61,17 +62,7 @@ export default function Header() {
       }
     };
 
-    const loadCartCount = async (authToken: string) => {
-      try {
-        const cartData = await getCart(authToken);
-        if (cartData && cartData.cartDetails) {
-          const count = cartData.cartDetails.reduce((sum, item) => sum + item.quantity, 0);
-          setCartCount(count);
-        }
-      } catch (err) {
-        console.error("Error loading header cart count:", err);
-      }
-    };
+
 
     const loadNotifications = async (authToken: string) => {
       try {
@@ -88,7 +79,6 @@ export default function Header() {
 
     loadCategories();
     if (token) {
-      loadCartCount(token);
       loadNotifications(token);
 
       // Thiết lập kết nối SignalR

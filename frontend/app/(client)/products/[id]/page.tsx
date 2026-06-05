@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
-import { getProductDetail, getProducts, addToCart } from "@/lib/api";
+import { getProductDetail, getProducts } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -32,6 +33,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   // UI Interactive States
   const [quantity, setQuantity] = useState(1);
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const isWishlisted = product ? isInWishlist(product.id) : false;
   const setIsWishlisted = () => {
     if (product) toggleWishlist(product);
@@ -246,8 +248,8 @@ export default function ProductDetailPage({ params }: PageProps) {
   };
 
   const handleAddToCart = async () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) {
+    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!hasToken) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
       router.push("/login");
       return;
@@ -263,7 +265,7 @@ export default function ProductDetailPage({ params }: PageProps) {
       }
       
       try {
-        const res = await addToCart(token, {
+        const res = await addToCart({
           variantID: firstVariantId,
           quantity: quantity,
         });
@@ -280,7 +282,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     }
 
     try {
-      const res = await addToCart(token, {
+      const res = await addToCart({
         variantID: variantId,
         quantity: quantity,
       });
