@@ -120,9 +120,12 @@ export async function toggleBundleStatus(id: number, token: string): Promise<{ s
 }
 
 // Upload bundle image
-export async function uploadBundleImage(file: File, token: string): Promise<{ success: boolean; data?: string; message?: string }> {
+export async function uploadBundleImage(file: File, token: string, oldImageUrl?: string): Promise<{ success: boolean; data?: string; message?: string }> {
   const formData = new FormData();
   formData.append("file", file);
+  if (oldImageUrl) {
+    formData.append("oldImageUrl", oldImageUrl);
+  }
   const response = await fetch(`${API_BASE_URL}/Bundle/upload-image`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },

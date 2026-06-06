@@ -126,7 +126,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
     setUploading(true);
     toast.loading("Đang tải ảnh lên...");
     try {
-      const res = await uploadBundleImage(file, token);
+      const res = await uploadBundleImage(file, token, imageUrl || undefined);
       toast.dismiss();
       if (res.success && res.data) {
         setImageUrl(res.data);
