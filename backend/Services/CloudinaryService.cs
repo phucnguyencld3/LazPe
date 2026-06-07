@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Options;
 using PolyBabyAPI.Interface;
@@ -43,7 +43,7 @@ namespace PolyBabyAPI.Service
                     Transformation = new Transformation()
                         .Width(folder.Contains("Avatar") ? 300 : 800)
                         .Height(folder.Contains("Avatar") ? 300 : 800)
-                        .Crop("fill")
+                        .Crop(folder.Contains("Avatar") ? "fill" : "limit")
                         .Quality("auto")
                         .FetchFormat("auto"),
                     UseFilename = true,

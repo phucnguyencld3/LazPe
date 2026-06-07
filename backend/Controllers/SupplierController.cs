@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Filters;
@@ -79,10 +79,7 @@ namespace PolyBabyAPI.Controllers
                 {
                     var searchLower = searchTerm.ToLower();
                     allSuppliers = allSuppliers.Where(s =>
-                        s.SupplierName.ToLower().Contains(searchLower) ||
-                        (s.ContactName != null && s.ContactName.ToLower().Contains(searchLower)) ||
-                        (s.Email != null && s.Email.ToLower().Contains(searchLower)) ||
-                        (s.Phone != null && s.Phone.Contains(searchTerm))
+                        s.SupplierName.ToLower().Contains(searchLower)
                     );
                 }
 
@@ -114,10 +111,6 @@ namespace PolyBabyAPI.Controllers
                         {
                             supplierID = s.SupplierID,
                             supplierName = s.SupplierName,
-                            contactPerson = s.ContactName,
-                            email = s.Email,
-                            phoneNumber = s.Phone,
-                            address = s.Address,
                             logo = s.Logo,
                             description = s.Description,
                             status = s.Status,
@@ -296,10 +289,6 @@ namespace PolyBabyAPI.Controllers
                 var supplier = new Supplier
                 {
                     SupplierName = dto.SupplierName,
-                    ContactName = dto.ContactName ?? string.Empty,
-                    Email = dto.Email ?? string.Empty,
-                    Phone = dto.Phone ?? string.Empty,
-                    Address = dto.Address ?? string.Empty,
                     Logo = dto.Logo,
                     Description = dto.Description ?? string.Empty,
                     CreatedBy = dto.CreatedBy ?? "System",
@@ -354,10 +343,6 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Tên nhà cung cấp đã tồn tại" });
 
                 supplier.SupplierName = dto.SupplierName;
-                supplier.ContactName = dto.ContactName ?? string.Empty;
-                supplier.Email = dto.Email ?? string.Empty;
-                supplier.Phone = dto.Phone ?? string.Empty;
-                supplier.Address = dto.Address ?? string.Empty;
                 supplier.Description = dto.Description ?? string.Empty;
 
                 if (!string.IsNullOrEmpty(dto.Logo))
