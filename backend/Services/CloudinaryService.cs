@@ -139,6 +139,24 @@ namespace PolyBabyAPI.Service
                 return false;
             }
         }
+
+        public async Task<string> ReplaceImageAsync(string oldImageUrl, IFormFile newFile, string folder)
+        {
+            if (!string.IsNullOrEmpty(oldImageUrl))
+            {
+                try
+                {
+                    await DeleteImageAsync(oldImageUrl);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error deleting old image during replacement: {ImageUrl}", oldImageUrl);
+                }
+            }
+
+            return await UploadImageAsync(newFile, folder);
+        }
+
         // ✅ THÊM: Method upload local fallback
         public async Task<string> UploadAvatarLocalAsync(IFormFile file, string userId)
         {
