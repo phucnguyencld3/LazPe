@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.Models
@@ -13,22 +13,6 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Tên nhà cung cấp")]
         public string SupplierName { get; set; }
 
-        [StringLength(100)]
-        [Display(Name = "Người liên hệ")]
-        public string ContactName { get; set; }
-
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        [StringLength(50)]
-        public string Email { get; set; }
-
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        [StringLength(15)]
-        [Display(Name = "Số điện thoại")]
-        public string Phone { get; set; }
-
-        [StringLength(500)]
-        [Display(Name = "Địa chỉ")]
-        public string Address { get; set; }
 
         [Display(Name = "Logo")]
         public string Logo { get; set; }

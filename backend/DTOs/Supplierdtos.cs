@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -13,10 +13,6 @@ namespace PolyBabyAPI.DTOs
     {
         public int SupplierID { get; set; }
         public string SupplierName { get; set; } = string.Empty;
-        public string? ContactName { get; set; }
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
-        public string? Address { get; set; }
         public string? Logo { get; set; }
         public string? Description { get; set; }
         public bool Status { get; set; }
@@ -40,19 +36,6 @@ namespace PolyBabyAPI.DTOs
         [StringLength(200, ErrorMessage = "Tên nhà cung cấp không được vượt quá 200 ký tự")]
         public string SupplierName { get; set; } = string.Empty;
 
-        [StringLength(100, ErrorMessage = "Tên người liên hệ không được vượt quá 100 ký tự")]
-        public string? ContactName { get; set; }
-
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        [StringLength(50)]
-        public string? Email { get; set; }
-
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        [StringLength(15)]
-        public string? Phone { get; set; }
-
-        [StringLength(500, ErrorMessage = "Địa chỉ không được vượt quá 500 ký tự")]
-        public string? Address { get; set; }
 
         public string? Logo { get; set; }
 
@@ -74,19 +57,6 @@ namespace PolyBabyAPI.DTOs
         [StringLength(200, ErrorMessage = "Tên nhà cung cấp không được vượt quá 200 ký tự")]
         public string SupplierName { get; set; } = string.Empty;
 
-        [StringLength(100, ErrorMessage = "Tên người liên hệ không được vượt quá 100 ký tự")]
-        public string? ContactName { get; set; }
-
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        [StringLength(50)]
-        public string? Email { get; set; }
-
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        [StringLength(15)]
-        public string? Phone { get; set; }
-
-        [StringLength(500, ErrorMessage = "Địa chỉ không được vượt quá 500 ký tự")]
-        public string? Address { get; set; }
 
         /// <summary>null = giữ nguyên logo cũ</summary>
         public string? Logo { get; set; }
