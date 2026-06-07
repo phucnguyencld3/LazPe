@@ -215,7 +215,10 @@ try
     builder.Services.AddScoped<IVariantService, VariantService>(); 
 
     // Address service
-    builder.Services.AddHttpClient<AddressApiService>();
+    builder.Services.AddHttpClient<AddressApiService>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(5);
+    });
     builder.Services.AddScoped<AddressApiService>();
 
     builder.Services.AddHttpClient();
