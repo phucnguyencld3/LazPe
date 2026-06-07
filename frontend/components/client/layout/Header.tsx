@@ -16,6 +16,7 @@ export default function Header() {
   const [isAuth, setIsAuth] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   
   // Notifications states
@@ -413,7 +414,11 @@ export default function Header() {
             )}
             
             {isAuth ? (
-              <div className="relative group flex items-center h-full py-2">
+              <div 
+                className="relative flex items-center h-full py-2"
+                onMouseEnter={() => setUserDropdownOpen(true)}
+                onMouseLeave={() => setUserDropdownOpen(false)}
+              >
                 {/* Avatar / Circle Trigger */}
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center transition-all duration-200 hover:border-rose-300 cursor-pointer">
                   {user?.avatar ? (
@@ -428,7 +433,11 @@ export default function Header() {
                 </div>
 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 top-full pt-2 w-64 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto scale-95 group-hover:scale-100 transition-all duration-150 origin-top-right z-50 before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
+                <div className={`absolute right-0 top-full pt-2 w-64 origin-top-right z-50 before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 transition-all duration-150 ${
+                  userDropdownOpen 
+                    ? "opacity-100 pointer-events-auto scale-100" 
+                    : "opacity-0 pointer-events-none scale-95"
+                }`}>
                   <div className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden py-2">
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-slate-50 flex items-center gap-3">
@@ -458,6 +467,7 @@ export default function Header() {
                       <Link
                         href="/profile?tab=profile"
                         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
                       >
                         <span className="material-symbols-outlined text-base">person</span>
                         Trang cá nhân
@@ -465,6 +475,7 @@ export default function Header() {
                       <Link
                         href="/profile?tab=orders"
                         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
                       >
                         <span className="material-symbols-outlined text-base">shopping_bag</span>
                         Đơn hàng của tôi
@@ -472,6 +483,7 @@ export default function Header() {
                       <Link
                         href="/wishlist"
                         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
                       >
                         <span className="material-symbols-outlined text-base">favorite</span>
                         Sản phẩm yêu thích
@@ -481,7 +493,10 @@ export default function Header() {
                     {/* Logout Button */}
                     <div className="border-t border-slate-50 p-1 mt-1">
                       <button
-                        onClick={handleLogout}
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleLogout();
+                        }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 transition-colors text-left"
                       >
                         <span className="material-symbols-outlined text-base">logout</span>
