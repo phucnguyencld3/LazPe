@@ -365,17 +365,17 @@ export default function CartPage() {
 
   if (loading && !cart) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[calc(100vh-200px)] py-20 bg-background">
+      <div className="flex-grow flex items-center justify-center min-h-[calc(100vh-200px)] py-20 bg-slate-50">
         <div className="flex flex-col items-center gap-4">
-          <Loader className="animate-spin text-primary" size={40} />
-          <p className="text-on-surface-variant font-label-md">Đang tải giỏ hàng của bạn...</p>
+          <Loader className="animate-spin text-rose-500" size={40} />
+          <p className="text-slate-600 font-medium animate-pulse">Đang tải giỏ hàng của bạn...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-background text-on-surface font-body-md min-h-screen pb-24 relative">
+    <div className="bg-slate-50/60 text-slate-800 font-sans min-h-screen pb-24 relative selection:bg-rose-100 selection:text-rose-900">
       <main className="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
         {/* Cart Header & Progress */}
         <CartHeader />
@@ -423,12 +423,12 @@ export default function CartPage() {
           <section className="mt-20 border-t border-slate-100 pt-16">
             <div className="flex items-end justify-between mb-8">
               <div>
-                <h2 className="font-headline-md text-2xl font-bold text-primary">Sản phẩm có thể bạn thích</h2>
-                <p className="text-sm text-on-surface-variant mt-1">Những sản phẩm được ba mẹ mua sắm nhiều nhất</p>
+                <h2 className="text-2xl font-bold text-slate-800">Sản phẩm có thể bạn thích</h2>
+                <p className="text-sm text-slate-500 mt-1">Những sản phẩm được ba mẹ mua sắm nhiều nhất</p>
               </div>
               <Link 
                 href="/products" 
-                className="text-primary hover:underline font-bold text-sm flex items-center gap-1"
+                className="text-rose-500 hover:text-rose-600 font-bold text-sm flex items-center gap-1 transition-colors"
               >
                 Xem tất cả sản phẩm
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -437,7 +437,7 @@ export default function CartPage() {
 
             {loadingRecs ? (
               <div className="flex justify-center py-10">
-                <Loader className="animate-spin text-primary" size={24} />
+                <Loader className="animate-spin text-rose-500" size={24} />
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-md">
