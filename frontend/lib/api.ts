@@ -50,6 +50,11 @@ export async function getProducts(
           description: item.description ?? "",
           price: item.price ?? 0,
           discountPrice: item.minEffectivePrice ?? (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined),
+          minPrice: item.minPrice,
+          maxPrice: item.maxPrice,
+          minEffectivePrice: item.minEffectivePrice,
+          maxEffectivePrice: item.maxEffectivePrice,
+          variantCount: item.variantCount,
           image: item.imageUrl ?? item.image ?? "",
           categoryId: item.categoryID ?? item.categoryId,
           categoryName: item.categoryName,
@@ -99,12 +104,28 @@ export async function getProductDetail(id: number): Promise<Product | null> {
       const firstVariantImage = variants.find((v: any) => v.imageUrl)?.imageUrl;
       const finalImage = item.imageUrl ?? item.image ?? firstVariantImage ?? "";
 
+      const activeVariants = variants.filter((v: any) => v.status !== false);
+      const minPrice = activeVariants.length > 0 ? Math.min(...activeVariants.map((v: any) => v.unitPrice ?? 0)) : (item.price ?? 0);
+      const maxPrice = activeVariants.length > 0 ? Math.max(...activeVariants.map((v: any) => v.unitPrice ?? 0)) : (item.price ?? 0);
+      const minEffectivePrice = activeVariants.length > 0 
+        ? Math.min(...activeVariants.map((v: any) => v.finalPrice ?? v.unitPrice ?? 0)) 
+        : (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined);
+      const maxEffectivePrice = activeVariants.length > 0 
+        ? Math.max(...activeVariants.map((v: any) => v.finalPrice ?? v.unitPrice ?? 0)) 
+        : (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined);
+      const variantCount = variants.length;
+
       return {
         id: item.productID ?? item.productId ?? item.id,
         name: item.productName ?? item.name,
         description: item.description ?? "",
         price: item.price ?? 0,
         discountPrice: item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined,
+        minPrice,
+        maxPrice,
+        minEffectivePrice,
+        maxEffectivePrice,
+        variantCount,
         image: finalImage,
         categoryId: item.categoryID ?? item.categoryId,
         categoryName: item.category?.categoryName,

@@ -371,6 +371,7 @@ export default function ProductDetailPage({ params }: PageProps) {
               handleAddToCart={handleAddToCart}
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
+              activeVariant={activeVariant}
             />
           </div>
         </div>

@@ -43,6 +43,11 @@ export interface Product {
   description: string;
   price: number;
   discountPrice?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  minEffectivePrice?: number;
+  maxEffectivePrice?: number;
+  variantCount?: number;
   image?: string;
   rating?: number;
   ratingCount?: number;
