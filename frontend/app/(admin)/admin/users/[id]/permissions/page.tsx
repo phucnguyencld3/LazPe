@@ -23,6 +23,12 @@ export default function UserPermissionsPage() {
   const [allPermissions, setAllPermissions] = useState<any[]>([]);
   const [initialPermissionIds, setInitialPermissionIds] = useState<number[]>([]);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
+  
+  // Role Templates State
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [templatePermissionIds, setTemplatePermissionIds] = useState<number[]>([]);
+
   const [activeTab, setActiveTab] = useState<"existing" | "all">("existing");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -48,26 +54,38 @@ export default function UserPermissionsPage() {
           toast.error(userData.message || "Lỗi tải thông tin người dùng");
         }
 
-        // 2. Fetch User Specific Permissions
-        const userPermRes = await fetch(`${API_BASE_URL}/Permission/user/${id}`, {
+        // 2. Fetch User Specific Effective Permissions
+        const userPermRes = await fetch(`${API_BASE_URL}/Permission/effective-user/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userPermData = await userPermRes.json();
-        let currentPermIds: number[] = [];
+        
         if (userPermData.success) {
-          currentPermIds = userPermData.data.map((p: any) => p.id);
-          setInitialPermissionIds(currentPermIds);
-          setSelectedPermissionIds(currentPermIds);
+          const data = userPermData.data;
+          
+          if (data.roleTemplate) {
+            setSelectedTemplateId(data.roleTemplate.id);
+          }
+          
+          const tIds = data.templatePermissions.map((p: any) => p.id);
+          setTemplatePermissionIds(tIds);
+          
+          const effIds = data.effectivePermissions.map((p: any) => p.id);
+          setInitialPermissionIds(effIds);
+          setSelectedPermissionIds(effIds);
         }
 
-        // 3. Fetch All System Permissions
-        const allPermRes = await fetch(`${API_BASE_URL}/Permission`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 3. Fetch All System Permissions & Role Templates
+        const [allPermRes, templatesRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/Permission`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/RoleTemplate`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        
         const allPermData = await allPermRes.json();
-        if (allPermData.success) {
-          setAllPermissions(allPermData.data);
-        }
+        const templatesData = await templatesRes.json();
+        
+        if (allPermData.success) setAllPermissions(allPermData.data);
+        if (templatesData.success) setTemplates(templatesData.data);
       } catch (err) {
         console.error(err);
         toast.error("Lỗi khi kết nối đến máy chủ");
@@ -94,6 +112,22 @@ export default function UserPermissionsPage() {
       // If we uncheck, we also need to remove its dependent permissions from explicitly selected
       const toRemoveIds = getDependentPermissionIdsToRemove(permissionId, allPermissions);
       setSelectedPermissionIds((prev) => prev.filter((pid) => pid !== permissionId && !toRemoveIds.includes(pid)));
+    }
+  };
+
+  // Handle Template Change
+  const handleTemplateChange = (templateIdStr: string) => {
+    const tid = templateIdStr ? parseInt(templateIdStr) : null;
+    setSelectedTemplateId(tid);
+    
+    if (tid) {
+      const selectedTpl = templates.find(t => t.id === tid);
+      const newTplIds = selectedTpl ? selectedTpl.permissions.map((p: any) => p.permissionId) : [];
+      setTemplatePermissionIds(newTplIds);
+      // Automatically add template permissions to selected
+      setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...newTplIds])));
+    } else {
+      setTemplatePermissionIds([]);
     }
   };
 
@@ -140,56 +174,35 @@ export default function UserPermissionsPage() {
     });
   };
 
-  // Save changes to backend
+  // Save changes to backend via Sync API
   const handleSaveChange = async () => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
 
     // Combine explicit and implied permissions before saving
     const finalPermissionIds = Array.from(new Set([...selectedPermissionIds, ...impliedPermissionIds]));
-    const added = finalPermissionIds.filter((id) => !initialPermissionIds.includes(id));
-    const removed = initialPermissionIds.filter((id) => !finalPermissionIds.includes(id));
-
-    if (added.length === 0 && removed.length === 0) {
-      toast.info("Không có thay đổi nào cần lưu");
-      router.push(`/admin/users/${id}`);
-      return;
-    }
 
     setSaving(true);
     try {
-      // Create parallel fetch requests
-      const grantPromises = added.map((permissionId) =>
-        fetch(`${API_BASE_URL}/Permission/grant`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userId: id, permissionId }),
-        }).then((res) => res.json())
-      );
+      const res = await fetch(`${API_BASE_URL}/Permission/sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          userId: id, 
+          templateId: selectedTemplateId,
+          effectivePermissionIds: finalPermissionIds 
+        }),
+      });
 
-      const revokePromises = removed.map((permissionId) =>
-        fetch(`${API_BASE_URL}/Permission/revoke`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userId: id, permissionId }),
-        }).then((res) => res.json())
-      );
-
-      const results = await Promise.all([...grantPromises, ...revokePromises]);
-
-      const allSuccess = results.every((r) => r.success);
-      if (allSuccess) {
+      const data = await res.json();
+      if (data.success) {
         toast.success("Cập nhật phân quyền người dùng thành công!");
         router.push(`/admin/users/${id}`);
       } else {
-        const errors = results.filter((r) => !r.success).map((r) => r.message).join(", ");
-        toast.error(`Có lỗi xảy ra: ${errors}`);
+        toast.error(data.message || "Có lỗi xảy ra khi lưu thay đổi.");
       }
     } catch (err) {
       console.error(err);
@@ -241,7 +254,7 @@ export default function UserPermissionsPage() {
     filteredPermissions.every((p) => allSelectedSet.has(p.id));
 
   return (
-    <main className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <main className="w-full pb-lg animate-fadeIn space-y-8">
       {/* Header Section: User Profile Card */}
       <header className="bg-white p-6 rounded-2xl border border-slate-100 soft-shadow flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-5 w-full md:w-auto">
@@ -285,6 +298,27 @@ export default function UserPermissionsPage() {
           Xem chi tiết
         </button>
       </header>
+
+      {/* Role Template Selection */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 soft-shadow">
+        <label className="block text-sm font-bold text-slate-700 mb-2">Gói quyền mặc định (Role Template)</label>
+        <select 
+          value={selectedTemplateId || ""} 
+          onChange={(e) => handleTemplateChange(e.target.value)}
+          className="w-full md:w-1/2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
+        >
+          <option value="">-- Không sử dụng gói (Chỉ cấu hình quyền thủ công) --</option>
+          {templates.map(t => (
+            <option key={t.id} value={t.id}>{t.name} - {t.description}</option>
+          ))}
+        </select>
+        {selectedTemplateId && (
+          <p className="text-xs text-slate-500 mt-2 font-medium">
+            Nhân viên này sẽ thừa hưởng toàn bộ <strong className="text-indigo-600">{templatePermissionIds.length} quyền</strong> từ gói.
+            Bạn có thể tích thêm (Override Add) hoặc bỏ tích (Override Deny) các quyền hạn bên dưới.
+          </p>
+        )}
+      </div>
 
       {/* Section Tabs */}
       <div className="flex gap-4">
@@ -431,6 +465,11 @@ export default function UserPermissionsPage() {
                           {groupPerms.map((perm: any) => {
                             const isChecked = allSelectedSet.has(perm.id);
                             const isDisabled = impliedPermissionIds.includes(perm.id);
+                            const isFromTemplate = templatePermissionIds.includes(perm.id);
+                            
+                            let overrideStatus = null;
+                            if (isFromTemplate && !isChecked) overrideStatus = "deny";
+                            if (!isFromTemplate && isChecked) overrideStatus = "add";
 
                             return (
                               <div
@@ -443,7 +482,11 @@ export default function UserPermissionsPage() {
                                     checked={isChecked}
                                     disabled={isDisabled}
                                     onChange={() => !isDisabled && handleTogglePermission(perm.id)}
-                                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer disabled:cursor-not-allowed mt-0.5"
+                                    className={`w-4 h-4 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed mt-0.5 ${
+                                      overrideStatus === 'add' ? 'text-indigo-600 accent-indigo-600' : 
+                                      isFromTemplate ? 'text-emerald-500 accent-emerald-500' : 
+                                      'text-slate-600 accent-slate-600'
+                                    }`}
                                     id={`perm-${perm.id}`}
                                   />
                                   <div className="shrink-0 w-9 h-9 bg-white rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors shadow-sm">
@@ -454,10 +497,13 @@ export default function UserPermissionsPage() {
                                   <div className="min-w-0">
                                     <label
                                       htmlFor={`perm-${perm.id}`}
-                                      className="font-bold text-slate-700 text-sm block cursor-pointer select-none hover:text-slate-900 truncate"
+                                      className="font-bold text-slate-700 text-sm flex items-center gap-2 cursor-pointer select-none hover:text-slate-900 truncate"
                                       title={perm.name}
                                     >
                                       {perm.name}
+                                      {overrideStatus === 'add' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Thêm</span>}
+                                      {overrideStatus === 'deny' && <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold line-through">Cấm</span>}
+                                      {!overrideStatus && isFromTemplate && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Gói</span>}
                                     </label>
                                     <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed" title={perm.description}>
                                       {perm.description || "Không có mô tả chi tiết"}
