@@ -13,8 +13,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const isLiked = isInWishlist(product.id);
   return (
-    <Link href={`/products/${product.id}`}>
-      <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group">
+    <Link href={`/products/${product.id}`} className="h-full flex flex-col">
+      <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between">
         {/* Product Image */}
         <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
           {product.image ? (
@@ -71,7 +71,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Info */}
-        <div className="p-4 flex flex-col justify-between h-[140px]">
+        <div className="p-4 flex flex-col justify-between flex-grow min-h-[140px]">
           {/* Top Section */}
           <div className="space-y-1">
             {/* Category */}
