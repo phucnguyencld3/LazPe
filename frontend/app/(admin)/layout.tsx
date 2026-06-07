@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "@/lib/toast";
 import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, UserNotificationItem } from "@/lib/api";
+import { getValidToken, clearAuth } from "@/lib/utils/auth";
 
 export default function AdminLayout({
   children,
@@ -14,6 +15,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   const [isAuth, setIsAuth] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -22,9 +24,31 @@ export default function AdminLayout({
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
 
+  // Synchronize token and isAuth with auth state
   useEffect(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) return;
+    const handleAuthChange = () => {
+      const currentToken = getValidToken();
+      setToken(currentToken);
+      if (!currentToken) {
+        setIsAuth(false);
+      }
+    };
+
+    handleAuthChange();
+
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+    };
+  }, []);
+
+  // Load notifications and setup SignalR connection reactively when token changes
+  useEffect(() => {
+    if (!token) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
 
     const loadNotifications = async (authToken: string) => {
       try {
@@ -67,10 +91,9 @@ export default function AdminLayout({
     return () => {
       connection.stop();
     };
-  }, []);
+  }, [token]);
 
   const handleMarkAllRead = async () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
     try {
       const result = await markAllNotificationsRead(token);
@@ -86,7 +109,6 @@ export default function AdminLayout({
 
   const handleNotificationClick = async (notif: UserNotificationItem) => {
     setIsNotifDropdownOpen(false);
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
 
     if (!notif.isRead) {
@@ -130,24 +152,29 @@ export default function AdminLayout({
     return date.toLocaleDateString("vi-VN");
   };
 
+  // Perform route guard checks on render and mount
   useEffect(() => {
+    const currentToken = getValidToken();
+    if (!currentToken) {
+      clearAuth();
+      setIsAuth(false);
+      window.location.replace("/login");
+      return;
+    }
+
     if (isAuth) return;
 
     const checkAuth = async () => {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token) {
-        window.location.replace("/login");
-        return;
-      }
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
         const res = await fetch(`${API_BASE_URL}/Authentication/current-user`, {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${currentToken}`
           }
         });
 
         if (!res.ok) {
+          clearAuth();
           window.location.replace("/login");
           return;
         }
@@ -159,11 +186,13 @@ export default function AdminLayout({
         const hasDashboardAccess = user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
         if (!data.success || !hasDashboardAccess) {
+          clearAuth();
           window.location.replace("/login");
         } else {
           setIsAuth(true);
         }
       } catch (e) {
+        clearAuth();
         window.location.replace("/login");
       }
     };

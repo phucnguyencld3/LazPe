@@ -9,10 +9,12 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import { toast } from "@/lib/toast";
 import * as signalR from "@microsoft/signalr";
+import { getValidToken, clearAuth } from "@/lib/utils/auth";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const { cartCount } = useCart();
   
   // Notifications states
@@ -30,11 +32,27 @@ export default function Header() {
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
 
+  // Synchronize token and isAuth with auth state and handle changes reactively
   useEffect(() => {
     setMounted(true);
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    setIsAuth(!!token);
 
+    const handleAuthChange = () => {
+      const currentToken = getValidToken();
+      setToken(currentToken);
+      setIsAuth(!!currentToken);
+    };
+
+    // Initial load
+    handleAuthChange();
+
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+    };
+  }, []);
+
+  // Load categories once on mount
+  useEffect(() => {
     const loadCategories = async () => {
       try {
         const data = await getCategories();
@@ -62,7 +80,16 @@ export default function Header() {
       }
     };
 
+    loadCategories();
+  }, []);
 
+  // Load notifications and setup SignalR connection reactively when token changes
+  useEffect(() => {
+    if (!token) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
 
     const loadNotifications = async (authToken: string) => {
       try {
@@ -77,45 +104,41 @@ export default function Header() {
       }
     };
 
-    loadCategories();
-    if (token) {
-      loadNotifications(token);
+    loadNotifications(token);
 
-      // Thiết lập kết nối SignalR
-      const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5101/notificationHub", {
-          accessTokenFactory: () => token
-        })
-        .withAutomaticReconnect()
-        .build();
+    // Thiết lập kết nối SignalR
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5101/notificationHub", {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect()
+      .build();
 
-      connection.on("ReceiveNotification", (notif: UserNotificationItem) => {
-        setNotifications((prev) => [notif, ...prev.slice(0, 4)]);
-        setUnreadCount((prev) => prev + 1);
-        
-        // Hiển thị toast popup thông báo mới nhận
-        toast.success(`Thông báo mới: ${notif.title}`);
+    connection.on("ReceiveNotification", (notif: UserNotificationItem) => {
+      setNotifications((prev) => [notif, ...prev.slice(0, 4)]);
+      setUnreadCount((prev) => prev + 1);
+      
+      // Hiển thị toast popup thông báo mới nhận
+      toast.success(`Thông báo mới: ${notif.title}`);
 
-        // Phát âm thanh thông báo
-        try {
-          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
-          audio.volume = 0.4;
-          audio.play();
-        } catch (e) {
-          // Trình duyệt có thể block tự động phát tiếng
-        }
-      });
+      // Phát âm thanh thông báo
+      try {
+        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
+        audio.volume = 0.4;
+        audio.play();
+      } catch (e) {
+        // Trình duyệt có thể block tự động phát tiếng
+      }
+    });
 
-      connection.start().catch((err) => console.error("SignalR connection error:", err));
+    connection.start().catch((err) => console.error("SignalR connection error:", err));
 
-      return () => {
-        connection.stop();
-      };
-    }
-  }, []);
+    return () => {
+      connection.stop();
+    };
+  }, [token]);
 
   const handleMarkAllRead = async () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
     try {
       const result = await markAllNotificationsRead(token);
@@ -131,7 +154,6 @@ export default function Header() {
 
   const handleNotificationClick = async (notif: UserNotificationItem) => {
     setIsNotifDropdownOpen(false);
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) return;
 
     if (!notif.isRead) {
@@ -176,11 +198,7 @@ export default function Header() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
-    setIsAuth(false);
+    clearAuth();
     window.location.href = "/";
   };
 
