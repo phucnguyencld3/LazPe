@@ -15,6 +15,8 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   
   // Notifications states
@@ -40,6 +42,21 @@ export default function Header() {
       const currentToken = getValidToken();
       setToken(currentToken);
       setIsAuth(!!currentToken);
+
+      if (currentToken) {
+        const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (savedUserJson) {
+          try {
+            setUser(JSON.parse(savedUserJson));
+          } catch (e) {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     };
 
     // Initial load
@@ -397,16 +414,97 @@ export default function Header() {
             )}
             
             {isAuth ? (
-              <div className="flex items-center gap-3">
-                <Link href="/profile" className="p-2 text-slate-600 hover:text-slate-900 transition-colors" title="Trang cá nhân">
-                  <User size={20} />
-                </Link>
-                <button 
-                  onClick={handleLogout}
-                  className="text-xs font-semibold text-rose-500 hover:text-rose-600 px-3 py-1.5 border border-rose-200 hover:border-rose-300 rounded-full transition-all"
-                >
-                  Đăng xuất
-                </button>
+              <div 
+                className="relative flex items-center h-full py-2"
+                onMouseEnter={() => setUserDropdownOpen(true)}
+                onMouseLeave={() => setUserDropdownOpen(false)}
+              >
+                {/* Avatar / Circle Trigger */}
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center transition-all duration-200 hover:border-rose-300 cursor-pointer">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={18} className="text-slate-600" />
+                  )}
+                </div>
+
+                {/* Dropdown Menu */}
+                <div className={`absolute right-0 top-full pt-2 w-64 origin-top-right z-50 before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 transition-all duration-150 ${
+                  userDropdownOpen 
+                    ? "opacity-100 pointer-events-auto scale-100" 
+                    : "opacity-0 pointer-events-none scale-95"
+                }`}>
+                  <div className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden py-2">
+                    {/* User Info Header */}
+                    <div className="px-4 py-3 border-b border-slate-50 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0 flex items-center justify-center">
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User size={20} className="text-slate-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-800 truncate leading-snug">
+                          {user?.fullName || "Người dùng"}
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-semibold truncate mt-0.5">
+                          {user?.email || ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="p-1 space-y-0.5">
+                      <Link
+                        href="/profile?tab=profile"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <span className="material-symbols-outlined text-base">person</span>
+                        Trang cá nhân
+                      </Link>
+                      <Link
+                        href="/profile?tab=orders"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <span className="material-symbols-outlined text-base">shopping_bag</span>
+                        Đơn hàng của tôi
+                      </Link>
+                      <Link
+                        href="/wishlist"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <span className="material-symbols-outlined text-base">favorite</span>
+                        Sản phẩm yêu thích
+                      </Link>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="border-t border-slate-50 p-1 mt-1">
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 transition-colors text-left"
+                      >
+                        <span className="material-symbols-outlined text-base">logout</span>
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-3">
@@ -514,23 +612,59 @@ export default function Header() {
             </Link>
             
             {isAuth ? (
-              <div className="border-t border-slate-100 pt-4 px-4 flex flex-col gap-2">
-                <Link
-                  href="/profile"
-                  className="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Trang cá nhân
-                </Link>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full text-center py-2 text-sm font-semibold text-rose-500 border border-rose-200 rounded-lg hover:bg-rose-50"
-                >
-                  Đăng xuất
-                </button>
+              <div className="border-t border-slate-100 pt-4 px-4 space-y-4">
+                {/* User card info */}
+                <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-3 border border-slate-100">
+                  <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 bg-white flex-shrink-0 flex items-center justify-center">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User size={22} className="text-slate-600" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 truncate leading-snug">
+                      {user?.fullName || "Người dùng"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-semibold truncate mt-0.5">
+                      {user?.email || ""}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Integrated Menu options */}
+                <div className="space-y-1">
+                  <Link
+                    href="/profile?tab=profile"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="material-symbols-outlined text-lg text-slate-400">person</span>
+                    Trang cá nhân
+                  </Link>
+                  <Link
+                    href="/profile?tab=orders"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="material-symbols-outlined text-lg text-slate-400">shopping_bag</span>
+                    Đơn hàng của tôi
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 transition-colors text-left"
+                  >
+                    <span className="material-symbols-outlined text-lg">logout</span>
+                    Đăng xuất
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="border-t border-slate-100 pt-4 px-4 flex flex-col gap-2">

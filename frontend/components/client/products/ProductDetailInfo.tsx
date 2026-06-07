@@ -1,6 +1,6 @@
 import React from "react";
 import { Star, Minus, Plus, ShoppingCart, Heart } from "lucide-react";
-import { Product } from "@/types";
+import { Product, Variant } from "@/types";
 
 interface ProductDetailInfoProps {
   product: Product;
@@ -19,6 +19,7 @@ interface ProductDetailInfoProps {
   handleAddToCart: () => void;
   isWishlisted: boolean;
   setIsWishlisted: (wishlisted: boolean) => void;
+  activeVariant?: Variant | null;
 }
 
 export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
@@ -38,6 +39,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   handleAddToCart,
   isWishlisted,
   setIsWishlisted,
+  activeVariant = null,
 }) => {
   return (
     <div className="flex flex-col justify-between">
@@ -98,24 +100,85 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
         {/* Price Display */}
         <div className="bg-slate-50/80 rounded-2xl p-4 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs text-slate-400 font-medium block mb-1">Giá bán lẻ</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-rose-600">
-                ₫{(displayDiscountPrice || displayPrice).toLocaleString("vi-VN")}
-              </span>
-              {hasDiscount && (
-                <span className="text-sm text-slate-400 line-through">
-                  ₫{displayPrice.toLocaleString("vi-VN")}
-                </span>
-              )}
-            </div>
-          </div>
-          {hasDiscount && displayDiscountPrice !== undefined && (
-            <div className="text-xs font-bold text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-1.5 h-fit">
-              Tiết kiệm ₫{(displayPrice - displayDiscountPrice).toLocaleString("vi-VN")}
-            </div>
-          )}
+          {(() => {
+            const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
+            
+            // If it's a variable product and no variant is currently resolved
+            if (hasVariants && !activeVariant) {
+              const minEff = product.minEffectivePrice ?? 0;
+              const maxEff = product.maxEffectivePrice ?? 0;
+              const minOrig = product.minPrice ?? 0;
+              const maxOrig = product.maxPrice ?? 0;
+              const hasRangeDiscount = product.minEffectivePrice !== undefined && product.minPrice !== undefined && product.minEffectivePrice < product.minPrice;
+
+              if (hasRangeDiscount) {
+                const discountRangeText = minEff === maxEff
+                  ? `₫${minEff.toLocaleString("vi-VN")}`
+                  : `₫${minEff.toLocaleString("vi-VN")} - ₫${maxEff.toLocaleString("vi-VN")}`;
+                const origRangeText = minOrig === maxOrig
+                  ? `₫${minOrig.toLocaleString("vi-VN")}`
+                  : `₫${minOrig.toLocaleString("vi-VN")} - ₫${maxOrig.toLocaleString("vi-VN")}`;
+
+                return (
+                  <>
+                    <div>
+                      <span className="text-xs text-slate-400 font-medium block mb-1">Giá bán lẻ</span>
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-2xl sm:text-3xl font-bold text-rose-600">
+                          {discountRangeText}
+                        </span>
+                        <span className="text-sm text-slate-400 line-through">
+                          {origRangeText}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-bold text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-1.5 h-fit">
+                      Có ưu đãi giảm giá
+                    </div>
+                  </>
+                );
+              } else {
+                const priceRangeText = minOrig === maxOrig
+                  ? `₫${minOrig.toLocaleString("vi-VN")}`
+                  : `₫${minOrig.toLocaleString("vi-VN")} - ₫${maxOrig.toLocaleString("vi-VN")}`;
+
+                return (
+                  <div>
+                    <span className="text-xs text-slate-400 font-medium block mb-1">Giá bán lẻ</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-bold text-slate-900">
+                        {priceRangeText}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+            }
+
+            // Default rendering (simple product OR active variant selected)
+            return (
+              <>
+                <div>
+                  <span className="text-xs text-slate-400 font-medium block mb-1">Giá bán lẻ</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-rose-600">
+                      ₫{(displayDiscountPrice || displayPrice).toLocaleString("vi-VN")}
+                    </span>
+                    {hasDiscount && (
+                      <span className="text-sm text-slate-400 line-through">
+                        ₫{displayPrice.toLocaleString("vi-VN")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {hasDiscount && displayDiscountPrice !== undefined && (
+                  <div className="text-xs font-bold text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-1.5 h-fit">
+                    Tiết kiệm ₫{(displayPrice - displayDiscountPrice).toLocaleString("vi-VN")}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Dynamic Variants Selectors (Text Only) */}

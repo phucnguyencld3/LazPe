@@ -13,8 +13,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const isLiked = isInWishlist(product.id);
   return (
-    <Link href={`/products/${product.id}`}>
-      <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group">
+    <Link href={`/products/${product.id}`} className="h-full flex flex-col">
+      <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between">
         {/* Product Image */}
         <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
           {product.image ? (
@@ -71,7 +71,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Info */}
-        <div className="p-4 flex flex-col justify-between h-[140px]">
+        <div className="p-4 flex flex-col justify-between flex-grow min-h-[140px]">
           {/* Top Section */}
           <div className="space-y-1">
             {/* Category */}
@@ -115,21 +115,62 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Bottom Section */}
           <div className="space-y-1">
             {/* Price */}
-            <div className="flex items-center gap-2">
-              {product.discountPrice && product.discountPrice < product.price ? (
-                <>
-                  <span className="text-base font-bold text-rose-600">
-                    ₫{product.discountPrice.toLocaleString("vi-VN")}
-                  </span>
-                  <span className="text-xs text-slate-400 line-through">
-                    ₫{product.price.toLocaleString("vi-VN")}
-                  </span>
-                </>
-              ) : (
-                <span className="text-base font-bold text-slate-900">
-                  ₫{product.price.toLocaleString("vi-VN")}
-                </span>
-              )}
+            <div className="flex items-baseline gap-1 flex-wrap overflow-hidden whitespace-nowrap">
+              {(() => {
+                const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
+                const hasDiscount = hasVariants
+                  ? (product.minEffectivePrice !== undefined && product.minPrice !== undefined && product.minEffectivePrice < product.minPrice)
+                  : (product.discountPrice !== undefined && product.discountPrice < product.price);
+
+                if (hasVariants) {
+                  const minEff = product.minEffectivePrice ?? 0;
+                  const maxEff = product.maxEffectivePrice ?? 0;
+                  const minOrig = product.minPrice ?? 0;
+                  const maxOrig = product.maxPrice ?? 0;
+
+                  if (hasDiscount) {
+                    const discountRangeText = minEff === maxEff
+                      ? `₫${minEff.toLocaleString("vi-VN")}`
+                      : `₫${minEff.toLocaleString("vi-VN")} - ₫${maxEff.toLocaleString("vi-VN")}`;
+
+                    return (
+                      <span className="text-[11px] sm:text-xs md:text-sm font-extrabold text-rose-600 whitespace-nowrap truncate" title={discountRangeText}>
+                        {discountRangeText}
+                      </span>
+                    );
+                  } else {
+                    const priceRangeText = minOrig === maxOrig
+                      ? `₫${minOrig.toLocaleString("vi-VN")}`
+                      : `₫${minOrig.toLocaleString("vi-VN")} - ₫${maxOrig.toLocaleString("vi-VN")}`;
+
+                    return (
+                      <span className="text-[11px] sm:text-xs md:text-sm font-extrabold text-slate-900 whitespace-nowrap truncate" title={priceRangeText}>
+                        {priceRangeText}
+                      </span>
+                    );
+                  }
+                } else {
+                  // Fallback for simple products
+                  if (hasDiscount && product.discountPrice) {
+                    return (
+                      <>
+                        <span className="text-xs sm:text-sm md:text-base font-bold text-rose-600 whitespace-nowrap">
+                          ₫{product.discountPrice.toLocaleString("vi-VN")}
+                        </span>
+                        <span className="text-[10px] sm:text-xs text-slate-400 line-through whitespace-nowrap">
+                          ₫{product.price.toLocaleString("vi-VN")}
+                        </span>
+                      </>
+                    );
+                  } else {
+                    return (
+                      <span className="text-xs sm:text-sm md:text-base font-bold text-slate-900 whitespace-nowrap">
+                        ₫{product.price.toLocaleString("vi-VN")}
+                      </span>
+                    );
+                  }
+                }
+              })()}
             </div>
 
             {/* Stock Indicator */}
