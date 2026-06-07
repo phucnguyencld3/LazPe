@@ -309,6 +309,18 @@ export default function ProfilePage() {
   const handleAvatarUpdated = (newAvatarUrl: string) => {
     if (userProfile) {
       setUserProfile({ ...userProfile, avatar: newAvatarUrl });
+
+      const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (savedUserJson) {
+        const userObj = JSON.parse(savedUserJson);
+        userObj.avatar = newAvatarUrl;
+        if (localStorage.getItem("user")) {
+          localStorage.setItem("user", JSON.stringify(userObj));
+        } else {
+          sessionStorage.setItem("user", JSON.stringify(userObj));
+        }
+        window.dispatchEvent(new Event("auth-change"));
+      }
     }
   };
 
