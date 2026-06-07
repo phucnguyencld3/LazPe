@@ -35,23 +35,23 @@ export const CartItemList: React.FC<CartItemListProps> = ({
             type="checkbox"
             checked={isAllChecked()}
             onChange={handleToggleAllChecks}
-            className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary transition-all cursor-pointer"
+            className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 transition-all cursor-pointer"
           />
-          <span className="font-quicksand font-bold text-slate-800 group-hover:text-primary transition-colors text-sm">
+          <span className="font-bold text-slate-800 group-hover:text-rose-500 transition-colors text-sm">
             Chọn tất cả ({cart.cartDetails.length})
           </span>
         </label>
         <div className="flex gap-4">
           <button
             onClick={handleRemoveSelectedItems}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-error transition-colors font-bold text-xs"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-rose-500 transition-colors font-bold text-xs"
           >
             <Trash2 size={14} />
             Xóa mục đã chọn
           </button>
           <button
             onClick={handleClearAllCart}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-error transition-colors font-bold text-xs border-l border-slate-200 pl-4"
+            className="flex items-center gap-1.5 text-slate-400 hover:text-rose-500 transition-colors font-bold text-xs border-l border-slate-200 pl-4"
           >
             Xóa sạch giỏ hàng
           </button>
@@ -77,7 +77,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
               key={detail.cartDetailID}
               className={`bg-white p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-md items-center group transition-all border ${
                 isChecked 
-                  ? "border-primary-container bg-primary-container/2" 
+                  ? "border-rose-200 bg-rose-500/[0.02]" 
                   : "border-slate-100 hover:border-slate-200"
               }`}
             >
@@ -85,7 +85,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 type="checkbox"
                 checked={isChecked}
                 onChange={() => handleToggleCheck(detail.cartDetailID)}
-                className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary shrink-0 transition-all cursor-pointer"
+                className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 shrink-0 transition-all cursor-pointer"
               />
               
               {/* Product Image */}
@@ -105,7 +105,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
               {/* Product Info */}
               <div className="flex-grow space-y-1 text-center sm:text-left">
-                <h3 className="font-quicksand font-bold text-lg text-slate-800 hover:text-primary transition-colors">
+                <h3 className="font-bold text-lg text-slate-800 hover:text-rose-500 transition-colors">
                   {isBundle ? (
                     name
                   ) : (
@@ -117,7 +117,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 <p className="text-on-surface-variant text-xs font-semibold bg-slate-50 px-2 py-0.5 rounded inline-block">
                   {subtext}
                 </p>
-                <p className="text-primary font-bold text-base pt-1">
+                <p className="text-rose-500 font-extrabold text-base pt-1">
                   ₫{price.toLocaleString("vi-VN")}
                 </p>
               </div>
@@ -127,7 +127,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 <div className="flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
                   <button
                     onClick={() => handleUpdateQuantity(detail, detail.quantity - 1)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-primary transition-all active:scale-90"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
                   >
                     <Minus size={12} />
                   </button>
@@ -136,7 +136,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   </span>
                   <button
                     onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-primary transition-all active:scale-90"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
                   >
                     <Plus size={12} />
                   </button>
@@ -144,7 +144,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 
                 <button
                   onClick={() => handleRemoveItem(detail.cartDetailID)}
-                  className="material-symbols-outlined text-slate-400 hover:text-error p-2 hover:bg-red-50 rounded-full transition-all active:scale-90"
+                  className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-full transition-all active:scale-90"
                 >
                   delete
                 </button>
