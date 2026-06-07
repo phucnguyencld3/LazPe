@@ -129,31 +129,31 @@ export default function ProductCard({ product }: ProductCardProps) {
                   const maxOrig = product.maxPrice ?? 0;
 
                   if (hasDiscount) {
-                    const discountRangeText = minEff === maxEff
+                    const discountText = minEff === maxEff
                       ? `₫${minEff.toLocaleString("vi-VN")}`
-                      : `₫${minEff.toLocaleString("vi-VN")} - ₫${maxEff.toLocaleString("vi-VN")}`;
-                    const origRangeText = minOrig === maxOrig
+                      : `Từ ₫${minEff.toLocaleString("vi-VN")}`;
+                    const origText = minOrig === maxOrig
                       ? `₫${minOrig.toLocaleString("vi-VN")}`
-                      : `₫${minOrig.toLocaleString("vi-VN")} - ₫${maxOrig.toLocaleString("vi-VN")}`;
+                      : `Từ ₫${minOrig.toLocaleString("vi-VN")}`;
 
                     return (
                       <>
-                        <span className="text-sm sm:text-base font-bold text-rose-600">
-                          {discountRangeText}
+                        <span className="text-sm sm:text-base font-bold text-rose-600 whitespace-nowrap">
+                          {discountText}
                         </span>
-                        <span className="text-[10px] sm:text-xs text-slate-400 line-through">
-                          {origRangeText}
+                        <span className="text-[10px] sm:text-xs text-slate-400 line-through whitespace-nowrap">
+                          {origText}
                         </span>
                       </>
                     );
                   } else {
-                    const priceRangeText = minOrig === maxOrig
+                    const priceText = minOrig === maxOrig
                       ? `₫${minOrig.toLocaleString("vi-VN")}`
-                      : `₫${minOrig.toLocaleString("vi-VN")} - ₫${maxOrig.toLocaleString("vi-VN")}`;
+                      : `Từ ₫${minOrig.toLocaleString("vi-VN")}`;
 
                     return (
-                      <span className="text-sm sm:text-base font-bold text-slate-900">
-                        {priceRangeText}
+                      <span className="text-sm sm:text-base font-bold text-slate-900 whitespace-nowrap">
+                        {priceText}
                       </span>
                     );
                   }
@@ -162,17 +162,17 @@ export default function ProductCard({ product }: ProductCardProps) {
                   if (hasDiscount && product.discountPrice) {
                     return (
                       <>
-                        <span className="text-sm sm:text-base font-bold text-rose-600">
+                        <span className="text-sm sm:text-base font-bold text-rose-600 whitespace-nowrap">
                           ₫{product.discountPrice.toLocaleString("vi-VN")}
                         </span>
-                        <span className="text-[10px] sm:text-xs text-slate-400 line-through">
+                        <span className="text-[10px] sm:text-xs text-slate-400 line-through whitespace-nowrap">
                           ₫{product.price.toLocaleString("vi-VN")}
                         </span>
                       </>
                     );
                   } else {
                     return (
-                      <span className="text-sm sm:text-base font-bold text-slate-900">
+                      <span className="text-sm sm:text-base font-bold text-slate-900 whitespace-nowrap">
                         ₫{product.price.toLocaleString("vi-VN")}
                       </span>
                     );
