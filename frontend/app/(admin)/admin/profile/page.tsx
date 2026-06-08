@@ -14,7 +14,8 @@ import {
   Eye, 
   EyeOff, 
   Check, 
-  AlertCircle 
+  AlertCircle,
+  Bell
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { 
@@ -22,6 +23,7 @@ import {
   updateUserProfile, 
   changePassword, 
   uploadAvatar,
+  updateNotificationSettings,
   UserProfile 
 } from "@/lib/api";
 
@@ -50,6 +52,12 @@ export default function AdminProfilePage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Form States - Notification Settings
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [orderUpdates, setOrderUpdates] = useState(true);
+  const [promotions, setPromotions] = useState(true);
+  const [updatingNotifications, setUpdatingNotifications] = useState(false);
 
   // Initialize data on mount
   useEffect(() => {
@@ -87,6 +95,11 @@ export default function AdminProfilePage() {
         setProfile(data);
         setFullName(data.fullName);
         setPhoneNumber(data.phoneNumber || "");
+        
+        // Initialize notifications states
+        setEmailNotifications((data as any).receiveEmailNotifications ?? true);
+        setOrderUpdates((data as any).receiveOrderUpdates ?? true);
+        setPromotions((data as any).receivePromotions ?? true);
       }
     } catch (err) {
       console.error("Error fetching user profile:", err);
@@ -236,6 +249,40 @@ export default function AdminProfilePage() {
       toast.error("Lỗi kết nối khi đổi mật khẩu");
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  // Handle Notification Settings Update
+  const handleUpdateNotifications = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId || !token) return;
+
+    setUpdatingNotifications(true);
+    try {
+      const result = await updateNotificationSettings(userId, token, {
+        emailNotifications,
+        orderUpdates,
+        promotions
+      });
+
+      if (result.success) {
+        toast.success("Cập nhật cài đặt nhận thông báo thành công!");
+        if (profile) {
+          setProfile({
+            ...profile,
+            receiveEmailNotifications: emailNotifications,
+            receiveOrderUpdates: orderUpdates,
+            receivePromotions: promotions
+          } as any);
+        }
+      } else {
+        toast.error(result.message || "Không thể cập nhật cài đặt nhận thông báo");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối khi cập nhật cài đặt thông báo");
+    } finally {
+      setUpdatingNotifications(false);
     }
   };
 
@@ -548,36 +595,112 @@ export default function AdminProfilePage() {
             </form>
           </div>
 
-          {/* Card 3: Permissions & Roles list */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
-            <div>
-              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
-                <Shield size={20} className="text-indigo-500" /> Quyền Hạn Tài Khoản (Permissions)
-              </h3>
-              <p className="text-sm text-slate-450 font-semibold mt-1">
-                Danh sách chi tiết các quyền chức năng hiện có của tài khoản trong hệ thống quản trị.
-              </p>
+          {/* Grid Layout for Notifications and Permissions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Card 3: Notification Settings */}
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <Bell size={20} className="text-rose-500" /> Cài Đặt Thông Báo
+                  </h3>
+                  <p className="text-sm text-slate-400 font-semibold mt-1">Cấu hình nhận thông báo hệ thống và email cá nhân.</p>
+                </div>
+
+                <form onSubmit={handleUpdateNotifications} className="space-y-3">
+                  <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-xl transition-all cursor-pointer select-none">
+                    <div className="flex flex-col text-left pr-2">
+                      <span className="text-sm font-bold text-slate-800">Email thông báo</span>
+                      <span className="text-[11px] text-slate-400 font-semibold mt-0.5 leading-snug">Nhận thông báo qua hòm thư điện tử.</span>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={emailNotifications} 
+                      onChange={(e) => setEmailNotifications(e.target.checked)}
+                      className="w-5 h-5 rounded border-slate-350 text-rose-500 focus:ring-rose-400 cursor-pointer accent-rose-500 flex-shrink-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-xl transition-all cursor-pointer select-none">
+                    <div className="flex flex-col text-left pr-2">
+                      <span className="text-sm font-bold text-slate-800">Cập nhật đơn hàng</span>
+                      <span className="text-[11px] text-slate-400 font-semibold mt-0.5 leading-snug">Nhận tin báo trạng thái đơn hàng mua sắm.</span>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={orderUpdates} 
+                      onChange={(e) => setOrderUpdates(e.target.checked)}
+                      className="w-5 h-5 rounded border-slate-350 text-rose-500 focus:ring-rose-400 cursor-pointer accent-rose-500 flex-shrink-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-xl transition-all cursor-pointer select-none">
+                    <div className="flex flex-col text-left pr-2">
+                      <span className="text-sm font-bold text-slate-800">Tin tức & Khuyến mãi</span>
+                      <span className="text-[11px] text-slate-400 font-semibold mt-0.5 leading-snug">Nhận bản tin khuyến mãi và tin tức mới nhất.</span>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={promotions} 
+                      onChange={(e) => setPromotions(e.target.checked)}
+                      className="w-5 h-5 rounded border-slate-350 text-rose-500 focus:ring-rose-400 cursor-pointer accent-rose-500 flex-shrink-0"
+                    />
+                  </label>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={updatingNotifications}
+                      className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md shadow-rose-500/10 transition-all cursor-pointer"
+                    >
+                      {updatingNotifications ? (
+                        <>
+                          <Loader className="animate-spin" size={14} /> Đang lưu...
+                        </>
+                      ) : (
+                        "Lưu cài đặt"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
 
-            <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50">
-              {permissions.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-sm font-semibold">
-                  <Shield size={24} className="mx-auto mb-2 text-slate-300" />
-                  Tài khoản không được cấp quyền hạn riêng lẻ nào.
+            {/* Card 4: Permissions & Roles list */}
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <Shield size={20} className="text-indigo-500" /> Quyền Hạn Tài Khoản (Permissions)
+                  </h3>
+                  <p className="text-sm text-slate-450 font-semibold mt-1">
+                    Danh sách chi tiết các quyền chức năng hiện có của tài khoản trong hệ thống quản trị.
+                  </p>
                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {permissions.map((perm: string) => (
-                    <span 
-                      key={perm} 
-                      className="text-xs font-mono font-bold px-3 py-1.5 bg-white border border-slate-200/80 shadow-sm text-slate-600 hover:text-indigo-600 rounded-lg transition-colors cursor-default"
-                    >
-                      {perm}
-                    </span>
-                  ))}
+
+                <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 flex-1 min-h-[150px] overflow-y-auto" style={{ maxHeight: "250px" }}>
+                  {permissions.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-sm font-semibold">
+                      <Shield size={24} className="mx-auto mb-2 text-slate-300" />
+                      Tài khoản không được cấp quyền hạn riêng lẻ nào.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {permissions.map((perm: string) => (
+                        <span 
+                          key={perm} 
+                          className="text-xs font-mono font-bold px-3 py-1.5 bg-white border border-slate-200/80 shadow-sm text-slate-600 hover:text-indigo-600 rounded-lg transition-colors cursor-default"
+                        >
+                          {perm}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
+
           </div>
 
         </div>
