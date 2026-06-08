@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getValidToken } from "@/lib/utils/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,29 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
+  useEffect(() => {
+    const token = getValidToken();
+    if (token) {
+      const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (savedUserJson) {
+        try {
+          const user = JSON.parse(savedUserJson);
+          const roles = user?.roles || [];
+          const permissions = user?.permissions || [];
+          const hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
+          
+          if (hasDashboardAccess) {
+            window.location.replace("/admin");
+          } else {
+            window.location.replace("/");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +70,7 @@ export default function LoginPage() {
           sessionStorage.setItem("user", JSON.stringify(data.user));
         }
         
-        // Chuyển hướng: Admin hoặc User có quyền Admin.Access về trang quản trị, còn lại về trang chủ
+        // Chuyển hướng: Admin hoặc User có các quyền được gán về trang quản trị, còn lại về trang chủ
         let hasDashboardAccess = false;
         try {
           const user = data.user;
@@ -58,7 +82,7 @@ export default function LoginPage() {
           console.log("Roles:", roles);
           console.log("Permissions:", permissions);
           
-          hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access"));
+          hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
           console.log("hasDashboardAccess:", hasDashboardAccess);
         } catch (evalError) {
           console.error("Error evaluating redirect:", evalError);
