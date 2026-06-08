@@ -103,9 +103,9 @@ export default function ImportPage() {
     };
 
     const getStatusStyle = (isValid: boolean, hasDuplicate: boolean) => {
-        if (hasDuplicate) return "bg-warning-container text-on-warning-container";
-        if (!isValid) return "bg-error text-white";
-        return "bg-primary-container text-on-primary-container";
+        if (hasDuplicate) return "bg-amber-100 text-amber-800";
+        if (!isValid) return "bg-rose-600 text-white";
+        return "bg-green-100 text-green-800";
     };
 
     const getStatusLabel = (isValid: boolean, hasDuplicate: boolean) => {
@@ -299,9 +299,13 @@ export default function ImportPage() {
                         </button>
                         <button
                             onClick={proceedToCommit}
-                            className={`px-8 py-2 rounded-full font-bold text-white shadow-md transition-transform hover:scale-105 ${previewData.errors?.length > 0 || previewData.duplicates?.length > 0 ? "bg-warning" : "bg-primary"}`}
+                            className={`px-8 py-2 rounded-full font-bold text-white shadow-md transition-transform hover:scale-105 ${
+                                previewData.errors?.length > 0 || previewData.duplicates?.length > 0
+                                    ? "bg-amber-500 hover:bg-amber-600"
+                                    : "bg-primary hover:bg-primary/90"
+                            }`}
                         >
-                            {(previewData.errors?.length > 0 || previewData.duplicates?.length > 0) ? "Cần xử lý Lỗi/Trùng lặp" : "Tiến hành Import"}
+                            {(previewData.errors?.length > 0 || previewData.duplicates?.length > 0) ? "⚠ Cần xử lý Lỗi/Trùng lặp" : "Tiến hành Import"}
                         </button>
                     </div>
                 </div>

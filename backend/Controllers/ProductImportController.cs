@@ -25,6 +25,9 @@ namespace PolyBabyAPI.Controllers
             _logger = logger;
         }
 
+        // ─────────────────────────────────────────────
+        // GET /api/ProductImport/template
+        // ─────────────────────────────────────────────
         [HttpGet("template")]
         [AllowAnonymous]
         public IActionResult DownloadTemplate()
@@ -66,7 +69,7 @@ namespace PolyBabyAPI.Controllers
             variantsSheet.Cell(1, 7).Value = "ImageUrl";
 
             variantsSheet.Cell(2, 1).Value = "SP-AO-001";
-            variantsSheet.Cell(2, 2).Value = "SP-AO-001-XANH-S";
+            variantsSheet.Cell(2, 2).Value = "SP-AO-001-001";
             variantsSheet.Cell(2, 3).Value = "Xanh";
             variantsSheet.Cell(2, 4).Value = "S";
             variantsSheet.Cell(2, 5).Value = "150000";
@@ -80,6 +83,9 @@ namespace PolyBabyAPI.Controllers
             return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProductImportTemplate.xlsx");
         }
 
+        // ─────────────────────────────────────────────
+        // POST /api/ProductImport/validate
+        // ─────────────────────────────────────────────
         [HttpPost("validate")]
         [Permission("Product.Create")]
         public async Task<IActionResult> ValidateImport(IFormFile file)
@@ -88,7 +94,7 @@ namespace PolyBabyAPI.Controllers
                 return BadRequest("Vui lòng tải lên file Excel");
 
             var response = new ValidateImportResponseDto();
-            
+
             try
             {
                 using var stream = new MemoryStream();
@@ -102,7 +108,7 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest("File không đúng định dạng mẫu. Cần có 2 sheet 'Products' và 'Variants'.");
 
                 // Parse Products
-                var productRows = productsSheet.RowsUsed().Skip(1); // skip header
+                var productRows = productsSheet.RowsUsed().Skip(1);
                 var inFileDataProducts = new HashSet<string>();
 
                 foreach (var row in productRows)
@@ -126,12 +132,12 @@ namespace PolyBabyAPI.Controllers
                         Option2Values = row.Cell(11).GetString().Trim()
                     };
 
-                    // Basic Validations
                     if (string.IsNullOrEmpty(pDto.ProductName))
                     {
                         pDto.IsValid = false;
                         response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "ProductName", Message = "Tên sản phẩm trống" });
                     }
+
                     if (string.IsNullOrEmpty(pDto.CategoryName))
                     {
                         pDto.IsValid = false;
@@ -164,7 +170,6 @@ namespace PolyBabyAPI.Controllers
                         else pDto.SupplierId = sup.SupplierID;
                     }
 
-                    // Duplicates within file
                     if (inFileDataProducts.Contains(pDto.ProductCode))
                     {
                         pDto.IsValid = false;
@@ -175,7 +180,6 @@ namespace PolyBabyAPI.Controllers
                         inFileDataProducts.Add(pDto.ProductCode);
                     }
 
-                    // Duplicates in DB
                     var existingProd = await _context.Products.FirstOrDefaultAsync(p => p.Code == pDto.ProductCode);
                     if (existingProd != null)
                     {
@@ -247,6 +251,9 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        // ─────────────────────────────────────────────
+        // POST /api/ProductImport/commit
+        // ─────────────────────────────────────────────
         [HttpPost("commit")]
         [Permission("Product.Create")]
         public async Task<IActionResult> CommitImport([FromBody] ImportCommitRequestDto request)
@@ -256,34 +263,64 @@ namespace PolyBabyAPI.Controllers
 
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
 
+            // Pre-load all categories & suppliers to resolve name → ID
+            // Use GroupBy to handle duplicate names gracefully (take first match)
+            var allCategoriesRaw = await _context.Categories.ToListAsync();
+            var allCategories = allCategoriesRaw
+                .GroupBy(c => c.CategoryName.ToLower())
+                .ToDictionary(g => g.Key, g => g.First().CategoryID);
+
+            var allSuppliersRaw = await _context.Suppliers.ToListAsync();
+            var allSuppliers = allSuppliersRaw
+                .GroupBy(s => s.SupplierName.ToLower())
+                .ToDictionary(g => g.Key, g => g.First().SupplierID);
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var actionDict = request.ActionableDuplicates.ToDictionary(
-                    d => d.ItemCode, 
-                    d => d.ResolvingAction // Skip, Update, CreateNew
-                );
+                var actionDict = request.ActionableDuplicates
+                    .GroupBy(d => d.ItemCode)
+                    .ToDictionary(g => g.Key, g => g.First().ResolvingAction);
 
-                var productCodeMap = new Dictionary<string, int>(); // map ProductCode in excel to DB ProductID
+                var productCodeMap = new Dictionary<string, int>(); // excel code → DB ProductID
 
+                // ── Products ──────────────────────────────────────────────
                 foreach (var pDto in request.Products)
                 {
                     if (!pDto.IsValid) continue;
 
-                    string finalCode = pDto.ProductCode;
-                    bool skip = false;
-                    bool update = false;
+                    // Resolve CategoryId / SupplierId from name if ID is 0
+                    int resolvedCategoryId = pDto.CategoryId;
+                    if (resolvedCategoryId <= 0 && !string.IsNullOrEmpty(pDto.CategoryName))
+                        allCategories.TryGetValue(pDto.CategoryName.ToLower(), out resolvedCategoryId);
 
-                    if (actionDict.TryGetValue(pDto.ProductCode, out var action))
+                    int resolvedSupplierId = pDto.SupplierId;
+                    if (resolvedSupplierId <= 0 && !string.IsNullOrEmpty(pDto.SupplierName))
+                        allSuppliers.TryGetValue(pDto.SupplierName.ToLower(), out resolvedSupplierId);
+
+                    if (resolvedCategoryId <= 0)
                     {
-                        if (action == "Skip") skip = true;
-                        else if (action == "Update") update = true;
-                        else if (action == "CreateNew") finalCode = pDto.ProductCode + "-" + Guid.NewGuid().ToString().Substring(0,4);
+                        _logger.LogWarning("Bỏ qua sản phẩm {Code}: không tìm thấy danh mục '{Cat}'", pDto.ProductCode, pDto.CategoryName);
+                        continue;
                     }
 
-                    if (skip) 
+                    // Determine action (Skip / Update / CreateNew)
+                    string finalCode = pDto.ProductCode;
+                    bool skip = false, update = false;
+
+                    if (actionDict.TryGetValue(pDto.ProductCode, out var prodAction))
                     {
-                        var extId = await _context.Products.Where(p => p.Code == pDto.ProductCode).Select(p => p.ProductID).FirstOrDefaultAsync();
+                        if (prodAction == "Skip")        skip = true;
+                        else if (prodAction == "Update") update = true;
+                        else if (prodAction == "CreateNew") finalCode = pDto.ProductCode + "-" + Guid.NewGuid().ToString()[..4];
+                    }
+
+                    if (skip)
+                    {
+                        var extId = await _context.Products
+                            .Where(p => p.Code == pDto.ProductCode)
+                            .Select(p => p.ProductID)
+                            .FirstOrDefaultAsync();
                         if (extId > 0) productCodeMap[pDto.ProductCode] = extId;
                         continue;
                     }
@@ -291,157 +328,169 @@ namespace PolyBabyAPI.Controllers
                     Product prod;
                     if (update)
                     {
-                        prod = await _context.Products.Include(p => p.ProductOptions).FirstOrDefaultAsync(p => p.Code == pDto.ProductCode);
-                        if (prod == null) { skip = true; continue; } // shouldn't happen
-                        
+                        prod = await _context.Products
+                            .Include(p => p.ProductOptions)
+                            .FirstOrDefaultAsync(p => p.Code == pDto.ProductCode);
+                        if (prod == null) continue;
+
                         prod.ProductName = pDto.ProductName;
-                        prod.Description = pDto.Description;
-                        prod.CategoryID = pDto.CategoryId;
-                        prod.SupplierID = pDto.SupplierId;
-                        prod.Price = pDto.BasePrice;
-                        prod.Status = pDto.Status?.ToLower() == "true";
+                        prod.Description = string.IsNullOrEmpty(pDto.Description) ? prod.Description : pDto.Description;
+                        prod.CategoryID  = resolvedCategoryId;
+                        prod.SupplierID  = resolvedSupplierId > 0 ? resolvedSupplierId : prod.SupplierID;
+                        prod.Price       = pDto.BasePrice;
+                        prod.Status      = pDto.Status?.ToLower() == "true";
                     }
                     else
                     {
                         prod = new Product
                         {
-                            Code = finalCode,
+                            Code        = finalCode,
                             ProductName = pDto.ProductName,
-                            Description = pDto.Description,
-                            CategoryID = pDto.CategoryId,
-                            SupplierID = pDto.SupplierId,
-                            Price = pDto.BasePrice,
-                            Status = pDto.Status?.ToLower() == "true",
-                            CreatedAt = DateTime.Now,
-                            CreatedBy = currentUserId
+                            Description = string.IsNullOrEmpty(pDto.Description) ? "Nhập từ Excel" : pDto.Description,
+                            CategoryID  = resolvedCategoryId,
+                            SupplierID  = resolvedSupplierId > 0 ? resolvedSupplierId : allSuppliers.Values.FirstOrDefault(),
+                            Price       = pDto.BasePrice,
+                            Status      = pDto.Status?.ToLower() != "false",
+                            CreatedAt   = DateTime.Now,
+                            CreatedBy   = currentUserId
                         };
                         _context.Products.Add(prod);
                     }
-                    
+
                     await _context.SaveChangesAsync();
                     productCodeMap[pDto.ProductCode] = prod.ProductID;
 
-                    // Options logic
+                    // Create Options
                     if (!string.IsNullOrEmpty(pDto.Option1Name))
                     {
-                        var opt1 = prod.ProductOptions?.FirstOrDefault(o => o.Name == pDto.Option1Name);
-                        if (opt1 == null) 
+                        bool exists = await _context.ProductOptions
+                            .AnyAsync(o => o.ProductID == prod.ProductID && o.Name == pDto.Option1Name);
+                        if (!exists)
                         {
-                            opt1 = new ProductOption { ProductID = prod.ProductID, Name = pDto.Option1Name, DisplayOrder = 1, CreatedBy = currentUserId };
-                            _context.ProductOptions.Add(opt1);
+                            _context.ProductOptions.Add(new ProductOption
+                            {
+                                ProductID = prod.ProductID, Name = pDto.Option1Name, DisplayOrder = 1, CreatedBy = currentUserId
+                            });
                             await _context.SaveChangesAsync();
                         }
                     }
                     if (!string.IsNullOrEmpty(pDto.Option2Name))
                     {
-                         var opt2 = prod.ProductOptions?.FirstOrDefault(o => o.Name == pDto.Option2Name);
-                         if (opt2 == null)
-                         {
-                             opt2 = new ProductOption { ProductID = prod.ProductID, Name = pDto.Option2Name, DisplayOrder = 2, CreatedBy = currentUserId };
-                             _context.ProductOptions.Add(opt2);
-                             await _context.SaveChangesAsync();
-                         }
+                        bool exists = await _context.ProductOptions
+                            .AnyAsync(o => o.ProductID == prod.ProductID && o.Name == pDto.Option2Name);
+                        if (!exists)
+                        {
+                            _context.ProductOptions.Add(new ProductOption
+                            {
+                                ProductID = prod.ProductID, Name = pDto.Option2Name, DisplayOrder = 2, CreatedBy = currentUserId
+                            });
+                            await _context.SaveChangesAsync();
+                        }
                     }
                 }
 
+                // ── Variants ──────────────────────────────────────────────
                 foreach (var vDto in request.Variants)
                 {
                     if (!vDto.IsValid) continue;
-                    if (!productCodeMap.TryGetValue(vDto.ProductCode, out int prodId)) continue; // skipped product
+                    if (!productCodeMap.TryGetValue(vDto.ProductCode, out int prodId)) continue;
 
-                    var prod = await _context.Products.Include(p => p.ProductOptions).ThenInclude(po => po.ProductOptionValues).FirstOrDefaultAsync(p => p.ProductID == prodId);
+                    var prod = await _context.Products
+                        .Include(p => p.ProductOptions)
+                        .ThenInclude(po => po.ProductOptionValues)
+                        .FirstOrDefaultAsync(p => p.ProductID == prodId);
                     if (prod == null) continue;
 
                     string finalSku = vDto.SKU;
-                    bool skip = false;
-                    bool update = false;
+                    bool skip = false, update = false;
 
-                    if (actionDict.TryGetValue(vDto.SKU, out var action))
+                    if (actionDict.TryGetValue(vDto.SKU, out var varAction))
                     {
-                        if (action == "Skip") skip = true;
-                        else if (action == "Update") update = true;
-                        else if (action == "CreateNew") finalSku = vDto.SKU + "-" + Guid.NewGuid().ToString().Substring(0,4);
+                        if (varAction == "Skip")        skip = true;
+                        else if (varAction == "Update") update = true;
+                        else if (varAction == "CreateNew") finalSku = vDto.SKU + "-" + Guid.NewGuid().ToString()[..4];
                     }
 
                     if (skip) continue;
 
-                    Variant v;
+                    string variantName = $"{prod.ProductName} - {vDto.Option1Value} {vDto.Option2Value}".Trim(' ', '-').Trim();
+
                     if (update)
                     {
-                        v = await _context.Variants.FirstOrDefaultAsync(v => v.SKU == vDto.SKU);
-                        if (v != null)
+                        var existing = await _context.Variants.FirstOrDefaultAsync(v => v.SKU == vDto.SKU);
+                        if (existing != null)
                         {
-                            v.VariantName = $"{prod.ProductName} - {vDto.Option1Value} {vDto.Option2Value}".Trim();
-                            v.UnitPrice = vDto.Price;
-                            v.Stock = vDto.Stock;
-                            v.ImageUrl = vDto.ImageUrl;
-                            v.Description = $"Biến thể {v.VariantName}";
+                            existing.VariantName = string.IsNullOrEmpty(variantName) ? existing.VariantName : variantName;
+                            existing.UnitPrice   = vDto.Price;
+                            existing.Stock       = vDto.Stock;
+                            existing.ImageUrl    = vDto.ImageUrl;
+                            existing.Description = $"Biến thể {variantName}";
+                            await _context.SaveChangesAsync();
                         }
                     }
                     else
                     {
-                        v = new Variant
+                        var newVariant = new Variant
                         {
-                            ProductID = prod.ProductID,
-                            SKU = finalSku,
-                            VariantName = $"{prod.ProductName} - {vDto.Option1Value} {vDto.Option2Value}".Trim(),
-                            UnitPrice = vDto.Price,
-                            Stock = vDto.Stock,
-                            ImageUrl = vDto.ImageUrl,
-                            Description = "Biến thể nhập từ Excel",
-                            CreatedAt = DateTime.Now,
-                            CreatedBy = currentUserId
+                            ProductID   = prod.ProductID,
+                            SKU         = finalSku,
+                            VariantName = string.IsNullOrEmpty(variantName) ? prod.ProductName : variantName,
+                            UnitPrice   = vDto.Price,
+                            Stock       = vDto.Stock,
+                            ImageUrl    = vDto.ImageUrl,
+                            Description = string.IsNullOrEmpty(variantName) ? "Biến thể nhập từ Excel" : $"Biến thể {variantName}",
+                            CreatedAt   = DateTime.Now,
+                            CreatedBy   = currentUserId,
+                            Status      = true
                         };
-                        _context.Variants.Add(v);
+                        _context.Variants.Add(newVariant);
                         await _context.SaveChangesAsync();
 
                         // Associate Option Values
-                        var options = prod.ProductOptions.ToList();
-                        if (options.Count > 0 && !string.IsNullOrEmpty(vDto.Option1Value))
+                        var options = prod.ProductOptions.OrderBy(o => o.DisplayOrder).ToList();
+
+                        async Task LinkOptionValue(ProductOption opt, string valueStr)
                         {
-                            var o1 = options.FirstOrDefault(o => o.DisplayOrder == 1);
-                            if (o1 != null)
+                            if (string.IsNullOrEmpty(valueStr)) return;
+                            var ov = opt.ProductOptionValues.FirstOrDefault(v => v.Value == valueStr);
+                            if (ov == null)
                             {
-                                var ov = o1.ProductOptionValues.FirstOrDefault(val => val.Value == vDto.Option1Value);
-                                if (ov == null)
+                                ov = new ProductOptionValue
                                 {
-                                    ov = new ProductOptionValue { ProductOptionID = o1.ProductOptionID, Value = vDto.Option1Value, CreatedBy = currentUserId };
-                                    _context.ProductOptionValues.Add(ov);
-                                    await _context.SaveChangesAsync();
-                                    o1.ProductOptionValues.Add(ov);
-                                }
-                                _context.VariantOptionValues.Add(new VariantOptionValue { VariantID = v.VariantID, ProductOptionValueID = ov.ProductOptionValueID });
+                                    ProductOptionID = opt.ProductOptionID,
+                                    Value = valueStr,
+                                    CreatedBy = currentUserId
+                                };
+                                _context.ProductOptionValues.Add(ov);
+                                await _context.SaveChangesAsync();
+                                opt.ProductOptionValues.Add(ov);
                             }
-                        }
-                        if (options.Count > 1 && !string.IsNullOrEmpty(vDto.Option2Value))
-                        {
-                            var o2 = options.FirstOrDefault(o => o.DisplayOrder == 2);
-                            if (o2 != null)
+                            _context.VariantOptionValues.Add(new VariantOptionValue
                             {
-                                var ov = o2.ProductOptionValues.FirstOrDefault(val => val.Value == vDto.Option2Value);
-                                if (ov == null)
-                                {
-                                    ov = new ProductOptionValue { ProductOptionID = o2.ProductOptionID, Value = vDto.Option2Value, CreatedBy = currentUserId };
-                                    _context.ProductOptionValues.Add(ov);
-                                    await _context.SaveChangesAsync();
-                                    o2.ProductOptionValues.Add(ov);
-                                }
-                                _context.VariantOptionValues.Add(new VariantOptionValue { VariantID = v.VariantID, ProductOptionValueID = ov.ProductOptionValueID });
-                            }
+                                VariantID = newVariant.VariantID,
+                                ProductOptionValueID = ov.ProductOptionValueID
+                            });
                         }
+
+                        if (options.Count > 0) await LinkOptionValue(options[0], vDto.Option1Value);
+                        if (options.Count > 1) await LinkOptionValue(options[1], vDto.Option2Value);
                     }
                 }
-                
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                
+
                 return Ok(new { message = "Import thành công!" });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error committing Excel import");
-                return StatusCode(500, "Có lỗi xảy ra khi lưu dữ liệu.");
+                var isDev = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+                var detail = isDev
+                    ? $"{ex.Message} | {ex.InnerException?.Message}"
+                    : "Vui lòng kiểm tra lại dữ liệu và thử lại.";
+                return StatusCode(500, $"Có lỗi xảy ra khi lưu dữ liệu: {detail}");
             }
         }
     }

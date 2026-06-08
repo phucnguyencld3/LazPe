@@ -307,13 +307,13 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                     {/* Error Section */}
                     {errors.length > 0 && (
                         <section>
-                            <h3 className="text-lg font-bold text-error mb-4 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-rose-600 mb-4 flex items-center gap-2">
                                 <span className="material-symbols-outlined">error</span>
                                 Dữ liệu lỗi (Nhấp đúp hoặc bấm Sửa để chỉnh sửa trực tiếp)
                             </h3>
-                            <div className="border border-error/20 rounded-2xl overflow-hidden shadow-sm">
-                                <table className="w-full text-left bg-error-container/5 table-fixed">
-                                    <thead className="bg-error-container/20 text-on-error-container text-sm">
+                            <div className="border border-rose-200 rounded-2xl overflow-hidden shadow-sm">
+                                <table className="w-full text-left bg-rose-50/30 table-fixed">
+                                    <thead className="bg-rose-100 text-rose-800 text-sm">
                                         <tr>
                                             <th className="p-3 w-24">Sheet</th>
                                             <th className="p-3 w-16">Dòng</th>
@@ -334,10 +334,10 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                             const isEditing = editingErrorIndex === idx;
 
                                             return (
-                                                <tr key={idx} className="border-t border-error/10 hover:bg-error-container/5 transition-colors">
+                                                <tr key={idx} className="border-t border-rose-100 hover:bg-rose-50/50 transition-colors">
                                                     <td className="p-3 font-bold text-slate-600">{err.sheet}</td>
                                                     <td className="p-3 text-slate-500">{err.row}</td>
-                                                    <td className="p-3 text-error font-medium">{getFieldLabel(err.field)}</td>
+                                                    <td className="p-3 text-rose-600 font-medium">{getFieldLabel(err.field)}</td>
                                                     <td className="p-3 overflow-hidden text-ellipsis whitespace-nowrap">
                                                         {isEditing ? (
                                                             err.field === "CategoryName" ? (
@@ -382,14 +382,14 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                                             <div className="flex gap-2 justify-center">
                                                                 <button 
                                                                     onClick={() => saveEdit(idx, err)} 
-                                                                    className="p-1 text-success hover:bg-success-container/20 rounded flex items-center justify-center"
+                                                                    className="p-1 text-green-600 hover:bg-green-100 rounded flex items-center justify-center"
                                                                     title="Lưu"
                                                                 >
                                                                     <span className="material-symbols-outlined text-lg">check</span>
                                                                 </button>
                                                                 <button 
                                                                     onClick={() => setEditingErrorIndex(null)} 
-                                                                    className="p-1 text-error hover:bg-error-container/20 rounded flex items-center justify-center"
+                                                                    className="p-1 text-rose-600 hover:bg-rose-100 rounded flex items-center justify-center"
                                                                     title="Hủy"
                                                                 >
                                                                     <span className="material-symbols-outlined text-lg">close</span>
@@ -398,7 +398,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                                         ) : (
                                                             <button 
                                                                 onClick={() => startEditing(idx, currentValue)} 
-                                                                className="px-3 py-1 bg-primary-container text-primary font-bold text-xs rounded hover:bg-primary-container/80 flex items-center gap-1 mx-auto"
+                                                                className="px-3 py-1 bg-pink-100 text-primary font-bold text-xs rounded hover:bg-pink-200 flex items-center gap-1 mx-auto"
                                                             >
                                                                 <span className="material-symbols-outlined text-xs">edit</span>
                                                                 Sửa
@@ -419,7 +419,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                     {duplicates.length > 0 && (
                         <section>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-warning flex items-center gap-2">
+                                <h3 className="text-lg font-bold text-amber-600 flex items-center gap-2">
                                     <span className="material-symbols-outlined">warning</span>
                                     Xử lý trùng lặp ({duplicates.length})
                                 </h3>
@@ -430,9 +430,9 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                     <button onClick={() => applyBulkAction('CreateNew')} className="px-3 py-1 bg-secondary text-white text-sm font-bold rounded hover:bg-secondary/90">Tạo mới</button>
                                 </div>
                             </div>
-                            <div className="border border-warning/20 rounded-2xl overflow-hidden shadow-sm">
-                                <table className="w-full text-left bg-warning-container/5">
-                                    <thead className="bg-warning-container/20 text-on-warning-container text-sm">
+                            <div className="border border-amber-200 rounded-2xl overflow-hidden shadow-sm">
+                                <table className="w-full text-left bg-amber-50/30">
+                                    <thead className="bg-amber-100 text-amber-800 text-sm">
                                         <tr>
                                             <th className="p-3 w-12 text-center">
                                                 <input type="checkbox" checked={selectedItems.size === duplicates.length && duplicates.length > 0} onChange={selectAll} className="w-4 h-4 rounded border-slate-300"/>
@@ -445,7 +445,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                     </thead>
                                     <tbody>
                                         {duplicates.map((dup: any, idx: number) => (
-                                            <tr key={idx} className={`border-t border-warning/10 transition-colors ${selectedItems.has(dup.itemCode) ? 'bg-warning-container/10' : 'hover:bg-warning-container/5'}`}>
+                                            <tr key={idx} className={`border-t border-amber-100 transition-colors ${selectedItems.has(dup.itemCode) ? 'bg-amber-50' : 'hover:bg-amber-50/50'}`}>
                                                 <td className="p-3 text-center">
                                                     <input type="checkbox" checked={selectedItems.has(dup.itemCode)} onChange={() => toggleSelection(dup.itemCode)} className="w-4 h-4 rounded border-slate-300 accent-primary" />
                                                 </td>

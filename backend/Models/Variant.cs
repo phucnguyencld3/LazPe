@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -33,7 +33,7 @@ namespace PolyBabyAPI.Models
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]
         public int Stock { get; set; }
 
-        [MaxLength(10, ErrorMessage = "SKU tối đa 100 ký tự")]
+        [MaxLength(100, ErrorMessage = "SKU tối đa 100 ký tự")]
         public string SKU { get; set; }
 
         public string? ImageUrl { get; set; }
