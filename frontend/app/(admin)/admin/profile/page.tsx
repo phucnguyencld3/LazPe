@@ -948,12 +948,14 @@ export default function AdminProfilePage() {
             <div className="space-y-4 text-sm font-medium text-slate-650">
               <p><strong>Bước 1:</strong> Sử dụng ứng dụng Authenticator (Google/Microsoft Authenticator) để quét mã QR dưới đây:</p>
               
-              <div className="flex justify-center py-2">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-inner">
+              <div className="flex justify-center py-2 flex-shrink-0">
+                <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-inner w-[184px] h-[184px] flex items-center justify-center flex-shrink-0">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(authenticatorSetupData.qrCodeUri || "")}`}
                     alt="2FA QR Code" 
-                    className="w-40 h-40"
+                    width={160}
+                    height={160}
+                    className="w-40 h-40 object-contain aspect-square block flex-shrink-0"
                   />
                 </div>
               </div>
@@ -967,14 +969,13 @@ export default function AdminProfilePage() {
 
               <form onSubmit={handleEnableAuthenticator} className="space-y-4">
                 <div className="relative">
-                  <Smartphone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type="text" 
                     maxLength={6}
                     value={authenticatorCode}
                     onChange={(e) => setAuthenticatorCode(e.target.value.replace(/\D/g, ""))}
-                    placeholder="Mã xác thực 6 số..."
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[4px] font-mono text-center font-bold"
+                    placeholder="••••••"
+                    className="w-full py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[8px] font-mono text-center"
                     required
                   />
                 </div>
@@ -983,14 +984,14 @@ export default function AdminProfilePage() {
                   <button
                     type="button"
                     onClick={() => { setShowAuthenticatorModal(false); setAuthenticatorCode(""); }}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                    className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-all cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
                     disabled={submittingTwoFactor || authenticatorCode.length < 6}
-                    className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 disabled:opacity-60 cursor-pointer"
+                    className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm flex items-center gap-1.5 disabled:opacity-60 transition-all cursor-pointer"
                   >
                     {submittingTwoFactor && <Loader className="animate-spin" size={12} />}
                     Xác nhận kích hoạt
@@ -1024,14 +1025,13 @@ export default function AdminProfilePage() {
 
               <form onSubmit={handleEnableEmail2Fa} className="space-y-4">
                 <div className="relative">
-                  <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type="text" 
                     maxLength={6}
                     value={emailOtpCode}
                     onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ""))}
-                    placeholder="Nhập mã OTP..."
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[4px] font-mono text-center font-bold"
+                    placeholder="••••••"
+                    className="w-full py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[8px] font-mono text-center"
                     required
                   />
                 </div>
@@ -1050,14 +1050,14 @@ export default function AdminProfilePage() {
                   <button
                     type="button"
                     onClick={() => { setShowEmail2FaModal(false); setEmailOtpCode(""); setEmailSetupOtpSent(false); }}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                    className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-all cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
                     disabled={submittingTwoFactor || emailOtpCode.length < 6}
-                    className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 disabled:opacity-60 cursor-pointer"
+                    className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm flex items-center gap-1.5 disabled:opacity-60 transition-all cursor-pointer"
                   >
                     {submittingTwoFactor && <Loader className="animate-spin" size={12} />}
                     Xác nhận kích hoạt
