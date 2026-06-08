@@ -39,9 +39,12 @@ export default function AdminUsersPage() {
         setStats(statsData);
 
         const usersData = await fetchUsers(token, debouncedSearch, page);
-        setUsers(usersData.data);
+        const filteredList = (usersData.data || []).filter(
+          (u: any) => !u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")
+        );
+        setUsers(filteredList);
         setTotalPages(usersData.pagination.totalPages);
-        setTotalCount(usersData.pagination.totalCount);
+        setTotalCount(usersData.pagination.totalCount - (usersData.data.length - filteredList.length));
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {

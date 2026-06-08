@@ -49,7 +49,13 @@ export default function UserPermissionsPage() {
         });
         const userData = await userRes.json();
         if (userData.success) {
-          setUser(userData.data);
+          const u = userData.data;
+          if (u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")) {
+            toast.error("Không thể cấu hình quyền hạn cho tài khoản Quản trị viên.");
+            router.push("/admin/users");
+            return;
+          }
+          setUser(u);
         } else {
           toast.error(userData.message || "Lỗi tải thông tin người dùng");
         }
