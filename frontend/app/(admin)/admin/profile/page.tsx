@@ -930,8 +930,8 @@ export default function AdminProfilePage() {
 
       {/* Authenticator Setup Modal */}
       {showAuthenticatorModal && authenticatorSetupData && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed top-0 left-0 w-screen h-screen bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-[448px] max-w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
                 <QrCode size={22} className="text-rose-500" /> Cấu hình Authenticator App
@@ -1005,8 +1005,8 @@ export default function AdminProfilePage() {
 
       {/* Email OTP Setup Modal */}
       {showEmail2FaModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed top-0 left-0 w-screen h-screen bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-[448px] max-w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
                 <Mail size={22} className="text-rose-500" /> Cấu hình Xác thực Email
