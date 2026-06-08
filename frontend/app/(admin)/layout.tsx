@@ -16,6 +16,7 @@ export default function AdminLayout({
 }>) {
   const [isAuth, setIsAuth] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -31,6 +32,16 @@ export default function AdminLayout({
       setToken(currentToken);
       if (!currentToken) {
         setIsAuth(false);
+        setUser(null);
+      } else {
+        const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (savedUserJson) {
+          try {
+            setUser(JSON.parse(savedUserJson));
+          } catch (e) {
+            console.error("Error parsing user from storage:", e);
+          }
+        }
       }
     };
 
@@ -180,16 +191,19 @@ export default function AdminLayout({
         }
 
         const data = await res.json();
-        const user = data.user;
-        const roles = user?.roles || [];
-        const permissions = user?.permissions || [];
-        const hasDashboardAccess = user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
+        const apiUser = data.user;
+        const roles = apiUser?.roles || [];
+        const permissions = apiUser?.permissions || [];
+        const hasDashboardAccess = apiUser?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
         if (!data.success || !hasDashboardAccess) {
           clearAuth();
           window.location.replace("/login");
         } else {
           setIsAuth(true);
+          setUser(apiUser);
+          const storage = localStorage.getItem("token") ? localStorage : sessionStorage;
+          storage.setItem("user", JSON.stringify(apiUser));
         }
       } catch (e) {
         clearAuth();
@@ -308,13 +322,23 @@ export default function AdminLayout({
             )}
           </div>
           <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
-          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container">
-            <img 
-              alt="Admin Profile Avatar" 
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtn-RPABrqyfAIk-Bol7wq_PAmzFO0RQccPYAVIGJTLXZIE2ypug3FJrFdrIcoxyyEIp0oSyNMKOHGT-aT-oDTQSI8g3dEYp7O9MYI5prps_co8yfSkh_Cu1n-lmp7QN_H_Fg-n1KONZK_cby4aQzkl4hykD5fFHyXAhB3Ci-nKb2yI5Jlty1I9JIDwnrT_GBkPsYDSKSeyt_birkk1ZG507kN25QVu7lzA5MoOOQ1iHkIJActwwm73iL00BYzLL0xa58jmYVecLco" 
-            />
-          </div>
+          <Link href="/admin/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center">
+              {user?.avatar ? (
+                <img 
+                  alt="Admin Profile Avatar" 
+                  className="w-full h-full object-cover"
+                  src={user.avatar} 
+                />
+              ) : (
+                <span className="material-symbols-outlined text-slate-500">person</span>
+              )}
+            </div>
+            <div className="hidden md:flex flex-col items-start leading-none text-left">
+              <span className="text-xs font-bold text-slate-800">{user?.fullName || "Quản trị viên"}</span>
+              <span className="text-[10px] text-slate-500 mt-0.5">{user?.email || "admin@lazpe.com"}</span>
+            </div>
+          </Link>
         </div>
       </header>
 
@@ -393,6 +417,13 @@ export default function AdminLayout({
               >
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
                 <span className="font-label-md">Phân quyền</span>
+              </Link>
+              <Link
+                href="/admin/profile"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">account_circle</span>
+                <span className="font-label-md">Hồ sơ cá nhân</span>
               </Link>
             </div>
 
