@@ -8,6 +8,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  size?: "sm" | "md";
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -16,6 +17,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalItems,
   itemsPerPage,
   onPageChange,
+  size = "md",
 }) => {
   if (totalPages <= 1) return null;
 
@@ -41,24 +43,30 @@ export const Pagination: React.FC<PaginationProps> = ({
     return pages;
   };
 
+  const isSm = size === "sm";
+
   return (
-    <div className="px-6 py-4 flex items-center justify-between bg-surface-container-low border-t border-outline-variant">
-      <p className="text-label-sm text-on-surface-variant">
+    <div className={`flex items-center justify-between bg-surface-container-low border-t border-outline-variant ${
+      isSm ? "px-4 py-2" : "px-6 py-4"
+    }`}>
+      <p className={`text-on-surface-variant ${isSm ? "text-[11px] font-bold" : "text-label-sm"}`}>
         Hiển thị {startItem} - {endItem} trong tổng số {totalItems} mục
       </p>
-      <div className="flex items-center gap-2">
+      <div className={`flex items-center ${isSm ? "gap-1.5" : "gap-2"}`}>
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer"
+          className={`rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer ${
+            isSm ? "w-8 h-8" : "w-10 h-10"
+          }`}
         >
-          <span className="material-symbols-outlined">chevron_left</span>
+          <span className={`material-symbols-outlined ${isSm ? "text-base" : ""}`}>chevron_left</span>
         </button>
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center ${isSm ? "gap-1" : "gap-1"}`}>
           {getPageNumbers().map((page, index) => {
             if (page === "...") {
               return (
-                <span key={`dots-${index}`} className="px-2 text-outline-variant">
+                <span key={`dots-${index}`} className={`text-outline-variant ${isSm ? "px-1 text-xs" : "px-2"}`}>
                   ...
                 </span>
               );
@@ -68,10 +76,12 @@ export const Pagination: React.FC<PaginationProps> = ({
               <button
                 key={`page-${page}`}
                 onClick={() => onPageChange(page as number)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${
+                className={`rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                  isSm ? "w-8 h-8 text-xs font-bold" : "w-10 h-10 text-sm font-bold"
+                } ${
                   isPageActive
                     ? "bg-primary text-on-primary shadow-sm"
-                    : "hover:bg-primary-container/20 text-on-surface-variant font-label-md"
+                    : `hover:bg-primary-container/20 text-on-surface-variant ${isSm ? "font-bold" : "font-label-md"}`
                 }`}
               >
                 {page}
@@ -82,9 +92,11 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer"
+          className={`rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer ${
+            isSm ? "w-8 h-8" : "w-10 h-10"
+          }`}
         >
-          <span className="material-symbols-outlined">chevron_right</span>
+          <span className={`material-symbols-outlined ${isSm ? "text-base" : ""}`}>chevron_right</span>
         </button>
       </div>
     </div>

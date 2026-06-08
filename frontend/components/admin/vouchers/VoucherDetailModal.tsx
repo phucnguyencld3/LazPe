@@ -36,11 +36,15 @@ export default function VoucherDetailModal({
   const [totalDiscountGiven, setTotalDiscountGiven] = useState(0);
   const [historySearch, setHistorySearch] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
-  const historyPerPage = 6;
+  const historyPerPage = 5;
 
   // Tab 3: Assignment states
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [assignments, setAssignments] = useState<DirectAssignmentInfo[]>([]);
+  const [assignmentsPage, setAssignmentsPage] = useState(1);
+  const assignmentsPerPage = 5;
+  const [assignSearch, setAssignSearch] = useState("");
+
   const [remainingQuota, setRemainingQuota] = useState(0);
   const [userSearchKeyword, setUserSearchKeyword] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<SearchUserResult[]>([]);
@@ -88,6 +92,7 @@ export default function VoucherDetailModal({
       loadHistory();
     } else if (activeTab === "assign") {
       loadAssignments();
+      setAssignmentsPage(1);
     }
   }, [activeTab, voucher.voucherID]);
 
@@ -250,6 +255,21 @@ export default function VoucherDetailModal({
     (historyPage - 1) * historyPerPage,
     historyPage * historyPerPage
   );
+  const filteredAssignments = assignments.filter(item => {
+    const q = assignSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (item.userFullName && item.userFullName.toLowerCase().includes(q)) ||
+      (item.userEmail && item.userEmail.toLowerCase().includes(q))
+    );
+  });
+
+  const totalAssignmentsItems = filteredAssignments.length;
+  const totalAssignmentsPages = Math.max(1, Math.ceil(totalAssignmentsItems / assignmentsPerPage));
+  const displayedAssignments = filteredAssignments.slice(
+    (assignmentsPage - 1) * assignmentsPerPage,
+    assignmentsPage * assignmentsPerPage
+  );
 
   // Remaining and usage progress metrics
   const usedRatio = voucher.totalQuantity > 0 
@@ -261,7 +281,7 @@ export default function VoucherDetailModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
@@ -549,6 +569,7 @@ export default function VoucherDetailModal({
                         totalItems={totalHistoryItems}
                         itemsPerPage={historyPerPage}
                         onPageChange={setHistoryPage}
+                        size="sm"
                       />
                     )}
                   </>
@@ -677,9 +698,29 @@ export default function VoucherDetailModal({
 
                 {/* Right block - List assignments */}
                 <div className="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-100 flex flex-col gap-4">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
-                    Lịch sử phân phối trực tiếp
-                  </h4>
+                  <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-50 pb-2">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                      Lịch sử phân phối trực tiếp
+                    </h4>
+                    {/* Search Input for Assignments */}
+                    {assignments.length > 0 && (
+                      <div className="w-full sm:w-48 relative">
+                        <span className="material-symbols-outlined text-slate-400 text-[16px] absolute left-2.5 top-1/2 -translate-y-1/2">
+                          search
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Tìm người nhận..."
+                          value={assignSearch}
+                          onChange={e => {
+                            setAssignSearch(e.target.value);
+                            setAssignmentsPage(1);
+                          }}
+                          className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-150 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-[11px] font-semibold text-slate-700"
+                        />
+                      </div>
+                    )}
+                  </div>
 
                   {loadingAssignments ? (
                     <div className="flex justify-center items-center py-20">
@@ -691,54 +732,76 @@ export default function VoucherDetailModal({
                       <p className="text-xs font-bold mt-2">Chưa phân phối cho ai</p>
                       <p className="text-[10px] text-slate-400 mt-0.5">Tìm kiếm user ở panel bên trái để phân phối</p>
                     </div>
-                  ) : (
-                    <div className="overflow-x-auto" style={{ maxHeight: "350px", overflowY: "auto" }}>
-                      <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
-                        <thead>
-                          <tr className="bg-slate-50/50 border-b border-slate-50 text-[9px] font-bold text-slate-400 tracking-wider uppercase sticky top-0 bg-white">
-                            <th className="px-4 py-2">Khách hàng</th>
-                            <th className="px-4 py-2 text-center">Trạng thái ví</th>
-                            <th className="px-4 py-2">Ngày phát</th>
-                            <th className="px-4 py-2 text-right">Hành động</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 text-slate-700">
-                          {assignments.map(ass => (
-                            <tr key={ass.userVoucherID} className="hover:bg-slate-50/30 transition-colors">
-                              <td className="px-4 py-2">
-                                <div>
-                                  <p className="font-bold text-slate-800">{ass.userFullName || "N/A"}</p>
-                                  <p className="text-[9px] text-slate-400 font-semibold">{ass.userEmail}</p>
-                                </div>
-                              </td>
-                              <td className="px-4 py-2 text-center">
-                                {ass.status === "Unused" ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-100">Chưa dùng</span>
-                                ) : ass.status === "Used" ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Đã sử dụng</span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-50 text-slate-500 border border-slate-100">Hết hạn</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-2 text-[10px] font-bold text-slate-400">
-                                {new Date(ass.collectedAt).toLocaleDateString("vi-VN")}
-                              </td>
-                              <td className="px-4 py-2 text-right">
-                                {ass.status === "Unused" && (
-                                  <button
-                                    onClick={() => setRevokeItem(ass)}
-                                    className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer border border-rose-100"
-                                    title="Thu hồi voucher khỏi ví"
-                                  >
-                                    Thu hồi
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  ) : filteredAssignments.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-450 text-center">
+                      <span className="material-symbols-outlined text-4xl text-slate-200">search_off</span>
+                      <p className="text-xs font-bold mt-2">Không tìm thấy kết quả</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Không tìm thấy người nhận nào khớp với từ khóa</p>
                     </div>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
+                          <thead>
+                            <tr className="bg-slate-50/50 border-b border-slate-50 text-[9px] font-bold text-slate-400 tracking-wider uppercase sticky top-0 bg-white">
+                              <th className="px-4 py-2">Khách hàng</th>
+                              <th className="px-4 py-2 text-center">Trạng thái ví</th>
+                              <th className="px-4 py-2">Ngày phát</th>
+                              <th className="px-4 py-2 text-right">Hành động</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 text-slate-700">
+                            {displayedAssignments.map(ass => (
+                              <tr key={ass.userVoucherID} className="hover:bg-slate-50/30 transition-colors">
+                                <td className="px-4 py-2">
+                                  <div>
+                                    <p className="font-bold text-slate-800">{ass.userFullName || "N/A"}</p>
+                                    <p className="text-[9px] text-slate-400 font-semibold">{ass.userEmail}</p>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2 text-center">
+                                  {ass.status === "Unused" ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-100">Chưa dùng</span>
+                                  ) : ass.status === "Used" ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Đã sử dụng</span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-50 text-slate-500 border border-slate-100">Hết hạn</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2 text-[10px] font-bold text-slate-400">
+                                  {new Date(ass.collectedAt).toLocaleDateString("vi-VN")}
+                                </td>
+                                <td className="px-4 py-2 text-right">
+                                  {ass.status === "Unused" && (
+                                    <button
+                                      onClick={() => setRevokeItem(ass)}
+                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer border border-rose-100"
+                                      title="Thu hồi voucher khỏi ví"
+                                    >
+                                      Thu hồi
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Assignments Pagination */}
+                      {totalAssignmentsPages > 1 && (
+                        <div className="mt-auto">
+                          <Pagination
+                            currentPage={assignmentsPage}
+                            totalPages={totalAssignmentsPages}
+                            totalItems={totalAssignmentsItems}
+                            itemsPerPage={assignmentsPerPage}
+                            onPageChange={setAssignmentsPage}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
 
                 </div>
@@ -753,7 +816,7 @@ export default function VoucherDetailModal({
         <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-650 hover:bg-slate-700 text-white font-bold text-xs rounded-full transition-all cursor-pointer shadow-md"
+            className="px-6 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-full transition-all cursor-pointer shadow-md"
           >
             Đóng
           </button>
@@ -764,7 +827,7 @@ export default function VoucherDetailModal({
       {/* Revocation Confirmation Modal */}
       {revokeItem && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl p-6 w-[360px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-3 border border-rose-100">
                 <span className="material-symbols-outlined text-2xl">warning</span>

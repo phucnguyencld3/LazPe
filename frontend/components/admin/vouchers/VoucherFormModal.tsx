@@ -69,13 +69,13 @@ export default function VoucherFormModal({
       setDiscountValue(0);
       setMinOrderValue(0);
       setMaxDiscount(0);
-      
+
       // Default dates: start is now, end is 30 days from now
       const now = new Date();
       const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       setStartDate(formatDateTimeLocal(now.toISOString()));
       setEndDate(formatDateTimeLocal(thirtyDaysLater.toISOString()));
-      
+
       setTotalQuantity(100);
       setStatus(true);
       setVisibilityType(1);
@@ -254,8 +254,8 @@ export default function VoucherFormModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+
         {/* Modal Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2">
@@ -276,345 +276,385 @@ export default function VoucherFormModal({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6" style={{ scrollbarWidth: "thin" }}>
-          
-          {/* Main Info Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Voucher Code */}
-            <div>
-              <label className="block text-xs font-bold text-slate-450 uppercase mb-2">
-                Mã Voucher <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative flex gap-2">
-                <input
-                  type="text"
-                  required
-                  disabled={isEditing}
-                  value={code}
-                  onChange={e => {
-                    setCode(e.target.value.toUpperCase());
-                    if (validationErrors.code) {
-                      setValidationErrors(prev => {
-                        const next = { ...prev };
-                        delete next.code;
-                        return next;
-                      });
-                    }
-                  }}
-                  placeholder="Ví dụ: HELLO2026"
-                  className={`flex-1 px-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-slate-800 ${
-                    isEditing ? "opacity-60 cursor-not-allowed border-slate-200" : validationErrors.code ? "border-rose-300" : "border-slate-200"
-                  }`}
-                />
-                {!isEditing && (
-                  <button
-                    type="button"
-                    onClick={handleGenerateCode}
-                    disabled={generating}
-                    className="px-3 rounded-xl border border-primary text-primary hover:bg-primary-container/20 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6" style={{ scrollbarWidth: "thin" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* Cột trái: Thông tin cơ bản & Phân phối */}
+            <div className="space-y-5">
+
+              {/* Thông tin cơ bản */}
+              <div className="bg-slate-50/30 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-slate-400">info</span>
+                  Thông tin cơ bản
+                </h4>
+
+                {/* Voucher Code */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-455 uppercase mb-2">
+                    Mã Voucher <span className="text-rose-500">*</span>
+                  </label>
+                  
+                  {isEditing ? (
+                    <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-slate-50 to-slate-100/50 border border-slate-200 rounded-2xl shadow-sm">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <span className="material-symbols-outlined text-[18px]">vpn_key</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-450 font-bold uppercase tracking-wider">Mã voucher cố định</p>
+                          <p className="text-sm font-extrabold text-slate-800 tracking-wider font-mono select-all cursor-pointer" title="Nhấn để bôi đen">{code}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(code);
+                            toast.success("Đã sao chép mã voucher vào bộ nhớ tạm!");
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-white border border-transparent hover:border-slate-150 transition-all cursor-pointer flex items-center justify-center"
+                          title="Sao chép mã"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                        </button>
+                        <span 
+                          className="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-bold text-slate-500 border border-slate-200 flex items-center gap-1"
+                          title="Mã voucher không thể thay đổi sau khi tạo"
+                        >
+                          <span className="material-symbols-outlined text-[12px]">lock</span>
+                          Cố định
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        value={code}
+                        onChange={e => {
+                          setCode(e.target.value.toUpperCase());
+                          if (validationErrors.code) {
+                            setValidationErrors(prev => {
+                              const next = { ...prev };
+                              delete next.code;
+                              return next;
+                            });
+                          }
+                        }}
+                        placeholder="Nhập mã voucher (Ví dụ: APPSUMMER)"
+                        className={`flex-grow px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold uppercase text-slate-800 ${
+                          validationErrors.code ? "border-rose-300" : "border-slate-200"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGenerateCode}
+                        disabled={generating}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-200 shrink-0 cursor-pointer disabled:opacity-50"
+                      >
+                        {generating ? (
+                          <div className="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-sm">casino</span>
+                            <span>Sinh mã</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  {validationErrors.code && (
+                    <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.code}</p>
+                  )}
+                </div>
+
+                {/* Voucher Name */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-455 uppercase mb-2">
+                    Tên chương trình Voucher <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={e => {
+                      setName(e.target.value);
+                      if (validationErrors.name) {
+                        setValidationErrors(prev => {
+                          const next = { ...prev };
+                          delete next.name;
+                          return next;
+                        });
+                      }
+                    }}
+                    placeholder="Ví dụ: Giảm giá hè rực rỡ"
+                    className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 ${validationErrors.name ? "border-rose-300" : "border-slate-200"
+                      }`}
+                  />
+                  {validationErrors.name && (
+                    <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.name}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Cấu hình phân phối */}
+              <div className="bg-slate-50/30 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-slate-400">visibility</span>
+                  Cấu hình phân phối
+                </h4>
+
+                {/* Visibility Type */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-455 uppercase mb-2">
+                    Hiển thị Voucher
+                  </label>
+                  <select
+                    value={visibilityType}
+                    onChange={e => setVisibilityType(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-700"
                   >
-                    {generating ? (
-                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-primary border-t-transparent"></div>
+                    <option value={1}>Công khai (Cho mọi khách hàng thấy/lưu)</option>
+                    <option value={2}>Riêng tư (Độc quyền)</option>
+                  </select>
+                </div>
+
+                {/* Exclusive Type */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-455 uppercase mb-2">
+                    Hình thức phân phối độc quyền
+                  </label>
+                  <select
+                    value={exclusiveType}
+                    onChange={e => setExclusiveType(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-700"
+                  >
+                    {visibilityType === 1 ? (
+                      <>
+                        <option value={0}>Không độc quyền (Mặc định)</option>
+                        <option value={2}>Phát trực tiếp vào ví toàn bộ người dùng mới/cũ</option>
+                      </>
                     ) : (
                       <>
-                        <span className="material-symbols-outlined text-sm">casino</span>
-                        <span>Sinh mã</span>
+                        <option value={1}>Nhập mã thủ công để kích hoạt (Ví dụ: Mã ẩn truyền thông)</option>
+                        <option value={2}>Admin chỉ định phân phối trực tiếp vào ví user</option>
                       </>
                     )}
-                  </button>
-                )}
+                  </select>
+                </div>
               </div>
-              {validationErrors.code && (
-                <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.code}</p>
-              )}
-            </div>
 
-            {/* Voucher Name */}
-            <div>
-              <label className="block text-xs font-bold text-slate-455 uppercase mb-2">
-                Tên chương trình Voucher <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={e => {
-                  setName(e.target.value);
-                  if (validationErrors.name) {
-                    setValidationErrors(prev => {
-                      const next = { ...prev };
-                      delete next.name;
-                      return next;
-                    });
-                  }
-                }}
-                placeholder="Ví dụ: Giảm giá hè rực rỡ"
-                className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 ${
-                  validationErrors.name ? "border-rose-300" : "border-slate-200"
-                }`}
-              />
-              {validationErrors.name && (
-                <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.name}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Discount Policy Section */}
-          <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-slate-400">payments</span>
-              Chính sách giảm giá
-            </h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Discount Type */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Loại giảm giá
+              {/* Active Status Toggle */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                <div>
+                  <p className="text-xs font-bold text-slate-800">Trạng thái hoạt động</p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">
+                    Cho phép hệ thống kiểm tra và áp dụng voucher khi khách mua hàng.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={status}
+                    onChange={e => setStatus(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-5.5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
-                <select
-                  disabled={isEditing}
-                  value={discountType}
-                  onChange={e => {
-                    const val = Number(e.target.value);
-                    setDiscountType(val);
-                    setDiscountValue(0);
-                    setMaxDiscount(0);
-                  }}
-                  className={`w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-700 ${
-                    isEditing ? "opacity-60 cursor-not-allowed" : ""
-                  }`}
-                >
-                  <option value={1}>Theo phần trăm (%)</option>
-                  <option value={2}>Tiền cố định (đ)</option>
-                </select>
               </div>
 
-              {/* Discount Value */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Giá trị giảm ({discountType === 1 ? "%" : "đ"}) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  max={discountType === 1 ? 100 : undefined}
-                  disabled={isEditing}
-                  value={discountValue || ""}
-                  onChange={e => {
-                    setDiscountValue(Number(e.target.value));
-                    if (validationErrors.discountValue) {
-                      setValidationErrors(prev => {
-                        const next = { ...prev };
-                        delete next.discountValue;
-                        return next;
-                      });
-                    }
-                  }}
-                  placeholder={discountType === 1 ? "Ví dụ: 10" : "Ví dụ: 50000"}
-                  className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 ${
-                    isEditing ? "opacity-60 cursor-not-allowed border-slate-200" : validationErrors.discountValue ? "border-rose-300" : "border-slate-200"
-                  }`}
-                />
-                {validationErrors.discountValue && (
-                  <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.discountValue}</p>
-                )}
-              </div>
-
-              {/* Max Discount (Only for percentage) */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Mức giảm tối đa (đ)
-                </label>
-                <input
-                  type="number"
-                  disabled={discountType === 2 || isEditing}
-                  value={discountType === 2 ? "" : maxDiscount || ""}
-                  onChange={e => setMaxDiscount(Number(e.target.value))}
-                  placeholder={discountType === 2 ? "Không áp dụng" : "Không giới hạn (0)"}
-                  className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 ${
-                    discountType === 2 || isEditing ? "opacity-60 cursor-not-allowed bg-slate-100 border-slate-200" : "border-slate-200"
-                  }`}
-                />
-              </div>
             </div>
 
-            {/* Min Order Value */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Đơn hàng tối thiểu để áp dụng (đ)
-                </label>
-                <input
-                  type="number"
-                  value={minOrderValue || ""}
-                  onChange={e => setMinOrderValue(Number(e.target.value))}
-                  placeholder="Ví dụ: 150000 (0 nếu không yêu cầu)"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Số lượng phát hành tối đa
-                </label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  value={totalQuantity || ""}
-                  onChange={e => {
-                    setTotalQuantity(Number(e.target.value));
-                    if (validationErrors.totalQuantity) {
-                      setValidationErrors(prev => {
-                        const next = { ...prev };
-                        delete next.totalQuantity;
-                        return next;
-                      });
-                    }
-                  }}
-                  placeholder="Ví dụ: 100"
-                  className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 ${
-                    validationErrors.totalQuantity ? "border-rose-300" : "border-slate-200"
-                  }`}
-                />
-                {validationErrors.totalQuantity && (
-                  <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.totalQuantity}</p>
-                )}
-              </div>
-            </div>
-          </div>
+            {/* Cột phải: Chính sách giảm giá & Thời gian áp dụng */}
+            <div className="space-y-5">
 
-          {/* Visibility and Distribution settings */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Visibility Type */}
-            <div>
-              <label className="block text-xs font-bold text-slate-450 uppercase mb-2">
-                Hiển thị Voucher
-              </label>
-              <select
-                disabled={isEditing}
-                value={visibilityType}
-                onChange={e => setVisibilityType(Number(e.target.value))}
-                className={`w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 ${
-                  isEditing ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-              >
-                <option value={1}>Public (Công khai cho mọi khách hàng thấy/lưu)</option>
-                <option value={2}>Exclusive (Riêng tư/Độc quyền)</option>
-              </select>
-            </div>
+              {/* Chính sách giảm giá */}
+              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-slate-400">payments</span>
+                  Chính sách giảm giá
+                </h4>
 
-            {/* Exclusive Type */}
-            <div>
-              <label className="block text-xs font-bold text-slate-450 uppercase mb-2">
-                Hình thức phân phối độc quyền
-              </label>
-              <select
-                disabled={isEditing}
-                value={exclusiveType}
-                onChange={e => setExclusiveType(Number(e.target.value))}
-                className={`w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 ${
-                  isEditing ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-              >
-                {visibilityType === 1 ? (
-                  <>
-                    <option value={0}>Không độc quyền (Mặc định)</option>
-                    <option value={2}>Phát trực tiếp vào ví toàn bộ người dùng mới/cũ</option>
-                  </>
-                ) : (
-                  <>
-                    <option value={1}>Nhập mã thủ công để kích hoạt (Ví dụ: Mã ẩn truyền thông)</option>
-                    <option value={2}>Admin chỉ định phân phối trực tiếp vào ví user</option>
-                  </>
-                )}
-              </select>
-            </div>
-          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Discount Type */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                      Loại giảm giá
+                    </label>
+                    <select
+                      value={discountType}
+                      onChange={e => {
+                        const val = Number(e.target.value);
+                        setDiscountType(val);
+                        setDiscountValue(0);
+                        setMaxDiscount(0);
+                      }}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-700"
+                    >
+                      <option value={1}>Theo phần trăm (%)</option>
+                      <option value={2}>Tiền cố định (đ)</option>
+                    </select>
+                  </div>
 
-          {/* Time Validity Period */}
-          <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-slate-400">schedule</span>
-              Thời gian áp dụng
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Start Date */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Ngày bắt đầu có hiệu lực <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={startDate}
-                  onChange={e => {
-                    setStartDate(e.target.value);
-                    if (validationErrors.startDate) {
-                      setValidationErrors(prev => {
-                        const next = { ...prev };
-                        delete next.startDate;
-                        return next;
-                      });
-                    }
-                  }}
-                  className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 ${
-                    validationErrors.startDate ? "border-rose-300" : "border-slate-200"
-                  }`}
-                />
-                {validationErrors.startDate && (
-                  <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.startDate}</p>
-                )}
+                  {/* Discount Value */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                      Giá trị giảm ({discountType === 1 ? "%" : "đ"}) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={discountType === 1 ? 100 : undefined}
+                      value={discountValue || ""}
+                      onChange={e => {
+                        setDiscountValue(Number(e.target.value));
+                        if (validationErrors.discountValue) {
+                          setValidationErrors(prev => {
+                            const next = { ...prev };
+                            delete next.discountValue;
+                            return next;
+                          });
+                        }
+                      }}
+                      placeholder={discountType === 1 ? "Ví dụ: 10" : "Ví dụ: 50000"}
+                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.discountValue ? "border-rose-300" : "border-slate-200"
+                        }`}
+                    />
+                    {validationErrors.discountValue && (
+                      <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.discountValue}</p>
+                    )}
+                  </div>
+
+                  {/* Max Discount (Only for percentage) */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
+                      Mức giảm tối đa (đ)
+                    </label>
+                    <input
+                      type="number"
+                      disabled={discountType === 2}
+                      value={discountType === 2 ? "" : maxDiscount || ""}
+                      onChange={e => setMaxDiscount(Number(e.target.value))}
+                      placeholder={discountType === 2 ? "Không áp dụng" : "Không giới hạn (0)"}
+                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${discountType === 2 ? "opacity-60 cursor-not-allowed bg-slate-100 border-slate-200" : "border-slate-200"
+                        }`}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Min Order Value */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                      Đơn hàng tối thiểu (đ)
+                    </label>
+                    <input
+                      type="number"
+                      value={minOrderValue || ""}
+                      onChange={e => setMinOrderValue(Number(e.target.value))}
+                      placeholder="Ví dụ: 150000 (0 nếu không yêu cầu)"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855"
+                    />
+                  </div>
+
+                  {/* Total Quantity */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                      Số lượng phát hành tối đa
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={totalQuantity || ""}
+                      onChange={e => {
+                        setTotalQuantity(Number(e.target.value));
+                        if (validationErrors.totalQuantity) {
+                          setValidationErrors(prev => {
+                            const next = { ...prev };
+                            delete next.totalQuantity;
+                            return next;
+                          });
+                        }
+                      }}
+                      placeholder="Ví dụ: 100"
+                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.totalQuantity ? "border-rose-300" : "border-slate-200"
+                        }`}
+                    />
+                    {validationErrors.totalQuantity && (
+                      <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.totalQuantity}</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* End Date */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                  Ngày kết thúc hiệu lực <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={endDate}
-                  onChange={e => {
-                    setEndDate(e.target.value);
-                    if (validationErrors.endDate) {
-                      setValidationErrors(prev => {
-                        const next = { ...prev };
-                        delete next.endDate;
-                        return next;
-                      });
-                    }
-                  }}
-                  className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 ${
-                    validationErrors.endDate ? "border-rose-300" : "border-slate-200"
-                  }`}
-                />
-                {validationErrors.endDate && (
-                  <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.endDate}</p>
-                )}
-              </div>
-            </div>
-          </div>
+              {/* Thời gian áp dụng */}
+              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-slate-400">schedule</span>
+                  Thời gian áp dụng
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                      Ngày bắt đầu có hiệu lực <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={startDate}
+                      onChange={e => {
+                        setStartDate(e.target.value);
+                        if (validationErrors.startDate) {
+                          setValidationErrors(prev => {
+                            const next = { ...prev };
+                            delete next.startDate;
+                            return next;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.startDate ? "border-rose-300" : "border-slate-200"
+                        }`}
+                    />
+                    {validationErrors.startDate && (
+                      <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.startDate}</p>
+                    )}
+                  </div>
 
-          {/* Active Status Toggle */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-            <div>
-              <p className="text-xs font-bold text-slate-800">Trạng thái hoạt động</p>
-              <p className="text-[9px] text-slate-400 mt-0.5">
-                Cho phép hệ thống kiểm tra và áp dụng voucher khi khách mua hàng.
-              </p>
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                      Ngày kết thúc hiệu lực <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={endDate}
+                      onChange={e => {
+                        setEndDate(e.target.value);
+                        if (validationErrors.endDate) {
+                          setValidationErrors(prev => {
+                            const next = { ...prev };
+                            delete next.endDate;
+                            return next;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.endDate ? "border-rose-300" : "border-slate-200"
+                        }`}
+                    />
+                    {validationErrors.endDate && (
+                      <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.endDate}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={status}
-                onChange={e => setStatus(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-10 h-5.5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
           </div>
         </form>
 
@@ -628,7 +668,7 @@ export default function VoucherFormModal({
           >
             Hủy bỏ
           </button>
-          
+
           <button
             type="button"
             onClick={handleSubmit}

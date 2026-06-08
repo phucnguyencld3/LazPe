@@ -33,7 +33,7 @@ export default function AdminVouchersPage() {
 
   // Pagination (Client-side)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   // Modal control states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -444,11 +444,9 @@ export default function AdminVouchersPage() {
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
                   <th className="px-6 py-4">Mã Voucher</th>
-                  <th className="px-6 py-4">Tên chương trình</th>
                   <th className="px-6 py-4">Mức giảm</th>
                   <th className="px-6 py-4">Tỉ lệ sử dụng</th>
                   <th className="px-6 py-4">Loại phân phối</th>
-                  <th className="px-6 py-4">Thời gian hiệu lực</th>
                   <th className="px-6 py-4 text-center">Trạng thái khóa</th>
                   <th className="px-6 py-4 text-right">Thao tác</th>
                 </tr>
@@ -463,16 +461,9 @@ export default function AdminVouchersPage() {
                     <tr key={voucher.voucherID} className="hover:bg-slate-50/50 transition-colors">
                       {/* Code */}
                       <td className="px-6 py-4">
-                        <span className="font-bold text-slate-800 text-sm tracking-wide bg-slate-100/80 px-3 py-1.5 rounded-lg border border-slate-150">
+                        <span className="inline-flex items-center px-3 py-1.5 bg-primary/5 border border-dashed border-primary/30 rounded-xl text-xs font-bold text-primary tracking-wider font-mono">
                           {voucher.code}
                         </span>
-                      </td>
-
-                      {/* Name */}
-                      <td className="px-6 py-4">
-                        <div className="max-w-[180px] truncate font-semibold text-slate-700 text-sm" title={voucher.name}>
-                          {voucher.name}
-                        </div>
                       </td>
 
                       {/* Discount Amount */}
@@ -501,46 +492,35 @@ export default function AdminVouchersPage() {
                       {/* Visibility / Exclusive type */}
                       <td className="px-6 py-4">
                         {voucher.visibilityType === 1 ? (
-                          <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                            Public
-                          </span>
+                          voucher.exclusiveType === 2 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-50 text-teal-650 border border-teal-100">
+                              <span className="material-symbols-outlined text-[12px]">send</span>
+                              Công khai - Phát tự động
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-650 border border-emerald-100">
+                              <span className="material-symbols-outlined text-[12px]">public</span>
+                              Công khai
+                            </span>
+                          )
                         ) : (
-                          <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-150">
-                            Exclusive
-                          </span>
+                          voucher.exclusiveType === 1 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                              <span className="material-symbols-outlined text-[12px]">vpn_key</span>
+                              Độc quyền - Nhập mã
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">
+                              <span className="material-symbols-outlined text-[12px]">lock</span>
+                              Độc quyền - Phát trực tiếp
+                            </span>
+                          )
                         )}
-                        <span className="text-[9px] font-semibold text-slate-400 block mt-1">
-                          {voucher.exclusiveType === 0 ? "Không độc quyền" : 
-                           voucher.exclusiveType === 1 ? "Nhập mã" : "Phát trực tiếp"}
-                        </span>
-                      </td>
-
-                      {/* Dates */}
-                      <td className="px-6 py-4 text-[10px] font-bold text-slate-450">
-                        <div>
-                          <p>BĐ: {new Date(voucher.startDate).toLocaleDateString("vi-VN")}</p>
-                          <p className="mt-0.5">KT: {new Date(voucher.endDate).toLocaleDateString("vi-VN")}</p>
-                        </div>
                       </td>
 
                       {/* Validity/Status */}
                       <td className="px-6 py-4 text-center">
-                        <div className="flex flex-col items-center gap-1.5">
-                          {getValidityBadge(voucher.startDate, voucher.endDate, voucher.status)}
-                          
-                          {/* Toggle active button */}
-                          <button
-                            onClick={() => handleToggleStatusClick(voucher)}
-                            disabled={togglingId === voucher.voucherID}
-                            className={`px-2 py-0.5 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
-                              voucher.status 
-                                ? "bg-slate-50 hover:bg-slate-100 text-slate-500 border-slate-200" 
-                                : "bg-primary-container/20 hover:bg-primary-container/30 text-primary border-primary/20"
-                            }`}
-                          >
-                            {togglingId === voucher.voucherID ? "..." : (voucher.status ? "Tạm khóa" : "Mở khóa")}
-                          </button>
-                        </div>
+                        {getValidityBadge(voucher.startDate, voucher.endDate, voucher.status)}
                       </td>
 
                       {/* Actions */}
@@ -552,6 +532,25 @@ export default function AdminVouchersPage() {
                             title="Xem chi tiết & lịch sử sử dụng"
                           >
                             <span className="material-symbols-outlined text-lg">visibility</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleToggleStatusClick(voucher)}
+                            disabled={togglingId === voucher.voucherID}
+                            className={`p-1.5 rounded-full transition-all duration-200 ${
+                              voucher.status
+                                ? "hover:bg-amber-50 text-amber-550 hover:text-amber-700 cursor-pointer"
+                                : "hover:bg-emerald-50 text-emerald-650 hover:text-emerald-850 cursor-pointer"
+                            }`}
+                            title={voucher.status ? "Tạm khóa voucher" : "Mở khóa voucher"}
+                          >
+                            {togglingId === voucher.voucherID ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                            ) : (
+                              <span className="material-symbols-outlined text-lg">
+                                {voucher.status ? "lock" : "lock_open"}
+                              </span>
+                            )}
                           </button>
                           
                           <button
@@ -622,7 +621,7 @@ export default function AdminVouchersPage() {
       {/* Confirmation Modal: Delete */}
       {voucherToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl p-8 w-[380px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-rose-100">
                 <span className="material-symbols-outlined text-3xl">warning</span>
@@ -661,7 +660,7 @@ export default function AdminVouchersPage() {
       {/* Confirmation Modal: Toggle Status */}
       {voucherToToggle && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl p-8 w-[380px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4 border border-amber-100">
                 <span className="material-symbols-outlined text-3xl">info</span>
