@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { 
   User, 
@@ -79,6 +80,11 @@ export default function AdminProfilePage() {
   const [emailOtpCode, setEmailOtpCode] = useState("");
   const [submittingTwoFactor, setSubmittingTwoFactor] = useState(false);
   const [emailSetupOtpSent, setEmailSetupOtpSent] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchTwoFactorStatus = async (authToken: string) => {
     try {
@@ -929,8 +935,8 @@ export default function AdminProfilePage() {
       </div>
 
       {/* Authenticator Setup Modal */}
-      {showAuthenticatorModal && authenticatorSetupData && (
-        <div className="fixed top-0 left-0 w-screen h-screen bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {mounted && showAuthenticatorModal && authenticatorSetupData && createPortal(
+        <div className="fixed top-0 left-0 w-screen h-screen bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-[448px] max-w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
@@ -1000,12 +1006,13 @@ export default function AdminProfilePage() {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Email OTP Setup Modal */}
-      {showEmail2FaModal && (
-        <div className="fixed top-0 left-0 w-screen h-screen bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {mounted && showEmail2FaModal && createPortal(
+        <div className="fixed top-0 left-0 w-screen h-screen bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-[448px] max-w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
@@ -1066,7 +1073,8 @@ export default function AdminProfilePage() {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
