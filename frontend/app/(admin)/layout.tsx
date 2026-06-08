@@ -218,6 +218,13 @@ export default function AdminLayout({
     return pathname?.startsWith(path);
   };
 
+  const handleLogout = () => {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+      clearAuth();
+      window.location.replace("/login");
+    }
+  };
+
   if (!isAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
@@ -500,10 +507,17 @@ export default function AdminLayout({
             </div>
           </nav>
           
-          <div className="mt-auto px-4 pb-md pt-md">
-            <button className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md transition-transform">
+          <div className="mt-auto px-4 pb-md pt-md space-y-2">
+            <button className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md transition-transform cursor-pointer">
               <span className="material-symbols-outlined text-sm">help</span>
               Trung tâm hỗ trợ
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md shadow-rose-500/10 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">logout</span>
+              Đăng xuất
             </button>
           </div>
         </aside>
