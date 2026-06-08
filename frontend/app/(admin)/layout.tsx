@@ -19,6 +19,7 @@ export default function AdminLayout({
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Notifications states
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
@@ -219,10 +220,7 @@ export default function AdminLayout({
   };
 
   const handleLogout = () => {
-    if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
-      clearAuth();
-      window.location.replace("/login");
-    }
+    setShowLogoutConfirm(true);
   };
 
   if (!isAuth) {
@@ -539,6 +537,43 @@ export default function AdminLayout({
           </footer>
         </main>
       </div>
+
+      {/* Custom Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-[360px] max-w-full p-6 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-2xl">logout</span>
+              </div>
+              <h3 className="text-base font-extrabold text-slate-800">Xác nhận đăng xuất</h3>
+              <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị LazPe không?
+              </p>
+            </div>
+            
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  clearAuth();
+                  window.location.replace("/login");
+                }}
+                className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
