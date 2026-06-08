@@ -706,12 +706,12 @@ namespace PolyBabyAPI.Controllers
                     },
                     TimeSpan.FromSeconds(ResetOtpExpiredSeconds));
 
-                var subject = "Mã OTP đặt lại mật khẩu - PolyBaby";
+                var subject = "Mã OTP đặt lại mật khẩu - LazPe";
                 var htmlBody = $@"
                     <div style='font-family: Arial, sans-serif; color: #333;'>
                         <h3 style='margin-bottom: 12px;'>Xác thực đặt lại mật khẩu</h3>
                         <p>Xin chào {WebUtility.HtmlEncode(user.FullName ?? user.Email)},</p>
-                        <p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản PolyBaby.</p>
+                        <p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản LazPe.</p>
                         <p>Mã OTP của bạn là:</p>
                         <div style='font-size: 28px; font-weight: 700; color: #696cff; letter-spacing: 4px; margin: 8px 0 16px 0;'>{otpCode}</div>
                         <p>Mã có hiệu lực trong <strong>{ResetOtpExpiredSeconds} giây</strong>.</p>

@@ -176,7 +176,7 @@ namespace PolyBabyAPI.Services
             var smtpPassword = _configuration["EmailSettings:SmtpPassword"];
             var enableSsl = _configuration.GetValue("EmailSettings:EnableSsl", true);
             var fromEmail = _configuration["EmailSettings:FromEmail"] ?? smtpUser;
-            var fromName = _configuration["EmailSettings:FromName"] ?? "PolyBaby";
+            var fromName = _configuration["EmailSettings:FromName"] ?? "LazPe";
 
             if (string.IsNullOrWhiteSpace(smtpHost) || string.IsNullOrWhiteSpace(fromEmail))
             {
