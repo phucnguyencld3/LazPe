@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PolyBabyAPI.Interfaces;
@@ -9,9 +9,9 @@ namespace PolyBabyAPI.Data
 {
     public static class IdentitySeeder
     {
-        private const string AdminUserName = "admin";
+        private const string AdminUserName = "lazpevn@gmail.com";
         private const string AdminPassword = "123456";
-        private const string AdminEmail = "admin@polybaby.com";
+        private const string AdminEmail = "lazpevn@gmail.com";
         private const string AdminFullName = "Administrator";
 
         public static async Task SeedAsync(IServiceProvider serviceProvider)
@@ -167,6 +167,25 @@ namespace PolyBabyAPI.Data
 
         private static async Task<ApplicationUser?> SeedAdminUserAsync(UserManager<ApplicationUser> userManager, ILogger logger)
         {
+            var oldAdmin = await userManager.FindByNameAsync("admin") ?? await userManager.FindByEmailAsync("admin@polybaby.com");
+            if (oldAdmin != null)
+            {
+                logger.LogInformation("Found legacy admin user. Migrating username and email to '{NewAdmin}'...", AdminEmail);
+                oldAdmin.UserName = AdminUserName;
+                oldAdmin.Email = AdminEmail;
+                oldAdmin.EmailConfirmed = true;
+                var updateResult = await userManager.UpdateAsync(oldAdmin);
+                if (updateResult.Succeeded)
+                {
+                    logger.LogInformation("Successfully migrated legacy admin to '{NewAdmin}'.", AdminEmail);
+                }
+                else
+                {
+                    logger.LogError("Failed to migrate legacy admin: {Errors}", 
+                        string.Join("; ", updateResult.Errors.Select(e => e.Description)));
+                }
+            }
+
             var adminUser = await userManager.FindByNameAsync(AdminUserName);
             
             if (adminUser == null)
