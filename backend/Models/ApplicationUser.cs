@@ -57,6 +57,11 @@ namespace PolyBabyAPI.Models
 
         // Navigation property cho permissions
         public virtual ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
+
+        // THÊM NAVIGATION PROPERTY CHO ROLE TEMPLATE
+        public int? RoleTemplateId { get; set; }
+        [ForeignKey("RoleTemplateId")]
+        public virtual RoleTemplate? RoleTemplate { get; set; }
     }
 }
 

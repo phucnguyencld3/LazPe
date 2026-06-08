@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Filters;
 using PolyBabyAPI.Interfaces;
@@ -88,6 +88,30 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Lấy Effective Permissions của user (bao gồm từ Template và Override)
+        /// </summary>
+        [HttpGet("effective-user/{userId}")]
+        [Permission("Permission.Read")]
+        public async Task<IActionResult> GetUserEffectivePermissions(string userId)
+        {
+            try
+            {
+                var data = await _permissionService.GetUserEffectivePermissionsAsync(userId);
+                return Ok(new
+                {
+                    success = true,
+                    data = data,
+                    message = "Lấy effective permissions của user thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting effective user permissions for {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy permissions của user" });
+            }
+        }
+
+        /// <summary>
         /// Tạo permission mới
         /// </summary>
         [HttpPost]
@@ -141,7 +165,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var currentUserId = User.FindFirst("UserId")?.Value ?? "";
-                var result = await _permissionService.GrantPermissionAsync(dto.UserId, dto.PermissionId, currentUserId);
+                var result = await _permissionService.GrantPermissionAsync(dto.UserId, dto.PermissionId, currentUserId, dto.IsGranted);
 
                 if (result)
                 {
@@ -213,6 +237,58 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Đồng bộ quyền hạn của user (Cập nhật Role Template và Overrides)
+        /// </summary>
+        [HttpPost("sync")]
+        [Permission("Permission.Assign")]
+        public async Task<IActionResult> SyncUserPermissions([FromBody] SyncPermissionDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ" });
+
+                var currentUserId = User.FindFirst("UserId")?.Value ?? "";
+
+                // 1. Cập nhật Role Template
+                await _permissionService.AssignRoleTemplateToUserAsync(dto.UserId, dto.TemplateId);
+
+                // 2. Tính toán Overrides
+                // Xóa toàn bộ overrides cũ
+                var oldOverrides = await _permissionService.GetUserPermissionsAsync(dto.UserId);
+                // Vì ta cần xóa toàn bộ UserPermission cho userId này (cả add và deny), ta làm thủ công bằng context hoặc service.
+                // Để nhanh chóng, ta dùng service loop:
+                foreach(var up in oldOverrides) {
+                    await _permissionService.RevokePermissionAsync(dto.UserId, up.Id);
+                }
+
+                // Lấy quyền của template
+                var template = dto.TemplateId.HasValue ? await _permissionService.GetRoleTemplateByIdAsync(dto.TemplateId.Value) : null;
+                var templatePermIds = template?.TemplatePermissions.Select(tp => tp.PermissionId).ToList() ?? new List<int>();
+
+                // Tính toán Overrides mới dựa trên Effective Ids truyền từ client
+                var newAdds = dto.EffectivePermissionIds.Except(templatePermIds).ToList();
+                var newDenies = templatePermIds.Except(dto.EffectivePermissionIds).ToList();
+
+                foreach (var id in newAdds)
+                {
+                    await _permissionService.GrantPermissionAsync(dto.UserId, id, currentUserId, true);
+                }
+
+                foreach (var id in newDenies)
+                {
+                    await _permissionService.GrantPermissionAsync(dto.UserId, id, currentUserId, false);
+                }
+
+                return Ok(new { success = true, message = "Đồng bộ quyền hạn thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error syncing permissions for user {UserId}", dto.UserId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi đồng bộ quyền" });
+            }
+        }
+
+        /// <summary>
         /// Kiểm tra user có permission không
         /// </summary>
         [HttpGet("check/{userId}/{permissionName}")]
@@ -250,12 +326,20 @@ namespace PolyBabyAPI.Controllers
         {
             public string UserId { get; set; } = string.Empty;
             public int PermissionId { get; set; }
+            public bool IsGranted { get; set; } = true;
         }
 
         public class RevokePermissionDto
         {
             public string UserId { get; set; } = string.Empty;
             public int PermissionId { get; set; }
+        }
+
+        public class SyncPermissionDto
+        {
+            public string UserId { get; set; } = string.Empty;
+            public int? TemplateId { get; set; }
+            public List<int> EffectivePermissionIds { get; set; } = new List<int>();
         }
         #endregion
     }

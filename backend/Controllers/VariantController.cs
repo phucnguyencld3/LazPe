@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
@@ -593,15 +593,8 @@ namespace PolyBabyAPI.Controllers
                 if (variant == null)
                     return NotFound(new { message = "Không tìm thấy biến thể" });
 
-                // Xóa ảnh cũ trên Cloudinary nếu có
-                if (!string.IsNullOrEmpty(variant.ImageUrl))
-                {
-                    try { await _cloudinaryService.DeleteImageAsync(variant.ImageUrl); }
-                    catch (Exception ex) { _logger.LogWarning(ex, "Could not delete old variant image"); }
-                }
-
-                // Upload ảnh mới lên Cloudinary folder "Variants"
-                var imageUrl = await _cloudinaryService.UploadImageAsync(image, "Variants");
+                // Thay thế ảnh trên Cloudinary bằng phương thức dùng chung
+                var imageUrl = await _cloudinaryService.ReplaceImageAsync(variant.ImageUrl, image, "Variants");
 
                 if (string.IsNullOrEmpty(imageUrl))
                     return StatusCode(500, new { message = "Không thể upload hình ảnh lên Cloudinary" });

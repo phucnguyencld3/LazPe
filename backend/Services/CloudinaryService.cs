@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Options;
 using PolyBabyAPI.Interface;
@@ -27,7 +27,7 @@ namespace PolyBabyAPI.Service
             return await UploadImageAsync(file, "polystation/products");
         }
 
-        // ✅ Thêm method upload với folder tùy chọn
+        // Thêm method upload với folder tùy chọn
         public async Task<string> UploadImageAsync(IFormFile file, string folder)
         {
             if (file == null || file.Length == 0)
@@ -69,7 +69,7 @@ namespace PolyBabyAPI.Service
             }
         }
 
-        // ✅ Thêm method upload avatar chuyên dụng
+        // Thêm method upload avatar chuyên dụng
         public async Task<string> UploadAvatarAsync(IFormFile file, string userId)
         {
             if (file == null || file.Length == 0)
@@ -139,7 +139,25 @@ namespace PolyBabyAPI.Service
                 return false;
             }
         }
-        // ✅ THÊM: Method upload local fallback
+
+        public async Task<string> ReplaceImageAsync(string oldImageUrl, IFormFile newFile, string folder)
+        {
+            if (!string.IsNullOrEmpty(oldImageUrl))
+            {
+                try
+                {
+                    await DeleteImageAsync(oldImageUrl);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error deleting old image during replacement: {ImageUrl}", oldImageUrl);
+                }
+            }
+
+            return await UploadImageAsync(newFile, folder);
+        }
+
+        //Method upload local fallback
         public async Task<string> UploadAvatarLocalAsync(IFormFile file, string userId)
         {
             if (file == null || file.Length == 0)
@@ -149,22 +167,22 @@ namespace PolyBabyAPI.Service
             {
                 _logger.LogInformation("Starting local avatar upload for user: {UserId}", userId);
 
-                // ✅ Tạo thư mục uploads/avatars nếu chưa có
+                //Tạo thư mục uploads/avatars nếu chưa có
                 var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
                 Directory.CreateDirectory(uploadsPath);
 
-                // ✅ Tạo tên file unique
+                //Tạo tên file unique
                 var fileExtension = Path.GetExtension(file.FileName);
                 var fileName = $"{userId}_{Guid.NewGuid():N}{fileExtension}";
                 var filePath = Path.Combine(uploadsPath, fileName);
 
-                // ✅ Lưu file
+                //Lưu file
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
 
-                // ✅ Trả về URL relative
+                // Trả về URL relative
                 var avatarUrl = $"/uploads/avatars/{fileName}";
                 _logger.LogInformation("Avatar uploaded locally for user {UserId}: {AvatarUrl}", userId, avatarUrl);
 

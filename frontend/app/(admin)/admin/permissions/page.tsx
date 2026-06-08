@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { fetchPermissions, API_BASE_URL } from "@/lib/features/permissions/permissionApi";
 import { PermissionSummaryCards } from "@/components/admin/permissions/PermissionSummaryCards";
-import { PermissionDefinitionsTab } from "@/components/admin/permissions/PermissionDefinitionsTab";
+import { PermissionRoleTemplatesTab } from "@/components/admin/permissions/PermissionRoleTemplatesTab";
 import { PermissionUsersTab } from "@/components/admin/permissions/PermissionUsersTab";
 
 export default function PermissionCenterPage() {
@@ -21,7 +21,7 @@ export default function PermissionCenterPage() {
   const [totalCount, setTotalCount] = useState(0);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"users" | "definitions">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "templates">("users");
 
   // Debounce search
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function PermissionCenterPage() {
         const perms = await fetchPermissions(token);
         setPermissions(perms);
 
-        const usersRes = await fetch(`${API_BASE_URL}/Users?search=${debouncedSearch}&page=${page}&pageSize=10`, {
+        const usersRes = await fetch(`${API_BASE_URL}/Users?search=${debouncedSearch}&page=${page}&pageSize=10&onlyWithPermissions=true`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const usersData = await usersRes.json();
@@ -111,14 +111,14 @@ export default function PermissionCenterPage() {
           Phân quyền tài khoản ({totalCount})
         </button>
         <button
-          onClick={() => setActiveTab("definitions")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === "definitions"
+          onClick={() => setActiveTab("templates")}
+          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === "templates"
               ? "border-primary text-primary"
               : "border-transparent text-on-surface-variant/70 hover:text-primary"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">rule</span>
-          Danh sách quyền hệ thống ({totalSystemPermissions})
+          <span className="material-symbols-outlined text-sm">settings_suggest</span>
+          Quản lý Gói Quyền
         </button>
       </div>
 
@@ -135,7 +135,7 @@ export default function PermissionCenterPage() {
           setPage={setPage}
         />
       ) : (
-        <PermissionDefinitionsTab groupedPermissions={groupedPermissions} />
+        <PermissionRoleTemplatesTab showHeader={false} />
       )}
     </div>
   );

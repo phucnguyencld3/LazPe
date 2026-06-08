@@ -126,6 +126,13 @@ export const fetchCategoriesForSelect = async (token: string): Promise<CategoryS
 };
 
 // Detailed definitions
+export interface AdminVariantOptionValue {
+  variantOptionValueID: number;
+  variantID: number;
+  productOptionValueID: number;
+  productOptionValue?: AdminProductOptionValue;
+}
+
 export interface AdminVariantInfo {
   variantID: number;
   productID: number;
@@ -140,6 +147,7 @@ export interface AdminVariantInfo {
   description?: string | null;
   status: boolean;
   createdAt?: string;
+  variantOptionValues: AdminVariantOptionValue[];
 }
 
 export interface AdminProductOptionValue {

@@ -368,6 +368,13 @@ export default function AdminLayout({
                 <span className="material-symbols-outlined">category</span>
                 <span className="font-label-md">Danh mục</span>
               </Link>
+              <Link
+                href="/admin/brands"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">verified</span>
+                <span className="font-label-md">Thương hiệu</span>
+              </Link>
             </div>
 
             {/* Tài khoản */}

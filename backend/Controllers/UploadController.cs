@@ -89,13 +89,13 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpPost("image")]
         [Permission("Product.Update")]
-        public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string folder = "polystation/variants")
+        public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string folder = "polystation/variants", [FromForm] string? oldImageUrl = null)
         {
             try
             {
                 _logger.LogInformation("=== Upload Image Request ===");
-                _logger.LogInformation("File: {FileName}, Size: {Size}, Folder: {Folder}",
-                    file?.FileName ?? "null", file?.Length ?? 0, folder);
+                _logger.LogInformation("File: {FileName}, Size: {Size}, Folder: {Folder}, OldImageUrl: {OldImageUrl}",
+                    file?.FileName ?? "null", file?.Length ?? 0, folder, oldImageUrl ?? "null");
 
                 if (file == null || file.Length == 0)
                 {
@@ -121,9 +121,9 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
                 }
 
-                //  Sử dụng method UploadImageAsync có sẵn
-                _logger.LogInformation("Calling CloudinaryService.UploadImageAsync...");
-                var uploadResult = await _cloudinaryService.UploadImageAsync(file, folder);
+                // Sử dụng method ReplaceImageAsync dùng chung
+                _logger.LogInformation("Calling CloudinaryService.ReplaceImageAsync...");
+                var uploadResult = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, folder);
 
                 _logger.LogInformation("Upload result: {Result}", uploadResult ?? "NULL");
 

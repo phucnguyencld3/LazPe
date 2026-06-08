@@ -34,11 +34,17 @@ namespace PolyBabyAPI.Services
         public async Task<(List<UserDto> users, int totalCount)> GetUsersPagedAsync(
             string? search = null,
             int page = 1,
-            int pageSize = 10)
+            int pageSize = 10,
+            bool onlyWithPermissions = false)
         {
             try
             {
                 var query = _context.Users.AsQueryable();
+
+                if (onlyWithPermissions)
+                {
+                    query = query.Where(u => u.RoleTemplateId != null || _context.UserPermissions.Any(up => up.UserId == u.Id));
+                }
 
                 // Filter by search
                 if (!string.IsNullOrEmpty(search))

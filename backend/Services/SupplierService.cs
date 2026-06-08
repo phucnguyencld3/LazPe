@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interface;
 using PolyBabyAPI.Models;
@@ -120,10 +120,7 @@ namespace PolyBabyAPI.Service
 
             return await _context.Suppliers
                 .Include(s => s.Products)
-                .Where(s => s.SupplierName.ToLower().Contains(searchTerm) ||
-                           s.ContactName.ToLower().Contains(searchTerm) ||
-                           s.Email.ToLower().Contains(searchTerm) ||
-                           s.Phone.Contains(searchTerm))
+                .Where(s => s.SupplierName.ToLower().Contains(searchTerm))
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
         }

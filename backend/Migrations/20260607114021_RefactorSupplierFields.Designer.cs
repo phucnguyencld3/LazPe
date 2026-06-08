@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607114021_RefactorSupplierFields")]
+    partial class RefactorSupplierFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -287,9 +290,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<DateTime>("RegisterDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("RoleTemplateId")
-                        .HasColumnType("int");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -312,8 +312,6 @@ namespace PolyBabyAPI.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("RoleTemplateId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -1948,56 +1946,6 @@ namespace PolyBabyAPI.Migrations
                         });
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.RoleTemplate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("RoleTemplates");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Quản trị viên toàn quyền",
-                            IsActive = true,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Nhân viên bán hàng",
-                            IsActive = true,
-                            Name = "Staff"
-                        });
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.Supplier", b =>
                 {
                     b.Property<int>("SupplierID")
@@ -2034,21 +1982,6 @@ namespace PolyBabyAPI.Migrations
                     b.HasKey("SupplierID");
 
                     b.ToTable("Suppliers");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.TemplatePermission", b =>
-                {
-                    b.Property<int>("TemplateId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TemplateId", "PermissionId");
-
-                    b.HasIndex("PermissionId");
-
-                    b.ToTable("TemplatePermissions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserAddress", b =>
@@ -2155,9 +2088,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<string>("GrantedBy")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsGranted")
-                        .HasColumnType("bit");
 
                     b.HasKey("UserId", "PermissionId");
 
@@ -2495,16 +2425,6 @@ namespace PolyBabyAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.ApplicationUser", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.RoleTemplate", "RoleTemplate")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleTemplateId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("RoleTemplate");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.BundleItem", b =>
@@ -2892,25 +2812,6 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Review");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.TemplatePermission", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.Permission", "Permission")
-                        .WithMany()
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PolyBabyAPI.Models.RoleTemplate", "RoleTemplate")
-                        .WithMany("TemplatePermissions")
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("RoleTemplate");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.UserAddress", b =>
                 {
                     b.HasOne("PolyBabyAPI.Models.District", "District")
@@ -3210,13 +3111,6 @@ namespace PolyBabyAPI.Migrations
             modelBuilder.Entity("PolyBabyAPI.Models.ReviewComment", b =>
                 {
                     b.Navigation("ChildComments");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.RoleTemplate", b =>
-                {
-                    b.Navigation("TemplatePermissions");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Supplier", b =>
