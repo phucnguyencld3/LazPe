@@ -52,6 +52,8 @@ namespace PolyBabyAPI.Data
 
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
+        public DbSet<RoleTemplate> RoleTemplates { get; set; }
+        public DbSet<TemplatePermission> TemplatePermissions { get; set; }
 
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<Wishlist> Wishlists { get; set; }
@@ -416,6 +418,43 @@ namespace PolyBabyAPI.Data
 
                 entity.HasOne(e => e.Permission)
                       .WithMany(p => p.UserPermissions)
+                      .HasForeignKey(e => e.PermissionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ApplicationUser - RoleTemplate relationship
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.RoleTemplate)
+                .WithMany(rt => rt.Users)
+                .HasForeignKey(u => u.RoleTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // RoleTemplate entity
+            builder.Entity<RoleTemplate>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Name).IsUnique();
+                entity.Property(e => e.Description).HasMaxLength(255);
+                
+                entity.HasData(
+                    new RoleTemplate { Id = 1, Name = "Admin", Description = "Quản trị viên toàn quyền", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc), IsActive = true },
+                    new RoleTemplate { Id = 2, Name = "Staff", Description = "Nhân viên bán hàng", CreatedAt = new DateTime(2026, 6, 6, 0, 0, 0, DateTimeKind.Utc), IsActive = true }
+                );
+            });
+
+            // TemplatePermission entity (Many-to-Many)
+            builder.Entity<TemplatePermission>(entity =>
+            {
+                entity.HasKey(e => new { e.TemplateId, e.PermissionId });
+
+                entity.HasOne(e => e.RoleTemplate)
+                      .WithMany(rt => rt.TemplatePermissions)
+                      .HasForeignKey(e => e.TemplateId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Permission)
+                      .WithMany() // We can skip the inverse navigation on Permission for simplicity
                       .HasForeignKey(e => e.PermissionId)
                       .OnDelete(DeleteBehavior.Cascade);
             });

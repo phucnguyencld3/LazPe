@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.DTOs;
@@ -34,14 +34,15 @@ namespace PolyBabyAPI.Controllers
         public async Task<IActionResult> GetUsers(
             [FromQuery] string? search = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool onlyWithPermissions = false)
         {
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 _logger.LogInformation("User {UserId} accessing users list", userId);
 
-                var (users, totalCount) = await _userService.GetUsersPagedAsync(search, page, pageSize);
+                var (users, totalCount) = await _userService.GetUsersPagedAsync(search, page, pageSize, onlyWithPermissions);
 
                 return Ok(new
                 {

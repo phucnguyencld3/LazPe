@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace PolyBabyAPI.Models
 {
@@ -8,6 +8,7 @@ namespace PolyBabyAPI.Models
         public int PermissionId { get; set; }
         public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
         public string? GrantedBy { get; set; } // UserId của admin cấp quyền
+        public bool IsGranted { get; set; } = true; // true = Override Add, false = Override Deny
 
         // Navigation properties
         public virtual ApplicationUser User { get; set; } = null!;
