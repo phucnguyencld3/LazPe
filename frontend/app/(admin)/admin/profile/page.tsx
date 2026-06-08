@@ -264,10 +264,10 @@ export default function AdminProfilePage() {
   const permissions = user?.permissions || [];
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 font-sans text-sm">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Hồ Sơ Cá Nhân</h1>
-        <p className="text-xs text-slate-400 font-semibold mt-1">
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Hồ Sơ Cá Nhân</h1>
+        <p className="text-sm text-slate-500 font-semibold mt-1.5">
           Quản lý thông tin cá nhân, cập nhật ảnh đại diện và thay đổi mật khẩu tài khoản quản trị viên.
         </p>
       </div>
@@ -299,7 +299,7 @@ export default function AdminProfilePage() {
               {!uploadingAvatar && (
                 <label className="absolute inset-0 bg-black/0 group-hover:bg-black/45 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer">
                   <Upload size={18} className="mb-1" />
-                  <span className="text-[10px] font-bold">Tải ảnh lên</span>
+                  <span className="text-xs font-bold">Tải ảnh lên</span>
                   <input 
                     type="file" 
                     onChange={handleAvatarChange} 
@@ -310,24 +310,24 @@ export default function AdminProfilePage() {
               )}
             </div>
 
-            <h2 className="text-lg font-bold text-slate-800 mt-4 leading-tight">
+            <h2 className="text-xl font-bold text-slate-800 mt-4 leading-tight">
               {profile?.fullName || user?.fullName || "Chưa thiết lập"}
             </h2>
-            <p className="text-xs text-slate-400 font-semibold mt-1">
+            <p className="text-sm text-slate-500 font-semibold mt-1">
               {profile?.email || user?.email}
             </p>
 
             {/* Badges of Roles */}
-            <div className="flex flex-wrap gap-2 justify-center mt-3 w-full border-t border-slate-50 pt-3">
+            <div className="flex flex-wrap gap-2 justify-center mt-3.5 w-full border-t border-slate-100 pt-3.5">
               {roles.length === 0 ? (
-                <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-bold">
+                <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full font-bold">
                   Không có vai trò
                 </span>
               ) : (
                 roles.map((r: string) => (
                   <span 
                     key={r} 
-                    className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${getRoleBadgeColor(r)}`}
+                    className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${getRoleBadgeColor(r)}`}
                   >
                     {r}
                   </span>
@@ -336,25 +336,25 @@ export default function AdminProfilePage() {
             </div>
 
             {/* General Info list */}
-            <div className="w-full text-left mt-6 space-y-3.5 border-t border-slate-50 pt-4 text-xs font-semibold text-slate-600">
+            <div className="w-full text-left mt-6 space-y-4 border-t border-slate-100 pt-4 text-sm font-semibold text-slate-600">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Trạng thái:</span>
-                <span className="flex items-center gap-1 text-emerald-500">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   Hoạt động
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Xác thực Email:</span>
                 {profile?.emailConfirmed ? (
-                  <span className="text-emerald-500 flex items-center gap-0.5"><Check size={14} /> Đã xác thực</span>
+                  <span className="text-emerald-500 flex items-center gap-1 font-bold"><Check size={16} /> Đã xác thực</span>
                 ) : (
-                  <span className="text-amber-500 flex items-center gap-0.5"><AlertCircle size={14} /> Chưa xác thực</span>
+                  <span className="text-amber-500 flex items-center gap-1 font-bold"><AlertCircle size={16} /> Chưa xác thực</span>
                 )}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Ngày đăng ký:</span>
-                <span className="text-slate-800">
+                <span className="text-slate-800 font-bold">
                   {profile?.registerDate ? new Date(profile.registerDate).toLocaleDateString("vi-VN") : "N/A"}
                 </span>
               </div>
@@ -368,56 +368,56 @@ export default function AdminProfilePage() {
           {/* Card 1: Personal Info form */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
             <div>
-              <h3 className="text-base font-extrabold text-slate-800">Thông Tin Cá Nhân</h3>
-              <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Cập nhật họ tên và số điện thoại liên lạc của bạn.</p>
+              <h3 className="text-lg font-extrabold text-slate-800">Thông Tin Cá Nhân</h3>
+              <p className="text-sm text-slate-400 font-semibold mt-1">Cập nhật họ tên và số điện thoại liên lạc của bạn.</p>
             </div>
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Họ tên */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên *</label>
                   <div className="relative">
-                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type="text" 
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Nhập họ và tên..."
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                       required
                     />
                   </div>
                 </div>
 
                 {/* Số điện thoại */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Số điện thoại</label>
                   <div className="relative">
-                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Phone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type="text" 
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="Nhập số điện thoại..."
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                     />
                   </div>
                 </div>
 
                 {/* Email (Readonly) */}
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    Địa chỉ Email <Lock size={12} className="text-slate-400" /> (Không thể chỉnh sửa)
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-450 uppercase tracking-wider flex items-center gap-1.5">
+                    Địa chỉ Email <Lock size={14} className="text-slate-400" /> (Không thể chỉnh sửa)
                   </label>
                   <div className="relative">
-                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350" />
+                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type="email" 
                       value={profile?.email || ""} 
                       disabled
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-400 cursor-not-allowed select-none"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-100 border border-slate-200/60 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed select-none"
                     />
                   </div>
                 </div>
@@ -427,7 +427,7 @@ export default function AdminProfilePage() {
                 <button
                   type="submit"
                   disabled={updatingProfile}
-                  className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md shadow-rose-500/10 transition-all"
+                  className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md shadow-rose-500/10 transition-all cursor-pointer"
                 >
                   {updatingProfile ? (
                     <>
@@ -444,16 +444,16 @@ export default function AdminProfilePage() {
           {/* Card 2: Password form */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
             <div>
-              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-1.5">
-                <Key size={18} className="text-rose-500" /> Đổi Mật Khẩu
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                <Key size={20} className="text-rose-500" /> Đổi Mật Khẩu
               </h3>
-              <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Bảo vệ tài khoản bằng cách sử dụng mật khẩu mạnh.</p>
+              <p className="text-sm text-slate-400 font-semibold mt-1">Bảo vệ tài khoản bằng cách sử dụng mật khẩu mạnh.</p>
             </div>
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {passwordError && (
-                <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2 text-rose-600 text-[11px] font-bold">
-                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                <div className="p-3.5 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2 text-rose-600 text-sm font-bold">
+                  <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
                   <span>{passwordError}</span>
                 </div>
               )}
@@ -461,16 +461,16 @@ export default function AdminProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 {/* Mật khẩu cũ */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Mật khẩu hiện tại *</label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type={showCurrentPassword ? "text" : "password"}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Mật khẩu cũ..."
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                      className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                       required
                     />
                     <button 
@@ -478,22 +478,22 @@ export default function AdminProfilePage() {
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
-                      {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
                 {/* Mật khẩu mới */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Mật khẩu mới *</label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type={showNewPassword ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Ít nhất 6 ký tự..."
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                      className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                       required
                     />
                     <button 
@@ -501,22 +501,22 @@ export default function AdminProfilePage() {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
-                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
                 {/* Nhập lại mật khẩu mới */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Xác nhận mật khẩu *</label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                       placeholder="Xác nhận mật khẩu..."
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                      className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                       required
                     />
                     <button 
@@ -524,7 +524,7 @@ export default function AdminProfilePage() {
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function AdminProfilePage() {
                 <button
                   type="submit"
                   disabled={changingPassword}
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 transition-all"
+                  className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 transition-all cursor-pointer"
                 >
                   {changingPassword ? (
                     <>
@@ -551,17 +551,17 @@ export default function AdminProfilePage() {
           {/* Card 3: Permissions & Roles list */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
             <div>
-              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-1.5">
-                <Shield size={18} className="text-indigo-500" /> Quyền Hạn Tài Khoản (Permissions)
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                <Shield size={20} className="text-indigo-500" /> Quyền Hạn Tài Khoản (Permissions)
               </h3>
-              <p className="text-[11px] text-slate-400 font-semibold mt-0.5">
+              <p className="text-sm text-slate-450 font-semibold mt-1">
                 Danh sách chi tiết các quyền chức năng hiện có của tài khoản trong hệ thống quản trị.
               </p>
             </div>
 
-            <div className="border border-slate-50 rounded-2xl p-4 bg-slate-50/30">
+            <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50">
               {permissions.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                <div className="text-center py-6 text-slate-400 text-sm font-semibold">
                   <Shield size={24} className="mx-auto mb-2 text-slate-300" />
                   Tài khoản không được cấp quyền hạn riêng lẻ nào.
                 </div>
@@ -570,7 +570,7 @@ export default function AdminProfilePage() {
                   {permissions.map((perm: string) => (
                     <span 
                       key={perm} 
-                      className="text-[11px] font-mono font-bold px-3 py-1 bg-white border border-slate-100 shadow-sm text-slate-600 hover:text-indigo-600 rounded-lg transition-colors cursor-default"
+                      className="text-xs font-mono font-bold px-3 py-1.5 bg-white border border-slate-200/80 shadow-sm text-slate-600 hover:text-indigo-600 rounded-lg transition-colors cursor-default"
                     >
                       {perm}
                     </span>
