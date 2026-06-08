@@ -69,8 +69,8 @@ export default function Email2FaModal({
           <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
             <Mail size={22} className="text-rose-500" /> Cấu hình Xác thực Email
           </h3>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => { setShowEmail2FaModal(false); setEmailOtpCode(""); }}
             className="text-slate-400 hover:text-slate-650 text-xl font-bold cursor-pointer"
           >
@@ -83,8 +83,8 @@ export default function Email2FaModal({
 
           <form onSubmit={handleEnableEmail2Fa} className="space-y-4">
             <div className="relative">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 maxLength={6}
                 value={emailOtpCode}
                 onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ""))}

@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { ShieldCheck, Smartphone, Mail, Loader, Lock, QrCode } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { disable2Fa, setupAuthenticator, setupEmail2Fa } from "@/lib/api";
@@ -29,11 +30,21 @@ export default function TwoFactorCard({
   setShowEmail2FaModal,
 }: TwoFactorCardProps) {
 
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Handle Disable 2FA
-  const handleDisable2Fa = async () => {
+  const handleDisable2Fa = () => {
+    setShowDisableConfirm(true);
+  };
+
+  const confirmDisable2Fa = async () => {
     if (!token) return;
-    if (!confirm("Bạn có chắc chắn muốn tắt tính năng xác thực 2 bước không? Tài khoản của bạn sẽ kém an toàn hơn.")) return;
-    
+    setShowDisableConfirm(false);
     setLoadingTwoFactor(true);
     try {
       const res = await disable2Fa(token);
@@ -166,6 +177,39 @@ export default function TwoFactorCard({
             )}
           </div>
         </div>
+      {mounted && showDisableConfirm && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-[420px] max-w-full p-8 border border-slate-100 shadow-2xl space-y-7 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-3xl">shield_lock</span>
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800">Tắt xác thực 2 bước</h3>
+              <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+                Bạn có chắc chắn muốn tắt tính năng xác thực 2 bước không? Tài khoản của bạn sẽ kém an toàn hơn.
+              </p>
+            </div>
+            
+            <div className="flex gap-4 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowDisableConfirm(false)}
+                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={confirmDisable2Fa}
+                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Xác nhận tắt
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       </div>
     </div>
   );

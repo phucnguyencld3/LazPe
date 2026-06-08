@@ -53,8 +53,8 @@ export default function AuthenticatorModal({
           <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
             <QrCode size={22} className="text-rose-500" /> Cấu hình Authenticator App
           </h3>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => { setShowAuthenticatorModal(false); setAuthenticatorCode(""); }}
             className="text-slate-400 hover:text-slate-650 text-xl font-bold cursor-pointer"
           >
@@ -64,12 +64,12 @@ export default function AuthenticatorModal({
 
         <div className="space-y-4 text-sm font-medium text-slate-650">
           <p><strong>Bước 1:</strong> Sử dụng ứng dụng Authenticator (Google/Microsoft Authenticator) để quét mã QR dưới đây:</p>
-          
+
           <div className="flex justify-center py-2 flex-shrink-0">
             <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-inner w-[184px] h-[184px] flex items-center justify-center flex-shrink-0">
-              <img 
+              <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(authenticatorSetupData?.qrCodeUri || "")}`}
-                alt="2FA QR Code" 
+                alt="2FA QR Code"
                 width={160}
                 height={160}
                 className="w-40 h-40 object-contain aspect-square block flex-shrink-0"
@@ -86,8 +86,8 @@ export default function AuthenticatorModal({
 
           <form onSubmit={handleEnableAuthenticator} className="space-y-4">
             <div className="relative">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 maxLength={6}
                 value={authenticatorCode}
                 onChange={(e) => setAuthenticatorCode(e.target.value.replace(/\D/g, ""))}

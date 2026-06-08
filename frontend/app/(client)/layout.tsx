@@ -28,10 +28,10 @@ export default function ClientLayout({
           const user = JSON.parse(savedUserJson);
           const roles = user?.roles || [];
           const permissions = user?.permissions || [];
-          
+
           // Chặn Admin và toàn bộ tài khoản có các quyền được gán truy cập vào trang client
           const hasAdminAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
-          
+
           if (hasAdminAccess) {
             setIsAdmin(true);
             window.location.replace("/admin");
@@ -58,7 +58,7 @@ export default function ClientLayout({
       <CartProvider>
         <div className="min-h-screen bg-white text-slate-900 client-scaled-layout">
           <Header />
-          <main className="pt-20">{children}</main>
+          <main className="pt-20 w-full">{children}</main>
           <CustomerChatWidget />
           <footer className="border-t border-slate-200 bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">

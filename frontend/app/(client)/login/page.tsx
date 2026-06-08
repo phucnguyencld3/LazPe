@@ -122,7 +122,7 @@ export default function LoginPage() {
           const roles = user?.roles || [];
           const permissions = user?.permissions || [];
           const hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
-          
+
           if (hasDashboardAccess) {
             window.location.replace("/admin");
           } else {
@@ -156,7 +156,9 @@ export default function LoginPage() {
         if (data.requiresTwoFactor) {
           setTempUserId(data.userId);
           setTwoFactorProviders(data.providers || []);
-          const defaultProvider = data.providers?.[0] || "Authenticator";
+          const defaultProvider = data.providers?.includes("Authenticator")
+            ? "Authenticator"
+            : (data.providers?.includes("Email") ? "Email" : "Authenticator");
           setTwoFactorProvider(defaultProvider);
           setShowTwoFactor(true);
           setError("");
@@ -181,19 +183,19 @@ export default function LoginPage() {
           sessionStorage.setItem("token", data.token);
           sessionStorage.setItem("user", JSON.stringify(data.user));
         }
-        
+
         // Chuyển hướng: Admin hoặc User có các quyền được gán về trang quản trị, còn lại về trang chủ
         let hasDashboardAccess = false;
         try {
           const user = data.user;
           const roles = user?.roles || [];
           const permissions = user?.permissions || [];
-          
+
           console.log("=== Login Debug ===");
           console.log("User:", user);
           console.log("Roles:", roles);
           console.log("Permissions:", permissions);
-          
+
           hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
           console.log("hasDashboardAccess:", hasDashboardAccess);
         } catch (evalError) {
@@ -218,13 +220,13 @@ export default function LoginPage() {
 
   if (showTwoFactor) {
     return (
-      <div className="flex-grow flex items-center justify-center px-4 md:px-16 py-20 relative overflow-hidden bg-background min-h-[calc(100vh-80px)]">
+      <div className="w-full min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-20 relative overflow-hidden bg-background">
         {/* Background Decorations */}
         <div className="absolute top-0 left-0 w-64 h-64 bg-primary-container opacity-20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary-container opacity-20 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl"></div>
 
         {/* 2FA Card */}
-        <div className="w-full max-w-md bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_-10px_rgba(135,78,88,0.1)] z-10 p-8 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full max-w-md min-w-[320px] md:min-w-[400px] flex-shrink-0 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_-10px_rgba(135,78,88,0.1)] z-10 p-8 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="text-center mb-8">
             <h2 className="font-headline-lg text-2xl font-bold text-primary mb-2">Xác thực 2 bước</h2>
             <p className="font-body-md text-slate-500 text-sm">Tài khoản của bạn đã được bảo vệ. Vui lòng nhập mã xác thực để đăng nhập.</p>
@@ -237,11 +239,10 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => handleProviderChange("Authenticator")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                    twoFactorProvider === "Authenticator"
-                      ? "bg-white text-slate-800 shadow-sm font-bold"
-                      : "text-slate-500 hover:text-slate-800 font-semibold"
-                  }`}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${twoFactorProvider === "Authenticator"
+                    ? "bg-white text-slate-800 shadow-sm font-bold"
+                    : "text-slate-500 hover:text-slate-800 font-semibold"
+                    }`}
                 >
                   Authenticator App
                 </button>
@@ -250,11 +251,10 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => handleProviderChange("Email")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                    twoFactorProvider === "Email"
-                      ? "bg-white text-slate-800 shadow-sm font-bold"
-                      : "text-slate-500 hover:text-slate-800 font-semibold"
-                  }`}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${twoFactorProvider === "Email"
+                    ? "bg-white text-slate-800 shadow-sm font-bold"
+                    : "text-slate-500 hover:text-slate-800 font-semibold"
+                    }`}
                 >
                   Email OTP
                 </button>
@@ -287,7 +287,7 @@ export default function LoginPage() {
                 value={twoFactorCode}
                 onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="••••••"
-                className="w-full text-center text-2xl font-bold tracking-[8px] h-14 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary-container text-on-surface"
+                className="w-full text-center text-2xl font-bold tracking-[12px] pl-[12px] h-16 bg-surface-container-low border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-container text-on-surface font-mono focus:bg-surface-container transition-all"
                 required
               />
             </div>
@@ -339,20 +339,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex-grow flex items-center justify-center px-4 md:px-16 py-20 relative overflow-hidden bg-background min-h-[calc(100vh-80px)]">
+    <div className="w-full flex-grow flex items-center justify-center px-4 md:px-16 py-20 relative overflow-hidden bg-background min-h-[calc(100vh-80px)]">
       {/* Background Decorations */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-primary-container opacity-20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary-container opacity-20 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl"></div>
 
       {/* Login Card */}
       <div className="w-full max-w-5xl bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col md:flex-row shadow-[0_20px_40px_-10px_rgba(135,78,88,0.1)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        
+
         {/* Left Side: Visual/Branding */}
         <div className="hidden md:flex md:w-1/2 bg-primary-container relative flex-col justify-center items-center p-20 text-center">
           <div className="absolute inset-0 opacity-40">
-            <img 
-              alt="LazPe Kids" 
-              className="w-full h-full object-cover" 
+            <img
+              alt="LazPe Kids"
+              className="w-full h-full object-cover"
               src="/login-page-img/Login-img-001.png"
             />
           </div>
@@ -364,7 +364,7 @@ export default function LoginPage() {
               Tiếp tục hành trình khám phá thế giới diệu kỳ cùng bé yêu của bạn tại LazPe.
             </p>
           </div>
-          
+
           {/* Decorative Floater */}
           <div className="absolute bottom-6 left-6 bg-white/30 backdrop-blur-md p-6 rounded-lg flex items-center gap-3">
             <span className="material-symbols-outlined text-primary fill-current">favorite</span>
@@ -385,19 +385,19 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-            
+
             {/* Email Field */}
             <div className="space-y-1">
               <label className="font-label-md font-semibold text-sm text-on-surface-variant ml-2">Email</label>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">mail</span>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full h-14 pl-12 pr-6 bg-surface-container-low border-none rounded-2xl focus:ring-2 focus:ring-primary-container text-on-surface transition-all" 
-                  placeholder="email@vidu.com" 
+                  className="w-full h-14 pl-12 pr-6 bg-surface-container-low border-none rounded-2xl focus:ring-2 focus:ring-primary-container text-on-surface transition-all"
+                  placeholder="email@vidu.com"
                 />
               </div>
             </div>
@@ -412,16 +412,16 @@ export default function LoginPage() {
               </div>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">lock</span>
-                <input 
+                <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full h-14 pl-12 pr-12 bg-surface-container-low border-none rounded-2xl focus:ring-2 focus:ring-primary-container text-on-surface transition-all" 
-                  placeholder="••••••••" 
+                  className="w-full h-14 pl-12 pr-12 bg-surface-container-low border-none rounded-2xl focus:ring-2 focus:ring-primary-container text-on-surface transition-all"
+                  placeholder="••••••••"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-6 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
                 >
@@ -446,7 +446,7 @@ export default function LoginPage() {
 
             {/* Actions */}
             <div className="pt-6 space-y-6">
-              <button 
+              <button
                 type="submit"
                 disabled={loading}
                 className="w-full h-14 bg-primary text-on-primary font-headline-md rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:scale-100"
@@ -463,7 +463,7 @@ export default function LoginPage() {
 
               <div className="text-center">
                 <p className="font-body-md text-on-surface-variant">
-                  Chưa có tài khoản? 
+                  Chưa có tài khoản?
                   <Link href="/register" className="text-primary font-bold hover:underline ml-1">
                     Tạo tài khoản mới
                   </Link>
