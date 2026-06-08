@@ -432,9 +432,16 @@ export default function AdminLayout({
               </Link>
             </div>
 
-            {/* Loyalty */}
+            {/* Loyalty & Vouchers */}
             <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Chương trình Loyalty</span>
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Khuyến mãi & Loyalty</span>
+              <Link
+                href="/admin/vouchers"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">confirmation_number</span>
+                <span className="font-label-md">Quản lý Voucher</span>
+              </Link>
               <Link
                 href="/admin/loyalty"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
