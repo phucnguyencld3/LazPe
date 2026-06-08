@@ -140,6 +140,21 @@ namespace PolyBabyAPI.Controllers
                 //Reset failed attempt count khi đăng nhập thành công
                 await _userManager.ResetAccessFailedCountAsync(user);
 
+                // Kiểm tra 2FA
+                var is2faEnabled = await _userManager.GetTwoFactorEnabledAsync(user);
+                if (is2faEnabled)
+                {
+                    var validProviders = await _userManager.GetValidTwoFactorProvidersAsync(user);
+                    _logger.LogInformation("Yêu cầu xác thực 2 bước cho user: {Email}", user.Email ?? user.UserName);
+                    return Ok(new
+                    {
+                        success = true,
+                        requiresTwoFactor = true,
+                        userId = user.Id,
+                        providers = validProviders
+                    });
+                }
+
                 // Lấy roles và permissions của user
                 var userRoles = await _userManager.GetRolesAsync(user);
         
@@ -167,7 +182,7 @@ namespace PolyBabyAPI.Controllers
                         phoneNumber = user.PhoneNumber ?? string.Empty,
                         avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                         roles = userRoles ?? new List<string>(),
-                        permissions = userPermissions.Select(p => p.Name).ToList(), // ✅ THÊM permissions
+                        permissions = userPermissions.Select(p => p.Name).ToList(), // THÊM permissions
                         isAdmin = isAdmin
                     }
                 });
@@ -211,7 +226,22 @@ namespace PolyBabyAPI.Controllers
                     return Unauthorized(new { success = false, message = "Không có quyền admin" });
                 }
 
-                // ✅ THÊM: Load permissions cho admin
+                // Kiểm tra 2FA cho Admin
+                var is2faEnabled = await _userManager.GetTwoFactorEnabledAsync(user);
+                if (is2faEnabled)
+                {
+                    var validProviders = await _userManager.GetValidTwoFactorProvidersAsync(user);
+                    _logger.LogInformation("Yêu cầu xác thực 2 bước cho Admin: {Username}", user.UserName);
+                    return Ok(new
+                    {
+                        success = true,
+                        requiresTwoFactor = true,
+                        userId = user.Id,
+                        providers = validProviders
+                    });
+                }
+
+                // THÊM: Load permissions cho admin
                 var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id);
 
                 // Tạo JWT token với permissions
@@ -233,7 +263,7 @@ namespace PolyBabyAPI.Controllers
                         phoneNumber = user.PhoneNumber ?? string.Empty,
                         avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                         roles = userRoles ?? new List<string>(),
-                        permissions = userPermissions.Select(p => p.Name).ToList(), // ✅ THÊM permissions
+                        permissions = userPermissions.Select(p => p.Name).ToList(), // THÊM permissions
                         isAdmin = true
                     }
                 });
@@ -934,16 +964,268 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy trạng thái 2FA của người dùng
+        /// </summary>
+        [HttpGet("2fa-status")]
+        [Authorize]
+        public async Task<IActionResult> Get2FaStatus()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var isEnabled = await _userManager.GetTwoFactorEnabledAsync(user);
+            var providers = new List<string>();
+            if (isEnabled)
+            {
+                providers = (await _userManager.GetValidTwoFactorProvidersAsync(user)).ToList();
+            }
+
+            return Ok(new
+            {
+                success = true,
+                isEnabled = isEnabled,
+                providers = providers
+            });
+        }
+
+        /// <summary>
+        /// Tạo khoá cấu hình Authenticator App (quét QR code)
+        /// </summary>
+        [HttpPost("2fa-setup-authenticator")]
+        [Authorize]
+        public async Task<IActionResult> SetupAuthenticator()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var unformattedKey = await _userManager.GetAuthenticatorKeyAsync(user);
+            if (string.IsNullOrEmpty(unformattedKey))
+            {
+                await _userManager.ResetAuthenticatorKeyAsync(user);
+                unformattedKey = await _userManager.GetAuthenticatorKeyAsync(user);
+            }
+
+            var email = await _userManager.GetEmailAsync(user);
+            var qrCodeUri = string.Format(
+                "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6",
+                System.Net.WebUtility.UrlEncode("LazPe"),
+                System.Net.WebUtility.UrlEncode(email),
+                unformattedKey);
+
+            return Ok(new
+            {
+                success = true,
+                sharedKey = unformattedKey,
+                qrCodeUri = qrCodeUri
+            });
+        }
+
+        /// <summary>
+        /// Bật Authenticator App bằng cách xác minh mã 6 số
+        /// </summary>
+        [HttpPost("2fa-enable-authenticator")]
+        [Authorize]
+        public async Task<IActionResult> EnableAuthenticator([FromBody] EnableAuthenticatorDto model)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var cleanCode = model.Code.Replace(" ", "").Replace("-", "");
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(
+                user, _userManager.Options.Tokens.AuthenticatorTokenProvider, cleanCode);
+
+            if (isValid)
+            {
+                await _userManager.SetTwoFactorEnabledAsync(user, true);
+                _logger.LogInformation("Đã bật Authenticator App 2FA cho user: {Email}", user.Email);
+                return Ok(new { success = true, message = "Bật xác thực qua Authenticator App thành công!" });
+            }
+
+            return BadRequest(new { success = false, message = "Mã xác thực không chính xác" });
+        }
+
+        /// <summary>
+        /// Tạo và gửi OTP xác minh cấu hình Email 2FA
+        /// </summary>
+        [HttpPost("2fa-setup-email")]
+        [Authorize]
+        public async Task<IActionResult> SetupEmail2Fa()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+            var emailBody = $@"
+                <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;'>
+                    <h2 style='color: #db2777; text-align: center;'>Thiết lập Xác thực 2 bước (2FA) - LazPe</h2>
+                    <p>Xin chào <strong>{user.FullName}</strong>,</p>
+                    <p>Bạn đang yêu cầu thiết lập xác thực 2 bước qua Email cho tài khoản quản trị của mình. Dưới đây là mã xác thực OTP của bạn:</p>
+                    <div style='background-color: #f8fafc; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;'>
+                        <span style='font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #1e293b;'>{code}</span>
+                    </div>
+                    <p style='font-size: 12px; color: #64748b;'>Mã này có hiệu lực trong vòng 3 phút. Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
+                </div>";
+
+            await _emailSender.SendEmailAsync(user.Email, "Mã xác thực cấu hình 2FA - LazPe", emailBody);
+            return Ok(new { success = true, message = "Đã gửi mã xác nhận đến email của bạn" });
+        }
+
+        /// <summary>
+        /// Bật Email 2FA bằng cách xác minh mã OTP gửi qua mail
+        /// </summary>
+        [HttpPost("2fa-enable-email")]
+        [Authorize]
+        public async Task<IActionResult> EnableEmail2Fa([FromBody] EnableEmail2FaDto model)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", model.Code);
+            if (isValid)
+            {
+                await _userManager.SetTwoFactorEnabledAsync(user, true);
+                _logger.LogInformation("Đã bật Email 2FA cho user: {Email}", user.Email);
+                return Ok(new { success = true, message = "Bật xác thực qua Email thành công!" });
+            }
+
+            return BadRequest(new { success = false, message = "Mã xác thực không chính xác hoặc đã hết hạn" });
+        }
+
+        /// <summary>
+        /// Tắt xác thực 2 bước hoàn toàn
+        /// </summary>
+        [HttpPost("2fa-disable")]
+        [Authorize]
+        public async Task<IActionResult> Disable2Fa()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var result = await _userManager.SetTwoFactorEnabledAsync(user, false);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Đã tắt 2FA cho user: {Email}", user.Email);
+                return Ok(new { success = true, message = "Tắt xác thực 2 bước thành công!" });
+            }
+
+            return BadRequest(new { success = false, message = "Không thể tắt xác thực 2 bước" });
+        }
+
+        /// <summary>
+        /// Gửi OTP qua email phục vụ đăng nhập 2FA (khi chưa đăng nhập)
+        /// </summary>
+        [HttpPost("2fa-send-email-login-otp")]
+        public async Task<IActionResult> SendEmailLoginOtp([FromBody] Send2FaEmailDto model)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            var is2faEnabled = await _userManager.GetTwoFactorEnabledAsync(user);
+            if (!is2faEnabled)
+            {
+                return BadRequest(new { success = false, message = "Tài khoản chưa bật xác thực 2 bước" });
+            }
+
+            var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+            var emailBody = $@"
+                <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;'>
+                    <h2 style='color: #db2777; text-align: center;'>Mã Xác thực Đăng nhập (2FA) - LazPe</h2>
+                    <p>Xin chào <strong>{user.FullName}</strong>,</p>
+                    <p>Có một yêu cầu đăng nhập vào tài khoản của bạn. Đây là mã xác nhận OTP đăng nhập của bạn:</p>
+                    <div style='background-color: #f8fafc; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;'>
+                        <span style='font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #1e293b;'>{code}</span>
+                    </div>
+                    <p style='font-size: 12px; color: #64748b;'>Mã này có hiệu lực trong vòng 3 phút. Nếu bạn không thực hiện yêu cầu này, vui lòng đổi mật khẩu ngay để bảo mật tài khoản.</p>
+                </div>";
+
+            await _emailSender.SendEmailAsync(user.Email, "Mã xác thực đăng nhập 2FA - LazPe", emailBody);
+            return Ok(new { success = true, message = "Mã xác thực đăng nhập đã được gửi đến email của bạn!" });
+        }
+
+        /// <summary>
+        /// Xác thực OTP / Code để cấp JWT Token đăng nhập
+        /// </summary>
+        [HttpPost("2fa-verify-login")]
+        public async Task<IActionResult> VerifyTwoFactorLogin([FromBody] Verify2FaLoginDto model)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null) return NotFound(new { success = false, message = "Không tìm thấy người dùng" });
+
+            // Kiểm tra lockout
+            var isLockedOut = await _userManager.IsLockedOutAsync(user);
+            if (isLockedOut)
+            {
+                return Unauthorized(new { success = false, message = "Tài khoản đang bị khóa do nhập sai nhiều lần" });
+            }
+
+            bool isValid = false;
+            var cleanCode = model.Code.Replace(" ", "").Replace("-", "");
+
+            if (model.Provider == "Email")
+            {
+                isValid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", cleanCode);
+            }
+            else if (model.Provider == "Authenticator")
+            {
+                isValid = await _userManager.VerifyTwoFactorTokenAsync(user, _userManager.Options.Tokens.AuthenticatorTokenProvider, cleanCode);
+            }
+
+            if (isValid)
+            {
+                // Reset số lần xác thực thất bại
+                await _userManager.ResetAccessFailedCountAsync(user);
+
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id);
+                var token = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
+                var isAdmin = userRoles.Contains("Admin");
+
+                _logger.LogInformation("Xác thực 2FA thành công cho: {Email}", user.Email ?? user.UserName);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đăng nhập thành công",
+                    token = token ?? string.Empty,
+                    user = new
+                    {
+                        id = user.Id ?? string.Empty,
+                        email = user.Email ?? string.Empty,
+                        userName = user.UserName ?? string.Empty,
+                        fullName = user.FullName ?? string.Empty,
+                        phoneNumber = user.PhoneNumber ?? string.Empty,
+                        avatar = user.Avatar ?? "/assets/img/avatars/1.png",
+                        roles = userRoles ?? new List<string>(),
+                        permissions = userPermissions.Select(p => p.Name).ToList(),
+                        isAdmin = isAdmin
+                    }
+                });
+            }
+
+            // Tăng số lần xác thực thất bại
+            await _userManager.AccessFailedAsync(user);
+            return BadRequest(new { success = false, message = "Mã xác thực không hợp lệ hoặc đã hết hạn" });
+        }
+
         #region Helper Methods
 
         private async Task<string> GenerateJwtTokenAsync(ApplicationUser user, IList<string> roles, List<Permission> permissions)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             
-            // ✅ Đọc từ JwtSettings section
+            // Đọc từ JwtSettings section
             var secretKey = _configuration["JwtSettings:SecretKey"];
             
-            // ✅ Validate SecretKey
+            // Validate SecretKey
             if (string.IsNullOrEmpty(secretKey) || secretKey.Length < 32)
             {
                 throw new InvalidOperationException("JWT SecretKey must be at least 32 characters long.");

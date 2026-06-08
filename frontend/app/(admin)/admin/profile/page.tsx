@@ -15,7 +15,10 @@ import {
   EyeOff, 
   Check, 
   AlertCircle,
-  Bell
+  Bell,
+  Smartphone,
+  QrCode,
+  ShieldCheck
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { 
@@ -24,6 +27,12 @@ import {
   changePassword, 
   uploadAvatar,
   updateNotificationSettings,
+  get2FaStatus,
+  setupAuthenticator,
+  enableAuthenticator,
+  setupEmail2Fa,
+  enableEmail2Fa,
+  disable2Fa,
   UserProfile 
 } from "@/lib/api";
 
@@ -59,6 +68,30 @@ export default function AdminProfilePage() {
   const [promotions, setPromotions] = useState(true);
   const [updatingNotifications, setUpdatingNotifications] = useState(false);
 
+  // Form States - 2FA Settings
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorProviders, setTwoFactorProviders] = useState<string[]>([]);
+  const [loadingTwoFactor, setLoadingTwoFactor] = useState(false);
+  const [showAuthenticatorModal, setShowAuthenticatorModal] = useState(false);
+  const [showEmail2FaModal, setShowEmail2FaModal] = useState(false);
+  const [authenticatorSetupData, setAuthenticatorSetupData] = useState<any>(null);
+  const [authenticatorCode, setAuthenticatorCode] = useState("");
+  const [emailOtpCode, setEmailOtpCode] = useState("");
+  const [submittingTwoFactor, setSubmittingTwoFactor] = useState(false);
+  const [emailSetupOtpSent, setEmailSetupOtpSent] = useState(false);
+
+  const fetchTwoFactorStatus = async (authToken: string) => {
+    try {
+      const res = await get2FaStatus(authToken);
+      if (res && res.success) {
+        setTwoFactorEnabled(res.isEnabled);
+        setTwoFactorProviders(res.providers || []);
+      }
+    } catch (err) {
+      console.error("Error fetching 2FA status:", err);
+    }
+  };
+
   // Initialize data on mount
   useEffect(() => {
     const savedToken = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -78,6 +111,7 @@ export default function AdminProfilePage() {
 
       if (uid) {
         fetchProfile(uid, savedToken);
+        fetchTwoFactorStatus(savedToken);
       } else {
         setLoading(false);
       }
@@ -283,6 +317,116 @@ export default function AdminProfilePage() {
       toast.error("Lỗi kết nối khi cập nhật cài đặt thông báo");
     } finally {
       setUpdatingNotifications(false);
+    }
+  };
+
+  // Handle Setup Authenticator App
+  const handleSetupAuthenticator = async () => {
+    if (!token) return;
+    setLoadingTwoFactor(true);
+    try {
+      const res = await setupAuthenticator(token);
+      if (res && res.success) {
+        setAuthenticatorSetupData(res);
+        setShowAuthenticatorModal(true);
+      } else {
+        toast.error(res?.message || "Không thể cấu hình Authenticator App");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối khi thiết lập Authenticator");
+    } finally {
+      setLoadingTwoFactor(false);
+    }
+  };
+
+  // Handle Enable Authenticator App
+  const handleEnableAuthenticator = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !authenticatorCode) return;
+    setSubmittingTwoFactor(true);
+    try {
+      const res = await enableAuthenticator(token, authenticatorCode);
+      if (res.success) {
+        toast.success("Bật xác thực qua Authenticator App thành công!");
+        setShowAuthenticatorModal(false);
+        setAuthenticatorCode("");
+        await fetchTwoFactorStatus(token);
+      } else {
+        toast.error(res.message || "Mã xác thực không chính xác");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi hệ thống khi kích hoạt Authenticator");
+    } finally {
+      setSubmittingTwoFactor(false);
+    }
+  };
+
+  // Handle Setup Email 2FA OTP
+  const handleSetupEmail2Fa = async () => {
+    if (!token) return;
+    setLoadingTwoFactor(true);
+    try {
+      const res = await setupEmail2Fa(token);
+      if (res.success) {
+        setEmailSetupOtpSent(true);
+        setShowEmail2FaModal(true);
+        toast.success("Đã gửi mã xác nhận đến email của bạn!");
+      } else {
+        toast.error(res.message || "Không thể gửi yêu cầu thiết lập Email 2FA");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối khi thiết lập Email 2FA");
+    } finally {
+      setLoadingTwoFactor(false);
+    }
+  };
+
+  // Handle Enable Email 2FA
+  const handleEnableEmail2Fa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !emailOtpCode) return;
+    setSubmittingTwoFactor(true);
+    try {
+      const res = await enableEmail2Fa(token, emailOtpCode);
+      if (res.success) {
+        toast.success("Bật xác thực qua Email thành công!");
+        setShowEmail2FaModal(false);
+        setEmailOtpCode("");
+        setEmailSetupOtpSent(false);
+        await fetchTwoFactorStatus(token);
+      } else {
+        toast.error(res.message || "Mã xác thực không chính xác hoặc đã hết hạn");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi hệ thống khi kích hoạt Email 2FA");
+    } finally {
+      setSubmittingTwoFactor(false);
+    }
+  };
+
+  // Handle Disable 2FA
+  const handleDisable2Fa = async () => {
+    if (!token) return;
+    if (!confirm("Bạn có chắc chắn muốn tắt tính năng xác thực 2 bước không? Tài khoản của bạn sẽ kém an toàn hơn.")) return;
+    
+    setLoadingTwoFactor(true);
+    try {
+      const res = await disable2Fa(token);
+      if (res.success) {
+        toast.success("Tắt xác thực 2 bước thành công!");
+        await fetchTwoFactorStatus(token);
+      } else {
+        toast.error(res.message || "Không thể tắt xác thực 2 bước");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối khi tắt xác thực 2 bước");
+    } finally {
+      setLoadingTwoFactor(false);
     }
   };
 
@@ -595,7 +739,7 @@ export default function AdminProfilePage() {
             </form>
           </div>
 
-          {/* Grid Layout for Notifications and Permissions */}
+          {/* Grid Layout for Notifications, 2FA, and Permissions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Card 3: Notification Settings */}
@@ -667,8 +811,86 @@ export default function AdminProfilePage() {
               </div>
             </div>
 
-            {/* Card 4: Permissions & Roles list */}
+            {/* Card 4: Two-Factor Authentication (2FA) */}
             <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <ShieldCheck size={20} className="text-emerald-500" /> Xác Thực 2 Bước (2FA)
+                  </h3>
+                  <p className="text-sm text-slate-400 font-semibold mt-1">Bảo vệ tài khoản tối đa bằng hai lớp xác thực bảo mật.</p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Status indicator */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200/60 rounded-2xl">
+                    <span className="text-sm font-bold text-slate-700">Trạng thái 2FA:</span>
+                    <span className={`text-xs font-extrabold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${
+                      twoFactorEnabled 
+                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+                        : "bg-slate-100 text-slate-500 border border-slate-200"
+                    }`}>
+                      <span className={`w-2 h-2 rounded-full ${twoFactorEnabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
+                      {twoFactorEnabled ? "Đang bật" : "Đang tắt"}
+                    </span>
+                  </div>
+
+                  {/* Configured providers details */}
+                  {twoFactorEnabled && twoFactorProviders.length > 0 && (
+                    <div className="text-xs font-semibold text-slate-500 space-y-2">
+                      <span className="block text-[11px] uppercase tracking-wider text-slate-400">Phương thức kích hoạt:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {twoFactorProviders.map(prov => (
+                          <span key={prov} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 flex items-center gap-1.5 font-bold">
+                            {prov === "Authenticator" ? <Smartphone size={14} className="text-rose-500" /> : <Mail size={14} className="text-rose-500" />}
+                            {prov === "Authenticator" ? "Authenticator App" : "Email OTP"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="pt-2">
+                    {twoFactorEnabled ? (
+                      <button
+                        type="button"
+                        onClick={handleDisable2Fa}
+                        disabled={loadingTwoFactor}
+                        className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-650 rounded-xl text-sm font-bold border border-red-200/50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        {loadingTwoFactor ? <Loader className="animate-spin" size={16} /> : <Lock size={16} />}
+                        Tắt xác thực 2 bước
+                      </button>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <button
+                          type="button"
+                          onClick={handleSetupAuthenticator}
+                          disabled={loadingTwoFactor}
+                          className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          {loadingTwoFactor ? <Loader className="animate-spin" size={16} /> : <QrCode size={16} />}
+                          Cài đặt Authenticator App
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSetupEmail2Fa}
+                          disabled={loadingTwoFactor}
+                          className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-rose-500/10 cursor-pointer"
+                        >
+                          {loadingTwoFactor ? <Loader className="animate-spin" size={16} /> : <Mail size={16} />}
+                          Cài đặt qua Email OTP
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: Permissions & Roles list */}
+            <div className="md:col-span-2 bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 flex flex-col justify-between">
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
@@ -705,6 +927,147 @@ export default function AdminProfilePage() {
 
         </div>
       </div>
+
+      {/* Authenticator Setup Modal */}
+      {showAuthenticatorModal && authenticatorSetupData && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                <QrCode size={22} className="text-rose-500" /> Cấu hình Authenticator App
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => { setShowAuthenticatorModal(false); setAuthenticatorCode(""); }}
+                className="text-slate-400 hover:text-slate-650 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm font-medium text-slate-650">
+              <p><strong>Bước 1:</strong> Sử dụng ứng dụng Authenticator (Google/Microsoft Authenticator) để quét mã QR dưới đây:</p>
+              
+              <div className="flex justify-center py-2">
+                <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-inner">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(authenticatorSetupData.qrCodeUri || "")}`}
+                    alt="2FA QR Code" 
+                    className="w-40 h-40"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50 space-y-1">
+                <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Nếu không quét được, nhập khoá thủ công:</span>
+                <code className="block text-xs font-mono font-bold select-all text-slate-800 tracking-wide text-center">{authenticatorSetupData.sharedKey}</code>
+              </div>
+
+              <p><strong>Bước 2:</strong> Nhập mã 6 chữ số hiển thị trên ứng dụng xác thực để kích hoạt:</p>
+
+              <form onSubmit={handleEnableAuthenticator} className="space-y-4">
+                <div className="relative">
+                  <Smartphone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="text" 
+                    maxLength={6}
+                    value={authenticatorCode}
+                    onChange={(e) => setAuthenticatorCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Mã xác thực 6 số..."
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[4px] font-mono text-center font-bold"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowAuthenticatorModal(false); setAuthenticatorCode(""); }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingTwoFactor || authenticatorCode.length < 6}
+                    className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 disabled:opacity-60 cursor-pointer"
+                  >
+                    {submittingTwoFactor && <Loader className="animate-spin" size={12} />}
+                    Xác nhận kích hoạt
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email OTP Setup Modal */}
+      {showEmail2FaModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 border border-slate-100 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
+                <Mail size={22} className="text-rose-500" /> Cấu hình Xác thực Email
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => { setShowEmail2FaModal(false); setEmailOtpCode(""); setEmailSetupOtpSent(false); }}
+                className="text-slate-400 hover:text-slate-650 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm font-medium text-slate-650">
+              <p>Chúng tôi đã gửi mã OTP gồm 6 chữ số vào địa chỉ email: <strong>{profile?.email}</strong>. Vui lòng nhập mã để hoàn tất kích hoạt.</p>
+
+              <form onSubmit={handleEnableEmail2Fa} className="space-y-4">
+                <div className="relative">
+                  <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="text" 
+                    maxLength={6}
+                    value={emailOtpCode}
+                    onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Nhập mã OTP..."
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[4px] font-mono text-center font-bold"
+                    required
+                  />
+                </div>
+
+                <div className="text-center text-xs">
+                  <button
+                    type="button"
+                    onClick={handleSetupEmail2Fa}
+                    className="text-rose-500 hover:text-rose-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Gửi lại mã OTP qua email
+                  </button>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowEmail2FaModal(false); setEmailOtpCode(""); setEmailSetupOtpSent(false); }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingTwoFactor || emailOtpCode.length < 6}
+                    className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 disabled:opacity-60 cursor-pointer"
+                  >
+                    {submittingTwoFactor && <Loader className="animate-spin" size={12} />}
+                    Xác nhận kích hoạt
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

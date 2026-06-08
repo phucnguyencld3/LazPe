@@ -175,4 +175,49 @@ namespace PolyBabyAPI.DTOs
         [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã OTP phải gồm 6 chữ số")]
         public string Otp { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// DTO xác minh kích hoạt Authenticator App (TOTP)
+    /// </summary>
+    public class EnableAuthenticatorDto
+    {
+        [Required(ErrorMessage = "Mã xác thực là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã xác thực phải gồm 6 chữ số")]
+        public string Code { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO xác minh kích hoạt Email 2FA
+    /// </summary>
+    public class EnableEmail2FaDto
+    {
+        [Required(ErrorMessage = "Mã xác thực là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã xác thực phải gồm 6 chữ số")]
+        public string Code { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO gửi mã OTP đăng nhập 2FA qua Email
+    /// </summary>
+    public class Send2FaEmailDto
+    {
+        [Required(ErrorMessage = "UserId là bắt buộc")]
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO xác thực đăng nhập 2FA
+    /// </summary>
+    public class Verify2FaLoginDto
+    {
+        [Required(ErrorMessage = "UserId là bắt buộc")]
+        public string UserId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mã xác thực là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã xác thực phải gồm 6 chữ số")]
+        public string Code { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Phương thức xác thực là bắt buộc")]
+        public string Provider { get; set; } = string.Empty; // "Email" hoặc "Authenticator"
+    }
 }
