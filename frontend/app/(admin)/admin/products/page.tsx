@@ -202,6 +202,13 @@ export default function AdminProductsPage() {
         </div>
         <div className="flex items-center gap-sm shrink-0">
           <button
+            onClick={() => router.push("/admin/products/import")}
+            className="border border-secondary text-secondary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-sm font-bold cursor-pointer"
+          >
+            <span className="material-symbols-outlined">upload_file</span>
+            Import Excel
+          </button>
+          <button
             onClick={() => toast.info("Tính năng xuất dữ liệu chưa khả dụng")}
             className="border border-primary text-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-sm font-bold cursor-pointer"
           >
