@@ -81,28 +81,6 @@ export function ProductPricingInventory({
           </div>
         </div>
       </section>
-
-      {/* Inventory Section */}
-      <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
-          <span className="material-symbols-outlined text-primary">warehouse</span>
-          <h3 className="text-lg font-bold text-slate-800">Kho hàng</h3>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-            Số lượng tồn kho ban đầu
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={stock}
-            onChange={(e) => onStockChange(e.target.value === "" ? "" : Number(e.target.value))}
-            placeholder="Ví dụ: 100"
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
-          />
-        </div>
-      </section>
     </div>
   );
 }

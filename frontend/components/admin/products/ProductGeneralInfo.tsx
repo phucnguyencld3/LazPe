@@ -1,5 +1,5 @@
 "use client";
-import { SupplierSelectOption } from "@/lib/features/products/productApi";
+import { SupplierSelectOption, CategorySelectOption } from "@/lib/features/products/productApi";
 
 interface ProductGeneralInfoProps {
   productName: string;
@@ -11,6 +11,9 @@ interface ProductGeneralInfoProps {
   suppliers: SupplierSelectOption[];
   description: string;
   onDescriptionChange: (val: string) => void;
+  categories: CategorySelectOption[];
+  selectedCategoryId: number | null;
+  onCategoryChange: (catId: number | null, pathIds: number[]) => void;
 }
 
 export function ProductGeneralInfo({
@@ -22,8 +25,47 @@ export function ProductGeneralInfo({
   onSupplierIdChange,
   suppliers,
   description,
-  onDescriptionChange
+  onDescriptionChange,
+  categories,
+  selectedCategoryId,
+  onCategoryChange
 }: ProductGeneralInfoProps) {
+
+  // Helper to trace category path from leaf to root
+  const getCategoryPath = (catId: number | null): number[] => {
+    if (!catId) return [];
+    const path: number[] = [];
+    let current = categories.find(c => c.categoryID === catId);
+    while (current) {
+      path.unshift(current.categoryID);
+      const parentId = current.parentID;
+      current = parentId ? categories.find(c => c.categoryID === parentId) : undefined;
+    }
+    return path;
+  };
+
+  // Filter only active leaf categories (categories that have no child subcategories)
+  const leafCategories = categories.filter(cat => {
+    if (!cat.status) return false;
+    return !categories.some(c => c.parentID === cat.categoryID && c.status);
+  });
+
+  const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === "") {
+      onCategoryChange(null, []);
+    } else {
+      const catId = Number(val);
+      const path = getCategoryPath(catId);
+      onCategoryChange(catId, path);
+    }
+  };
+
+  const selectedPathIds = getCategoryPath(selectedCategoryId);
+  const getCategoryName = (id: number) => {
+    return categories.find(c => c.categoryID === id)?.categoryName || "";
+  };
+
   return (
     <div className="space-y-8">
       {/* General Information Card */}
@@ -67,15 +109,16 @@ export function ProductGeneralInfo({
             {/* Supplier/Brand */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-                Thương hiệu / Nhãn hàng
+                Thương hiệu / Nhãn hàng <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <select
+                  required
                   value={supplierId}
                   onChange={(e) => onSupplierIdChange(e.target.value === "" ? "" : Number(e.target.value))}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 appearance-none cursor-pointer"
                 >
-                  <option value="">Chọn thương hiệu (Không bắt buộc)</option>
+                  <option value="">Chọn thương hiệu / nhãn hàng...</option>
                   {suppliers.map(s => (
                     <option key={s.supplierID} value={s.supplierID}>
                       {s.supplierName}
@@ -88,23 +131,64 @@ export function ProductGeneralInfo({
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Description Card */}
-      <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
-          <span className="material-symbols-outlined text-primary">subject</span>
-          <h3 className="text-lg font-bold text-slate-800">Mô tả sản phẩm</h3>
-        </div>
-        <div>
-          <textarea
-            rows={6}
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder="Nhập mô tả sản phẩm ở đây để khách hàng nắm rõ thông tin sản phẩm..."
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
-          />
+          {/* Category Selection */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+              Phân loại danh mục <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={selectedCategoryId || ""}
+                onChange={handleCategorySelect}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 appearance-none cursor-pointer"
+              >
+                <option value="">Chọn phân loại danh mục...</option>
+                {leafCategories.map(cat => (
+                  <option key={cat.categoryID} value={cat.categoryID}>
+                    {cat.categoryName}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                unfold_more
+              </span>
+            </div>
+            
+            {/* Detailed Selected Category Path */}
+            {selectedCategoryId && selectedPathIds.length > 0 && (
+              <div className="mt-2.5 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-1.5 text-xs text-slate-500 leading-normal animate-in fade-in duration-200">
+                <span className="material-symbols-outlined text-secondary text-sm shrink-0">done_all</span>
+                <span className="font-bold text-slate-400">Danh mục đang chọn:</span>
+                <div className="flex flex-wrap items-center gap-1 font-semibold text-slate-700">
+                  {selectedPathIds.map((id, idx) => (
+                    <span key={id} className="flex items-center gap-1">
+                      <span className={idx === selectedPathIds.length - 1 ? "text-primary font-bold" : ""}>
+                        {getCategoryName(id)}
+                      </span>
+                      {idx < selectedPathIds.length - 1 && (
+                        <span className="material-symbols-outlined text-slate-300 text-[10px]">chevron_right</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+              Mô tả sản phẩm
+            </label>
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              placeholder="Nhập mô tả sản phẩm ở đây để khách hàng nắm rõ thông tin sản phẩm..."
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
+            />
+          </div>
         </div>
       </section>
     </div>

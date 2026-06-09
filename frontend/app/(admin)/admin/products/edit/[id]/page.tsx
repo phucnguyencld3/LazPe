@@ -13,7 +13,6 @@ import {
 } from "@/lib/features/products/productApi";
 
 // Presentational Components
-import { CategorySelector } from "@/components/admin/products/CategorySelector";
 import { ProductGeneralInfo } from "@/components/admin/products/ProductGeneralInfo";
 import { ProductPricingInventory } from "@/components/admin/products/ProductPricingInventory";
 
@@ -127,6 +126,11 @@ export default function EditProductPage() {
       return;
     }
 
+    if (!supplierId) {
+      toast.warning("Vui lòng chọn thương hiệu / nhãn hàng.");
+      return;
+    }
+
     if (!selectedCategoryId) {
       toast.warning("Vui lòng chọn danh mục phân loại sản phẩm.");
       return;
@@ -141,8 +145,8 @@ export default function EditProductPage() {
       const payload: UpdateProductPayload = {
         productName: productName.trim(),
         code: code.trim() || undefined,
-        categoryID: selectedCategoryId,
-        supplierID: supplierId === "" ? null : Number(supplierId),
+        categoryID: selectedCategoryId as number,
+        supplierID: typeof supplierId === "number" ? supplierId : null,
         description: description.trim() || undefined,
         price: price === "" ? 0 : Number(price),
         productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
@@ -221,12 +225,8 @@ export default function EditProductPage() {
               suppliers={suppliers}
               description={description}
               onDescriptionChange={setDescription}
-            />
-
-            <CategorySelector
               categories={categories}
               selectedCategoryId={selectedCategoryId}
-              selectedPath={selectedPath}
               onCategoryChange={handleCategoryChange}
             />
           </div>
@@ -285,7 +285,7 @@ export default function EditProductPage() {
             </button>
             <button
               type="submit"
-              disabled={saving || !productName.trim() || !selectedCategoryId}
+              disabled={saving || !productName.trim() || !selectedCategoryId || !supplierId}
               className="px-8 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
             >
               {saving ? (

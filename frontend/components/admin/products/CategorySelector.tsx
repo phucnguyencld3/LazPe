@@ -117,22 +117,13 @@ export function CategorySelector({
         <div className="text-xs font-medium text-slate-600 leading-normal min-w-0">
           <p className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Danh mục đang chọn</p>
           {selectedPath.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {selectedPath.map((id, idx) => (
-                <div key={id} className="flex items-center gap-2">
-                  <span className="font-bold text-slate-800 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm">
-                    {getCategoryName(id)}
-                  </span>
-                  {idx < selectedPath.length - 1 && (
-                    <span className="material-symbols-outlined text-slate-300 text-[14px]">
-                      chevron_right
-                    </span>
-                  )}
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span className="font-bold text-primary bg-primary-container/10 border border-primary/20 px-3 py-1.5 rounded-xl shadow-sm text-sm">
+                {getCategoryName(selectedPath[selectedPath.length - 1])}
+              </span>
             </div>
           ) : (
-            <p className="font-semibold text-slate-500 italic">Chưa có lựa chọn nào.</p>
+            <p className="font-semibold text-slate-500 italic mt-1">Chưa có lựa chọn nào.</p>
           )}
         </div>
       </div>

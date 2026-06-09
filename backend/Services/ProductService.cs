@@ -368,6 +368,238 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        public async Task<ServiceResult<ProductDto>> CreateFullProductAsync(CreateFullProductDto dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Validation: Tên sản phẩm bắt buộc
+                if (string.IsNullOrWhiteSpace(dto.ProductName))
+                {
+                    return new ServiceResult<ProductDto>
+                    {
+                        Success = false,
+                        Message = "Tên sản phẩm không được để trống"
+                    };
+                }
+
+                // 2. Validation: SKU/Code sản phẩm gốc không trùng lặp
+                if (!string.IsNullOrWhiteSpace(dto.Code) && await IsProductCodeExistAsync(dto.Code))
+                {
+                    return new ServiceResult<ProductDto>
+                    {
+                        Success = false,
+                        Message = $"Mã sản phẩm (SKU) '{dto.Code}' đã tồn tại"
+                    };
+                }
+
+                // Tự động sinh mã sản phẩm nếu trống
+                var productCode = string.IsNullOrWhiteSpace(dto.Code) ? await GenerateProductCodeAsync() : dto.Code.Trim();
+
+                // 3. Validation: Category phải tồn tại
+                var categoryExists = await _context.Categories.AnyAsync(c => c.CategoryID == dto.CategoryID);
+                if (!categoryExists)
+                {
+                    return new ServiceResult<ProductDto>
+                    {
+                        Success = false,
+                        Message = "Danh mục sản phẩm không tồn tại hoặc đã bị ẩn"
+                    };
+                }
+
+                // 4. Validation: Supplier (thương hiệu) phải tồn tại nếu truyền
+                if (dto.SupplierID.HasValue && dto.SupplierID.Value > 0)
+                {
+                    var supplierExists = await _context.Suppliers.AnyAsync(s => s.SupplierID == dto.SupplierID.Value);
+                    if (!supplierExists)
+                    {
+                        return new ServiceResult<ProductDto>
+                        {
+                            Success = false,
+                            Message = "Thương hiệu không tồn tại hoặc đã bị ẩn"
+                        };
+                    }
+                }
+
+                // 5. Validation: Option không trùng tên
+                var optionNames = dto.Options.Select(o => o.Name.Trim()).ToList();
+                if (optionNames.Count != optionNames.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+                {
+                    return new ServiceResult<ProductDto>
+                    {
+                        Success = false,
+                        Message = "Không cho phép trùng tên các thuộc tính (Options)"
+                    };
+                }
+
+                // 6. Validation: Trùng Value trong cùng Option
+                foreach (var option in dto.Options)
+                {
+                    var values = option.Values.Select(v => v.Value.Trim()).ToList();
+                    if (values.Count != values.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+                    {
+                        return new ServiceResult<ProductDto>
+                        {
+                            Success = false,
+                            Message = $"Thuộc tính '{option.Name}' có các giá trị trùng lặp"
+                        };
+                    }
+                }
+
+                // 7. Validation: Trùng mã SKU của các biến thể
+                var variantSkus = dto.Variants.Where(v => !string.IsNullOrWhiteSpace(v.SKU)).Select(v => v.SKU.Trim()).ToList();
+                if (variantSkus.Count != variantSkus.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+                {
+                    return new ServiceResult<ProductDto>
+                    {
+                        Success = false,
+                        Message = "Mã SKU của các biến thể trong danh sách bị trùng lặp"
+                    };
+                }
+
+                foreach (var sku in variantSkus)
+                {
+                    var skuExistsInDb = await _context.Variants.AnyAsync(v => v.SKU == sku);
+                    if (skuExistsInDb)
+                    {
+                        return new ServiceResult<ProductDto>
+                        {
+                            Success = false,
+                            Message = $"Mã SKU '{sku}' của biến thể đã tồn tại trong hệ thống"
+                        };
+                    }
+                }
+
+                // 8. Tạo Product
+                var product = new Product
+                {
+                    Code = productCode,
+                    ProductName = dto.ProductName,
+                    Description = dto.Description ?? "",
+                    Price = dto.Price,
+                    ProductDiscountPercent = dto.ProductDiscountPercent,
+                    Stock = dto.Variants.Any() ? dto.Variants.Sum(v => v.Stock) : dto.Stock,
+                    CategoryID = dto.CategoryID,
+                    SupplierID = dto.SupplierID ?? 0,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = dto.CreatedBy ?? "System",
+                    Status = dto.Status
+                };
+
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+
+                // Map để lưu trữ ID của Option Value phục vụ cho ánh xạ Variant
+                // Key cấp 1: Tên Option (vd: "Màu sắc")
+                // Key cấp 2: Giá trị (vd: "Đỏ")
+                // Value: ProductOptionValueID vừa sinh trong DB
+                var optionValueMap = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+
+                // 9. Tạo Product Options & Values
+                foreach (var optDto in dto.Options)
+                {
+                    var option = new ProductOption
+                    {
+                        ProductID = product.ProductID,
+                        Name = optDto.Name,
+                        DisplayOrder = optDto.DisplayOrder,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = dto.CreatedBy ?? "System"
+                    };
+                    _context.ProductOptions.Add(option);
+                    await _context.SaveChangesAsync();
+
+                    var valMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var valDto in optDto.Values)
+                    {
+                        var optVal = new ProductOptionValue
+                        {
+                            ProductOptionID = option.ProductOptionID,
+                            Value = valDto.Value,
+                            Price = valDto.Price,
+                            DisplayOrder = valDto.DisplayOrder,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = dto.CreatedBy ?? "System"
+                        };
+                        _context.ProductOptionValues.Add(optVal);
+                        await _context.SaveChangesAsync();
+
+                        valMap[valDto.Value] = optVal.ProductOptionValueID;
+                    }
+
+                    optionValueMap[optDto.Name] = valMap;
+                }
+
+                // 10. Tạo các Variants và gắn Variant Option Values
+                foreach (var varDto in dto.Variants)
+                {
+                    var sku = string.IsNullOrWhiteSpace(varDto.SKU)
+                        ? $"{productCode}-{Guid.NewGuid().ToString("N").Substring(0, 5).ToUpper()}"
+                        : varDto.SKU.Trim();
+
+                    var variant = new Variant
+                    {
+                        ProductID = product.ProductID,
+                        VariantName = varDto.VariantName,
+                        UnitPrice = varDto.UnitPrice,
+                        VariantDiscountPercent = varDto.VariantDiscountPercent,
+                        Stock = varDto.Stock,
+                        SKU = sku,
+                        ImageUrl = varDto.ImageUrl,
+                        Description = varDto.Description ?? "",
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = dto.CreatedBy ?? "System",
+                        Status = varDto.Status
+                    };
+
+                    _context.Variants.Add(variant);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var mapDto in varDto.OptionValues)
+                    {
+                        if (optionValueMap.TryGetValue(mapDto.OptionName, out var valMap) &&
+                            valMap.TryGetValue(mapDto.Value, out var optValId))
+                        {
+                            var vov = new VariantOptionValue
+                            {
+                                VariantID = variant.VariantID,
+                                ProductOptionValueID = optValId
+                            };
+                            _context.VariantOptionValues.Add(vov);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Không tìm thấy thuộc tính '{mapDto.OptionName}' với giá trị '{mapDto.Value}'");
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Product Created: {ProductName} (ID: {ProductID})", product.ProductName, product.ProductID);
+                _logger.LogInformation("Variants Generated: {VariantCount} variants created", dto.Variants.Count);
+
+                var resultDto = await GetProductByIdAsync(product.ProductID);
+                return new ServiceResult<ProductDto>
+                {
+                    Success = true,
+                    Data = resultDto,
+                    Message = "Tạo sản phẩm hoàn chỉnh thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error creating full product");
+                return new ServiceResult<ProductDto>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi tạo sản phẩm: " + ex.Message
+                };
+            }
+        }
+
         public async Task<ServiceResult<ProductDto>> UpdateProductAsync(int id, UpdateProductDto dto, string userId)
         {
             try

@@ -13,6 +13,7 @@ namespace PolyBabyAPI.Interfaces
         Task<ProductDto?> GetProductByIdAsync(int id);
         Task<ProductDetailDto?> GetProductDetailAsync(int id);
         Task<ServiceResult<ProductDto>> CreateProductAsync(CreateProductDto dto);
+        Task<ServiceResult<ProductDto>> CreateFullProductAsync(CreateFullProductDto dto);
         Task<ServiceResult<ProductDto>> UpdateProductAsync(int id, UpdateProductDto dto, string userId);
         Task<ServiceResult<bool>> DeleteProductAsync(int id);
         Task<ServiceResult<bool>> ToggleProductStatusAsync(int id);

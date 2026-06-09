@@ -498,6 +498,41 @@ export interface CreateProductPayload {
   supplierID?: number | null;
 }
 
+export interface CreateFullProductPayload {
+  code?: string;
+  productName: string;
+  description?: string;
+  price?: number;
+  productDiscountPercent?: number;
+  stock?: number;
+  categoryID: number;
+  supplierID?: number | null;
+  status?: boolean;
+  options: {
+    name: string;
+    displayOrder: number;
+    values: {
+      value: string;
+      price: number;
+      displayOrder: number;
+    }[];
+  }[];
+  variants: {
+    variantName: string;
+    unitPrice: number;
+    variantDiscountPercent: number;
+    stock: number;
+    sku: string;
+    imageUrl?: string | null;
+    description?: string | null;
+    status: boolean;
+    optionValues: {
+      optionName: string;
+      value: string;
+    }[];
+  }[];
+}
+
 export const fetchSuppliersForSelect = async (token: string): Promise<SupplierSelectOption[]> => {
   const res = await fetch(`${API_BASE_URL}/Product/suppliers`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -521,6 +556,23 @@ export const createProduct = async (token: string, payload: CreateProductPayload
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to create product");
+  }
+  return res.json();
+};
+
+export const createFullProduct = async (token: string, payload: CreateFullProductPayload): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Product/full`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create full product");
   }
   return res.json();
 };
