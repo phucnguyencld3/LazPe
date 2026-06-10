@@ -100,6 +100,42 @@ export default function CountdownTimer({
     }
   }[variant];
 
+  if (timeLeft.hours >= 24) {
+    const days = Math.floor(timeLeft.hours / 24);
+    const remainingHours = timeLeft.hours % 24;
+    return (
+      <div className="flex items-center gap-1.5 select-none flex-wrap">
+        <div className="flex items-center gap-1">
+          <div className={`flex items-center justify-center ${sizeClasses.box} ${variantClasses.box}`}>
+            {days}
+          </div>
+          <span className={`font-bold ${variantClasses.labelColor} ${sizeClasses.label} ml-0.5`}>ngày</span>
+        </div>
+        
+        <div className="flex items-center gap-1 ml-1">
+          <div className={`flex items-center justify-center ${sizeClasses.box} ${variantClasses.box}`}>
+            {formatNumber(remainingHours)}
+          </div>
+          <span className={`font-bold ${variantClasses.labelColor} ${sizeClasses.label} ml-0.5`}>giờ</span>
+        </div>
+
+        <div className="flex items-center gap-1 ml-1">
+          <div className={`flex items-center justify-center ${sizeClasses.box} ${variantClasses.box}`}>
+            {formatNumber(timeLeft.minutes)}
+          </div>
+          <span className={`font-bold ${variantClasses.labelColor} ${sizeClasses.label} ml-0.5`}>phút</span>
+        </div>
+
+        <div className="flex items-center gap-1 ml-1">
+          <div className={`flex items-center justify-center ${sizeClasses.box} ${variantClasses.box}`}>
+            {formatNumber(timeLeft.seconds)}
+          </div>
+          <span className={`font-bold ${variantClasses.labelColor} ${sizeClasses.label} ml-0.5`}>giây</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-1.5 select-none">
       {/* Hours */}

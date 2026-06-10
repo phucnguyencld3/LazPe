@@ -53,6 +53,19 @@ export default function CartPage() {
   // General alert
   const [applyingCode, setApplyingCode] = useState(false);
 
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
   const showAlert = (type: "success" | "error", text: string) => {
     if (type === "success") {
       toast.success(text);
@@ -101,7 +114,13 @@ export default function CartPage() {
       // Fetch top 4 products for recommendation
       const prodRes = await getProducts(1, 4);
       if (prodRes && prodRes.items) {
-        setRecommendations(prodRes.items);
+        // Sắp xếp đưa các sản phẩm hết hàng (inStock = false) xuống cuối
+        const sortedRecs = [...prodRes.items].sort((a, b) => {
+          if (a.inStock && !b.inStock) return -1;
+          if (!a.inStock && b.inStock) return 1;
+          return 0;
+        });
+        setRecommendations(sortedRecs);
       }
     } catch (error) {
       console.error("Error loading recommendations:", error);
@@ -154,49 +173,59 @@ export default function CartPage() {
     }
   };
 
-  const handleRemoveItem = async (cartDetailId: number) => {
+  const handleRemoveItem = (cartDetailId: number) => {
     if (!token) return;
-    if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?")) return;
-
-    try {
-      const res = await removeFromCart(cartDetailId);
-      if (res.success) {
-        showAlert("success", res.message || "Đã xóa sản phẩm khỏi giỏ hàng");
-        
-        // Remove item from checked state
-        setCheckedDetails((prev) => {
-          const next = { ...prev };
-          delete next[cartDetailId];
-          return next;
-        });
-      } else {
-        showAlert("error", res.message || "Không thể xóa sản phẩm");
+    setConfirmModal({
+      isOpen: true,
+      title: "Xóa sản phẩm",
+      message: "Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?",
+      onConfirm: async () => {
+        try {
+          const res = await removeFromCart(cartDetailId);
+          if (res.success) {
+            showAlert("success", res.message || "Đã xóa sản phẩm khỏi giỏ hàng");
+            
+            // Remove item from checked state
+            setCheckedDetails((prev) => {
+              const next = { ...prev };
+              delete next[cartDetailId];
+              return next;
+            });
+          } else {
+            showAlert("error", res.message || "Không thể xóa sản phẩm");
+          }
+        } catch (error) {
+          console.error(error);
+          showAlert("error", "Lỗi kết nối");
+        }
       }
-    } catch (error) {
-      console.error(error);
-      showAlert("error", "Lỗi kết nối");
-    }
+    });
   };
 
-  const handleClearAllCart = async () => {
+  const handleClearAllCart = () => {
     if (!token) return;
-    if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?")) return;
-
-    try {
-      const res = await clearCart();
-      if (res.success) {
-        setCheckedDetails({});
-        showAlert("success", "Đã xóa sạch giỏ hàng!");
-      } else {
-        showAlert("error", res.message || "Không thể xóa giỏ hàng");
+    setConfirmModal({
+      isOpen: true,
+      title: "Xóa sạch giỏ hàng",
+      message: "Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?",
+      onConfirm: async () => {
+        try {
+          const res = await clearCart();
+          if (res.success) {
+            setCheckedDetails({});
+            showAlert("success", "Đã xóa sạch giỏ hàng!");
+          } else {
+            showAlert("error", res.message || "Không thể xóa giỏ hàng");
+          }
+        } catch (error) {
+          console.error(error);
+          showAlert("error", "Lỗi kết nối");
+        }
       }
-    } catch (error) {
-      console.error(error);
-      showAlert("error", "Lỗi kết nối");
-    }
+    });
   };
 
-  const handleRemoveSelectedItems = async () => {
+  const handleRemoveSelectedItems = () => {
     if (!token || !cart) return;
     const selectedIds = Object.keys(checkedDetails).filter((key) => checkedDetails[Number(key)]);
     if (selectedIds.length === 0) {
@@ -204,22 +233,27 @@ export default function CartPage() {
       return;
     }
 
-    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} sản phẩm đã chọn?`)) return;
-
-    try {
-      for (const id of selectedIds) {
-        await removeFromCart(Number(id));
+    setConfirmModal({
+      isOpen: true,
+      title: "Xóa sản phẩm đã chọn",
+      message: `Bạn có chắc chắn muốn xóa ${selectedIds.length} sản phẩm đã chọn khỏi giỏ hàng?`,
+      onConfirm: async () => {
+        try {
+          for (const id of selectedIds) {
+            await removeFromCart(Number(id));
+          }
+          showAlert("success", "Đã xóa các sản phẩm đã chọn");
+          setCheckedDetails((prev) => {
+            const next = { ...prev };
+            selectedIds.forEach((id) => delete next[Number(id)]);
+            return next;
+          });
+        } catch (error) {
+          console.error(error);
+          showAlert("error", "Lỗi kết nối");
+        }
       }
-      showAlert("success", "Đã xóa các sản phẩm đã chọn");
-      setCheckedDetails((prev) => {
-        const next = { ...prev };
-        selectedIds.forEach((id) => delete next[Number(id)]);
-        return next;
-      });
-    } catch (error) {
-      console.error(error);
-      showAlert("error", "Có lỗi xảy ra khi xóa hàng loạt");
-    }
+    });
   };
 
   const handleApplyVoucherCode = async (e: React.FormEvent) => {
@@ -477,6 +511,44 @@ export default function CartPage() {
         subTotal={subTotal}
         handleApplyVoucherFromModal={handleApplyVoucherFromModal}
       />
+
+      {/* CONFIRMATION DIALOG MODAL */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 max-w-[400px] w-full space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 shrink-0">
+                <span className="material-symbols-outlined text-rose-500 text-lg">delete</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-800">{confirmModal.title}</h3>
+            </div>
+            
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-semibold">
+              {confirmModal.message}
+            </p>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                className="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  confirmModal.onConfirm();
+                  setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                }}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

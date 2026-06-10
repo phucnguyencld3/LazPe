@@ -27,7 +27,9 @@ export default function HomePage() {
       setLoadingProducts(true);
       const productsData = await getProducts(1, 10);
       if (productsData) {
-        setProducts(productsData.items || []);
+        // Lọc bỏ hoàn toàn các sản phẩm hết hàng (inStock = false)
+        const inStockProducts = (productsData.items || []).filter((p) => p.inStock);
+        setProducts(inStockProducts);
       }
       setLoadingProducts(false);
 

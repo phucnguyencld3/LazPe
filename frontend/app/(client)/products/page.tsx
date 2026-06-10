@@ -154,7 +154,7 @@ function ProductsContent() {
 
   // Client-side filtering for Price and Sale
   const filteredProducts = React.useMemo(() => {
-    return products.filter((product) => {
+    const list = products.filter((product) => {
       // Price filter
       const price = product.discountPrice || product.price;
       if (price > maxPrice) return false;
@@ -167,6 +167,13 @@ function ProductsContent() {
       }
 
       return true;
+    });
+
+    // Sắp xếp đưa các sản phẩm hết hàng (inStock = false) xuống cuối danh sách
+    return [...list].sort((a, b) => {
+      if (a.inStock && !b.inStock) return -1;
+      if (!a.inStock && b.inStock) return 1;
+      return 0;
     });
   }, [products, maxPrice, sortParam]);
 
