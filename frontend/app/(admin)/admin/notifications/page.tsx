@@ -16,6 +16,13 @@ import {
   adminUpdateTemplate,
   adminDeleteTemplate
 } from "@/lib/api";
+import Button from "@/components/admin/ui/Button";
+import Input from "@/components/admin/ui/Input";
+import TextArea from "@/components/admin/ui/TextArea";
+import Badge from "@/components/admin/ui/Badge";
+import Modal from "@/components/admin/ui/Modal";
+import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/admin/ui/Table";
+import { Card, StatsCard } from "@/components/admin/ui/Card";
 
 // Import ApexCharts dynamically to avoid Hydration errors
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
@@ -318,7 +325,7 @@ export default function AdminNotificationsPage() {
   ] : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-outfit pb-20">
       {/* Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div>
@@ -370,30 +377,43 @@ export default function AdminNotificationsPage() {
           {activeTab === "STATS" && stats && (
             <div className="space-y-6">
               {/* KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {[
-                  { label: "Tổng chiến dịch", value: stats.totalNotifications, icon: "campaign", color: "text-blue-500 bg-blue-50 border-blue-100" },
-                  { label: "Đã phát hành", value: stats.totalSent, icon: "done_all", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
-                  { label: "Tổng người nhận", value: stats.totalRecipients, icon: "groups", color: "text-purple-500 bg-purple-50 border-purple-100" },
-                  { label: "Tỷ lệ đọc trung bình", value: `${stats.overallReadRate}%`, icon: "mark_chat_read", color: "text-pink-500 bg-pink-50 border-pink-100" },
-                  { label: "Tỷ lệ tương tác", value: `${stats.engagementRate}%`, icon: "ads_click", color: "text-amber-500 bg-amber-50 border-amber-100" }
-                ].map((kpi, idx) => (
-                  <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{kpi.label}</p>
-                      <h3 className="text-xl font-extrabold text-slate-800 mt-1">{kpi.value}</h3>
-                    </div>
-                    <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${kpi.color}`}>
-                      <span className="material-symbols-outlined text-xl">{kpi.icon}</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <StatsCard
+                  title="Tổng chiến dịch"
+                  value={stats.totalNotifications ?? "0"}
+                  icon={<span className="material-symbols-outlined">campaign</span>}
+                  iconBgColor="bg-blue-50 text-blue-500 dark:bg-blue-900/20"
+                />
+                <StatsCard
+                  title="Đã phát hành"
+                  value={stats.totalSent ?? "0"}
+                  icon={<span className="material-symbols-outlined">done_all</span>}
+                  iconBgColor="bg-emerald-50 text-emerald-500 dark:bg-emerald-900/20"
+                />
+                <StatsCard
+                  title="Tổng người nhận"
+                  value={stats.totalRecipients ?? "0"}
+                  icon={<span className="material-symbols-outlined">groups</span>}
+                  iconBgColor="bg-purple-50 text-purple-500 dark:bg-purple-900/20"
+                />
+                <StatsCard
+                  title="Tỷ lệ đọc TB"
+                  value={`${stats.overallReadRate ?? 0}%`}
+                  icon={<span className="material-symbols-outlined">mark_chat_read</span>}
+                  iconBgColor="bg-pink-50 text-pink-500 dark:bg-pink-900/20"
+                />
+                <StatsCard
+                  title="Tỷ lệ tương tác"
+                  value={`${stats.engagementRate ?? 0}%`}
+                  icon={<span className="material-symbols-outlined">ads_click</span>}
+                  iconBgColor="bg-amber-50 text-amber-500 dark:bg-amber-900/20"
+                />
               </div>
 
               {/* Charts grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Sent over time */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                <div className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
                   <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     <span className="material-symbols-outlined text-rose-500">timeline</span> Tương tác chiến dịch (7 ngày qua)
                   </h3>
@@ -403,7 +423,7 @@ export default function AdminNotificationsPage() {
                 </div>
 
                 {/* Read rates by type */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                <div className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
                   <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     <span className="material-symbols-outlined text-rose-500">bar_chart</span> Hiệu suất đọc theo loại thông báo (%)
                   </h3>
@@ -414,129 +434,137 @@ export default function AdminNotificationsPage() {
               </div>
 
               {/* Top Campaigns table */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  <span className="material-symbols-outlined text-rose-500">stars</span> Top 5 chiến dịch hiệu quả nhất
+              <Card className="p-6">
+                <h3 className="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-brand-500">stars</span> Top 5 chiến dịch hiệu quả nhất
                 </h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        <th className="pb-3 pl-4">Mã</th>
-                        <th className="pb-3">Tiêu đề chiến dịch</th>
-                        <th className="pb-3">Loại thông báo</th>
-                        <th className="pb-3">Tổng người nhận</th>
-                        <th className="pb-3">Đã đọc</th>
-                        <th className="pb-3 pr-4">Tỷ lệ đọc</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableCell isHeader>Mã</TableCell>
+                        <TableCell isHeader>Tiêu đề chiến dịch</TableCell>
+                        <TableCell isHeader>Loại thông báo</TableCell>
+                        <TableCell isHeader>Tổng người nhận</TableCell>
+                        <TableCell isHeader>Đã đọc</TableCell>
+                        <TableCell isHeader className="text-right">Tỷ lệ đọc</TableCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {stats.topCampaigns?.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="text-center py-6 text-slate-400">Chưa có chiến dịch nào được ghi nhận hiệu suất.</td>
-                        </tr>
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-6 text-slate-400">Chưa có chiến dịch nào được ghi nhận hiệu suất.</TableCell>
+                        </TableRow>
                       ) : (
                         stats.topCampaigns?.map((camp: any) => (
-                          <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-3 pl-4 font-mono font-bold text-slate-400">{camp.code}</td>
-                            <td className="py-3 font-bold text-slate-800">{camp.title}</td>
-                            <td className="py-3 capitalize">{camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}</td>
-                            <td className="py-3">{camp.recipientsCount}</td>
-                            <td className="py-3">{camp.readCount}</td>
-                            <td className="py-3 pr-4 text-rose-500 font-bold">{camp.readRate}%</td>
-                          </tr>
+                          <TableRow key={camp.id}>
+                            <TableCell className="font-mono font-bold text-slate-400">#{camp.code}</TableCell>
+                            <TableCell className="font-bold text-slate-800 dark:text-white">{camp.title}</TableCell>
+                            <TableCell className="capitalize">{camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}</TableCell>
+                            <TableCell>{camp.recipientsCount}</TableCell>
+                            <TableCell>{camp.readCount}</TableCell>
+                            <TableCell className="text-right text-brand-500 font-bold">{camp.readRate}%</TableCell>
+                          </TableRow>
                         ))
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
+              </Card>
             </div>
           )}
 
           {/* TAB 2: CAMPAIGNS LIST */}
           {activeTab === "CAMPAIGNS" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center gap-4 justify-between bg-slate-50/50">
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-4 justify-between bg-slate-50/50 dark:bg-gray-800/50">
                 <div className="relative w-full sm:w-80">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Search size={14} />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                    <Search size={16} />
                   </span>
-                  <input
+                  <Input
                     type="text"
-                    placeholder="Tìm kiếm chiến dịch bằng tiêu đề, mã..."
+                    placeholder="Tìm kiếm chiến dịch..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                    className="pl-12"
                   />
                 </div>
-                <span className="text-xs text-slate-400 font-bold">Hiển thị {filteredCampaigns.length} chiến dịch</span>
+                <span className="text-xs text-slate-400 dark:text-gray-400 font-bold">Hiển thị {filteredCampaigns.length} chiến dịch</span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/20">
-                      <th className="py-3.5 pl-6">Mã</th>
-                      <th>Chiến dịch</th>
-                      <th>Loại / Mức độ</th>
-                      <th>Đối tượng nhận</th>
-                      <th>Trạng thái</th>
-                      <th>Lịch gửi</th>
-                      <th>Tương tác</th>
-                      <th className="pr-6 text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableCell isHeader>Mã</TableCell>
+                      <TableCell isHeader>Chiến dịch</TableCell>
+                      <TableCell isHeader>Loại / Mức độ</TableCell>
+                      <TableCell isHeader>Đối tượng nhận</TableCell>
+                      <TableCell isHeader>Trạng thái</TableCell>
+                      <TableCell isHeader>Lịch gửi</TableCell>
+                      <TableCell isHeader>Tương tác</TableCell>
+                      <TableCell isHeader className="text-right">Thao tác</TableCell>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {filteredCampaigns.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="text-center py-16 text-slate-400">
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-16 text-slate-400">
                           <span className="material-symbols-outlined text-4xl text-slate-300 mb-1">campaign</span>
                           <p className="font-medium text-xs mt-1">Không tìm thấy chiến dịch nào</p>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       filteredCampaigns.map((camp) => (
-                        <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 pl-6 font-mono font-bold text-slate-400">{camp.code}</td>
-                          <td className="py-4 max-w-[20rem]">
-                            <p className="font-bold text-slate-800 truncate" title={camp.title}>{camp.title}</p>
+                        <TableRow key={camp.id}>
+                          <TableCell className="font-mono font-bold text-slate-400">#{camp.code}</TableCell>
+                          <TableCell className="max-w-[20rem]">
+                            <p className="font-bold text-slate-800 dark:text-white truncate" title={camp.title}>{camp.title}</p>
                             <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5" title={camp.shortDescription}>{camp.shortDescription}</p>
-                          </td>
-                          <td className="py-4 space-y-1">
-                            <p className="capitalize font-bold text-slate-600 text-[11px]">
+                          </TableCell>
+                          <TableCell className="space-y-1">
+                            <p className="capitalize font-bold text-slate-650 dark:text-gray-300 text-[11px]">
                               {camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}
                             </p>
-                            {getPriorityBadge(camp.priority)}
-                          </td>
-                          <td className="py-4">
-                            <span className="px-2 py-1 bg-slate-50 border border-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                            {camp.priority === "Critical" && <Badge color="error" size="sm">Khẩn cấp</Badge>}
+                            {camp.priority === "High" && <Badge color="warning" size="sm">Cao</Badge>}
+                            {camp.priority === "Medium" && <Badge color="info" size="sm">Trung bình</Badge>}
+                            {camp.priority === "Low" && <Badge color="light" size="sm">Thấp</Badge>}
+                          </TableCell>
+                          <TableCell>
+                            <Badge color="light" size="sm">
                               {camp.targetTypeName}
-                            </span>
+                            </Badge>
                             {camp.targetValue && (
                               <p className="text-[9px] text-slate-400 mt-1 font-mono max-w-[120px] truncate" title={camp.targetValue}>
                                 {camp.targetValue}
                               </p>
                             )}
-                          </td>
-                          <td className="py-4">{getStatusBadge(camp.status)}</td>
-                          <td className="py-4 text-[11px] text-slate-500 font-bold">{formatDateTime(camp.publishedAt)}</td>
-                          <td className="py-4 text-[11px]">
+                          </TableCell>
+                          <TableCell>
+                            {camp.status === "Sent" && <Badge color="success" startIcon={<CheckCircle size={10} />}>Đã gửi</Badge>}
+                            {camp.status === "Scheduled" && <Badge color="info" startIcon={<Clock size={10} />}>Lập lịch</Badge>}
+                            {camp.status === "Draft" && <Badge color="light" startIcon={<FileText size={10} />}>Bản nháp</Badge>}
+                            {camp.status === "Cancelled" && <Badge color="error" startIcon={<XCircle size={10} />}>Đã hủy</Badge>}
+                          </TableCell>
+                          <TableCell className="text-[11px] text-slate-500 font-bold">{formatDateTime(camp.publishedAt)}</TableCell>
+                          <TableCell className="text-[11px]">
                             {camp.status === "Sent" ? (
                               <div className="space-y-0.5">
-                                <p className="font-bold text-slate-800">{camp.readCount} / {camp.recipientsCount} đọc</p>
-                                <p className="text-[10px] text-rose-500 font-bold">{camp.readRate}%</p>
+                                <p className="font-bold text-slate-800 dark:text-white">{camp.readCount} / {camp.recipientsCount} đọc</p>
+                                <p className="text-[10px] text-brand-500 font-bold">{camp.readRate}%</p>
                               </div>
                             ) : (
                               <span className="text-slate-300">-</span>
                             )}
-                          </td>
-                          <td className="py-4 pr-6 text-right">
+                          </TableCell>
+                          <TableCell className="text-right">
                             <div className="flex justify-end gap-1.5">
                               {camp.status === "Scheduled" && (
                                 <button
                                   onClick={() => handleCancelSchedule(camp.id)}
-                                  className="p-1.5 hover:bg-orange-50 text-orange-500 rounded-lg transition-colors"
+                                  className="w-8 h-8 rounded-full hover:bg-orange-50 text-orange-500 flex items-center justify-center transition-colors cursor-pointer"
                                   title="Hủy lịch gửi"
                                 >
                                   <span className="material-symbols-outlined text-[16px] font-bold">cancel_schedule_send</span>
@@ -546,14 +574,14 @@ export default function AdminNotificationsPage() {
                                 <>
                                   <button
                                     onClick={() => handleSendNow(camp.id)}
-                                    className="p-1.5 hover:bg-emerald-50 text-emerald-500 rounded-lg transition-colors"
+                                    className="w-8 h-8 rounded-full hover:bg-emerald-50 text-emerald-500 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Gửi ngay bây giờ"
                                   >
                                     <Play size={14} />
                                   </button>
                                   <Link
                                     href={`/admin/notifications/edit/${camp.id}`}
-                                    className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors flex items-center justify-center"
+                                    className="w-8 h-8 rounded-full hover:bg-blue-50 text-blue-500 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Chỉnh sửa"
                                   >
                                     <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
@@ -562,18 +590,18 @@ export default function AdminNotificationsPage() {
                               )}
                               <button
                                 onClick={() => handleDeleteCampaign(camp.id)}
-                                className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-lg transition-colors"
+                                className="w-8 h-8 rounded-full hover:bg-red-50 text-red-500 hover:text-red-600 flex items-center justify-center transition-colors cursor-pointer"
                                 title="Xóa"
                               >
                                 <Trash2 size={14} />
                               </button>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -582,69 +610,70 @@ export default function AdminNotificationsPage() {
           {activeTab === "TEMPLATES" && (
             <div className="space-y-4">
               <div className="flex justify-end">
-                <button
+                <Button
                   onClick={() => handleOpenTemplateModal()}
-                  className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 shadow-sm"
+                  variant="primary"
+                  startIcon={<Plus size={14} />}
                 >
-                  <Plus size={14} /> Tạo mẫu thông báo mới
-                </button>
+                  Tạo mẫu thông báo mới
+                </Button>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/20">
-                        <th className="py-3.5 pl-6">ID</th>
-                        <th>Tên Mẫu</th>
-                        <th>Mã Mẫu Code</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày tạo</th>
-                        <th className="pr-6 text-right">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableCell isHeader>ID</TableCell>
+                        <TableCell isHeader>Tên Mẫu</TableCell>
+                        <TableCell isHeader>Mã Mẫu Code</TableCell>
+                        <TableCell isHeader>Trạng thái</TableCell>
+                        <TableCell isHeader>Ngày tạo</TableCell>
+                        <TableCell isHeader className="text-right">Thao tác</TableCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {templates.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="text-center py-12 text-slate-400">Chưa có mẫu thông báo nào.</td>
-                        </tr>
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-12 text-slate-400">Chưa có mẫu thông báo nào.</TableCell>
+                        </TableRow>
                       ) : (
                         templates.map((tpl) => (
-                          <tr key={tpl.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-4 pl-6 font-mono font-bold text-slate-400">{tpl.id}</td>
-                            <td className="py-4 font-bold text-slate-800">{tpl.templateName}</td>
-                            <td className="py-4 font-mono font-bold text-slate-400">{tpl.templateCode}</td>
-                            <td className="py-4">
+                          <TableRow key={tpl.id}>
+                            <TableCell className="font-mono font-bold text-slate-400">#{tpl.id}</TableCell>
+                            <TableCell className="font-bold text-slate-800 dark:text-white">{tpl.templateName}</TableCell>
+                            <TableCell className="font-mono font-bold text-slate-400">{tpl.templateCode}</TableCell>
+                            <TableCell>
                               {tpl.isActive ? (
-                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[10px] font-bold">Kích hoạt</span>
+                                <Badge color="success">Kích hoạt</Badge>
                               ) : (
-                                <span className="px-2 py-0.5 bg-slate-50 text-slate-400 border border-slate-100 rounded text-[10px] font-bold">Tắt</span>
+                                <Badge color="light">Tắt</Badge>
                               )}
-                            </td>
-                            <td className="py-4 text-[11px] text-slate-400">{formatDateTime(tpl.createdAt)}</td>
-                            <td className="py-4 pr-6 text-right">
+                            </TableCell>
+                            <TableCell className="text-[11px] text-slate-400">{formatDateTime(tpl.createdAt)}</TableCell>
+                            <TableCell className="text-right">
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => handleOpenTemplateModal(tpl)}
-                                  className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors"
+                                  className="w-8 h-8 rounded-full hover:bg-blue-50 text-blue-500 flex items-center justify-center transition-colors cursor-pointer"
                                   title="Sửa mẫu"
                                 >
                                   <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
                                 </button>
                                 <button
                                   onClick={() => handleDeleteTemplate(tpl.id)}
-                                  className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                                  className="w-8 h-8 rounded-full hover:bg-red-50 text-red-500 flex items-center justify-center transition-colors cursor-pointer"
                                   title="Xóa mẫu"
                                 >
                                   <Trash2 size={14} />
                                 </button>
                               </div>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </div>
@@ -653,121 +682,121 @@ export default function AdminNotificationsPage() {
       )}
 
       {/* TEMPLATE DIALOG MODAL */}
-      {templateModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-[32rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-sm">{editingTemplate ? "Chỉnh sửa mẫu" : "Tạo mẫu thông báo mới"}</h3>
-              <button 
-                onClick={() => setTemplateModalOpen(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleTemplateSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tên mẫu</label>
-                <input
-                  type="text"
-                  value={templateForm.templateName}
-                  onChange={(e) => setTemplateForm({ ...templateForm, templateName: e.target.value })}
-                  placeholder="Ví dụ: Voucher Sinh Nhật Khách Hàng"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã mẫu (Code)</label>
-                <input
-                  type="text"
-                  value={templateForm.templateCode}
-                  onChange={(e) => setTemplateForm({ ...templateForm, templateCode: e.target.value.toUpperCase().replace(/\s+/g, "_") })}
-                  placeholder="Ví dụ: TPL_BIRTHDAY_GIFT"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
-                  disabled={!!editingTemplate}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nội dung mẫu (Content Template)</label>
-                <textarea
-                  rows={6}
-                  value={templateForm.templateContent}
-                  onChange={(e) => setTemplateForm({ ...templateForm, templateContent: e.target.value })}
-                  placeholder="Chúc mừng sinh nhật {FullName}! LazPe tặng bạn 1 voucher giảm 10% cho đơn hàng tiếp theo. Mã voucher: {VoucherCode}."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
-                />
-                <p className="text-[10px] text-slate-400 mt-1.5 font-medium leading-relaxed">
-                  * Gợi ý: Có thể sử dụng các biến placeholder như {"{FullName}"}, {"{VoucherCode}"}, {"{TierName}"} để hệ thống tự động thay đổi giá trị theo từng người nhận.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="tpl-active"
-                  checked={templateForm.isActive}
-                  onChange={(e) => setTemplateForm({ ...templateForm, isActive: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-200 text-rose-500 focus:ring-rose-400"
-                />
-                <label htmlFor="tpl-active" className="text-xs font-semibold text-slate-700 select-none">
-                  Kích hoạt sử dụng mẫu này
-                </label>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTemplateModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600"
-                >
-                  {editingTemplate ? "Cập nhật mẫu" : "Tạo mẫu"}
-                </button>
-              </div>
-            </form>
-          </div>
+      <Modal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        showCloseButton={false}
+        className="max-w-[32rem] !p-0 overflow-hidden"
+      >
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-gray-800/50 flex justify-between items-center">
+          <h3 className="font-bold text-slate-800 dark:text-white text-sm">{editingTemplate ? "Chỉnh sửa mẫu" : "Tạo mẫu thông báo mới"}</h3>
+          <button 
+            onClick={() => setTemplateModalOpen(false)}
+            className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
         </div>
-      )}
+
+        <form onSubmit={handleTemplateSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tên mẫu</label>
+            <Input
+              type="text"
+              value={templateForm.templateName}
+              onChange={(e) => setTemplateForm({ ...templateForm, templateName: e.target.value })}
+              placeholder="Ví dụ: Voucher Sinh Nhật Khách Hàng"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Mã mẫu (Code)</label>
+            <Input
+              type="text"
+              value={templateForm.templateCode}
+              onChange={(e) => setTemplateForm({ ...templateForm, templateCode: e.target.value.toUpperCase().replace(/\s+/g, "_") })}
+              placeholder="Ví dụ: TPL_BIRTHDAY_GIFT"
+              disabled={!!editingTemplate}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nội dung mẫu (Content Template)</label>
+            <TextArea
+              rows={5}
+              value={templateForm.templateContent}
+              onChange={(e) => setTemplateForm({ ...templateForm, templateContent: e.target.value })}
+              placeholder="Chúc mừng sinh nhật {FullName}! LazPe tặng bạn 1 voucher giảm 10% cho đơn hàng tiếp theo. Mã voucher: {VoucherCode}."
+              required
+            />
+            <p className="text-[10px] text-slate-400 dark:text-gray-500 mt-1.5 font-medium leading-relaxed">
+              * Gợi ý: Có thể sử dụng các biến placeholder như {"{FullName}"}, {"{VoucherCode}"}, {"{TierName}"} để hệ thống tự động thay đổi giá trị theo từng người nhận.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="tpl-active"
+              checked={templateForm.isActive}
+              onChange={(e) => setTemplateForm({ ...templateForm, isActive: e.target.checked })}
+              className="w-4 h-4 rounded border-slate-200 text-brand-500 focus:ring-brand-500"
+            />
+            <label htmlFor="tpl-active" className="text-xs font-semibold text-slate-700 dark:text-gray-300 select-none cursor-pointer">
+              Kích hoạt sử dụng mẫu này
+            </label>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+            <Button
+              type="button"
+              onClick={() => setTemplateModalOpen(false)}
+              variant="outline"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+            >
+              {editingTemplate ? "Cập nhật mẫu" : "Tạo mẫu"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Confirm Modal */}
-      {confirmModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+      <Modal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal(prev => ({ ...prev, show: false }))}
+        showCloseButton={false}
+        className="max-w-[380px]"
+      >
+        <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-2">
+          {confirmModal.title}
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed mb-6 font-semibold">
+          {confirmModal.message}
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button
             onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
-          />
-          <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 max-w-[380px] w-full relative z-10 transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95">
-            <h3 className="text-sm font-bold text-slate-800 mb-2">
-              {confirmModal.title}
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed mb-6 font-semibold">
-              {confirmModal.message}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-[11px] font-bold text-slate-600 transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={confirmModal.onConfirm}
-                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold transition-all shadow-md shadow-rose-500/10 active:scale-95"
-              >
-                Xác nhận
-              </button>
-            </div>
-          </div>
+            variant="outline"
+            size="sm"
+          >
+            Hủy bỏ
+          </Button>
+          <Button
+            onClick={confirmModal.onConfirm}
+            variant="primary"
+            size="sm"
+          >
+            Xác nhận
+          </Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

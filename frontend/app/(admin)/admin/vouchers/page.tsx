@@ -12,6 +12,12 @@ import {
   deleteVoucher,
   toggleVoucherStatus
 } from "@/lib/features/vouchers/voucherApi";
+import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/admin/ui/Table";
+import Badge from "@/components/admin/ui/Badge";
+import Button from "@/components/admin/ui/Button";
+import Input from "@/components/admin/ui/Input";
+import { StatsCard } from "@/components/admin/ui/Card";
+import Modal from "@/components/admin/ui/Modal";
 
 export default function AdminVouchersPage() {
   const router = useRouter();
@@ -234,10 +240,9 @@ export default function AdminVouchersPage() {
   const getValidityBadge = (startDateStr: string, endDateStr: string, status: boolean) => {
     if (!status) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-550 border border-rose-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-450"></span>
+        <Badge color="error" variant="light" size="sm" startIcon={<span className="w-1.5 h-1.5 rounded-full bg-current"></span>}>
           Tạm khóa
-        </span>
+        </Badge>
       );
     }
     const now = new Date();
@@ -246,180 +251,151 @@ export default function AdminVouchersPage() {
 
     if (now < start) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-550"></span>
+        <Badge color="warning" variant="light" size="sm" startIcon={<span className="w-1.5 h-1.5 rounded-full bg-current"></span>}>
           Sắp diễn ra
-        </span>
+        </Badge>
       );
     } else if (now > end) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+        <Badge color="light" variant="light" size="sm" startIcon={<span className="w-1.5 h-1.5 rounded-full bg-current"></span>}>
           Hết hạn
-        </span>
+        </Badge>
       );
     } else {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <Badge color="success" variant="light" size="sm" startIcon={<span className="w-1.5 h-1.5 rounded-full bg-current"></span>}>
           Đang hoạt động
-        </span>
+        </Badge>
       );
     }
   };
 
   return (
-    <main className="w-full pb-20 animate-in fade-in duration-300">
+    <main className="w-full pb-20 animate-in fade-in duration-300 font-outfit space-y-6">
       
       {/* Header section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-3xl">local_activity</span>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white/90 tracking-tight flex items-center gap-2">
+            <span className="material-symbols-outlined text-brand-500 text-3xl">local_activity</span>
             Quản lý Voucher
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Thiết lập các chương trình khuyến mãi, phân phối voucher công khai hoặc chỉ định cho người dùng cụ thể.
           </p>
         </div>
-        <button
+        <Button
           onClick={handleOpenCreateForm}
-          className="px-5 py-3 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+          variant="primary"
+          className="font-bold"
+          startIcon={<span className="material-symbols-outlined text-[18px]">add</span>}
         >
-          <span className="material-symbols-outlined text-sm">add</span>
           Tạo Voucher Mới
-        </button>
+        </Button>
       </div>
 
       {/* Stats Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Vouchers */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">local_activity</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tổng số voucher</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{loading ? "..." : stats.total}</h3>
-          </div>
-        </div>
-
-        {/* Active Vouchers */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <span className="material-symbols-outlined">alarm_on</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Đang chạy có hiệu lực</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{loading ? "..." : stats.active}</h3>
-          </div>
-        </div>
-
-        {/* Total Usages */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-650">
-              <span className="material-symbols-outlined">receipt_long</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tổng số lượt đã dùng</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{loading ? "..." : stats.totalUsages}</h3>
-          </div>
-        </div>
-
-        {/* Top Performer */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
-              <span className="material-symbols-outlined">stars</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Sử dụng nhiều nhất</p>
-            <h3 className="text-sm font-bold text-slate-800 mt-2 truncate" title={stats.topVoucher}>
-              {loading ? "..." : stats.topVoucher}
-            </h3>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 font-outfit">
+        <StatsCard
+          title="Tổng số voucher"
+          value={loading ? "..." : stats.total}
+          icon={<span className="material-symbols-outlined text-[24px]">local_activity</span>}
+          iconBgColor="bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400"
+        />
+        <StatsCard
+          title="Đang chạy có hiệu lực"
+          value={loading ? "..." : stats.active}
+          icon={<span className="material-symbols-outlined text-[24px]">alarm_on</span>}
+          iconBgColor="bg-success-50 text-success-500 dark:bg-success-500/10 dark:text-success-400"
+        />
+        <StatsCard
+          title="Tổng số lượt đã dùng"
+          value={loading ? "..." : stats.totalUsages}
+          icon={<span className="material-symbols-outlined text-[24px]">receipt_long</span>}
+          iconBgColor="bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400"
+        />
+        <StatsCard
+          title="Sử dụng nhiều nhất"
+          value={loading ? "..." : stats.topVoucher}
+          icon={<span className="material-symbols-outlined text-[24px]">stars</span>}
+          iconBgColor="bg-warning-50 text-warning-500 dark:bg-warning-500/10 dark:text-orange-400"
+        />
       </div>
 
       {/* Main List Section */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-white/[0.03] rounded-[2rem] border border-gray-100 dark:border-white/[0.05] shadow-theme-xs overflow-hidden">
         
         {/* Search, filters block */}
-        <div className="p-6 border-b border-slate-50 flex flex-col xl:flex-row gap-4 items-center justify-between bg-slate-50/10">
+        <div className="p-6 border-b border-gray-100 dark:border-white/[0.05] flex flex-col xl:flex-row gap-4 items-center justify-between bg-gray-50/30 dark:bg-gray-900/10">
           {/* Search input */}
-          <div className="w-full xl:w-80 relative">
-            <span className="material-symbols-outlined text-slate-400 text-lg absolute left-4.5 top-1/2 -translate-y-1/2">
-              search
-            </span>
-            <input
-              type="text"
+          <div className="w-full xl:w-80 relative group">
+            <Input
               placeholder="Tìm theo mã code hoặc tên voucher..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-sm font-semibold text-slate-700"
+              className="pl-11"
             />
+            <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-[18px] absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-brand-500 transition-colors pointer-events-none">
+              search
+            </span>
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-650"
               >
-                <span className="material-symbols-outlined text-base">close</span>
+                <span className="material-symbols-outlined text-[16px]">close</span>
               </button>
             )}
           </div>
 
           {/* Filtering panels */}
-          <div className="w-full xl:w-auto flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="w-full xl:w-auto flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
             
             {/* Validity filter */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Hiệu lực:</span>
-              <select
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap">Hiệu lực:</span>
+              <Input
+                options={[
+                  { value: "all", label: "Tất cả" },
+                  { value: "ongoing", label: "Đang hoạt động" },
+                  { value: "upcoming", label: "Sắp diễn ra" },
+                  { value: "expired", label: "Hết hạn" },
+                  { value: "suspended", label: "Đang tạm khóa" },
+                ]}
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700"
-              >
-                <option value="all">Tất cả</option>
-                <option value="ongoing">Đang hoạt động</option>
-                <option value="upcoming">Sắp diễn ra</option>
-                <option value="expired">Hết hạn</option>
-                <option value="suspended">Đang tạm khóa</option>
-              </select>
+                className="!py-1.5 !h-9 text-xs"
+              />
             </div>
 
             {/* Discount Type filter */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Loại giảm:</span>
-              <select
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap">Loại giảm:</span>
+              <Input
+                options={[
+                  { value: "all", label: "Tất cả" },
+                  { value: "1", label: "Theo phần trăm (%)" },
+                  { value: "2", label: "Tiền cố định (đ)" },
+                ]}
                 value={typeFilter}
                 onChange={e => setTypeFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700"
-              >
-                <option value="all">Tất cả</option>
-                <option value="1">Theo phần trăm (%)</option>
-                <option value="2">Tiền cố định (đ)</option>
-              </select>
+                className="!py-1.5 !h-9 text-xs"
+              />
             </div>
 
             {/* Visibility filter */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Hiển thị:</span>
-              <select
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap">Hiển thị:</span>
+              <Input
+                options={[
+                  { value: "all", label: "Tất cả" },
+                  { value: "1", label: "Công khai (Public)" },
+                  { value: "2", label: "Riêng tư (Exclusive)" },
+                ]}
                 value={visibilityFilter}
                 onChange={e => setVisibilityFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700"
-              >
-                <option value="all">Tất cả</option>
-                <option value="1">Công khai (Public)</option>
-                <option value="2">Riêng tư (Exclusive)</option>
-              </select>
+                className="!py-1.5 !h-9 text-xs"
+              />
             </div>
 
           </div>
@@ -429,125 +405,121 @@ export default function AdminVouchersPage() {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex justify-center items-center py-24">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-500"></div>
             </div>
           ) : displayedVouchers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-              <span className="material-symbols-outlined text-5xl mb-3 text-slate-200">
+            <div className="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-gray-500">
+              <span className="material-symbols-outlined text-5xl mb-3 text-gray-200 dark:text-gray-800">
                 search_off
               </span>
               <p className="text-sm font-bold">Không tìm thấy voucher nào</p>
-              <p className="text-xs text-slate-400 mt-1">Hãy thử thay đổi điều kiện lọc hoặc tạo mới voucher</p>
+              <p className="text-xs text-gray-450 mt-1">Hãy thử thay đổi điều kiện lọc hoặc tạo mới voucher</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                  <th className="px-6 py-4">Mã Voucher</th>
-                  <th className="px-6 py-4">Mức giảm</th>
-                  <th className="px-6 py-4">Tỉ lệ sử dụng</th>
-                  <th className="px-6 py-4">Loại phân phối</th>
-                  <th className="px-6 py-4 text-center">Trạng thái khóa</th>
-                  <th className="px-6 py-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
+            <Table className="!rounded-none border-0 shadow-none bg-transparent">
+              <TableHeader>
+                <TableRow>
+                  <TableCell isHeader>Mã Voucher</TableCell>
+                  <TableCell isHeader>Mức giảm</TableCell>
+                  <TableCell isHeader>Tỉ lệ sử dụng</TableCell>
+                  <TableCell isHeader>Loại phân phối</TableCell>
+                  <TableCell isHeader className="text-center">Trạng thái khóa</TableCell>
+                  <TableCell isHeader className="text-right">Thao tác</TableCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {displayedVouchers.map(voucher => {
                   const usedPct = voucher.totalQuantity > 0 
                     ? Math.round((voucher.usedQuantity / voucher.totalQuantity) * 100)
                     : 0;
 
                   return (
-                    <tr key={voucher.voucherID} className="hover:bg-slate-50/50 transition-colors">
+                    <TableRow key={voucher.voucherID}>
                       {/* Code */}
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1.5 bg-primary/5 border border-dashed border-primary/30 rounded-xl text-xs font-bold text-primary tracking-wider font-mono">
+                      <TableCell>
+                        <span className="inline-flex items-center px-3 py-1.5 bg-brand-50/50 border border-dashed border-brand-500/30 dark:bg-brand-500/5 dark:border-brand-500/20 rounded-xl text-xs font-bold text-brand-500 tracking-wider font-mono">
                           {voucher.code}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Discount Amount */}
-                      <td className="px-6 py-4 text-sm font-bold text-slate-800">
+                      <TableCell className="text-sm font-bold text-gray-800 dark:text-white/95">
                         {voucher.discountType === 1 
                           ? `${voucher.discountValue}%` 
                           : formatCurrency(voucher.discountValue)}
-                      </td>
+                      </TableCell>
 
                       {/* Usage bar */}
-                      <td className="px-6 py-4">
+                      <TableCell>
                         <div className="w-32">
-                          <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold mb-1">
+                          <div className="flex justify-between items-center text-[10px] text-gray-400 dark:text-gray-500 font-bold mb-1">
                             <span>{voucher.usedQuantity}/{voucher.totalQuantity}</span>
                             <span>{usedPct}%</span>
                           </div>
-                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
                             <div 
-                              className="bg-primary h-full rounded-full" 
+                              className="bg-brand-500 h-full rounded-full" 
                               style={{ width: `${Math.min(100, usedPct)}%` }}
                             ></div>
                           </div>
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Visibility / Exclusive type */}
-                      <td className="px-6 py-4">
+                      <TableCell>
                         {voucher.visibilityType === 1 ? (
                           voucher.exclusiveType === 2 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-50 text-teal-650 border border-teal-100">
-                              <span className="material-symbols-outlined text-[12px]">send</span>
+                            <Badge color="info" variant="light" size="sm" startIcon={<span className="material-symbols-outlined text-[14px]">send</span>}>
                               Công khai - Phát tự động
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-650 border border-emerald-100">
-                              <span className="material-symbols-outlined text-[12px]">public</span>
+                            <Badge color="success" variant="light" size="sm" startIcon={<span className="material-symbols-outlined text-[14px]">public</span>}>
                               Công khai
-                            </span>
+                            </Badge>
                           )
                         ) : (
                           voucher.exclusiveType === 1 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
-                              <span className="material-symbols-outlined text-[12px]">vpn_key</span>
+                            <Badge color="primary" variant="light" size="sm" startIcon={<span className="material-symbols-outlined text-[14px]">vpn_key</span>}>
                               Độc quyền - Nhập mã
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">
-                              <span className="material-symbols-outlined text-[12px]">lock</span>
+                            <Badge color="primary" variant="light" size="sm" startIcon={<span className="material-symbols-outlined text-[14px]">lock</span>}>
                               Độc quyền - Phát trực tiếp
-                            </span>
+                            </Badge>
                           )
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Validity/Status */}
-                      <td className="px-6 py-4 text-center">
+                      <TableCell className="text-center">
                         {getValidityBadge(voucher.startDate, voucher.endDate, voucher.status)}
-                      </td>
+                      </TableCell>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-right">
+                      <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleOpenDetailModal(voucher)}
-                            className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 transition-colors"
                             title="Xem chi tiết & lịch sử sử dụng"
                           >
-                            <span className="material-symbols-outlined text-lg">visibility</span>
+                            <span className="material-symbols-outlined text-[18px]">visibility</span>
                           </button>
 
                           <button
                             onClick={() => handleToggleStatusClick(voucher)}
                             disabled={togglingId === voucher.voucherID}
-                            className={`p-1.5 rounded-full transition-all duration-200 ${
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                               voucher.status
-                                ? "hover:bg-amber-50 text-amber-550 hover:text-amber-700 cursor-pointer"
-                                : "hover:bg-emerald-50 text-emerald-650 hover:text-emerald-850 cursor-pointer"
+                                ? "text-warning-600 hover:bg-warning-50 dark:hover:bg-warning-500/10"
+                                : "text-success-600 hover:bg-success-50 dark:hover:bg-success-500/10"
                             }`}
                             title={voucher.status ? "Tạm khóa voucher" : "Mở khóa voucher"}
                           >
                             {togglingId === voucher.voucherID ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-current border-t-transparent"></div>
                             ) : (
-                              <span className="material-symbols-outlined text-lg">
+                              <span className="material-symbols-outlined text-[18px]">
                                 {voucher.status ? "lock" : "lock_open"}
                               </span>
                             )}
@@ -555,151 +527,151 @@ export default function AdminVouchersPage() {
                           
                           <button
                             onClick={() => handleOpenEditForm(voucher)}
-                            className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 transition-colors"
                             title="Sửa"
                           >
-                            <span className="material-symbols-outlined text-lg">edit</span>
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           
                           <button
                             onClick={() => handleDeleteClick(voucher)}
-                            className={`p-1.5 rounded-full transition-colors ${
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                               voucher.usedQuantity > 0 
-                                ? "opacity-30 cursor-not-allowed text-slate-300" 
-                                : "hover:bg-rose-50 text-rose-500 hover:text-rose-700 cursor-pointer"
+                                ? "opacity-30 cursor-not-allowed text-gray-300 dark:text-gray-700" 
+                                : "text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10"
                             }`}
                             disabled={voucher.usedQuantity > 0}
                             title={voucher.usedQuantity > 0 ? "Không thể xóa voucher đã dùng" : "Xóa"}
                           >
-                            <span className="material-symbols-outlined text-lg">delete</span>
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </div>
 
         {/* Pagination bar */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
-        )}
-      </div>
+        {
+          totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          )
+        }
+      </div >
 
       {/* Form Modal (Create / Edit) */}
-      {isFormOpen && token && (
-        <VoucherFormModal
-          voucher={selectedVoucherForEdit}
-          token={token}
-          onClose={() => {
-            setIsFormOpen(false);
-            setSelectedVoucherForEdit(null);
-          }}
-          onSaveSuccess={handleSaveSuccess}
-        />
-      )}
+      {
+        isFormOpen && token && (
+          <VoucherFormModal
+            voucher={selectedVoucherForEdit}
+            token={token}
+            onClose={() => {
+              setIsFormOpen(false);
+              setSelectedVoucherForEdit(null);
+            }}
+            onSaveSuccess={handleSaveSuccess}
+          />
+        )
+      }
 
       {/* Detail / History Modal */}
-      {selectedVoucherForDetail && token && (
-        <VoucherDetailModal
-          voucher={selectedVoucherForDetail}
-          token={token}
-          onClose={() => setSelectedVoucherForDetail(null)}
-          onRefreshVoucher={handleRefresh}
-        />
-      )}
+      {
+        selectedVoucherForDetail && token && (
+          <VoucherDetailModal
+            voucher={selectedVoucherForDetail}
+            token={token}
+            onClose={() => setSelectedVoucherForDetail(null)}
+            onRefreshVoucher={handleRefresh}
+          />
+        )
+      }
 
       {/* Confirmation Modal: Delete */}
-      {voucherToDelete && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 w-[380px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-rose-100">
-                <span className="material-symbols-outlined text-3xl">warning</span>
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Xác nhận xóa Voucher?</h3>
-              <p className="text-xs text-slate-400 mt-2 px-1 leading-relaxed">
-                Bạn có chắc chắn muốn xóa vĩnh viễn voucher <span className="font-bold text-slate-800">"{voucherToDelete.code}"</span>?
-                Hành động này sẽ xóa dữ liệu voucher khỏi hệ thống và không thể hoàn tác.
-              </p>
+      <Modal isOpen={voucherToDelete !== null} onClose={() => setVoucherToDelete(null)} showCloseButton={true} className="!max-w-sm">
+        {voucherToDelete && (
+          <div className="font-outfit p-1 text-center flex flex-col items-center">
+            <div className="w-14 h-14 bg-error-50 dark:bg-error-500/10 text-error-500 rounded-full flex items-center justify-center mb-4 border border-error-100 dark:border-error-500/20">
+              <span className="material-symbols-outlined text-2xl">warning</span>
+            </div>
+            <h3 className="text-base font-bold text-gray-800 dark:text-white/90">Xác nhận xóa Voucher?</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 px-1 leading-relaxed">
+              Bạn có chắc chắn muốn xóa vĩnh viễn voucher <span className="font-bold text-gray-800 dark:text-white">"{voucherToDelete.code}"</span>?
+              Hành động này sẽ xóa dữ liệu voucher khỏi hệ thống và không thể hoàn tác.
+            </p>
 
-              <div className="flex items-center gap-3 w-full mt-6">
-                <button
-                  onClick={() => setVoucherToDelete(null)}
-                  disabled={deletingId !== null}
-                  className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  disabled={deletingId !== null}
-                  className="flex-1 py-2.5 rounded-full bg-rose-500 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-rose-500/20 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer"
-                >
-                  {deletingId !== null ? (
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    "Xác nhận xóa"
-                  )}
-                </button>
-              </div>
+            <div className="flex items-center gap-3 w-full mt-6">
+              <Button
+                onClick={() => setVoucherToDelete(null)}
+                disabled={deletingId !== null}
+                variant="secondary"
+                className="flex-1"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={deletingId !== null}
+                isLoading={deletingId !== null}
+                variant="danger"
+                className="flex-1"
+              >
+                Xác nhận xóa
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Confirmation Modal: Toggle Status */}
-      {voucherToToggle && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 w-[380px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4 border border-amber-100">
-                <span className="material-symbols-outlined text-3xl">info</span>
-              </div>
-              <h3 className="text-base font-bold text-slate-900">
-                {voucherToToggle.status ? "Khóa Voucher?" : "Mở khóa Voucher?"}
-              </h3>
-              <p className="text-xs text-slate-400 mt-2 px-1 leading-relaxed">
-                Bạn có chắc chắn muốn {voucherToToggle.status ? "tạm thời khóa/vô hiệu hóa" : "kích hoạt mở khóa"} voucher 
-                <span className="font-bold text-slate-800"> "{voucherToToggle.code}"</span>?
-                {voucherToToggle.status 
-                  ? " Khách hàng sẽ không thể áp dụng voucher này khi thanh toán đơn hàng nữa." 
-                  : " Voucher sẽ tiếp tục có hiệu lực cho khách hàng mua sắm."}
-              </p>
+      <Modal isOpen={voucherToToggle !== null} onClose={() => setVoucherToToggle(null)} showCloseButton={true} className="!max-w-sm">
+        {voucherToToggle && (
+          <div className="font-outfit p-1 text-center flex flex-col items-center">
+            <div className="w-14 h-14 bg-warning-50 dark:bg-warning-500/10 text-warning-500 rounded-full flex items-center justify-center mb-4 border border-warning-100 dark:border-warning-500/20">
+              <span className="material-symbols-outlined text-2xl">info</span>
+            </div>
+            <h3 className="text-base font-bold text-gray-800 dark:text-white/90">
+              {voucherToToggle.status ? "Khóa Voucher?" : "Mở khóa Voucher?"}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 px-1 leading-relaxed">
+              Bạn có chắc chắn muốn {voucherToToggle.status ? "tạm thời khóa/vô hiệu hóa" : "kích hoạt mở khóa"} voucher 
+              <span className="font-bold text-gray-800 dark:text-white"> "{voucherToToggle.code}"</span>?
+              {voucherToToggle.status 
+                ? " Khách hàng sẽ không thể áp dụng voucher này khi thanh toán đơn hàng nữa." 
+                : " Voucher sẽ tiếp tục có hiệu lực cho khách hàng mua sắm."}
+            </p>
 
-              <div className="flex items-center gap-3 w-full mt-6">
-                <button
-                  onClick={() => setVoucherToToggle(null)}
-                  disabled={togglingId !== null}
-                  className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  onClick={confirmToggleStatus}
-                  disabled={togglingId !== null}
-                  className="flex-1 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
-                >
-                  {togglingId !== null ? (
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    "Xác nhận"
-                  )}
-                </button>
-              </div>
+            <div className="flex items-center gap-3 w-full mt-6">
+              <Button
+                onClick={() => setVoucherToToggle(null)}
+                disabled={togglingId !== null}
+                variant="secondary"
+                className="flex-1"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                onClick={confirmToggleStatus}
+                disabled={togglingId !== null}
+                isLoading={togglingId !== null}
+                variant="primary"
+                className="flex-1"
+              >
+                Xác nhận
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
     </main>
   );

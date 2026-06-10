@@ -8,26 +8,28 @@ interface UserFiltersProps {
 
 export const UserFilters: React.FC<UserFiltersProps> = ({ searchTerm, onSearchChange, onReset }) => {
   return (
-    <div className="glass-card p-md rounded-xl shadow-sm bg-surface-container-lowest border border-outline-variant/20">
-      <div className="flex flex-wrap items-center gap-md">
-        <div className="flex-1 relative min-w-[300px]">
-          <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+    <div className="bg-white dark:bg-gray-950 rounded-[2rem] p-6 border border-gray-150 dark:border-white/[0.05] shadow-theme-xs font-outfit">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex-1 relative w-full">
+          <span className="material-symbols-outlined absolute left-4.5 top-1/2 -translate-y-1/2 text-gray-400">
+            search
+          </span>
           <input
-            className="w-full pl-xl pr-md py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+            className="w-full pl-12 pr-4 py-2.5 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-semibold text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 transition-all"
             placeholder="Tìm kiếm theo tên, email, SĐT..."
             type="text"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
-        <select className="bg-surface-container-low border-none rounded-lg px-lg py-md font-label-md text-on-surface focus:ring-2 focus:ring-primary/30 min-w-[180px]">
-          <option value="">Trạng thái</option>
+        <select className="w-full sm:w-auto px-4 py-2.5 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-bold text-gray-850 dark:text-white/95 dark:bg-gray-900 cursor-pointer transition-all min-w-[180px]">
+          <option value="">Trạng thái (Tất cả)</option>
           <option value="active">Đang hoạt động</option>
           <option value="locked">Bị khóa</option>
         </select>
         <button 
           onClick={onReset} 
-          className="text-primary font-label-md text-label-md font-bold hover:underline px-md py-md"
+          className="text-brand-500 hover:text-brand-600 font-bold text-sm px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-all cursor-pointer"
         >
           Đặt lại
         </button>
@@ -35,3 +37,4 @@ export const UserFilters: React.FC<UserFiltersProps> = ({ searchTerm, onSearchCh
     </div>
   );
 };
+

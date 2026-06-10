@@ -1,5 +1,7 @@
 import React from "react";
-import { OrderInfo, getStatusBadgeColor, getStatusLabel } from "@/lib/features/orders/orderApi";
+import { OrderInfo, getStatusLabel } from "@/lib/features/orders/orderApi";
+import Button from "@/components/admin/ui/Button";
+import Badge from "@/components/admin/ui/Badge";
 
 interface OrderActionBarProps {
   order: OrderInfo;
@@ -14,53 +16,82 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
   onShowCancelModal,
   onPrintOrder,
 }) => {
+  const getBadgeColor = (statusCode: number) => {
+    switch (statusCode) {
+      case 0: // Pending (Chờ xác nhận)
+        return "warning";
+      case 1: // Confirmed (Đang xử lý)
+        return "info";
+      case 2: // Shipping (Đang giao)
+        return "primary";
+      case 3: // Received (Đã nhận)
+      case 4: // Completed (Hoàn thành)
+        return "success";
+      case 5: // Cancelled (Đã hủy)
+      default:
+        return "error";
+    }
+  };
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <div className="flex gap-3">
-        <span className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 ${getStatusBadgeColor(order.statusCode)}`}>
-          <span className="w-2 h-2 bg-current rounded-full"></span>
+    <div className="flex flex-wrap items-center justify-between gap-4 font-outfit">
+      <div className="flex flex-wrap gap-2.5">
+        <Badge
+          color={getBadgeColor(order.statusCode)}
+          variant="light"
+          size="md"
+          startIcon={<span className="w-1.5 h-1.5 bg-current rounded-full"></span>}
+        >
           {getStatusLabel(order.statusCode)}
-        </span>
-        <span className="px-4 py-1.5 bg-slate-200 text-slate-600 rounded-full text-sm font-bold">
-          Thanh toán: {order.payMethod || "Thanh toán khi nhận hàng (COD)"}
-        </span>
+        </Badge>
+        <Badge
+          color="light"
+          variant="light"
+          size="md"
+        >
+          Thanh toán: {order.payMethod || "COD"}
+        </Badge>
       </div>
       
-      <div className="flex items-center gap-4">
-        <button
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
           onClick={onPrintOrder}
-          className="flex items-center gap-2 px-6 py-2.5 border border-primary text-primary font-bold rounded-full hover:bg-primary-container/20 transition-all cursor-pointer active:scale-95"
+          variant="outline"
+          className="font-bold"
+          startIcon={<span className="material-symbols-outlined text-[18px]">print</span>}
         >
-          <span className="material-symbols-outlined text-xl">print</span>
           In đơn hàng
-        </button>
+        </Button>
         
         {order.statusCode === 0 && (
-          <button
+          <Button
             onClick={() => onUpdateStatus('confirm')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary font-bold rounded-full shadow-md hover:bg-primary/95 transition-all cursor-pointer active:scale-95"
+            variant="primary"
+            className="font-bold"
           >
             Xác nhận đơn
-          </button>
+          </Button>
         )}
         
         {order.statusCode === 1 && (
-          <button
+          <Button
             onClick={() => onUpdateStatus('mark-shipped')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-secondary text-on-secondary font-bold rounded-full shadow-md hover:bg-secondary/95 transition-all cursor-pointer active:scale-95"
+            variant="primary"
+            className="font-bold"
           >
             Bắt đầu giao hàng
-          </button>
+          </Button>
         )}
 
         {(order.statusCode < 3 && order.statusCode !== 5) && (
-          <button 
+          <Button 
             onClick={onShowCancelModal}
-            className="px-6 py-2.5 bg-error-container text-on-error-container hover:bg-error-container/80 font-bold rounded-full transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+            variant="danger"
+            className="font-bold"
+            startIcon={<span className="material-symbols-outlined text-[18px]">cancel</span>}
           >
-            <span className="material-symbols-outlined">cancel</span>
             Hủy đơn
-          </button>
+          </Button>
         )}
       </div>
     </div>

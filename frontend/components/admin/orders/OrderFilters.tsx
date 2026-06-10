@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Input from "@/components/admin/ui/Input";
+import Button from "@/components/admin/ui/Button";
 
 interface OrderFiltersProps {
   statusFilter: number | null;
@@ -35,18 +37,21 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
 
   const getTabClass = (isActive: boolean, isError: boolean = false) => {
     if (isActive) {
-      return "px-6 py-2 bg-primary text-on-primary rounded-full font-bold transition-all whitespace-nowrap cursor-pointer shadow-sm active:scale-95 duration-200";
+      if (isError) {
+        return "px-5 py-2 bg-error-500 text-white rounded-full font-semibold transition-all whitespace-nowrap shadow-theme-xs hover:bg-error-600 active:scale-95 duration-200 text-xs";
+      }
+      return "px-5 py-2 bg-brand-500 text-white rounded-full font-semibold transition-all whitespace-nowrap shadow-theme-xs hover:bg-brand-600 active:scale-95 duration-200 text-xs";
     }
     if (isError) {
-      return "px-6 py-2 bg-surface hover:bg-red-50 text-error rounded-full font-label-md transition-all whitespace-nowrap border border-outline-variant/30 cursor-pointer active:scale-95 duration-200";
+      return "px-5 py-2 bg-error-50 dark:bg-error-500/10 hover:bg-error-100 dark:hover:bg-error-500/20 text-error-600 dark:text-error-400 rounded-full font-semibold transition-all whitespace-nowrap border border-error-100 dark:border-error-500/20 active:scale-95 duration-200 text-xs";
     }
-    return "px-6 py-2 bg-surface hover:bg-primary-container/20 text-on-surface rounded-full font-label-md transition-all whitespace-nowrap border border-outline-variant/30 cursor-pointer active:scale-95 duration-200";
+    return "px-5 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full font-semibold transition-all whitespace-nowrap border border-gray-200 dark:border-white/5 active:scale-95 duration-200 text-xs";
   };
 
   return (
-    <div className="bg-surface-container-lowest p-md rounded-lg shadow-sm border border-outline-variant/20 space-y-md">
+    <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] shadow-theme-xs border border-gray-100 dark:border-white/[0.05] space-y-6 font-outfit">
       {/* Status Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
         <button
           onClick={() => setStatusFilter(null)}
           className={getTabClass(statusFilter === null)}
@@ -86,64 +91,59 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-end gap-md">
+      <div className="flex flex-wrap items-end gap-4">
         {/* Search */}
-        <div className="flex-1 min-w-[280px] space-y-1">
-          <label className="text-label-sm text-on-surface-variant ml-2 block">Tìm kiếm</label>
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">
-              search
-            </span>
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-14 pl-12 pr-4 bg-surface rounded-full border-2 border-transparent focus:border-primary focus:ring-0 transition-all text-body-md outline-none"
-              placeholder="Mã đơn hàng, tên khách hàng..."
-              type="text"
-            />
-          </div>
+        <div className="flex-1 min-w-[280px] relative group">
+          <Input
+            label="Tìm kiếm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-11"
+            placeholder="Mã đơn hàng, tên khách hàng..."
+          />
+          <span className="material-symbols-outlined absolute left-4 bottom-[11px] text-gray-400 dark:text-gray-500 text-[20px] pointer-events-none group-focus-within:text-brand-500 transition-colors">
+            search
+          </span>
         </div>
 
         {/* Date Range */}
-        <div className="w-64 space-y-1">
-          <label className="text-label-sm text-on-surface-variant ml-2 block">Khoảng thời gian</label>
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">
-              calendar_today
-            </span>
-            <input
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full h-14 pl-12 pr-4 bg-surface rounded-full border-2 border-transparent focus:border-primary focus:ring-0 transition-all text-body-md outline-none"
-              placeholder="01/10/2023 - 31/10/2023"
-              type="text"
-            />
-          </div>
+        <div className="w-64 relative group">
+          <Input
+            label="Khoảng thời gian"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="pl-11"
+            placeholder="01/10/2023 - 31/10/2023"
+          />
+          <span className="material-symbols-outlined absolute left-4 bottom-[11px] text-gray-400 dark:text-gray-500 text-[20px] pointer-events-none group-focus-within:text-brand-500 transition-colors">
+            calendar_today
+          </span>
         </div>
 
         {/* Price Value */}
-        <div className="w-48 space-y-1">
-          <label className="text-label-sm text-on-surface-variant ml-2 block">Giá trị đơn</label>
-          <select
+        <div className="w-48">
+          <Input
+            label="Giá trị đơn"
+            options={[
+              { value: "Mọi mức giá", label: "Mọi mức giá" },
+              { value: "Dưới 500k", label: "Dưới 500k" },
+              { value: "500k - 2M", label: "500k - 2M" },
+              { value: "Trên 2M", label: "Trên 2M" },
+            ]}
             value={orderValue}
             onChange={(e) => setOrderValue(e.target.value)}
-            className="w-full h-14 px-6 bg-surface rounded-full border-2 border-transparent focus:border-primary focus:ring-0 transition-all text-body-md appearance-none outline-none cursor-pointer"
-          >
-            <option>Mọi mức giá</option>
-            <option>Dưới 500k</option>
-            <option>500k - 2M</option>
-            <option>Trên 2M</option>
-          </select>
+          />
         </div>
 
         {/* Filter Action Button */}
-        <button
+        <Button
           onClick={handleFilterClick}
-          className="h-14 px-8 bg-secondary hover:bg-secondary/90 text-on-secondary rounded-full font-bold shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+          variant="secondary"
+          className="font-bold h-11 px-5"
+          startIcon={<span className="material-symbols-outlined text-[18px]">filter_list</span>}
         >
-          <span className="material-symbols-outlined">filter_list</span>
           Lọc dữ liệu
-        </button>
+        </Button>
       </div>
     </div>
   );

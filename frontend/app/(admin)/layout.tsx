@@ -9,7 +9,23 @@ import { toast } from "@/lib/toast";
 import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, UserNotificationItem } from "@/lib/api";
 import { getValidToken, clearAuth } from "@/lib/utils/auth";
 
+import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
+import AppSidebar from "@/components/admin/shared/AppSidebar";
+import AppHeader from "@/components/admin/shared/AppHeader";
+
 export default function AdminLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <SidebarProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </SidebarProvider>
+  );
+}
+
+function AdminLayoutContent({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -22,7 +38,9 @@ export default function AdminLayout({
   // Notifications states
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+
+  const { isExpanded, isHovered, isMobileOpen, toggleMobileSidebar } = useSidebar();
+  const isOpen = isExpanded || isHovered || isMobileOpen;
 
   // Synchronize token and isAuth with auth state
   useEffect(() => {
@@ -108,7 +126,6 @@ export default function AdminLayout({
   };
 
   const handleNotificationClick = async (notif: UserNotificationItem) => {
-    setIsNotifDropdownOpen(false);
     if (!token) return;
 
     if (!notif.isRead) {
@@ -199,304 +216,58 @@ export default function AdminLayout({
     checkAuth();
   }, [router, pathname, isAuth]);
 
-  const isActive = (path: string) => {
-    if (path === "/admin" && pathname !== "/admin") return false;
-    return pathname?.startsWith(path);
-  };
-
   if (!isAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500"></div>
       </div>
     );
   }
 
+  const mainContentMargin = isMobileOpen
+    ? "ml-0"
+    : isOpen
+    ? "lg:ml-[290px]"
+    : "lg:ml-[90px]";
+
   return (
-    <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative admin-scaled-layout">
-      {/* Top Navigation Shell */}
-      <header className="sticky top-0 z-40 flex items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
-        <div className="flex items-center gap-sm ml-72">
-          {/* Logo shifted to avoid being completely covered by sidebar, if needed. Or just leave it as is if it matches mockup. We'll leave it as in mockup */}
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Laz<span className="text-rose-500">Pe</span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-md">
-          <div className="relative">
-            <button
-              onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
-              className={`material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300 relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
-              title="Thông báo"
-            >
-              notifications
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+    <div className="min-h-screen lg:flex bg-gray-50 dark:bg-gray-950 font-outfit text-gray-900 dark:text-white/90" style={{ zoom: "85%" }}>
+      {/* Sidebar navigation */}
+      <AppSidebar />
 
-            {/* Dropdown Panel */}
-            {isNotifDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 text-slate-800">
-                <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
-                  <span className="font-bold text-slate-800 text-sm">Thông báo mới</span>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={handleMarkAllRead}
-                      className="text-[11px] text-rose-500 hover:text-rose-600 font-bold transition-colors"
-                    >
-                      Đọc tất cả
-                    </button>
-                  )}
-                </div>
-                
-                <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                  {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                      <span className="material-symbols-outlined text-3xl mb-1 text-slate-300">notifications_off</span>
-                      <span className="text-[11px] font-medium">Không có thông báo nào</span>
-                    </div>
-                  ) : (
-                    notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        onClick={() => handleNotificationClick(notif)}
-                        className={`flex items-start gap-3 p-3 hover:bg-slate-50 transition-colors cursor-pointer relative ${!notif.isRead ? "bg-rose-500/5" : ""}`}
-                      >
-                        {!notif.isRead && (
-                          <span className="absolute top-4 right-3 w-2 h-2 bg-rose-500 rounded-full"></span>
-                        )}
+      {/* Backdrop for mobile */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden backdrop-blur-xs"
+          onClick={toggleMobileSidebar}
+        />
+      )}
 
-                        <div className="w-9 h-9 rounded-full bg-rose-50/50 flex-shrink-0 overflow-hidden flex items-center justify-center border border-rose-100/50 text-rose-500">
-                          {notif.thumbnailImage ? (
-                            <img src={notif.thumbnailImage} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="material-symbols-outlined text-lg">
-                              {getNotifIcon(notif.type)}
-                            </span>
-                          )}
-                        </div>
+      {/* Main Content Area */}
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${mainContentMargin}`}>
+        {/* App Header */}
+        <AppHeader
+          notifications={notifications}
+          unreadCount={unreadCount}
+          handleMarkAllRead={handleMarkAllRead}
+          handleNotificationClick={handleNotificationClick}
+          getNotifIcon={getNotifIcon}
+          formatTime={formatTime}
+        />
 
-                        <div className="flex-1 min-w-0 pr-2">
-                          <p className={`text-xs text-slate-800 line-clamp-1 leading-snug ${!notif.isRead ? "font-bold" : "font-semibold"}`}>
-                            {notif.title}
-                          </p>
-                          <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">
-                            {notif.shortDescription}
-                          </p>
-                          <span className="text-[9px] text-slate-400 font-bold block mt-1">
-                            {formatTime(notif.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="px-3 pt-2 mt-2 border-t border-slate-100">
-                  <Link
-                    href="/admin/notifications"
-                    className="block text-center w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 transition-colors"
-                    onClick={() => setIsNotifDropdownOpen(false)}
-                  >
-                    Xem tất cả thông báo
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-          <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
-          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container">
-            <img 
-              alt="Admin Profile Avatar" 
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtn-RPABrqyfAIk-Bol7wq_PAmzFO0RQccPYAVIGJTLXZIE2ypug3FJrFdrIcoxyyEIp0oSyNMKOHGT-aT-oDTQSI8g3dEYp7O9MYI5prps_co8yfSkh_Cu1n-lmp7QN_H_Fg-n1KONZK_cby4aQzkl4hykD5fFHyXAhB3Ci-nKb2yI5Jlty1I9JIDwnrT_GBkPsYDSKSeyt_birkk1ZG507kN25QVu7lzA5MoOOQ1iHkIJActwwm73iL00BYzLL0xa58jmYVecLco" 
-            />
-          </div>
-        </div>
-      </header>
-
-      <div className="flex flex-1">
-        {/* Sidebar Shell */}
-        <aside className="fixed left-0 top-0 h-full w-72 py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 transition-all overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-          <div className="px-md mb-lg">
-            <div className="flex items-center gap-sm mb-xs">
-              <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
-              </h2>
-            </div>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">Hệ thống quản lý LazPe</p>
-          </div>
-          
-          <nav className="flex-1 space-y-md">
-            {/* Tổng quan */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tổng quan</span>
-              <Link
-                href="/admin"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">dashboard</span>
-                <span className="font-label-md">Tổng quan</span>
-              </Link>
-            </div>
-
-            {/* Sản phẩm */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Sản phẩm</span>
-              <Link
-                href="/admin/products"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">inventory_2</span>
-                <span className="font-label-md">Sản phẩm</span>
-              </Link>
-              <Link
-                href="/admin/combo"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">inventory</span>
-                <span className="font-label-md">Combo</span>
-              </Link>
-              <Link
-                href="/admin/categories"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">category</span>
-                <span className="font-label-md">Danh mục</span>
-              </Link>
-              <Link
-                href="/admin/brands"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">verified</span>
-                <span className="font-label-md">Thương hiệu</span>
-              </Link>
-            </div>
-
-            {/* Tài khoản */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tài khoản</span>
-              <Link
-                href="/admin/users"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">group</span>
-                <span className="font-label-md">Người dùng</span>
-              </Link>
-              <Link
-                href="/admin/permissions"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-                <span className="font-label-md">Phân quyền</span>
-              </Link>
-            </div>
-
-            {/* Đơn hàng */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đơn hàng</span>
-              <Link
-                href="/admin/orders"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">shopping_cart</span>
-                <span className="font-label-md">Đơn hàng</span>
-              </Link>
-            </div>
-
-            {/* Tin nhắn hỗ trợ */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Hỗ trợ</span>
-              <Link
-                href="/admin/chats"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">chat</span>
-                <span className="font-label-md">Tin nhắn</span>
-              </Link>
-            </div>
-
-            {/* Thống kê */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thống kê</span>
-              <Link
-                href="/admin/statistics"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">bar_chart</span>
-                <span className="font-label-md">Thống kê</span>
-              </Link>
-            </div>
-
-            {/* Loyalty & Vouchers */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Khuyến mãi & Loyalty</span>
-              <Link
-                href="/admin/vouchers"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">confirmation_number</span>
-                <span className="font-label-md">Quản lý Voucher</span>
-              </Link>
-              <Link
-                href="/admin/loyalty"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">loyalty</span>
-                <span className="font-label-md">Quản lý Loyalty</span>
-              </Link>
-            </div>
-
-            {/* Đánh giá */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đánh giá sản phẩm</span>
-              <Link
-                href="/admin/reviews"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">gavel</span>
-                <span className="font-label-md">Kiểm duyệt đánh giá</span>
-              </Link>
-            </div>
-
-            {/* Thông báo */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thông báo</span>
-              <Link
-                href="/admin/notifications"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">notifications</span>
-                <span className="font-label-md">Quản lý thông báo</span>
-              </Link>
-            </div>
-          </nav>
-          
-          <div className="mt-auto px-4 pb-md pt-md">
-            <button className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md transition-transform">
-              <span className="material-symbols-outlined text-sm">help</span>
-              Trung tâm hỗ trợ
-            </button>
-          </div>
-        </aside>
-        
-        {/* Main Content Area */}
-        <main className={`flex-1 ml-72 flex flex-col ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-margin-desktop min-h-0"}`}>
+        {/* Content body */}
+        <main className={`flex-1 flex flex-col min-h-0 ${pathname === "/admin/chats" ? "h-[calc(100vh-4.5rem)] p-4 pb-2" : "p-6 lg:p-8"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
-          
+
           {/* Footer Shell */}
-          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${pathname === "/admin/chats" ? "py-2 mt-2" : "py-md mt-lg"}`}>
+          <footer className={`flex flex-col sm:flex-row justify-between items-center text-xs text-gray-400 border-t border-gray-150 dark:border-gray-800 bg-transparent py-4 mt-8 gap-2`}>
             <p>© 2024 Hệ thống quản lý LazPe. Bảo lưu mọi quyền.</p>
-            <div className="flex gap-md">
-              <a className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a>
-              <a className="hover:text-primary transition-colors" href="#">Điều khoản dịch vụ</a>
-              <a className="hover:text-primary transition-colors" href="#">Hướng dẫn quản trị</a>
+            <div className="flex gap-4">
+              <a className="hover:text-brand-500 transition-colors" href="#">Chính sách bảo mật</a>
+              <a className="hover:text-brand-500 transition-colors" href="#">Điều khoản dịch vụ</a>
+              <a className="hover:text-brand-500 transition-colors" href="#">Hướng dẫn quản trị</a>
             </div>
           </footer>
         </main>

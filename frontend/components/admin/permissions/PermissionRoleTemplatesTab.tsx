@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "@/lib/toast";
+import Button from "@/components/admin/ui/Button";
+import Input from "@/components/admin/ui/Input";
+import TextArea from "@/components/admin/ui/TextArea";
+import Modal from "@/components/admin/ui/Modal";
+import Badge from "@/components/admin/ui/Badge";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -69,9 +74,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       setDescription("");
       setSelectedPermissions([]);
     }
-    // Clear previous search terms
     setPermissionSearchTerm("");
-    // Collapse all resources when modal opens
     setExpandedResources([]);
     setShowModal(true);
   };
@@ -221,94 +224,101 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
   };
 
   return (
-    <div className="w-full pb-10 animate-fadeIn">
+    <div className="w-full pb-10 animate-fadeIn font-outfit">
       {showHeader ? (
-        <header className="mb-8 flex justify-between items-center">
+        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-primary">Quản lý Gói Quyền (Role Templates)</h1>
-            <p className="text-slate-500 mt-1">
+            <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white/90">
+              Quản lý Gói Quyền (Role Templates)
+            </h1>
+            <p className="text-sm text-gray-400 mt-1">
               Thiết lập các gói quyền mặc định (ví dụ: Staff, Manager) để gán nhanh cho nhân sự.
             </p>
           </div>
-          <button
+          <Button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+            variant="primary"
+            className="rounded-full shadow-theme-xs font-bold text-xs"
+            startIcon={<span className="material-symbols-outlined text-sm">add</span>}
           >
-            <span className="material-symbols-outlined text-lg">add</span>
             Tạo Gói Quyền
-          </button>
+          </Button>
         </header>
       ) : (
-        <div className="flex justify-between items-center mb-md gap-md flex-wrap">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <p className="font-body-md text-on-surface-variant/70">
+            <p className="text-sm text-gray-450 dark:text-gray-500">
               Thiết lập các gói quyền mặc định (ví dụ: Staff, Manager) để gán nhanh cho nhân sự của hệ thống.
             </p>
           </div>
-          <button
+          <Button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-lg py-md bg-primary text-on-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-sm shrink-0 cursor-pointer"
+            variant="primary"
+            className="rounded-full font-bold text-xs shrink-0"
+            startIcon={<span className="material-symbols-outlined text-sm">add</span>}
           >
-            <span className="material-symbols-outlined text-sm">add</span>
             Tạo Gói Quyền
-          </button>
+          </Button>
         </div>
       )}
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-500"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map(template => (
             <div
               key={template.id}
-              className="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/20 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+              className="bg-white dark:bg-gray-950 rounded-[2rem] p-6 border border-gray-150 dark:border-white/[0.05] shadow-theme-xs flex flex-col justify-between hover:shadow-theme-md hover:border-brand-500/25 transition-all duration-300"
             >
               <div>
-                <div className="flex justify-between items-start mb-sm">
+                <div className="flex justify-between items-start mb-4 gap-3">
                   <div>
-                    <h3 className="font-headline-sm text-[16px] font-bold text-on-surface">{template.name}</h3>
-                    <p className="text-xs text-on-surface-variant/70 mt-xs leading-relaxed">
+                    <h3 className="text-base font-bold text-gray-800 dark:text-white/90">{template.name}</h3>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
                       {template.description || "Không có mô tả"}
                     </p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      variant="icon"
                       onClick={() => handleOpenModal(template)}
-                      className="text-on-surface-variant/60 hover:text-primary p-1 rounded-full hover:bg-primary-container/20 transition-colors cursor-pointer"
                       title="Sửa"
                     >
-                      <span className="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
-                    <button
+                      <span className="material-symbols-outlined text-lg">edit</span>
+                    </Button>
+                    <Button
+                      variant="icon"
                       onClick={() => handleRequestDelete(template)}
-                      className="text-on-surface-variant/60 hover:text-error p-1 rounded-full hover:bg-error-container/20 transition-colors cursor-pointer"
                       title="Xóa"
+                      className="hover:text-error-500 dark:hover:text-error-400"
                     >
-                      <span className="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </Button>
                   </div>
                 </div>
 
-                <div className="bg-surface-container-low rounded-lg p-md mt-md">
-                  <div className="text-xs font-bold text-on-surface mb-sm">
+                <div className="bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
+                  <div className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">
                     Quyền hạn ({template.permissions.length}):
                   </div>
-                  <div className="flex flex-wrap gap-xs">
+                  <div className="flex flex-wrap gap-1.5">
                     {template.permissions.slice(0, 5).map((p: any) => (
-                      <span
+                      <Badge
                         key={p.permissionId}
-                        className="px-sm py-0.5 bg-primary-container/20 text-primary rounded text-[11px] font-medium"
+                        color="primary"
+                        variant="light"
+                        size="sm"
                       >
                         {p.name}
-                      </span>
+                      </Badge>
                     ))}
                     {template.permissions.length > 5 && (
-                      <span className="px-sm py-0.5 bg-surface-variant text-on-surface-variant rounded text-[11px] font-medium">
+                      <Badge color="light" variant="light" size="sm">
                         +{template.permissions.length - 5} quyền khác
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -319,262 +329,257 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       )}
 
       {/* Modal Form */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fadeIn">
-          {/* Modal Container - Stable height and scroll constraint */}
-          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl w-full max-w-5xl h-[80vh] max-h-[800px] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <Modal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        className="max-w-5xl h-[85vh] max-h-[850px] flex flex-col overflow-hidden p-0 font-outfit"
+        showCloseButton={false}
+      >
+        {/* Modal Header */}
+        <div className="py-4 px-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/[0.01] shrink-0">
+          <h2 className="text-base font-bold text-gray-800 dark:text-white/90">
+            {editingTemplate ? "Cập nhật Gói Quyền" : "Tạo Gói Quyền Mới"}
+          </h2>
+          <Button
+            variant="icon"
+            onClick={handleCloseModal}
+            className="hover:text-error-500 dark:hover:text-error-400"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </Button>
+        </div>
+
+        {/* Split Content */}
+        <div className="p-6 overflow-hidden flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-950">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-1 min-h-0">
             
-            {/* Modal Header - Increased text size & spacing slightly */}
-            <div className="py-3.5 px-6 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low shrink-0">
-              <h2 className="font-headline-sm text-base text-on-surface font-bold">
-                {editingTemplate ? "Cập nhật Gói Quyền" : "Tạo Gói Quyền Mới"}
-              </h2>
-              <button
-                onClick={handleCloseModal}
-                className="text-on-surface-variant hover:text-error rounded-full p-1 hover:bg-error-container/20 transition-colors cursor-pointer flex items-center justify-center shrink-0"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            {/* Split Content - scroll-free parent container */}
-            <div className="p-lg bg-surface-container-lowest overflow-hidden flex-1 flex flex-col min-h-0">
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-lg flex-1 min-h-0">
-                
-                {/* Left Side: General Info Form - Standard Readable Sizes */}
-                <div className="lg:col-span-2 space-y-md pr-lg lg:border-r border-outline-variant/20 flex flex-col justify-start">
-                  <h3 className="font-headline-sm text-sm font-bold text-primary pb-xs border-b border-outline-variant/10 mb-xs uppercase tracking-wider">
-                    Thông tin gói quyền
-                  </h3>
-                  
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider mb-xs">Tên gói quyền</label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-on-surface text-sm font-medium"
-                      placeholder="VD: Staff, Manager..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider mb-xs">Mô tả chi tiết</label>
-                    <textarea
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      rows={5}
-                      className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-on-surface text-sm font-medium resize-none"
-                      placeholder="Mô tả vai trò của gói quyền này..."
-                    />
-                  </div>
-                </div>
-
-                {/* Right Side: Permission Accordion Selector (Scrollable) */}
-                <div className="lg:col-span-3 flex flex-col min-h-0 h-full">
-                  
-                  {/* Permissions Config Header with unfold buttons - Standard Sizes */}
-                  <div className="flex justify-between items-center mb-sm pb-xs border-b border-outline-variant/20 shrink-0">
-                    <h3 className="font-headline-sm text-sm font-bold text-primary">
-                      Cấu hình Quyền hạn
-                    </h3>
-                    <div className="flex gap-sm items-center">
-                      <button
-                        type="button"
-                        onClick={handleExpandAll}
-                        className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">unfold_more</span>
-                        Mở rộng
-                      </button>
-                      <span className="text-outline-variant/30 text-xs">|</span>
-                      <button
-                        type="button"
-                        onClick={handleCollapseAll}
-                        className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">unfold_less</span>
-                        Thu gọn
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Search Bar Input - Standard Text Size */}
-                  <div className="relative flex items-center mb-sm shrink-0">
-                    <span className="material-symbols-outlined text-on-surface-variant/50 absolute left-2.5 text-[18px]">search</span>
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm nhanh quyền hạn..."
-                      value={permissionSearchTerm}
-                      onChange={(e) => setPermissionSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-7 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-medium text-on-surface"
-                    />
-                    {permissionSearchTerm && (
-                      <button
-                        type="button"
-                        onClick={() => setPermissionSearchTerm("")}
-                        className="absolute right-2.5 text-on-surface-variant/50 hover:text-primary transition-colors flex items-center justify-center cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">clear</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Scrollable list of accordion resources - Flex-1 min-h-0 scroll */}
-                  <div 
-                    className="space-y-sm overflow-y-auto pr-xs flex-1 min-h-0" 
-                    style={{ scrollbarWidth: "thin" }}
-                  >
-                    {Object.keys(groupedPermissions).map(resource => {
-                      const resourcePermissions = groupedPermissions[resource];
-                      const isExpanded = expandedResources.includes(resource);
-                      
-                      // Count selected permissions in this group
-                      const groupSelectedCount = resourcePermissions.filter((p: any) =>
-                        selectedPermissions.includes(p.id)
-                      ).length;
-
-                      return (
-                        <div 
-                          key={resource} 
-                          className="border border-outline-variant/15 rounded-lg overflow-hidden bg-surface-container-low transition-all"
-                        >
-                          {/* Accordion Group Header - Highly Legible */}
-                          <div
-                            onClick={() => handleToggleExpandResource(resource)}
-                            className="py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors select-none"
-                          >
-                            <div className="flex items-center gap-sm">
-                              <input
-                                type="checkbox"
-                                checked={groupSelectedCount === resourcePermissions.length && resourcePermissions.length > 0}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => handleToggleGroupSelect(resourcePermissions, e.target.checked)}
-                                className="w-4 h-4 rounded border-outline-variant/50 text-primary focus:ring-primary accent-primary cursor-pointer shrink-0"
-                                title="Chọn tất cả quyền trong chức năng này"
-                              />
-                              <span className="material-symbols-outlined text-primary text-[20px] shrink-0">
-                                {getResourceIcon(resource)}
-                              </span>
-                              <span className="font-bold text-xs text-on-surface uppercase tracking-wider">
-                                {resource}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                groupSelectedCount > 0 
-                                  ? "bg-primary/10 text-primary border border-primary/20" 
-                                  : "bg-surface-variant text-on-surface-variant/60"
-                              }`}>
-                                {groupSelectedCount}/{resourcePermissions.length} đã chọn
-                              </span>
-                            </div>
-                            <span className="material-symbols-outlined text-on-surface-variant/60 text-[20px] shrink-0">
-                              {isExpanded ? "expand_less" : "expand_more"}
-                            </span>
-                          </div>
-
-                          {/* Accordion Group Content - Legible & Readable checkbox list */}
-                          {isExpanded && (
-                            <div className="px-4 py-2 bg-surface-container-lowest border-t border-outline-variant/10 divide-y divide-outline-variant/5">
-                              {resourcePermissions.map((perm: any) => (
-                                <div key={perm.id} className="py-2 first:pt-1 last:pb-1">
-                                  <label className="flex items-start gap-sm cursor-pointer group">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedPermissions.includes(perm.id)}
-                                      onChange={() => handleTogglePermission(perm.id)}
-                                      className="mt-0.5 w-4 h-4 rounded border-outline-variant/50 text-primary focus:ring-primary accent-primary cursor-pointer shrink-0"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                      <div className="font-bold text-xs text-on-surface group-hover:text-primary transition-colors">
-                                        {perm.name}
-                                      </div>
-                                      {perm.description && (
-                                        <div className="text-xs text-on-surface-variant/70 mt-0.5 leading-normal">
-                                          {perm.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </label>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {Object.keys(groupedPermissions).length === 0 && (
-                      <div className="text-center py-8 bg-surface-container-low rounded-lg text-on-surface-variant/70 font-medium text-xs">
-                        Không tìm thấy quyền hạn nào khớp với từ khóa tìm kiếm.
-                      </div>
-                    )}
-                  </div>
-                  
-                </div>
+            {/* Left Side: General Info Form */}
+            <div className="lg:col-span-2 space-y-5 lg:border-r border-gray-100 dark:border-gray-800 lg:pr-6 flex flex-col justify-start">
+              <h3 className="text-sm font-bold text-brand-500 pb-2 border-b border-gray-100 dark:border-gray-800 mb-2 uppercase tracking-wider">
+                Thông tin gói quyền
+              </h3>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-405 dark:text-gray-500 uppercase tracking-wider mb-2">Tên gói quyền</label>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="VD: Staff, Manager..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-405 dark:text-gray-500 uppercase tracking-wider mb-2">Mô tả chi tiết</label>
+                <TextArea
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={5}
+                  className="resize-none"
+                  placeholder="Mô tả vai trò của gói quyền này..."
+                />
               </div>
             </div>
 
-            {/* Modal Footer - Thinner padding and compact buttons */}
-            <div className="py-3 px-6 border-t border-outline-variant/20 flex justify-end gap-sm bg-surface-container-low shrink-0">
-              <button
-                onClick={handleCloseModal}
-                className="px-5 py-2 bg-surface-container-lowest border border-outline-variant/30 text-on-surface-variant rounded-lg font-bold hover:bg-surface-container-high transition-colors cursor-pointer text-xs"
+            {/* Right Side: Permission Accordion Selector */}
+            <div className="lg:col-span-3 flex flex-col min-h-0 h-full">
+              
+              {/* Permissions Config Header with unfold buttons */}
+              <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                <h3 className="text-sm font-bold text-brand-500">
+                  Cấu hình Quyền hạn
+                </h3>
+                <div className="flex gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={handleExpandAll}
+                    className="text-xs text-brand-500 font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">unfold_more</span>
+                    Mở rộng
+                  </button>
+                  <span className="text-gray-300 dark:text-gray-700 text-xs">|</span>
+                  <button
+                    type="button"
+                    onClick={handleCollapseAll}
+                    className="text-xs text-brand-500 font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">unfold_less</span>
+                    Thu gọn
+                  </button>
+                </div>
+              </div>
+
+              {/* Search Bar Input */}
+              <div className="relative flex items-center mb-3 shrink-0">
+                <span className="material-symbols-outlined text-gray-400 absolute left-3 text-[18px]">search</span>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm nhanh quyền hạn..."
+                  value={permissionSearchTerm}
+                  onChange={(e) => setPermissionSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-8 py-2 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-semibold text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 transition-all"
+                />
+                {permissionSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setPermissionSearchTerm("")}
+                    className="absolute right-3 text-gray-400 hover:text-brand-500 transition-colors flex items-center justify-center cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">clear</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Scrollable list of accordion resources */}
+              <div 
+                className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0 custom-scrollbar" 
               >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-6 py-2 bg-primary text-on-primary rounded-lg font-bold hover:bg-primary/95 transition-colors shadow-sm cursor-pointer text-xs"
-              >
-                Lưu Gói Quyền
-              </button>
+                {Object.keys(groupedPermissions).map(resource => {
+                  const resourcePermissions = groupedPermissions[resource];
+                  const isExpanded = expandedResources.includes(resource);
+                  const groupSelectedCount = resourcePermissions.filter((p: any) =>
+                    selectedPermissions.includes(p.id)
+                  ).length;
+
+                  return (
+                    <div 
+                      key={resource} 
+                      className="border border-gray-150 dark:border-gray-800 rounded-2xl overflow-hidden bg-gray-50/50 dark:bg-white/[0.01] transition-all"
+                    >
+                      {/* Accordion Group Header */}
+                      <div
+                        onClick={() => handleToggleExpandResource(resource)}
+                        className="py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-colors select-none"
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={groupSelectedCount === resourcePermissions.length && resourcePermissions.length > 0}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => handleToggleGroupSelect(resourcePermissions, e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 accent-brand-500 cursor-pointer shrink-0"
+                          />
+                          <span className="material-symbols-outlined text-brand-500 text-[20px] shrink-0">
+                            {getResourceIcon(resource)}
+                          </span>
+                          <span className="font-bold text-xs text-gray-800 dark:text-white/80 uppercase tracking-wider">
+                            {resource}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            groupSelectedCount > 0 
+                              ? "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400" 
+                              : "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-500"
+                          }`}>
+                            {groupSelectedCount}/{resourcePermissions.length} đã chọn
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-gray-400 text-[20px] shrink-0">
+                          {isExpanded ? "expand_less" : "expand_more"}
+                        </span>
+                      </div>
+
+                      {/* Accordion Group Content */}
+                      {isExpanded && (
+                        <div className="px-4 py-2 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-850">
+                          {resourcePermissions.map((perm: any) => (
+                            <div key={perm.id} className="py-2 first:pt-1 last:pb-1">
+                              <label className="flex items-start gap-3 cursor-pointer group">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPermissions.includes(perm.id)}
+                                  onChange={() => handleTogglePermission(perm.id)}
+                                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 accent-brand-500 cursor-pointer shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-bold text-xs text-gray-700 dark:text-gray-300 group-hover:text-brand-500 transition-colors">
+                                    {perm.name}
+                                  </div>
+                                  {perm.description && (
+                                    <div className="text-xs text-gray-450 dark:text-gray-500 mt-0.5 leading-normal">
+                                      {perm.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {Object.keys(groupedPermissions).length === 0 && (
+                  <div className="text-center py-8 bg-gray-50 dark:bg-white/5 rounded-2xl text-gray-400 dark:text-gray-500 font-medium text-xs">
+                    Không tìm thấy quyền hạn nào khớp với từ khóa tìm kiếm.
+                  </div>
+                )}
+              </div>
+              
             </div>
           </div>
         </div>
-      )}
 
-      {/* Custom Delete Confirmation Modal - Legible Size */}
-      {deleteConfirmOpen && deletingTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fadeIn">
-          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="py-3 px-6 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low">
-              <h2 className="text-sm text-rose-600 font-bold flex items-center gap-1.5 uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[18px]">warning</span>
-                Xác nhận xóa
-              </h2>
-              <button
-                onClick={() => { setDeleteConfirmOpen(false); setDeletingTemplate(null); }}
-                className="text-on-surface-variant hover:text-error rounded-full p-0.5 hover:bg-error-container/20 transition-colors cursor-pointer flex items-center justify-center"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
+        {/* Modal Footer */}
+        <div className="py-3 px-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50 dark:bg-white/[0.01] shrink-0">
+          <Button
+            onClick={handleCloseModal}
+            variant="secondary"
+            className="rounded-full text-xs font-bold py-2"
+          >
+            Hủy bỏ
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="primary"
+            className="rounded-full text-xs font-bold py-2"
+          >
+            Lưu Gói Quyền
+          </Button>
+        </div>
+      </Modal>
 
-            <div className="p-5 bg-surface-container-lowest text-on-surface">
-              <p className="text-sm font-semibold leading-relaxed">
-                Bạn có chắc chắn muốn xóa gói quyền <strong className="text-primary">{deletingTemplate.name}</strong>?
-              </p>
-              <p className="text-xs text-on-surface-variant/70 mt-sm bg-rose-500/5 p-sm rounded border border-rose-500/10 leading-relaxed">
-                Nhân sự đang dùng gói này sẽ bị thu hồi các quyền mặc định tương ứng.
-              </p>
-            </div>
+      {/* Custom Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirmOpen}
+        onClose={() => { setDeleteConfirmOpen(false); setDeletingTemplate(null); }}
+        className="max-w-md font-outfit"
+      >
+        <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4 mb-4">
+          <div className="w-10 h-10 rounded-full bg-error-50 dark:bg-error-500/15 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-error-500">warning</span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">
+            Xác nhận xóa
+          </h3>
+        </div>
 
-            <div className="py-3 px-6 border-t border-outline-variant/20 flex justify-end gap-sm bg-surface-container-low">
-              <button
-                onClick={() => { setDeleteConfirmOpen(false); setDeletingTemplate(null); }}
-                className="px-4 py-1.5 bg-surface-container-lowest border border-outline-variant/30 text-on-surface-variant rounded-lg font-bold hover:bg-surface-container-high transition-colors text-xs cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-5 py-1.5 bg-rose-500 text-white rounded-lg font-bold hover:bg-rose-600 transition-colors shadow-sm text-xs cursor-pointer"
-              >
-                Xác nhận xóa
-              </button>
-            </div>
+        <div className="space-y-6">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-relaxed">
+            Bạn có chắc chắn muốn xóa gói quyền <strong className="text-brand-500">{deletingTemplate?.name}</strong>?
+          </p>
+          <p className="text-xs text-error-500 bg-error-50/50 dark:bg-error-500/5 p-3 rounded-xl border border-error-100 dark:border-error-500/10 leading-relaxed">
+            Nhân sự đang dùng gói này sẽ bị thu hồi các quyền mặc định tương ứng.
+          </p>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-850">
+            <Button
+              onClick={() => { setDeleteConfirmOpen(false); setDeletingTemplate(null); }}
+              variant="secondary"
+              className="rounded-full text-xs font-bold py-2"
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              variant="danger"
+              className="rounded-full text-xs font-bold py-2"
+            >
+              Xác nhận xóa
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

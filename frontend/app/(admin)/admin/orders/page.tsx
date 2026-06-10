@@ -7,6 +7,7 @@ import { OrderInfo, fetchOrders } from "@/lib/features/orders/orderApi";
 import { OrderSummaryCards } from "@/components/admin/orders/OrderSummaryCards";
 import { OrderFilters } from "@/components/admin/orders/OrderFilters";
 import { OrderTable } from "@/components/admin/orders/OrderTable";
+import Button from "@/components/admin/ui/Button";
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -97,20 +98,21 @@ export default function AdminOrdersPage() {
   }, [orders]);
 
   return (
-    <main className="w-full space-y-md animate-in fade-in duration-300 pb-10">
+    <main className="w-full space-y-6 animate-in fade-in duration-300 pb-10 font-outfit">
       {/* Title & Description Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 pt-4">
-        <div className="space-y-2">
-          <h1 className="text-headline-lg font-headline-lg text-on-background">Quản lý đơn hàng</h1>
-          <p className="text-body-lg font-body-lg text-on-surface-variant">Theo dõi và cập nhật trạng thái đơn hàng từ khách hàng của LazPe.</p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white/90">Quản lý đơn hàng</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Theo dõi và cập nhật trạng thái đơn hàng từ khách hàng của LazPe.</p>
         </div>
-        <button
+        <Button
           onClick={() => toast.info("Tính năng xuất Excel chưa khả dụng")}
-          className="flex items-center gap-2 px-6 py-3 bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-bold rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          variant="outline"
+          startIcon={<span className="material-symbols-outlined text-[18px]">ios_share</span>}
+          className="font-bold"
         >
-          <span className="material-symbols-outlined">ios_share</span>
           Xuất file Excel
-        </button>
+        </Button>
       </div>
 
       <OrderSummaryCards 

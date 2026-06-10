@@ -9,6 +9,11 @@ import { formatCurrency } from "@/lib/utils/formatters";
 // Dynamically import ApexCharts to prevent SSR Hydration Errors in Next.js
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
+import Input from "@/components/admin/ui/Input";
+import Button from "@/components/admin/ui/Button";
+import { Card, StatsCard } from "@/components/admin/ui/Card";
+import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/admin/ui/Table";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
 interface DashboardSummary {
@@ -577,7 +582,7 @@ export default function AdminStatisticsPage() {
   const supplierChart = getSupplierChartConfig();
 
   return (
-    <div className="space-y-lg min-h-screen pb-xl">
+    <div className="space-y-6 min-h-screen pb-10 font-outfit">
       {/* Dynamic print-style overrides to format printed page perfectly */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
@@ -605,71 +610,67 @@ export default function AdminStatisticsPage() {
       `}} />
 
       {/* Header section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-md no-print">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
         <div>
-          <h1 className="font-display-lg text-headline-lg text-on-surface">Báo cáo & Thống kê Doanh thu</h1>
-          <p className="text-on-surface-variant font-label-sm">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Báo cáo & Thống kê Doanh thu</h1>
+          <p className="text-gray-400 dark:text-gray-500 text-sm">
             Phân tích chuyên sâu về hiệu suất kinh doanh, tồn kho và các mặt hàng bán chạy.
           </p>
         </div>
-        <div className="flex flex-wrap gap-sm">
-          <button
+        <div className="flex flex-wrap gap-3">
+          <Button
             onClick={handleRefresh}
-            className="flex items-center gap-2 border border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface px-md py-sm rounded-lg font-label-md transition-colors"
+            variant="outline"
+            startIcon={<span className="material-symbols-outlined text-md">refresh</span>}
           >
-            <span className="material-symbols-outlined text-md">refresh</span>
             Làm mới
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleExportExcel}
-            className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white px-md py-sm rounded-lg font-label-md transition-colors shadow-sm"
+            variant="success"
+            startIcon={<span className="material-symbols-outlined text-md">table_view</span>}
           >
-            <span className="material-symbols-outlined text-md">table_view</span>
             Xuất Excel
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Filter Section */}
-      <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 filters-section no-print">
-        <div className="flex items-center gap-sm mb-md border-b border-outline-variant pb-xs">
-          <span className="material-symbols-outlined text-primary">filter_alt</span>
-          <h2 className="font-headline-sm text-on-surface">Bộ lọc tìm kiếm</h2>
+      <div className="bg-white dark:bg-white/[0.03] rounded-[2rem] shadow-theme-xs p-6 border border-gray-100 dark:border-white/[0.05] filters-section no-print">
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-100 dark:border-white/[0.05] pb-3">
+          <span className="material-symbols-outlined text-brand-500">filter_alt</span>
+          <h2 className="text-base font-bold text-gray-800 dark:text-white">Bộ lọc tìm kiếm</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-md">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {/* Date range inputs */}
           <div>
-            <label className="block text-on-surface-variant font-label-sm mb-xs">Từ ngày</label>
-            <input
+            <label className="block text-gray-455 dark:text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Từ ngày</label>
+            <Input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className={`w-full p-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${
-                isDateLimitExceeded() ? "border-rose-500 bg-rose-50/50" : "border-outline-variant"
-              }`}
+              className={isDateLimitExceeded() ? "!border-rose-500 !bg-rose-50/50" : ""}
             />
           </div>
 
           <div>
-            <label className="block text-on-surface-variant font-label-sm mb-xs">Đến ngày</label>
-            <input
+            <label className="block text-gray-455 dark:text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Đến ngày</label>
+            <Input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className={`w-full p-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${
-                isDateLimitExceeded() ? "border-rose-500 bg-rose-50/50" : "border-outline-variant"
-              }`}
+              className={isDateLimitExceeded() ? "!border-rose-500 !bg-rose-50/50" : ""}
             />
           </div>
 
           {/* Category drop down */}
           <div>
-            <label className="block text-on-surface-variant font-label-sm mb-xs">Danh mục</label>
+            <label className="block text-gray-455 dark:text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Danh mục</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-2 text-sm border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-surface"
+              className="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm text-gray-800 dark:text-white/95 px-4 py-2.5 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none cursor-pointer font-semibold"
             >
               <option value="">Tất cả danh mục</option>
               {categoriesList.map((c) => (
@@ -680,13 +681,13 @@ export default function AdminStatisticsPage() {
             </select>
           </div>
 
-          {/* Supplier drop down */}
+          {/* Supplier/Brand drop down */}
           <div>
-            <label className="block text-on-surface-variant font-label-sm mb-xs">Thương hiệu</label>
+            <label className="block text-gray-455 dark:text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Thương hiệu</label>
             <select
               value={selectedBrand}
               onChange={(e) => setSelectedBrand(e.target.value)}
-              className="w-full p-2 text-sm border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-surface"
+              className="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm text-gray-800 dark:text-white/95 px-4 py-2.5 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none cursor-pointer font-semibold"
             >
               <option value="">Tất cả thương hiệu</option>
               {brandsList.map((b) => (
@@ -699,11 +700,11 @@ export default function AdminStatisticsPage() {
 
           {/* Product drop down */}
           <div>
-            <label className="block text-on-surface-variant font-label-sm mb-xs">Sản phẩm</label>
+            <label className="block text-gray-455 dark:text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Sản phẩm</label>
             <select
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="w-full p-2 text-sm border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-surface"
+              className="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm text-gray-800 dark:text-white/95 px-4 py-2.5 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none cursor-pointer font-semibold"
             >
               <option value="">Tất cả sản phẩm</option>
               {productsList.map((p) => (
@@ -716,11 +717,11 @@ export default function AdminStatisticsPage() {
 
           {/* Time Series Grouping drop down */}
           <div>
-            <label className="block text-on-surface-variant font-label-sm mb-xs">Nhóm theo</label>
+            <label className="block text-gray-455 dark:text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Nhóm theo</label>
             <select
               value={groupType}
               onChange={(e) => setGroupType(e.target.value)}
-              className="w-full p-2 text-sm border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-surface"
+              className="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm text-gray-800 dark:text-white/95 px-4 py-2.5 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 outline-none cursor-pointer font-semibold"
             >
               <option value="">Tự động (Ngày/Tháng)</option>
               <option value="Day">Theo ngày</option>
@@ -733,7 +734,7 @@ export default function AdminStatisticsPage() {
 
         {/* Date warning message */}
         {isDateLimitExceeded() && (
-          <div className="mt-md p-sm bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-center gap-2">
+          <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/25">
             <span className="material-symbols-outlined text-sm">warning</span>
             <span>Khoảng thời gian chọn không được vượt quá 6 tháng (186 ngày). Hãy rút ngắn phạm vi lọc để thực hiện truy vấn.</span>
           </div>
@@ -742,31 +743,33 @@ export default function AdminStatisticsPage() {
 
       {loading ? (
         // Loading skeletons matching dashboard grids
-        <div className="space-y-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-md">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-surface-container-lowest p-md rounded-lg soft-shadow border border-outline-variant animate-pulse h-28"></div>
+              <div key={i} className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] animate-pulse h-28"></div>
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
-            <div className="lg:col-span-2 bg-surface-container-lowest p-md rounded-xl soft-shadow h-96 animate-pulse"></div>
-            <div className="bg-surface-container-lowest p-md rounded-xl soft-shadow h-96 animate-pulse"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] h-96 animate-pulse"></div>
+            <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] h-96 animate-pulse"></div>
           </div>
         </div>
       ) : data ? (
         <>
           {/* KPI Dashboard Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-md kpi-print">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 kpi-print">
             {/* Revenue card */}
-            <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow border border-surface-container-high/40 flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300 print-card">
+            <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] shadow-theme-xs border border-gray-100 dark:border-white/[0.05] flex flex-col justify-between group hover:shadow-theme-md transition-shadow duration-300 print-card">
               <div className="flex justify-between items-start">
-                <div className="bg-green-50 p-sm rounded-lg text-green-600">
+                <div className="bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400 p-3 rounded-2xl">
                   <span className="material-symbols-outlined text-md" style={{ fontVariationSettings: "'FILL' 1" }}>
                     payments
                   </span>
                 </div>
-                <span className={`text-xs font-bold px-xs py-0.5 rounded-full flex items-center gap-0.5 ${
-                  data.summary.revenueGrowthRate >= 0 ? "text-green-600 bg-green-50" : "text-rose-600 bg-rose-50"
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
+                  data.summary.revenueGrowthRate >= 0 
+                    ? "text-success-600 bg-success-50 dark:bg-success-500/15 dark:text-success-400" 
+                    : "text-error-600 bg-error-50 dark:bg-error-500/15 dark:text-error-400"
                 }`}>
                   <span className="material-symbols-outlined text-[10px] font-bold">
                     {data.summary.revenueGrowthRate >= 0 ? "arrow_upward" : "arrow_downward"}
@@ -774,96 +777,95 @@ export default function AdminStatisticsPage() {
                   {formatPercent(data.summary.revenueGrowthRate)}
                 </span>
               </div>
-              <div className="mt-md">
-                <p className="text-on-surface-variant font-label-sm">Doanh thu thuần</p>
-                <h3 className="font-display-lg text-headline-sm text-on-surface font-bold mt-1">
+              <div className="mt-4">
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">Doanh thu thuần</p>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mt-1">
                   {formatCurrency(data.summary.totalRevenue)}
                 </h3>
               </div>
-              <p className="text-[10px] text-on-surface-variant mt-2">So với kỳ trước</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">So với kỳ trước</p>
             </div>
 
             {/* Orders count card */}
-            <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow border border-surface-container-high/40 flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300 print-card">
+            <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] shadow-theme-xs border border-gray-100 dark:border-white/[0.05] flex flex-col justify-between group hover:shadow-theme-md transition-shadow duration-300 print-card">
               <div className="flex justify-between items-start">
-                <div className="bg-orange-50 p-sm rounded-lg text-orange-600">
+                <div className="bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400 p-3 rounded-2xl">
                   <span className="material-symbols-outlined text-md" style={{ fontVariationSettings: "'FILL' 1" }}>
                     shopping_bag
                   </span>
                 </div>
               </div>
-              <div className="mt-md">
-                <p className="text-on-surface-variant font-label-sm">Đơn hàng</p>
-                <h3 className="font-display-lg text-headline-sm text-on-surface font-bold mt-1">
+              <div className="mt-4">
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">Đơn hàng</p>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mt-1">
                   {data.summary.totalOrders}
                 </h3>
               </div>
-              <div className="flex justify-between text-[10px] text-on-surface-variant mt-2 border-t border-outline-variant/40 pt-1">
-                <span className="text-green-600">{data.summary.completedOrders} hoàn thành</span>
-                <span className="text-rose-600">{data.summary.cancelledOrders} đã hủy</span>
+              <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mt-2 border-t border-gray-100 dark:border-white/[0.05] pt-1">
+                <span className="text-success-600 dark:text-success-400 font-semibold">{data.summary.completedOrders} hoàn thành</span>
+                <span className="text-error-600 dark:text-error-450 font-semibold">{data.summary.cancelledOrders} đã hủy</span>
               </div>
             </div>
 
             {/* Products sold card */}
-            <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow border border-surface-container-high/40 flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300 print-card">
+            <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] shadow-theme-xs border border-gray-100 dark:border-white/[0.05] flex flex-col justify-between group hover:shadow-theme-md transition-shadow duration-300 print-card">
               <div className="flex justify-between items-start">
-                <div className="bg-indigo-50 p-sm rounded-lg text-indigo-600">
+                <div className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 p-3 rounded-2xl">
                   <span className="material-symbols-outlined text-md" style={{ fontVariationSettings: "'FILL' 1" }}>
                     inventory
                   </span>
                 </div>
               </div>
-              <div className="mt-md">
-                <p className="text-on-surface-variant font-label-sm">Sản phẩm đã bán</p>
-                <h3 className="font-display-lg text-headline-sm text-on-surface font-bold mt-1">
+              <div className="mt-4">
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">Sản phẩm đã bán</p>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mt-1">
                   {data.summary.totalProductsSold.toLocaleString()}
                 </h3>
               </div>
-              <p className="text-[10px] text-on-surface-variant mt-2">Khối lượng sản phẩm xuất kho</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Khối lượng sản phẩm xuất kho</p>
             </div>
 
             {/* Total customers card */}
-            <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow border border-surface-container-high/40 flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300 print-card">
+            <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] shadow-theme-xs border border-gray-100 dark:border-white/[0.05] flex flex-col justify-between group hover:shadow-theme-md transition-shadow duration-300 print-card">
               <div className="flex justify-between items-start">
-                <div className="bg-blue-50 p-sm rounded-lg text-blue-600">
+                <div className="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 p-3 rounded-2xl">
                   <span className="material-symbols-outlined text-md" style={{ fontVariationSettings: "'FILL' 1" }}>
                     group
                   </span>
                 </div>
               </div>
-              <div className="mt-md">
-                <p className="text-on-surface-variant font-label-sm">Số khách hàng</p>
-                <h3 className="font-display-lg text-headline-sm text-on-surface font-bold mt-1">
+              <div className="mt-4">
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">Số khách hàng</p>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mt-1">
                   {data.summary.totalCustomers}
                 </h3>
               </div>
-              <p className="text-[10px] text-on-surface-variant mt-2">Khách hàng duy nhất đã thanh toán</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Khách hàng duy nhất đã thanh toán</p>
             </div>
 
             {/* Average order value card */}
-            <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow border border-surface-container-high/40 flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300 print-card">
+            <div className="bg-white dark:bg-white/[0.03] p-6 rounded-[2rem] shadow-theme-xs border border-gray-100 dark:border-white/[0.05] flex flex-col justify-between group hover:shadow-theme-md transition-shadow duration-300 print-card">
               <div className="flex justify-between items-start">
-                <div className="bg-purple-50 p-sm rounded-lg text-purple-600">
+                <div className="bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 p-3 rounded-2xl">
                   <span className="material-symbols-outlined text-md" style={{ fontVariationSettings: "'FILL' 1" }}>
                     price_check
                   </span>
                 </div>
               </div>
-              <div className="mt-md">
-                <p className="text-on-surface-variant font-label-sm">Đơn hàng trung bình</p>
-                <h3 className="font-display-lg text-headline-sm text-on-surface font-bold mt-1">
+              <div className="mt-4">
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-widest">Đơn hàng trung bình</p>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mt-1">
                   {formatCurrency(data.summary.averageOrderValue)}
                 </h3>
               </div>
-              <p className="text-[10px] text-on-surface-variant mt-2">Giá trị bình quân đơn thành công</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Giá trị bình quân đơn thành công</p>
             </div>
           </div>
 
           {/* Time Series Trend & Top Sellers charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Mixed Trend Chart */}
-            <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md">Xu hướng Doanh thu & Đơn hàng</h3>
+            <Card title="Xu hướng Doanh thu & Đơn hàng" className="lg:col-span-2 print-card">
               {isChartReady && mixedChart ? (
                 <Chart
                   options={mixedChart.options}
@@ -872,15 +874,14 @@ export default function AdminStatisticsPage() {
                   height={320}
                 />
               ) : (
-                <div className="h-[320px] flex items-center justify-center text-on-surface-variant text-sm">
+                <div className="h-[320px] flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                   Đang tải biểu đồ...
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Product bar chart */}
-            <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md">Top 5 Sản phẩm Bán chạy</h3>
+            <Card title="Top 5 Sản phẩm Bán chạy" className="print-card">
               {isChartReady && productChart ? (
                 <Chart
                   options={productChart.options}
@@ -889,18 +890,17 @@ export default function AdminStatisticsPage() {
                   height={320}
                 />
               ) : (
-                <div className="h-[320px] flex items-center justify-center text-on-surface-variant text-sm">
+                <div className="h-[320px] flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                   {isChartReady ? "Không có dữ liệu" : "Đang tải biểu đồ..."}
                 </div>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* Category & Supplier share distributions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category Pie Chart */}
-            <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md">Doanh thu theo Danh mục</h3>
+            <Card title="Doanh thu theo Danh mục" className="print-card">
               {isChartReady && categoryChart && categoryChart.series.length > 0 ? (
                 <Chart
                   options={categoryChart.options}
@@ -909,15 +909,14 @@ export default function AdminStatisticsPage() {
                   height={320}
                 />
               ) : (
-                <div className="h-[320px] flex items-center justify-center text-on-surface-variant text-sm">
+                <div className="h-[320px] flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                   {isChartReady ? "Không có dữ liệu doanh thu" : "Đang tải biểu đồ..."}
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Brand Pie Chart */}
-            <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md">Doanh thu theo Thương hiệu</h3>
+            <Card title="Doanh thu theo Thương hiệu" className="print-card">
               {isChartReady && supplierChart && supplierChart.series.length > 0 ? (
                 <Chart
                   options={supplierChart.options}
@@ -926,46 +925,48 @@ export default function AdminStatisticsPage() {
                   height={320}
                 />
               ) : (
-                <div className="h-[320px] flex items-center justify-center text-on-surface-variant text-sm">
+                <div className="h-[320px] flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                   {isChartReady ? "Không có dữ liệu doanh thu" : "Đang tải biểu đồ..."}
                 </div>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* Category list table & Supplier ranking table */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Categories list */}
-            <div className="lg:col-span-3 bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md">Chi tiết Danh mục</h3>
-              <div className="overflow-x-auto">
+            <div className="lg:col-span-3 bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] rounded-[2rem] p-6 shadow-theme-xs print-card">
+              <h3 className="text-base font-semibold text-gray-800 dark:text-white/90 pb-4 mb-4 border-b border-gray-100 dark:border-white/[0.05]">
+                Chi tiết Danh mục
+              </h3>
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-surface-container font-label-sm text-on-surface-variant">
-                    <tr>
-                      <th className="px-md py-sm rounded-l-lg">TÊN DANH MỤC</th>
-                      <th className="px-md py-sm text-center">SỐ SẢN PHẨM</th>
-                      <th className="px-md py-sm text-center">ĐÃ BÁN</th>
-                      <th className="px-md py-sm text-right">TỔNG DOANH THU</th>
-                      <th className="px-md py-sm text-right rounded-r-lg">TỶ TRỌNG</th>
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-white/[0.05]">
+                      <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TÊN DANH MỤC</th>
+                      <th className="pb-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">SỐ SẢN PHẨM</th>
+                      <th className="pb-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">ĐÃ BÁN</th>
+                      <th className="pb-3 text-right text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TỔNG DOANH THU</th>
+                      <th className="pb-3 text-right text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TỶ TRỌNG</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                     {data.categoryStats.map((cat) => (
-                      <tr key={cat.categoryID} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-md py-md font-medium">{cat.categoryName}</td>
-                        <td className="px-md py-md text-center">{cat.totalProducts}</td>
-                        <td className="px-md py-md text-center font-semibold text-slate-700">{cat.quantitySold}</td>
-                        <td className="px-md py-md text-right font-bold text-green-600">
+                      <tr key={cat.categoryID} className="hover:bg-gray-55 dark:hover:bg-white/[0.01] transition-colors duration-150">
+                        <td className="py-4 font-semibold text-gray-700 dark:text-gray-300">{cat.categoryName}</td>
+                        <td className="py-4 text-center text-gray-700 dark:text-gray-300">{cat.totalProducts}</td>
+                        <td className="py-4 text-center font-bold text-gray-800 dark:text-gray-200">{cat.quantitySold}</td>
+                        <td className="py-4 text-right font-bold text-success-600 dark:text-success-400">
                           {formatCurrency(cat.totalRevenue)}
                         </td>
-                        <td className="px-md py-md text-right font-medium text-slate-500">
+                        <td className="py-4 text-right font-semibold text-gray-400 dark:text-gray-500">
                           {cat.revenueSharePercentage}%
                         </td>
                       </tr>
                     ))}
                     {data.categoryStats.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="text-center py-lg text-on-surface-variant">
+                        <td colSpan={5} className="text-center py-6 text-gray-400 dark:text-gray-500">
                           Không tìm thấy danh mục nào.
                         </td>
                       </tr>
@@ -976,22 +977,24 @@ export default function AdminStatisticsPage() {
             </div>
 
             {/* Supplier list */}
-            <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md">Bảng xếp hạng Thương hiệu</h3>
-              <div className="overflow-x-auto">
+            <div className="lg:col-span-2 bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] rounded-[2rem] p-6 shadow-theme-xs print-card">
+              <h3 className="text-base font-semibold text-gray-800 dark:text-white/90 pb-4 mb-4 border-b border-gray-100 dark:border-white/[0.05]">
+                Bảng xếp hạng Thương hiệu
+              </h3>
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-surface-container font-label-sm text-on-surface-variant">
-                    <tr>
-                      <th className="px-md py-sm rounded-l-lg text-center w-12">HẠNG</th>
-                      <th className="px-md py-sm">THƯƠNG HIỆU</th>
-                      <th className="px-md py-sm text-center">ĐÃ BÁN</th>
-                      <th className="px-md py-sm text-right rounded-r-lg">DOANH THU</th>
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-white/[0.05]">
+                      <th className="pb-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest w-12">HẠNG</th>
+                      <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">THƯƠNG HIỆU</th>
+                      <th className="pb-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">ĐÃ BÁN</th>
+                      <th className="pb-3 text-right text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">DOANH THU</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                     {data.brandStats.map((brand, idx) => (
-                      <tr key={brand.supplierID} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-md py-md text-center font-bold">
+                      <tr key={brand.supplierID} className="hover:bg-gray-55 dark:hover:bg-white/[0.01] transition-colors duration-150">
+                        <td className="py-4 text-center font-bold">
                           {idx === 0 ? (
                             <span className="text-yellow-500 flex items-center justify-center">🏆</span>
                           ) : idx === 1 ? (
@@ -1002,16 +1005,16 @@ export default function AdminStatisticsPage() {
                             brand.rank
                           )}
                         </td>
-                        <td className="px-md py-md font-medium">{brand.supplierName}</td>
-                        <td className="px-md py-md text-center">{brand.quantitySold}</td>
-                        <td className="px-md py-md text-right font-bold text-green-600">
+                        <td className="py-4 font-semibold text-gray-700 dark:text-gray-300">{brand.supplierName}</td>
+                        <td className="py-4 text-center text-gray-700 dark:text-gray-300">{brand.quantitySold}</td>
+                        <td className="py-4 text-right font-bold text-success-600 dark:text-success-400">
                           {formatCurrency(brand.totalRevenue)}
                         </td>
                       </tr>
                     ))}
                     {data.brandStats.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="text-center py-lg text-on-surface-variant">
+                        <td colSpan={4} className="text-center py-6 text-gray-400 dark:text-gray-500">
                           Không tìm thấy thương hiệu nào.
                         </td>
                       </tr>
@@ -1023,30 +1026,30 @@ export default function AdminStatisticsPage() {
           </div>
 
           {/* Product Inventory Tops: Low vs High Stocks */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Highest Stock products */}
-            <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md text-slate-800 flex items-center gap-2">
-                <span className="material-symbols-outlined text-indigo-500">warehouse</span>
+            <div className="bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] rounded-[2rem] p-6 shadow-theme-xs print-card">
+              <h3 className="text-base font-semibold text-gray-800 dark:text-white/90 pb-4 mb-4 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
+                <span className="material-symbols-outlined text-brand-500">warehouse</span>
                 Sản phẩm Tồn kho cao nhất
               </h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-surface-container font-label-sm text-on-surface-variant">
-                    <tr>
-                      <th className="px-md py-sm rounded-l-lg">MÃ SP</th>
-                      <th className="px-md py-sm">TÊN SẢN PHẨM</th>
-                      <th className="px-md py-sm text-right rounded-r-lg">TỒN KHO HỆ THỐNG</th>
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-white/[0.05]">
+                      <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">MÃ SP</th>
+                      <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TÊN SẢN PHẨM</th>
+                      <th className="pb-3 text-right text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TỒN KHO HỆ THỐNG</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                     {data.topProducts.highestStock.map((prod) => (
-                      <tr key={prod.productID} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-md py-md font-medium text-primary">{prod.productCode}</td>
-                        <td className="px-md py-md font-medium truncate max-w-[200px]" title={prod.productName}>
+                      <tr key={prod.productID} className="hover:bg-gray-55 dark:hover:bg-white/[0.01] transition-colors duration-150">
+                        <td className="py-4 font-mono font-bold text-brand-500">{prod.productCode}</td>
+                        <td className="py-4 font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={prod.productName}>
                           {prod.productName}
                         </td>
-                        <td className="px-md py-md text-right font-bold text-indigo-600">{prod.stock}</td>
+                        <td className="py-4 text-right font-bold text-brand-600 dark:text-brand-400">{prod.stock}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1055,30 +1058,30 @@ export default function AdminStatisticsPage() {
             </div>
 
             {/* Lowest Stock products */}
-            <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-              <h3 className="font-headline-sm text-on-surface mb-md text-rose-700 flex items-center gap-2">
-                <span className="material-symbols-outlined text-rose-500">warning</span>
-                Sản phẩm Cảnh báo hết hàng (Tồn kho thấp nhất)
+            <div className="bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] rounded-[2rem] p-6 shadow-theme-xs print-card">
+              <h3 className="text-base font-semibold text-error-600 dark:text-error-400 pb-4 mb-4 border-b border-gray-100 dark:border-white/[0.05] flex items-center gap-2">
+                <span className="material-symbols-outlined text-error-500">warning</span>
+                Sản phẩm Cảnh báo hết hàng
               </h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-surface-container font-label-sm text-on-surface-variant">
-                    <tr>
-                      <th className="px-md py-sm rounded-l-lg">MÃ SP</th>
-                      <th className="px-md py-sm">TÊN SẢN PHẨM</th>
-                      <th className="px-md py-sm text-right rounded-r-lg">TỒN KHO HỆ THỐNG</th>
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-white/[0.05]">
+                      <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">MÃ SP</th>
+                      <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TÊN SẢN PHẨM</th>
+                      <th className="pb-3 text-right text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TỒN KHO HỆ THỐNG</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                     {data.topProducts.lowestStock.map((prod) => (
-                      <tr key={prod.productID} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-md py-md font-medium text-primary">{prod.productCode}</td>
-                        <td className="px-md py-md font-medium truncate max-w-[200px]" title={prod.productName}>
+                      <tr key={prod.productID} className="hover:bg-gray-55 dark:hover:bg-white/[0.01] transition-colors duration-150">
+                        <td className="py-4 font-mono font-bold text-brand-500">{prod.productCode}</td>
+                        <td className="py-4 font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={prod.productName}>
                           {prod.productName}
                         </td>
-                        <td className="px-md py-md text-right font-bold text-rose-600">
+                        <td className="py-4 text-right font-bold text-error-600">
                           {prod.stock <= 5 ? (
-                            <span className="bg-rose-50 text-rose-700 px-sm py-0.5 rounded-full text-xs font-semibold">
+                            <span className="bg-error-50 text-error-700 px-2.5 py-0.5 rounded-full text-xs font-bold dark:bg-error-500/15 dark:text-error-400">
                               {prod.stock} (Cực thấp)
                             </span>
                           ) : (
@@ -1094,69 +1097,69 @@ export default function AdminStatisticsPage() {
           </div>
 
           {/* Paginated Product Sales breakdown Table */}
-          <div className="bg-surface-container-lowest rounded-xl soft-shadow p-md border border-surface-container-high/40 print-card">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-md mb-md">
+          <div className="bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] rounded-[2rem] p-6 shadow-theme-xs print-card">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 border-b border-gray-100 dark:border-white/[0.05] pb-4">
               <div>
-                <h3 className="font-headline-sm text-on-surface">Báo cáo Sản phẩm Bán ra Chi tiết</h3>
-                <p className="text-on-surface-variant font-label-sm">Bao gồm tất cả sản phẩm đang kinh doanh và hiệu suất trong khoảng lọc.</p>
+                <h3 className="text-base font-bold text-gray-800 dark:text-white">Báo cáo Sản phẩm Bán ra Chi tiết</h3>
+                <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">Bao gồm tất cả sản phẩm đang kinh doanh và hiệu suất trong khoảng lọc.</p>
               </div>
               <div className="relative w-full md:w-80 no-print">
-                <input
+                <span className="material-symbols-outlined absolute left-3 top-2.5 z-10 text-gray-400 dark:text-gray-500 text-[18px] pointer-events-none">
+                  search
+                </span>
+                <Input
                   type="text"
-                  placeholder="Tìm theo mã hoặc tên sản phẩm..."
+                  placeholder="Tìm theo mã hoặc tên..."
                   value={productSearch}
                   onChange={(e) => {
                     setProductSearch(e.target.value);
                     setProductPage(1);
                   }}
-                  className="w-full pl-9 pr-4 py-2 text-sm border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-surface"
+                  className="pl-10"
                 />
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-md">
-                  search
-                </span>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-surface-container font-label-sm text-on-surface-variant">
-                  <tr>
-                    <th className="px-md py-sm rounded-l-lg">MÃ SẢN PHẨM</th>
-                    <th className="px-md py-sm">TÊN SẢN PHẨM</th>
-                    <th className="px-md py-sm">DANH MỤC</th>
-                    <th className="px-md py-sm">THƯƠNG HIỆU</th>
-                    <th className="px-md py-sm text-center">TỒN KHO HIỆN TẠI</th>
-                    <th className="px-md py-sm text-center">LƯỢNG ĐÃ BÁN</th>
-                    <th className="px-md py-sm text-right rounded-r-lg">TỔNG DOANH THU</th>
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-white/[0.05]">
+                    <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">MÃ SẢN PHẨM</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TÊN SẢN PHẨM</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">DANH MỤC</th>
+                    <th className="pb-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">THƯƠNG HIỆU</th>
+                    <th className="pb-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TỒN KHO</th>
+                    <th className="pb-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">LƯỢNG ĐÃ BÁN</th>
+                    <th className="pb-3 text-right text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">TỔNG DOANH THU</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-outline-variant">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {loadingTable ? (
                     [...Array(5)].map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                        <td colSpan={7} className="py-md px-md">
+                        <td colSpan={7} className="py-4">
                           <div className="h-4 bg-outline-variant/30 rounded w-full"></div>
                         </td>
                       </tr>
                     ))
                   ) : productBreakdown.map((prod) => (
-                    <tr key={prod.productID} className="hover:bg-surface-container-low transition-colors">
-                      <td className="px-md py-md font-mono text-primary font-bold">{prod.productCode}</td>
-                      <td className="px-md py-md font-semibold text-slate-800 truncate max-w-xs" title={prod.productName}>
+                    <tr key={prod.productID} className="hover:bg-gray-55 dark:hover:bg-white/[0.01] transition-colors duration-150">
+                      <td className="py-4 font-mono font-bold text-brand-500">{prod.productCode}</td>
+                      <td className="py-4 font-semibold text-gray-700 dark:text-gray-300 truncate max-w-xs" title={prod.productName}>
                         {prod.productName}
                       </td>
-                      <td className="px-md py-md text-slate-600">{prod.categoryName}</td>
-                      <td className="px-md py-md text-slate-600">{prod.supplierName}</td>
-                      <td className="px-md py-md text-center font-medium">{prod.stock}</td>
-                      <td className="px-md py-md text-center font-bold text-indigo-700">{prod.quantitySold}</td>
-                      <td className="px-md py-md text-right font-bold text-green-600">
+                      <td className="py-4 text-gray-500 dark:text-gray-400">{prod.categoryName}</td>
+                      <td className="py-4 text-gray-500 dark:text-gray-400">{prod.supplierName}</td>
+                      <td className="py-4 text-center text-gray-700 dark:text-gray-300">{prod.stock}</td>
+                      <td className="py-4 text-center font-bold text-brand-500">{prod.quantitySold}</td>
+                      <td className="py-4 text-right font-bold text-success-600 dark:text-success-400">
                         {formatCurrency(prod.totalRevenue)}
                       </td>
                     </tr>
                   ))}
                   {productBreakdown.length === 0 && !loadingTable && (
                     <tr>
-                      <td colSpan={7} className="text-center py-lg text-on-surface-variant font-medium">
+                      <td colSpan={7} className="text-center py-6 text-gray-400 dark:text-gray-500 font-medium">
                         Không tìm thấy sản phẩm nào khớp với tìm kiếm.
                       </td>
                     </tr>
@@ -1167,8 +1170,8 @@ export default function AdminStatisticsPage() {
 
             {/* Pagination Controls */}
             {productTotalPages > 1 && (
-              <div className="mt-md flex justify-between items-center no-print">
-                <p className="text-xs text-on-surface-variant">
+              <div className="mt-4 flex justify-between items-center no-print border-t border-gray-100 dark:border-white/[0.05] pt-4">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Hiển thị {(productPage - 1) * productPageSize + 1} - {Math.min(productPage * productPageSize, productTotalItems)} của {productTotalItems} sản phẩm
                 </p>
                 <Pagination
@@ -1183,9 +1186,9 @@ export default function AdminStatisticsPage() {
           </div>
         </>
       ) : (
-        <div className="bg-surface-container-lowest p-xl rounded-xl soft-shadow text-center border border-outline-variant text-on-surface-variant">
-          <span className="material-symbols-outlined text-4xl text-slate-400 mb-sm">bar_chart</span>
-          <p className="font-label-md">Không có dữ liệu trong khoảng thời gian đã chọn.</p>
+        <div className="bg-white dark:bg-white/[0.03] p-12 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] shadow-theme-xs text-center text-gray-400 dark:text-gray-500">
+          <span className="material-symbols-outlined text-4xl text-slate-400 mb-2">bar_chart</span>
+          <p className="font-semibold text-sm">Không có dữ liệu trong khoảng thời gian đã chọn.</p>
         </div>
       )}
     </div>

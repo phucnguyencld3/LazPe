@@ -1,6 +1,9 @@
 "use client";
 
 import type { FormEvent } from "react";
+import Button from "@/components/admin/ui/Button";
+import Input from "@/components/admin/ui/Input";
+import TextArea from "@/components/admin/ui/TextArea";
 
 interface CategoryFormProps {
   isEditing: boolean;
@@ -32,64 +35,63 @@ export default function CategoryForm({
   onSubmit
 }: CategoryFormProps) {
   return (
-    <div className="lg:col-span-4">
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm sticky top-28">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
-          <span className="material-symbols-outlined text-primary">
+    <div className="lg:col-span-4 font-outfit">
+      <div className="bg-white dark:bg-gray-950 rounded-[2rem] p-8 border border-gray-150 dark:border-white/[0.05] shadow-theme-xs sticky top-28">
+        <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+          <span className="material-symbols-outlined text-brand-500">
             {isEditing ? "edit_note" : "add_circle"}
           </span>
-          <h3 className="text-lg font-bold text-slate-800">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">
             {isEditing ? "Chỉnh sửa danh mục" : "Tạo danh mục mới"}
           </h3>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-6">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
               Tên danh mục <span className="text-rose-500">*</span>
             </label>
-            <input
+            <Input
               id="categoryNameInput"
               type="text"
               required
               value={categoryName}
               onChange={e => onCategoryNameChange(e.target.value)}
               placeholder="Nhập tên danh mục..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
               Mô tả chi tiết <span className="text-rose-500">*</span>
             </label>
-            <textarea
+            <TextArea
               rows={4}
               required
               value={description}
               onChange={e => onDescriptionChange(e.target.value)}
               placeholder="Mô tả tóm tắt..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
+              className="resize-none"
             />
+
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
               Thứ tự hiển thị
             </label>
-            <input
+            <Input
               type="text"
               value={sortOrder}
               onChange={e => onSortOrderChange(e.target.value)}
               placeholder="Ví dụ: 1, 2, A, B..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800 rounded-2xl">
             <div>
-              <p className="text-xs font-bold text-slate-800">Trạng thái hiển thị</p>
-              <p className="text-[9px] text-slate-400 mt-0.5">Cho phép hiển thị trên thanh tìm kiếm/sản phẩm</p>
+              <p className="text-xs font-bold text-gray-800 dark:text-white/90">Trạng thái hiển thị</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Cho phép hiển thị trên thanh tìm kiếm/sản phẩm</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -98,41 +100,36 @@ export default function CategoryForm({
                 onChange={e => onStatusChange(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-10 h-5.5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-primary"></div>
+              <div className="w-10 h-5.5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-brand-500"></div>
             </label>
           </div>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+          <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
             {isEditing && (
-              <button
+              <Button
                 type="button"
                 onClick={onCancelEdit}
-                className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
+                variant="secondary"
                 disabled={submitting}
+                className="flex-1 rounded-full text-xs font-bold py-2.5"
               >
                 Hủy sửa
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="submit"
               disabled={submitting}
-              className="flex-1 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              variant="primary"
+              isLoading={submitting}
+              className="flex-1 rounded-full text-xs font-bold py-2.5"
+              startIcon={!submitting ? <span className="material-symbols-outlined text-sm">save</span> : undefined}
             >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
-                  <span>Đang lưu...</span>
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[16px]">save</span>
-                  <span>{isEditing ? "Cập nhật" : "Tạo danh mục"}</span>
-                </>
-              )}
-            </button>
+              {isEditing ? "Cập nhật" : "Tạo danh mục"}
+            </Button>
           </div>
         </form>
       </div>
     </div>
   );
 }
+

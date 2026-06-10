@@ -1,22 +1,31 @@
 "use client";
 
+import Button from "@/components/admin/ui/Button";
+
 interface CategoryHeaderProps {
   onNewRootCategory: () => void;
 }
 
 export default function CategoryHeader({ onNewRootCategory }: CategoryHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 font-outfit">
       <div>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface text-3xl font-bold tracking-tight">Quản lý danh mục</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white/90">
+          Quản lý danh mục
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">
+          Cấu trúc phân cấp danh mục sản phẩm của hệ thống
+        </p>
       </div>
-      <button
+      <Button
         onClick={onNewRootCategory}
-        className="flex items-center gap-sm px-6 py-3 rounded-full bg-primary text-on-primary font-headline-md text-headline-md bouncy-hover shadow-lg cursor-pointer"
+        variant="primary"
+        className="rounded-full shadow-theme-xs font-bold text-xs"
+        startIcon={<span className="material-symbols-outlined text-sm">add_circle</span>}
       >
-        <span className="material-symbols-outlined">add_circle</span>
         Thêm danh mục mới
-      </button>
+      </Button>
     </div>
   );
 }
+

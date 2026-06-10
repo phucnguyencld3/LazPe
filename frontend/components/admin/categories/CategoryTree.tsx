@@ -104,20 +104,20 @@ export default function CategoryTree({
 
             return (
               <div key={cat.categoryID} className="w-full">
-                <div className="group/level1 flex items-center gap-md p-md rounded-lg tree-node-content cursor-pointer border border-transparent hover:border-primary/20">
+                <div className="group/level1 flex items-center gap-4 p-4 rounded-xl tree-node-content cursor-pointer border border-transparent hover:border-brand-500/20 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-all duration-200">
                   {hasChildren ? (
                     <button
                       type="button"
                       onClick={() => onToggleExpand(cat.categoryID)}
-                      className="w-8 h-8 rounded-full hover:bg-slate-200/50 flex items-center justify-center shrink-0 text-slate-500 transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 flex items-center justify-center shrink-0 text-gray-400 dark:text-gray-500 transition-colors cursor-pointer"
                     >
-                      <span className={`material-symbols-outlined text-primary expand-icon transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
+                      <span className={`material-symbols-outlined text-brand-500 expand-icon transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
                         chevron_right
                       </span>
                     </button>
                   ) : (
                     <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                      <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
                     </div>
                   )}
 
@@ -126,58 +126,58 @@ export default function CategoryTree({
                   </div>
 
                   <div className="flex-1 min-w-0" onClick={() => hasChildren && onToggleExpand(cat.categoryID)}>
-                    <h4 className="font-headline-md text-headline-md text-primary font-bold truncate flex items-center gap-2">
+                    <h4 className="text-base text-brand-500 dark:text-brand-400 font-bold truncate flex items-center gap-2">
                       {cat.categoryName}
                       {!cat.status && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-sans">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 font-sans">
                           Đã ẩn
                         </span>
                       )}
                     </h4>
-                    <span className="font-label-sm text-on-surface-variant text-xs">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                       {childrenCount} danh mục con
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-xs opacity-0 group-hover/level1:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 opacity-0 group-hover/level1:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={() => onAddSub(cat)}
-                      className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-brand-50 dark:hover:bg-brand-500/15 text-brand-500 transition-colors cursor-pointer"
                       title="Thêm danh mục con"
                     >
-                      <span className="material-symbols-outlined">add_box</span>
+                      <span className="material-symbols-outlined text-lg">add_box</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onShowDescription(cat)}
-                      className="p-2 rounded-full hover:bg-slate-100 text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
                       title="Xem mô tả"
                     >
-                      <span className="material-symbols-outlined">info</span>
+                      <span className="material-symbols-outlined text-lg">info</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onEdit(cat)}
-                      className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
                       title="Chỉnh sửa"
                     >
-                      <span className="material-symbols-outlined">edit</span>
+                      <span className="material-symbols-outlined text-lg">edit</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onDelete(cat)}
-                      className="p-2 rounded-full hover:bg-error/10 text-error transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-error-50 dark:hover:bg-error-500/15 text-error-500 transition-colors cursor-pointer"
                       title="Xóa danh mục"
                     >
-                      <span className="material-symbols-outlined">delete</span>
+                      <span className="material-symbols-outlined text-lg">delete</span>
                     </button>
                   </div>
                 </div>
 
                 {hasChildren && isExpanded && (
-                  <div className="ml-[60px] mt-sm space-y-sm relative">
-                    <div className="tree-line"></div>
+                  <div className="ml-[60px] mt-2 space-y-2 relative">
+                    <div className="absolute left-[-30px] top-0 bottom-4 w-[1px] bg-gray-200 dark:bg-gray-800"></div>
                     {renderTree(cat.categoryID, depth + 1)}
                   </div>
                 )}
@@ -190,76 +190,76 @@ export default function CategoryTree({
 
             return (
               <div key={cat.categoryID} className="w-full">
-                <div className="group/level2 flex items-center gap-md p-sm rounded-lg tree-node-content cursor-pointer border border-transparent hover:border-primary/20">
+                <div className="group/level2 flex items-center gap-4 p-2 rounded-lg tree-node-content cursor-pointer border border-transparent hover:border-brand-500/20 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-all duration-200">
                   {hasChildren ? (
                     <button
                       type="button"
                       onClick={() => onToggleExpand(cat.categoryID)}
-                      className="w-8 h-8 rounded-full hover:bg-slate-200/50 flex items-center justify-center shrink-0 text-slate-500 transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 flex items-center justify-center shrink-0 text-gray-400 dark:text-gray-500 transition-colors cursor-pointer"
                     >
-                      <span className={`material-symbols-outlined text-primary expand-icon transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
+                      <span className={`material-symbols-outlined text-brand-500 expand-icon transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
                         chevron_right
                       </span>
                     </button>
                   ) : (
                     <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                      <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
                     </div>
                   )}
 
                   <div className="flex-1 min-w-0" onClick={() => hasChildren && onToggleExpand(cat.categoryID)}>
-                    <h5 className="font-label-md text-label-md font-bold text-on-surface truncate flex items-center gap-2">
+                    <h5 className="text-sm font-bold text-gray-800 dark:text-white/90 truncate flex items-center gap-2">
                       {cat.categoryName}
                       {!cat.status && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-sans">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 font-sans">
                           Đã ẩn
                         </span>
                       )}
                     </h5>
-                    <span className="font-label-sm text-on-surface-variant text-xs">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                       {grandchildrenCount} dòng sản phẩm
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-xs opacity-0 group-hover/level2:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 opacity-0 group-hover/level2:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={() => onAddSub(cat)}
-                      className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-brand-50 dark:hover:bg-brand-500/15 text-brand-500 transition-colors cursor-pointer"
                       title="Thêm danh mục con"
                     >
-                      <span className="material-symbols-outlined">add_box</span>
+                      <span className="material-symbols-outlined text-lg">add_box</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onShowDescription(cat)}
-                      className="p-2 rounded-full hover:bg-slate-100 text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
                       title="Xem mô tả"
                     >
-                      <span className="material-symbols-outlined">info</span>
+                      <span className="material-symbols-outlined text-lg">info</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onEdit(cat)}
-                      className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
                       title="Chỉnh sửa"
                     >
-                      <span className="material-symbols-outlined">edit</span>
+                      <span className="material-symbols-outlined text-lg">edit</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onDelete(cat)}
-                      className="p-2 rounded-full hover:bg-error/10 text-error transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-error-50 dark:hover:bg-error-500/15 text-error-500 transition-colors cursor-pointer"
                       title="Xóa danh mục"
                     >
-                      <span className="material-symbols-outlined">delete</span>
+                      <span className="material-symbols-outlined text-lg">delete</span>
                     </button>
                   </div>
                 </div>
 
                 {hasChildren && isExpanded && (
-                  <div className="ml-[40px] mt-sm space-y-sm relative">
-                    <div className="tree-line"></div>
+                  <div className="ml-[40px] mt-2 space-y-2 relative">
+                    <div className="absolute left-[-20px] top-0 bottom-4 w-[1px] bg-gray-200 dark:bg-gray-800"></div>
                     {renderTree(cat.categoryID, depth + 1)}
                   </div>
                 )}
@@ -270,98 +270,107 @@ export default function CategoryTree({
           return (
             <div
               key={cat.categoryID}
-              className="group/level3 flex items-center gap-md p-sm rounded-lg tree-node-content border border-transparent hover:border-primary/20"
+              className="group/level3 flex items-center gap-4 p-2 rounded-lg tree-node-content border border-transparent hover:border-brand-500/20 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-all duration-200"
             >
-              <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center border border-outline-variant/30 shrink-0">
-                <span className="material-symbols-outlined text-outline text-sm">local_mall</span>
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-900 shadow-sm flex items-center justify-center border border-gray-200 dark:border-gray-800 shrink-0">
+                <span className="material-symbols-outlined text-gray-400 text-sm">local_mall</span>
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="font-body-md font-semibold text-on-surface truncate flex items-center gap-2">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate flex items-center gap-2">
                   {cat.categoryName}
                   {!cat.status && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-sans">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 font-sans">
                       Đã ẩn
                     </span>
                   )}
                 </p>
               </div>
 
-              <div className="flex items-center gap-xs opacity-0 group-hover/level3:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 opacity-0 group-hover/level3:opacity-100 transition-opacity">
                 <button
                   type="button"
                   onClick={() => onShowDescription(cat)}
-                  className="p-2 rounded-full hover:bg-slate-100 text-on-surface-variant transition-colors cursor-pointer"
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
                   title="Xem mô tả"
                 >
-                  <span className="material-symbols-outlined">info</span>
+                  <span className="material-symbols-outlined text-lg">info</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onEdit(cat)}
-                  className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer"
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
                   title="Chỉnh sửa"
                 >
-                  <span className="material-symbols-outlined">edit</span>
+                  <span className="material-symbols-outlined text-lg">edit</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onDelete(cat)}
-                  className="p-2 rounded-full hover:bg-error/10 text-error transition-colors cursor-pointer"
+                  className="p-2 rounded-full hover:bg-error-50 dark:hover:bg-error-500/15 text-error-500 transition-colors cursor-pointer"
                   title="Xóa danh mục"
                 >
-                  <span className="material-symbols-outlined">delete</span>
+                  <span className="material-symbols-outlined text-lg">delete</span>
                 </button>
               </div>
             </div>
           );
         })}
       </div>
+
     );
   };
 
   return (
-    <div className="lg:col-span-8 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex flex-col min-h-[600px]">
-      <div className="p-4 border-b border-outline-variant/30 bg-surface-container-low flex justify-between items-center rounded-t-2xl mb-6">
-        <div className="flex items-center gap-md">
-          <span className="font-headline-md text-headline-md text-primary font-semibold text-lg">Cấu trúc danh mục</span>
-          <div className="flex gap-xs">
+    <div className="lg:col-span-8 bg-white dark:bg-gray-950 rounded-[2rem] p-8 border border-gray-150 dark:border-white/[0.05] shadow-theme-xs flex flex-col min-h-[600px] font-outfit">
+      <div className="p-4 border-b border-gray-100 dark:border-white/[0.05] bg-gray-50/50 dark:bg-white/[0.02] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-t-2xl mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+          <span className="text-lg font-bold text-gray-800 dark:text-white/90">
+            Cấu trúc danh mục
+          </span>
+          <div className="flex gap-2">
             <button
               onClick={onExpandAll}
-              className="px-3 py-1 rounded-full border border-primary/20 text-primary font-label-sm hover:bg-primary/5 transition-colors text-xs font-bold cursor-pointer"
+              className="px-3 py-1 rounded-full border border-brand-200 dark:border-brand-800 text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors text-xs font-bold cursor-pointer"
             >
               Mở rộng tất cả
             </button>
             <button
               onClick={onCollapseAll}
-              className="px-3 py-1 rounded-full border border-outline-variant/50 text-outline font-label-sm hover:bg-surface-variant transition-colors text-xs font-bold cursor-pointer"
+              className="px-3 py-1 rounded-full border border-gray-200 dark:border-gray-800 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-xs font-bold cursor-pointer"
             >
               Thu gọn tất cả
             </button>
           </div>
         </div>
-        <span className="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-sm text-xs font-bold">
+        <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400 px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto">
           {rootCount} Cấp I • {categories.length} Tổng
         </span>
       </div>
 
       <div className="mb-6">
-        <div className="relative w-full max-w-none min-w-[320px]">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+        <div className="relative w-full">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            search
+          </span>
           <input
             type="text"
             value={searchTerm}
             onChange={e => onSearchChange(e.target.value)}
             placeholder="Tìm kiếm danh mục..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
+            className="w-full pl-11 pr-4 py-2.5 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-semibold text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 transition-all"
           />
         </div>
       </div>
 
       {categories.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-          <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">category</span>
-          <p className="text-slate-400 font-bold text-sm">Chưa có danh mục nào được khởi tạo.</p>
+        <div className="text-center py-20 bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+          <span className="material-symbols-outlined text-gray-300 dark:text-gray-700 text-5xl mb-2">
+            category
+          </span>
+          <p className="text-gray-400 dark:text-gray-500 font-bold text-sm">
+            Chưa có danh mục nào được khởi tạo.
+          </p>
         </div>
       ) : (
         <div className="flex-1 category-tree-container overflow-y-auto pr-2">
@@ -371,3 +380,4 @@ export default function CategoryTree({
     </div>
   );
 }
+

@@ -10,9 +10,7 @@ import {
   Loader, 
   TrendingDown, 
   Tag, 
-  AlertTriangle,
-  Check,
-  X
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { formatCurrency } from "@/lib/utils/formatters";
@@ -22,6 +20,12 @@ import {
   toggleBundleStatus, 
   BundleResponse 
 } from "@/lib/features/combo/comboApi";
+import Button from "@/components/admin/ui/Button";
+import Input from "@/components/admin/ui/Input";
+import Badge from "@/components/admin/ui/Badge";
+import Modal from "@/components/admin/ui/Modal";
+import { StatsCard } from "@/components/admin/ui/Card";
+import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/admin/ui/Table";
 
 interface ComboListProps {
   token: string;
@@ -81,7 +85,7 @@ export const ComboList: React.FC<ComboListProps> = ({
             ? "Đã tạm dừng hoạt động combo." 
             : "Đã kích hoạt hoạt động combo."
         );
-        // Optimistic UI update or refresh
+        // Optimistic UI update
         setBundles((prev) =>
           prev.map((b) => (b.bundleID === id ? { ...b, status: !currentStatus } : b))
         );
@@ -169,107 +173,70 @@ export const ComboList: React.FC<ComboListProps> = ({
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 font-outfit">
       {/* Header Bar */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="font-headline-md text-headline-md text-primary font-bold">
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white/90">
             Quản lý Combo sản phẩm
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant/70">
+          <p className="text-sm text-gray-400 mt-1">
             Tạo và cấu hình các gói sản phẩm đi kèm với giá ưu đãi để tăng doanh thu
           </p>
         </div>
-        <button
+        <Button
           onClick={onCreateClick}
-          className="bg-primary text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+          variant="primary"
+          className="rounded-full shadow-theme-xs font-bold text-xs"
+          startIcon={<Plus size={16} />}
         >
-          <Plus size={18} />
-          <span>Tạo Combo mới</span>
-        </button>
+          Tạo Combo mới
+        </Button>
       </header>
 
       {/* Stats Cards Bento Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Combos */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-              <Tag size={20} />
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Tổng số
-            </span>
-          </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Tổng số Combo</p>
-            <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{loading ? "..." : totalCombos}</h3>
-          </div>
-        </div>
-
-        {/* Active Combos */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-secondary-container/20 flex items-center justify-center text-secondary">
-              <span className="material-symbols-outlined text-[20px]">check_circle</span>
-            </div>
-            <span className="px-2 py-0.5 bg-green-50 text-secondary text-[10px] font-bold rounded-full border border-green-100">
-              Đang bán
-            </span>
-          </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Đang hoạt động</p>
-            <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{loading ? "..." : activeCombos}</h3>
-          </div>
-        </div>
-
-        {/* Inactive Combos */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
-              <span className="material-symbols-outlined text-[20px]">pause_circle</span>
-            </div>
-            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full border border-amber-100">
-              Tạm ẩn
-            </span>
-          </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Tạm dừng hoạt động</p>
-            <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{loading ? "..." : inactiveCombos}</h3>
-          </div>
-        </div>
-
-        {/* Average Discount */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500">
-              <TrendingDown size={20} />
-            </div>
-            <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full border border-rose-100">
-              Chiết khấu
-            </span>
-          </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Giảm giá trung bình</p>
-            <h3 className="text-3xl font-extrabold text-rose-500 mt-1">{loading ? "..." : `${avgDiscount}%`}</h3>
-          </div>
-        </div>
+        <StatsCard
+          title="Tổng số Combo"
+          value={loading ? "..." : totalCombos}
+          icon={<Tag size={24} />}
+          iconBgColor="bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400"
+        />
+        <StatsCard
+          title="Đang hoạt động"
+          value={loading ? "..." : activeCombos}
+          icon={<span className="material-symbols-outlined text-[24px]">check_circle</span>}
+          iconBgColor="bg-success-50 text-success-500 dark:bg-success-500/10 dark:text-success-400"
+        />
+        <StatsCard
+          title="Tạm dừng hoạt động"
+          value={loading ? "..." : inactiveCombos}
+          icon={<span className="material-symbols-outlined text-[24px]">pause_circle</span>}
+          iconBgColor="bg-warning-50 text-warning-500 dark:bg-warning-500/10 dark:text-orange-400"
+        />
+        <StatsCard
+          title="Giảm giá trung bình"
+          value={loading ? "..." : `${avgDiscount}%`}
+          icon={<TrendingDown size={24} />}
+          iconBgColor="bg-error-50 text-error-500 dark:bg-error-500/10 dark:text-error-400"
+          className="[&_h3]:text-error-500 dark:[&_h3]:text-error-400"
+        />
       </div>
 
       {/* Filter and Content Card */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-150 dark:border-white/[0.05] shadow-theme-xs overflow-hidden">
         {/* Tool Filter Bar */}
-        <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/30">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-4 bg-gray-50/30 dark:bg-white/[0.01]">
           <div className="flex flex-wrap items-center gap-4 flex-1">
             {/* Search Box */}
             <div className="relative min-w-[260px] flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm kiếm combo theo tên, mã..."
-                className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full pl-11 pr-4 py-2.5 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-semibold text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 transition-all"
               />
             </div>
 
@@ -277,7 +244,7 @@ export const ComboList: React.FC<ComboListProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[150px] cursor-pointer"
+              className="px-4 py-2.5 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-bold text-gray-850 dark:text-white/95 dark:bg-gray-900 cursor-pointer transition-all"
             >
               <option value="all">Trạng thái (Tất cả)</option>
               <option value="active">Đang hoạt động</option>
@@ -288,7 +255,7 @@ export const ComboList: React.FC<ComboListProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[170px] cursor-pointer"
+              className="px-4 py-2.5 bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 text-sm font-bold text-gray-850 dark:text-white/95 dark:bg-gray-900 cursor-pointer transition-all"
             >
               <option value="newest">Mới nhất</option>
               <option value="oldest">Cũ nhất</option>
@@ -301,7 +268,7 @@ export const ComboList: React.FC<ComboListProps> = ({
             {(searchTerm || statusFilter !== "all" || sortBy !== "newest") && (
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 text-slate-500 hover:text-primary rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 font-bold text-xs cursor-pointer"
+                className="px-4 py-2 text-gray-500 hover:text-brand-500 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-all flex items-center gap-1.5 font-bold text-xs cursor-pointer"
               >
                 <RotateCcw size={14} />
                 <span>Đặt lại bộ lọc</span>
@@ -310,13 +277,13 @@ export const ComboList: React.FC<ComboListProps> = ({
           </div>
 
           {/* View Mode Toggles */}
-          <div className="flex items-center gap-1 border border-slate-200 bg-slate-50 p-1 rounded-xl shrink-0">
+          <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-white/5 p-1 rounded-xl shrink-0">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === "grid" 
-                  ? "bg-white text-primary shadow-xs" 
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "bg-white dark:bg-gray-800 text-brand-500 shadow-xs" 
+                  : "text-gray-400 hover:text-gray-655"
               }`}
               title="Xem dạng lưới"
             >
@@ -324,10 +291,10 @@ export const ComboList: React.FC<ComboListProps> = ({
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === "table" 
-                  ? "bg-white text-primary shadow-xs" 
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "bg-white dark:bg-gray-800 text-brand-500 shadow-xs" 
+                  : "text-gray-400 hover:text-gray-655"
               }`}
               title="Xem dạng bảng"
             >
@@ -338,26 +305,26 @@ export const ComboList: React.FC<ComboListProps> = ({
 
         {/* Content List Area */}
         {loading ? (
-          <div className="py-24 text-center text-slate-400 flex flex-col items-center justify-center">
-            <Loader className="animate-spin text-primary h-9 w-9 mb-4" />
+          <div className="py-24 text-center text-gray-400 flex flex-col items-center justify-center">
+            <Loader className="animate-spin text-brand-500 h-9 w-9 mb-4" />
             <p className="text-sm font-bold uppercase tracking-wider">Đang tải danh sách combo...</p>
           </div>
         ) : filteredBundles.length === 0 ? (
-          <div className="py-24 text-center text-slate-400 flex flex-col items-center justify-center">
-            <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">inventory_2</span>
+          <div className="py-24 text-center text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center">
+            <span className="material-symbols-outlined text-5xl text-gray-200 dark:text-gray-800 mb-3">inventory_2</span>
             <p className="text-base font-bold">Không tìm thấy combo sản phẩm nào</p>
-            <p className="text-xs text-slate-400 mt-1">Vui lòng điều chỉnh tiêu chí tìm kiếm hoặc tạo mới combo</p>
+            <p className="text-xs text-gray-450 dark:text-gray-500 mt-1">Vui lòng điều chỉnh tiêu chí tìm kiếm hoặc tạo mới combo</p>
           </div>
         ) : viewMode === "grid" ? (
-          /* Bento/Grid Layout */
+          /* Grid Layout */
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredBundles.map((bundle) => (
               <div 
                 key={bundle.bundleID}
-                className="bg-white rounded-[2rem] border border-slate-100 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 flex flex-col overflow-hidden group"
+                className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-150 dark:border-gray-800 shadow-theme-xs hover:shadow-theme-md hover:border-brand-500/20 transition-all duration-300 flex flex-col overflow-hidden group"
               >
                 {/* Thumbnail Image Container */}
-                <div className="relative aspect-video w-full bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden">
+                <div className="relative aspect-video w-full bg-gray-50 dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 flex items-center justify-center overflow-hidden">
                   {bundle.imageUrl ? (
                     <img 
                       src={bundle.imageUrl} 
@@ -365,29 +332,29 @@ export const ComboList: React.FC<ComboListProps> = ({
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-4xl text-slate-300">inventory_2</span>
+                    <span className="material-symbols-outlined text-4xl text-gray-300 dark:text-gray-750">inventory_2</span>
                   )}
 
                   {/* Discount Badge */}
                   {bundle.discountPercent > 0 && (
-                    <div className="absolute top-4 left-4 bg-rose-500 text-white font-extrabold text-xs px-2.5 py-1 rounded-full shadow-sm flex items-center gap-0.5">
+                    <div className="absolute top-4 left-4 bg-error-500 text-white font-extrabold text-xs px-2.5 py-1 rounded-full shadow-sm flex items-center gap-0.5">
                       <TrendingDown size={12} />
                       <span>-{bundle.discountPercent}%</span>
                     </div>
                   )}
 
                   {/* Quick Edit Overlay */}
-                  <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-3">
+                  <div className="absolute inset-0 bg-slate-950/20 dark:bg-black/40 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-3">
                     <button
                       onClick={() => onEditClick(bundle.bundleID)}
-                      className="p-2.5 bg-white text-slate-700 hover:text-primary rounded-full shadow-md hover:scale-110 active:scale-95 transition-all font-bold"
+                      className="p-2.5 bg-white text-slate-800 hover:text-brand-500 rounded-full shadow-md hover:scale-110 active:scale-95 transition-all font-bold cursor-pointer"
                       title="Sửa Combo"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(bundle)}
-                      className="p-2.5 bg-white text-slate-700 hover:text-error rounded-full shadow-md hover:scale-110 active:scale-95 transition-all font-bold"
+                      className="p-2.5 bg-white text-slate-800 hover:text-error-500 rounded-full shadow-md hover:scale-110 active:scale-95 transition-all font-bold cursor-pointer"
                       title="Xóa Combo"
                     >
                       <Trash2 size={16} />
@@ -399,41 +366,41 @@ export const ComboList: React.FC<ComboListProps> = ({
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-start gap-2">
-                      <h4 className="font-bold text-slate-800 text-sm leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                      <h4 className="font-bold text-gray-800 dark:text-white/90 text-sm leading-snug line-clamp-1 group-hover:text-brand-500 transition-colors">
                         {bundle.name}
                       </h4>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-550 uppercase shrink-0">
                         {bundle.code || `ID: ${bundle.bundleID}`}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px]">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-2 min-h-[32px]">
                       {bundle.description || "Không có mô tả chi tiết cho combo này."}
                     </p>
 
                     {/* Mini Item Indicators */}
                     {bundle.items && bundle.items.length > 0 && (
                       <div className="pt-2 flex items-center gap-1.5 overflow-hidden">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1">
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mr-1">
                           Sản phẩm:
                         </span>
                         <div className="flex -space-x-2 overflow-hidden">
                           {bundle.items.slice(0, 4).map((item, index) => (
                             <div 
                               key={item.bundleItemID || index}
-                              className="w-6 h-6 rounded-full border border-white bg-slate-100 overflow-hidden flex items-center justify-center shrink-0"
+                              className="w-6 h-6 rounded-full border border-white dark:border-gray-900 bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center shrink-0"
                               title={`${item.productName} (${item.quantity} chiếc)`}
                             >
                               {item.imageUrl ? (
                                 <img src={item.imageUrl} alt={item.variantName} className="w-full h-full object-cover" />
                               ) : (
-                                <span className="text-[8px] font-bold text-slate-400">P</span>
+                                <span className="text-[8px] font-bold text-gray-400 dark:text-gray-555">P</span>
                               )}
                             </div>
                           ))}
                         </div>
                         {bundle.items.length > 4 && (
-                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded-full">
                             +{bundle.items.length - 4}
                           </span>
                         )}
@@ -442,21 +409,21 @@ export const ComboList: React.FC<ComboListProps> = ({
                   </div>
 
                   {/* Pricing and Switch Status footer */}
-                  <div className="border-t border-slate-50 pt-4 mt-4 flex items-center justify-between">
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4 flex items-center justify-between">
                     <div>
                       {bundle.discountPercent > 0 && (
-                        <span className="text-xs text-slate-400 line-through block font-medium">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 line-through block font-medium">
                           {formatCurrency(bundle.originalPrice)}
                         </span>
                       )}
-                      <span className="font-extrabold text-primary text-base">
+                      <span className="font-extrabold text-brand-500 dark:text-brand-400 text-base">
                         {formatCurrency(bundle.price)}
                       </span>
                     </div>
 
                     {/* Status switch */}
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold uppercase ${bundle.status ? "text-secondary" : "text-slate-400"}`}>
+                      <span className={`text-[10px] font-bold uppercase ${bundle.status ? "text-success-500" : "text-gray-400 dark:text-gray-550"}`}>
                         {bundle.status ? "Đang bán" : "Tạm dừng"}
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer select-none">
@@ -467,7 +434,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                           onChange={() => handleToggleStatus(bundle.bundleID, bundle.status)}
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                        <div className="w-9 h-5 bg-gray-200 dark:bg-gray-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
                       </label>
                     </div>
                   </div>
@@ -478,84 +445,84 @@ export const ComboList: React.FC<ComboListProps> = ({
         ) : (
           /* Table Layout */
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Combo</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Mã</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá gốc</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá Combo</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Giảm giá</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                  <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Hành động</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
+            <Table className="border-none shadow-none rounded-none">
+              <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-gray-800">
+                <TableRow>
+                  <TableCell isHeader>Combo</TableCell>
+                  <TableCell isHeader>Mã</TableCell>
+                  <TableCell isHeader>Giá gốc</TableCell>
+                  <TableCell isHeader>Giá Combo</TableCell>
+                  <TableCell isHeader className="text-center">Giảm giá</TableCell>
+                  <TableCell isHeader className="text-center">Trạng thái</TableCell>
+                  <TableCell isHeader className="text-right">Hành động</TableCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredBundles.map((bundle) => (
-                  <tr key={bundle.bundleID} className="hover:bg-slate-50/30 transition-colors group">
+                  <TableRow key={bundle.bundleID}>
                     {/* Item Detail */}
-                    <td className="px-8 py-4">
+                    <TableCell>
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900 flex-shrink-0 border border-gray-100 dark:border-gray-800 flex items-center justify-center">
                           {bundle.imageUrl ? (
                             <img src={bundle.imageUrl} alt={bundle.name} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="material-symbols-outlined text-slate-400">inventory_2</span>
+                            <span className="material-symbols-outlined text-gray-400 dark:text-gray-600">inventory_2</span>
                           )}
                         </div>
                         <div>
-                          <h5 className="font-bold text-slate-800 text-sm group-hover:text-primary transition-colors">
+                          <h5 className="font-bold text-gray-800 dark:text-white/90 text-sm group-hover:text-brand-500 transition-colors">
                             {bundle.name}
                           </h5>
                           {bundle.items && bundle.items.length > 0 ? (
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">
+                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
                               {bundle.items.length} sản phẩm trong gói
                             </p>
                           ) : (
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">
+                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-0.5">
                               Chưa có sản phẩm
                             </p>
                           )}
                         </div>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Code */}
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-slate-600 font-mono">
+                    <TableCell>
+                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400 font-mono">
                         {bundle.code || `ID: ${bundle.bundleID}`}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Original Price */}
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-semibold text-slate-500">
+                    <TableCell>
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                         {formatCurrency(bundle.originalPrice)}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Final Price */}
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-extrabold text-primary">
+                    <TableCell>
+                      <span className="text-sm font-extrabold text-brand-500 dark:text-brand-400">
                         {formatCurrency(bundle.price)}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Discount */}
-                    <td className="px-6 py-4 text-center">
+                    <TableCell className="text-center">
                       {bundle.discountPercent > 0 ? (
-                        <span className="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-extrabold rounded-full border border-rose-100 inline-flex items-center gap-0.5">
+                        <Badge color="error" variant="light" size="sm">
                           -{bundle.discountPercent}%
-                        </span>
+                        </Badge>
                       ) : (
-                        <span className="text-xs font-semibold text-slate-400">-</span>
+                        <span className="text-xs font-semibold text-gray-400">-</span>
                       )}
-                    </td>
+                    </TableCell>
 
                     {/* Status Switch */}
-                    <td className="px-6 py-4 text-center">
+                    <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <span className={`text-[10px] font-bold uppercase min-w-[50px] text-right ${bundle.status ? "text-secondary" : "text-slate-400"}`}>
+                        <span className={`text-[10px] font-bold uppercase min-w-[50px] text-right ${bundle.status ? "text-success-500" : "text-gray-400 dark:text-gray-550"}`}>
                           {bundle.status ? "Đang bán" : "Tạm ẩn"}
                         </span>
                         <label className="relative inline-flex items-center cursor-pointer select-none">
@@ -566,77 +533,80 @@ export const ComboList: React.FC<ComboListProps> = ({
                             onChange={() => handleToggleStatus(bundle.bundleID, bundle.status)}
                             className="sr-only peer"
                           />
-                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                          <div className="w-9 h-5 bg-gray-200 dark:bg-gray-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
                         </label>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Actions */}
-                    <td className="px-8 py-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="icon"
                           onClick={() => onEditClick(bundle.bundleID)}
-                          className="p-2 text-slate-450 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
                           title="Sửa"
                         >
                           <Edit size={15} />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="icon"
                           onClick={() => handleDeleteClick(bundle)}
-                          className="p-2 text-slate-450 hover:text-error hover:bg-rose-50 rounded-lg transition-colors"
                           title="Xóa"
+                          className="hover:text-error-500 dark:hover:text-error-400"
                         >
                           <Trash2 size={15} />
-                        </button>
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
 
       {/* Custom Delete Confirmation Modal */}
-      {bundleToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 flex flex-col items-center text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-error">
-                <AlertTriangle size={24} />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-slate-800">Xác nhận xóa Combo</h3>
-                <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                  Bạn có chắc chắn muốn xóa combo sản phẩm <span className="text-slate-700 font-bold">"{bundleToDelete.name}"</span>?
-                  Hành động này không thể hoàn tác và sẽ xóa bỏ vĩnh viễn gói combo này khỏi hệ thống.
-                </p>
-              </div>
-            </div>
-            
-            <div className="p-5 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setBundleToDelete(null)}
-                className="px-4 py-2 border border-slate-200 text-slate-650 rounded-xl hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
-                disabled={deleting}
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
-                disabled={deleting}
-              >
-                {deleting && <Loader className="animate-spin h-3.5 w-3.5" />}
-                <span>Xác nhận xóa</span>
-              </button>
-            </div>
+      <Modal
+        isOpen={!!bundleToDelete}
+        onClose={() => setBundleToDelete(null)}
+        showCloseButton={!deleting}
+        className="max-w-md"
+      >
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-error-50 dark:bg-error-500/15 flex items-center justify-center text-error-500">
+            <AlertTriangle size={24} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Xác nhận xóa Combo</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold leading-relaxed">
+              Bạn có chắc chắn muốn xóa combo sản phẩm <span className="text-gray-800 dark:text-white font-bold">"{bundleToDelete?.name}"</span>?
+              Hành động này không thể hoàn tác và sẽ xóa bỏ vĩnh viễn gói combo này khỏi hệ thống.
+            </p>
           </div>
         </div>
-      )}
+        
+        <div className="pt-6 mt-6 border-t border-gray-100 dark:border-gray-850 flex items-center justify-end gap-3">
+          <Button
+            type="button"
+            onClick={() => setBundleToDelete(null)}
+            variant="secondary"
+            className="rounded-full text-xs font-bold py-2"
+            disabled={deleting}
+          >
+            Hủy bỏ
+          </Button>
+          <Button
+            type="button"
+            onClick={confirmDelete}
+            variant="danger"
+            isLoading={deleting}
+            className="rounded-full text-xs font-bold py-2"
+          >
+            Xác nhận xóa
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

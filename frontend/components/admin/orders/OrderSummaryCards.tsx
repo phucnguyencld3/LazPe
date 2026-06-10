@@ -1,5 +1,7 @@
 import React from "react";
 import { formatCurrency } from "@/lib/features/orders/orderApi";
+import { StatsCard } from "@/components/admin/ui/Card";
+import Button from "@/components/admin/ui/Button";
 
 interface OrderSummaryCardsProps {
   totalOrders: number;
@@ -27,51 +29,58 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 font-outfit">
       {/* Card 1: Tổng đơn hàng */}
-      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] border border-primary-container/30 hover:shadow-lg transition-all duration-300">
-        <p className="text-label-md text-on-surface-variant font-medium">Tổng đơn hàng</p>
-        <h3 className="text-display-lg font-display-lg text-primary my-2 leading-none">
-          {totalOrders.toLocaleString()}
-        </h3>
-        <div className="flex items-center gap-1 text-secondary text-label-sm font-semibold">
-          <span className="material-symbols-outlined text-[16px]">trending_up</span>
-          <span>+12% so với tháng trước</span>
-        </div>
-      </div>
+      <StatsCard
+        title="Tổng đơn hàng"
+        value={totalOrders.toLocaleString()}
+        icon={<span className="material-symbols-outlined text-[24px]">shopping_bag</span>}
+        iconBgColor="bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400"
+        trend="+12%"
+        trendType="up"
+      />
 
       {/* Card 2: Đang xử lý */}
-      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] border border-secondary-container/30 hover:shadow-lg transition-all duration-300">
-        <p className="text-label-md text-on-surface-variant font-medium">Đang xử lý</p>
-        <h3 className="text-display-lg font-display-lg text-secondary my-2 leading-none">
-          {pending.toLocaleString()}
-        </h3>
-        <p className="text-label-sm text-on-surface-variant font-medium">Cần xử lý ngay</p>
-      </div>
+      <StatsCard
+        title="Đang xử lý"
+        value={pending.toLocaleString()}
+        icon={<span className="material-symbols-outlined text-[24px]">hourglass_empty</span>}
+        iconBgColor="bg-warning-50 text-warning-500 dark:bg-warning-500/10 dark:text-orange-400"
+      />
 
       {/* Card 3: Doanh thu hôm nay */}
-      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] hover:shadow-lg transition-all duration-300">
-        <p className="text-label-md text-on-surface-variant font-medium">Doanh thu hôm nay</p>
-        <h3 className="text-display-lg font-display-lg text-on-background my-2 leading-none">
-          {formatCompactRevenue(todayRevenue)}
-        </h3>
-        <p className="text-label-sm text-on-surface-variant font-medium">VNĐ ({formatCurrency(todayRevenue)})</p>
-      </div>
+      <StatsCard
+        title="Doanh thu hôm nay"
+        value={formatCompactRevenue(todayRevenue)}
+        icon={<span className="material-symbols-outlined text-[24px]">payments</span>}
+        iconBgColor="bg-success-50 text-success-500 dark:bg-success-500/10 dark:text-success-400"
+        trend={formatCurrency(todayRevenue)}
+        trendType="neutral"
+      />
 
       {/* Card 4: Đơn hàng bị hủy */}
-      <div className="bg-primary text-on-primary p-md rounded-lg shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all duration-300 min-h-[160px]">
-        <div>
-          <p className="text-label-md opacity-90 font-medium">Đơn hàng bị hủy</p>
-          <h3 className="text-display-lg font-display-lg my-1 leading-none text-white">
+      <div className="bg-brand-500 dark:bg-brand-600 text-white p-6 rounded-[2rem] shadow-theme-xs flex flex-col justify-between hover:shadow-theme-md transition-shadow duration-300 min-h-[160px]">
+        <div className="flex justify-between items-start">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/20 text-white">
+            <span className="material-symbols-outlined text-[24px]">cancel</span>
+          </div>
+          {onViewRequests && (
+            <Button
+              onClick={onViewRequests}
+              variant="outline"
+              size="sm"
+              className="!bg-white/10 !text-white hover:!bg-white/20 !ring-0 border-0 text-[11px] font-bold rounded-full uppercase px-3 py-1"
+            >
+              Xem yêu cầu
+            </Button>
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-white/70 text-xs font-bold uppercase tracking-widest">Đơn hàng bị hủy</p>
+          <h3 className="text-3xl font-bold text-white mt-1">
             {cancelledCount.toString().padStart(2, "0")}
           </h3>
         </div>
-        <button
-          onClick={onViewRequests}
-          className="bg-white/20 hover:bg-white/30 text-white text-label-md py-2 px-4 rounded-full transition-all text-center font-bold active:scale-95 cursor-pointer mt-2"
-        >
-          Xem yêu cầu
-        </button>
       </div>
     </div>
   );

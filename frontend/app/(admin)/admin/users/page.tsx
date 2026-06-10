@@ -7,6 +7,8 @@ import { UserStats } from "@/components/admin/users/UserStats";
 import { UserFilters } from "@/components/admin/users/UserFilters";
 import { UserTable } from "@/components/admin/users/UserTable";
 
+import Button from "@/components/admin/ui/Button";
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
@@ -65,20 +67,27 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full pb-20 font-outfit">
       {/* Header Section */}
-      <header className="mb-lg flex items-center justify-between">
+      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý người dùng</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant/70">Theo dõi và kiểm soát tài khoản người dùng</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-white/90">
+            Quản lý người dùng
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Theo dõi và kiểm soát tài khoản người dùng của hệ thống
+          </p>
         </div>
-        <button className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold">
-          <span className="material-symbols-outlined">file_export</span>
+        <Button
+          variant="secondary"
+          className="rounded-full font-bold text-xs"
+          startIcon={<span className="material-symbols-outlined text-sm">file_export</span>}
+        >
           Xuất dữ liệu
-        </button>
+        </Button>
       </header>
       
-      <div className="space-y-lg">
+      <div className="space-y-8">
         <UserStats stats={stats} />
         
         <UserFilters 
@@ -99,4 +108,4 @@ export default function AdminUsersPage() {
       </div>
     </div>
   );
-}
+}

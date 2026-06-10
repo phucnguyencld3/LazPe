@@ -27,6 +27,13 @@ import {
   ChevronDown, ChevronUp
 } from "lucide-react";
 import { Pagination } from "@/components/admin/shared/Pagination";
+import Button from "@/components/admin/ui/Button";
+import Input from "@/components/admin/ui/Input";
+import TextArea from "@/components/admin/ui/TextArea";
+import Badge from "@/components/admin/ui/Badge";
+import Modal from "@/components/admin/ui/Modal";
+import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/admin/ui/Table";
+import { Card, StatsCard } from "@/components/admin/ui/Card";
 
 export default function AdminReviewsPage() {
   const [activeTab, setActiveTab] = useState<"moderation" | "approved" | "rejected" | "settings" | "analytics" | "keywords">("moderation");
@@ -1334,338 +1341,344 @@ export default function AdminReviewsPage() {
       )}
 
       {/* Add / Edit Keyword Modal */}
-      {showAddKeywordModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="p-6 flex items-center justify-between border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
-                  <span className="material-symbols-outlined">key</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-800">
-                  {editingKeyword ? "Cập nhật từ khóa" : "Thêm từ khóa vi phạm"}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowAddKeywordModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-slate-400 text-[20px]">close</span>
-              </button>
+      <Modal
+        isOpen={showAddKeywordModal}
+        onClose={() => setShowAddKeywordModal(false)}
+        showCloseButton={false}
+        className="max-w-[450px] !p-0 overflow-hidden"
+      >
+        {/* Header */}
+        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+              <span className="material-symbols-outlined">key</span>
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+              {editingKeyword ? "Cập nhật từ khóa" : "Thêm từ khóa vi phạm"}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddKeywordModal(false)}
+            className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-slate-400 text-[20px]">close</span>
+          </button>
+        </div>
+
+        {/* Body */}
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          if (!keywordWord.trim()) {
+            toast.error("Vui lòng nhập từ khóa.");
+            return;
+          }
+          setSubmittingKeyword(true);
+          try {
+            let res;
+            if (editingKeyword) {
+              res = await updateReviewSensitiveKeyword(editingKeyword.keywordID, {
+                word: keywordWord.trim(),
+                severity: keywordSeverity,
+                category: keywordCategory
+              });
+            } else {
+              res = await createReviewSensitiveKeyword({
+                word: keywordWord.trim(),
+                severity: keywordSeverity,
+                category: keywordCategory
+              });
+            }
+
+            if (res.success) {
+              toast.success(res.message);
+              setShowAddKeywordModal(false);
+              fetchKeywords();
+            } else {
+              toast.error(res.message);
+            }
+          } catch (err) {
+            toast.error("Lỗi kết nối.");
+          } finally {
+            setSubmittingKeyword(false);
+          }
+        }}>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-650 block dark:text-gray-300">Từ khóa vi phạm</label>
+              <Input
+                type="text"
+                value={keywordWord}
+                onChange={(e) => setKeywordWord(e.target.value)}
+                placeholder="Ví dụ: lừa đảo, cùi bắp, shop ngu..."
+                required
+              />
             </div>
 
-            {/* Body */}
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              if (!keywordWord.trim()) {
-                toast.error("Vui lòng nhập từ khóa.");
-                return;
-              }
-              setSubmittingKeyword(true);
-              try {
-                let res;
-                if (editingKeyword) {
-                  res = await updateReviewSensitiveKeyword(editingKeyword.keywordID, {
-                    word: keywordWord.trim(),
-                    severity: keywordSeverity,
-                    category: keywordCategory
-                  });
-                } else {
-                  res = await createReviewSensitiveKeyword({
-                    word: keywordWord.trim(),
-                    severity: keywordSeverity,
-                    category: keywordCategory
-                  });
-                }
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-650 block dark:text-gray-300">Mức độ vi phạm</label>
+              <Input
+                options={[
+                  { value: "Warning", label: "⚠️ Warning (Nhẹ - gắn cờ cần xem xét)" },
+                  { value: "Medium", label: "🚫 Medium (Trung bình - tạm ẩn)" },
+                  { value: "Critical", label: "❌ Critical (Nghiêm trọng - từ chối ngay)" }
+                ]}
+                value={keywordSeverity}
+                onChange={(e) => setKeywordSeverity(e.target.value)}
+                className="cursor-pointer font-bold"
+              />
+            </div>
 
-                if (res.success) {
-                  toast.success(res.message);
-                  setShowAddKeywordModal(false);
-                  fetchKeywords();
-                } else {
-                  toast.error(res.message);
-                }
-              } catch (err) {
-                toast.error("Lỗi kết nối.");
-              } finally {
-                setSubmittingKeyword(false);
-              }
-            }}>
-              <div className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-600 block">Từ khóa vi phạm</label>
-                  <input
-                    type="text"
-                    value={keywordWord}
-                    onChange={(e) => setKeywordWord(e.target.value)}
-                    placeholder="Ví dụ: lừa đảo, cùi bắp, shop ngu..."
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    required
-                  />
-                </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-650 block dark:text-gray-300">Phân loại danh mục</label>
+              <Input
+                options={[
+                  { value: "Abuse", label: "Abuse (Xúc phạm)" },
+                  { value: "Vulgarity", label: "Vulgarity (Từ ngữ tục tĩu)" },
+                  { value: "Spam", label: "Spam (Spam quảng cáo)" },
+                  { value: "Phone", label: "Phone (Số điện thoại)" },
+                  { value: "Link", label: "Link (Website, Zalo, Telegram...)" },
+                  { value: "Scam", label: "Scam (Nội dung lừa đảo)" },
+                  { value: "Violations", label: "Violations (Vi phạm nguyên tắc cộng đồng)" }
+                ]}
+                value={keywordCategory}
+                onChange={(e) => setKeywordCategory(e.target.value)}
+                className="cursor-pointer font-bold"
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-600 block">Mức độ vi phạm</label>
-                  <select
-                    value={keywordSeverity}
-                    onChange={(e) => setKeywordSeverity(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-                  >
-                    <option value="Warning">⚠️ Warning (Nhẹ - gắn cờ cần xem xét)</option>
-                    <option value="Medium">🚫 Medium (Trung bình - tạm ẩn)</option>
-                    <option value="Critical">❌ Critical (Nghiêm trọng - từ chối ngay)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-600 block">Phân loại danh mục</label>
-                  <select
-                    value={keywordCategory}
-                    onChange={(e) => setKeywordCategory(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-                  >
-                    <option value="Abuse">Abuse (Xúc phạm)</option>
-                    <option value="Vulgarity">Vulgarity (Từ ngữ tục tĩu)</option>
-                    <option value="Spam">Spam (Spam quảng cáo)</option>
-                    <option value="Phone">Phone (Số điện thoại)</option>
-                    <option value="Link">Link (Website, Zalo, Telegram...)</option>
-                    <option value="Scam">Scam (Nội dung lừa đảo)</option>
-                    <option value="Violations">Violations (Vi phạm nguyên tắc cộng đồng)</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddKeywordModal(false)}
-                    className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingKeyword}
-                    className="px-5 py-2.5 rounded-full bg-primary hover:bg-primary/95 text-white font-bold text-xs cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  >
-                    {submittingKeyword ? "Đang xử lý..." : "Xác nhận lưu"}
-                  </button>
-                </div>
-              </div>
-            </form>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                onClick={() => setShowAddKeywordModal(false)}
+                variant="outline"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingKeyword}
+                isLoading={submittingKeyword}
+                variant="primary"
+              >
+                Xác nhận lưu
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* Lightbox Media Modal */}
-      {lightboxMedia && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="relative max-w-3xl w-full max-h-[85vh] bg-slate-900 rounded-[2rem] overflow-hidden flex flex-col justify-center items-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setLightboxMedia(null)}
-              className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-105 z-10 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[20px]">close</span>
-            </button>
-            <div className="w-full flex justify-center items-center p-6 min-h-[300px]">
-              {lightboxMedia.mediaType === "VIDEO" ? (
-                <video
-                  src={lightboxMedia.url}
-                  controls
-                  autoPlay
-                  className="max-w-full max-h-[70vh] rounded-2xl shadow-inner"
-                />
-              ) : (
+      <Modal
+        isOpen={!!lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+        showCloseButton={false}
+        className="max-w-3xl !bg-slate-900 !border-none !p-0 overflow-hidden"
+      >
+        <div className="relative max-h-[85vh] flex flex-col justify-center items-center">
+          <button
+            type="button"
+            onClick={() => setLightboxMedia(null)}
+            className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-105 z-10 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+          <div className="w-full flex justify-center items-center p-6 min-h-[300px]">
+            {lightboxMedia?.mediaType === "VIDEO" ? (
+              <video
+                src={lightboxMedia.url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[70vh] rounded-2xl shadow-inner"
+              />
+            ) : (
+              lightboxMedia && (
                 <img
                   src={lightboxMedia.url}
                   alt="Full preview"
                   className="max-w-full max-h-[70vh] object-contain rounded-2xl"
                 />
-              )}
-            </div>
+              )
+            )}
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Moderation Censorship Input Modal */}
       {selectedReviewForCensorship && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[520px] shrink-0 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="p-6 flex items-center justify-between border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${censorshipAction === "HIDE" ? "bg-rose-100 text-error" : "bg-emerald-100 text-secondary"
-                  }`}>
-                  <span className="material-symbols-outlined text-[24px]">
-                    {censorshipAction === "HIDE" ? "visibility_off" : "check_circle"}
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">
-                  {censorshipAction === "HIDE" ? "Không duyệt đánh giá" : "Duyệt hiển thị đánh giá"}
-                </h3>
+        <Modal
+          isOpen={!!selectedReviewForCensorship}
+          onClose={() => setSelectedReviewForCensorship(null)}
+          showCloseButton={false}
+          className="max-w-[520px] !p-0 overflow-hidden"
+        >
+          {/* Header */}
+          <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${censorshipAction === "HIDE" ? "bg-rose-100 text-error" : "bg-emerald-100 text-secondary"}`}>
+                <span className="material-symbols-outlined text-[24px]">
+                  {censorshipAction === "HIDE" ? "visibility_off" : "check_circle"}
+                </span>
               </div>
-              <button
-                onClick={() => setSelectedReviewForCensorship(null)}
-                className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-slate-400 text-[24px]">close</span>
-              </button>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white">
+                {censorshipAction === "HIDE" ? "Không duyệt đánh giá" : "Duyệt hiển thị đánh giá"}
+              </h3>
             </div>
-
-            {/* Body & Form */}
-            <form onSubmit={handleCensorshipSubmit}>
-              <div className="p-6 space-y-5">
-                <p className="text-slate-500 text-sm md:text-base leading-relaxed">
-                  {censorshipAction === "HIDE"
-                    ? "Đánh giá bị không duyệt (ẩn) sẽ không xuất hiện trên trang sản phẩm. Điểm thưởng Loyalty liên quan sẽ không được cộng hoặc bị thu hồi."
-                    : "Duyệt hiển thị lại bài đánh giá trên trang chi tiết sản phẩm cho mọi khách hàng."}
-                </p>
-
-                {censorshipAction === "HIDE" && (
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 block">Lý do ẩn có sẵn</label>
-                      <select
-                        value={selectedPresetReason}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSelectedPresetReason(val);
-                          if (val !== "CUSTOM") {
-                            const found = presetReasons.find(p => p.value === val);
-                            if (found) setCensorshipReason(found.label);
-                          } else {
-                            setCensorshipReason("");
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm md:text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-                      >
-                        {presetReasons.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 block">Nội dung lý do chi tiết</label>
-                      <textarea
-                        rows={3}
-                        value={censorshipReason}
-                        onChange={(e) => setCensorshipReason(e.target.value)}
-                        disabled={selectedPresetReason !== "CUSTOM"}
-                        placeholder="Ví dụ: Đánh giá chứa nội dung thô tục, spam link bán hàng khác hoặc không có nội dung trải nghiệm thực tế..."
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm md:text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-slate-50 disabled:text-slate-450"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReviewForCensorship(null)}
-                    className="px-6 py-3 rounded-full border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold text-sm cursor-pointer transition-colors"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingCensorship}
-                    className={`px-6 py-3 rounded-full text-white font-bold text-sm flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 ${censorshipAction === "HIDE" ? "bg-error hover:bg-error/90" : "bg-emerald-500 hover:bg-emerald-650"
-                      }`}
-                  >
-                    {submittingCensorship ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                        <span>Đang xử lý...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[18px]">
-                          {censorshipAction === "HIDE" ? "visibility_off" : "check_circle"}
-                        </span>
-                        <span>Xác nhận thực hiện</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
+            <button
+              type="button"
+              onClick={() => setSelectedReviewForCensorship(null)}
+              className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-slate-400 text-[24px]">close</span>
+            </button>
           </div>
-        </div>
+
+          {/* Body & Form */}
+          <form onSubmit={handleCensorshipSubmit}>
+            <div className="p-6 space-y-5">
+              <p className="text-slate-500 dark:text-gray-400 text-sm md:text-base leading-relaxed">
+                {censorshipAction === "HIDE"
+                  ? "Đánh giá bị không duyệt (ẩn) sẽ không xuất hiện trên trang sản phẩm. Điểm thưởng Loyalty liên quan sẽ không được cộng hoặc bị thu hồi."
+                  : "Duyệt hiển thị lại bài đánh giá trên trang chi tiết sản phẩm cho mọi khách hàng."}
+              </p>
+
+              {censorshipAction === "HIDE" && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-700 dark:text-gray-300 block">Lý do ẩn có sẵn</label>
+                    <Input
+                      options={presetReasons}
+                      value={selectedPresetReason}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedPresetReason(val);
+                        if (val !== "CUSTOM") {
+                          const found = presetReasons.find(p => p.value === val);
+                          if (found) setCensorshipReason(found.label);
+                        } else {
+                          setCensorshipReason("");
+                        }
+                      }}
+                      className="cursor-pointer font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-700 dark:text-gray-300 block">Nội dung lý do chi tiết</label>
+                    <TextArea
+                      rows={3}
+                      value={censorshipReason}
+                      onChange={(e) => setCensorshipReason(e.target.value)}
+                      disabled={selectedPresetReason !== "CUSTOM"}
+                      placeholder="Ví dụ: Đánh giá chứa nội dung thô tục, spam link bán hàng khác hoặc không có nội dung trải nghiệm thực tế..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setSelectedReviewForCensorship(null)}
+                  variant="outline"
+                >
+                  Hủy bỏ
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingCensorship}
+                  isLoading={submittingCensorship}
+                  variant={censorshipAction === "HIDE" ? "danger" : "success"}
+                  startIcon={
+                    <span className="material-symbols-outlined text-[18px]">
+                      {censorshipAction === "HIDE" ? "visibility_off" : "check_circle"}
+                    </span>
+                  }
+                >
+                  Xác nhận thực hiện
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Censorship Logs View Modal */}
       {selectedReviewForLogs && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="p-6 flex items-center justify-between border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
-                  <span className="material-symbols-outlined">history</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-800">
-                  Lịch sử kiểm duyệt đánh giá #{selectedReviewForLogs.reviewID}
-                </h3>
+        <Modal
+          isOpen={!!selectedReviewForLogs}
+          onClose={() => setSelectedReviewForLogs(null)}
+          showCloseButton={false}
+          className="max-w-[500px] !p-0 overflow-hidden"
+        >
+          {/* Header */}
+          <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined">history</span>
               </div>
-              <button
-                onClick={() => setSelectedReviewForLogs(null)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-slate-400 text-[20px]">close</span>
-              </button>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+                Lịch sử kiểm duyệt đánh giá #{selectedReviewForLogs.reviewID}
+              </h3>
             </div>
-
-            {/* Body */}
-            <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
-              {loadingLogs ? (
-                <div className="py-8 flex flex-col justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
-                  <span className="text-slate-400 text-xs font-bold mt-2">Đang tải lịch sử...</span>
-                </div>
-              ) : censorshipLogs.length > 0 ? (
-                <div className="space-y-4 relative border-l-2 border-slate-100 pl-4 ml-2.5">
-                  {censorshipLogs.map((log) => (
-                    <div key={log.logID} className="relative space-y-1">
-                      {/* Timeline dot */}
-                      <span className={`absolute -left-[23px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white ${log.action === "HIDE" ? "bg-red-500" : "bg-emerald-500"
-                        }`} />
-
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase">
-                        <span className={log.action === "HIDE" ? "text-red-500" : "text-emerald-500"}>
-                          {log.action === "HIDE" ? "ẨN ĐÁNH GIÁ" : "HIỂN THỊ LẠI"}
-                        </span>
-                        <span>•</span>
-                        <span>{new Date(log.timestamp).toLocaleString("vi-VN")}</span>
-                      </div>
-
-                      <div className="text-xs font-semibold text-slate-700">
-                        Thực hiện bởi: <strong className="font-bold">{log.actorName}</strong>
-                      </div>
-
-                      <div className="bg-slate-50 p-2.5 rounded border border-slate-150 text-xs font-medium text-slate-500 leading-relaxed">
-                        Lý do: <span className="text-slate-700 font-bold">{log.reason}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-6 text-slate-400 font-bold text-xs">Không tìm thấy bản ghi lịch sử kiểm duyệt nào cho đánh giá này.</p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-6 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setSelectedReviewForLogs(null)}
-                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
-              >
-                Đóng lại
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedReviewForLogs(null)}
+              className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-slate-400 text-[20px]">close</span>
+            </button>
           </div>
-        </div>
+
+          {/* Body */}
+          <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+            {loadingLogs ? (
+              <div className="py-8 flex flex-col justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+                <span className="text-slate-400 text-xs font-bold mt-2">Đang tải lịch sử...</span>
+              </div>
+            ) : censorshipLogs.length > 0 ? (
+              <div className="space-y-4 relative border-l-2 border-slate-100 dark:border-slate-800 pl-4 ml-2.5">
+                {censorshipLogs.map((log) => (
+                  <div key={log.logID} className="relative space-y-1">
+                    {/* Timeline dot */}
+                    <span className={`absolute -left-[23px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-900 ${log.action === "HIDE" ? "bg-red-500" : "bg-emerald-500"}`} />
+
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase">
+                      <span className={log.action === "HIDE" ? "text-red-500" : "text-emerald-500"}>
+                        {log.action === "HIDE" ? "ẨN ĐÁNH GIÁ" : "HIỂN THỊ LẠI"}
+                      </span>
+                      <span>•</span>
+                      <span>{new Date(log.timestamp).toLocaleString("vi-VN")}</span>
+                    </div>
+
+                    <div className="text-xs font-semibold text-slate-700 dark:text-gray-300">
+                      Thực hiện bởi: <strong className="font-bold">{log.actorName}</strong>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-gray-800 p-2.5 rounded border border-slate-150 dark:border-slate-700 text-xs font-medium text-slate-500 leading-relaxed">
+                      Lý do: <span className="text-slate-700 dark:text-gray-300 font-bold">{log.reason}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-6 text-slate-400 font-bold text-xs">Không tìm thấy bản ghi lịch sử kiểm duyệt nào cho đánh giá này.</p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <Button
+              onClick={() => setSelectedReviewForLogs(null)}
+              variant="outline"
+            >
+              Đóng lại
+            </Button>
+          </div>
+        </Modal>
       )}
+
     </main>
   );
 }
