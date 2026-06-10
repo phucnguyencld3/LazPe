@@ -144,6 +144,7 @@ try
         options.JsonSerializerOptions.DefaultIgnoreCondition =
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.Converters.Add(new PolyBabyAPI.Helpers.CustomDateTimeConverter());
     });
 
     // API Controllers và Swagger
@@ -234,6 +235,7 @@ try
     builder.Services.AddSignalR().AddJsonProtocol(options =>
     {
         options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.PayloadSerializerOptions.Converters.Add(new PolyBabyAPI.Helpers.CustomDateTimeConverter());
     });
     builder.Services.AddHostedService<ChatCleanupService>();
 

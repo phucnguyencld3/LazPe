@@ -1,61 +1,106 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Header from "@/components/client/layout/Header";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { CartProvider } from "@/context/CartContext";
 import CustomerChatWidget from "@/components/client/CustomerChatWidget";
+import { getValidToken } from "@/lib/utils/auth";
 
 export default function ClientLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const checkClientAccess = () => {
+      const token = getValidToken();
+      if (!token) return;
+
+      const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (savedUserJson) {
+        try {
+          const user = JSON.parse(savedUserJson);
+          const roles = user?.roles || [];
+          const permissions = user?.permissions || [];
+
+          // Chặn Admin và toàn bộ tài khoản có các quyền được gán truy cập vào trang client
+          const hasAdminAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
+
+          if (hasAdminAccess) {
+            setIsAdmin(true);
+            window.location.replace("/admin");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+
+    checkClientAccess();
+  }, [pathname]);
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-500"></div>
+      </div>
+    );
+  }
+
   return (
     <WishlistProvider>
       <CartProvider>
         <div className="min-h-screen bg-white text-slate-900 client-scaled-layout">
           <Header />
-          <main className="pt-20">{children}</main>
+          <main className="pt-20 w-full">{children}</main>
           <CustomerChatWidget />
-      <footer className="border-t border-slate-200 bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-center">
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-4">Về chúng tôi</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-slate-900">Giới thiệu</a></li>
-                <li><a href="#" className="hover:text-slate-900">Công ty</a></li>
-                <li><a href="#" className="hover:text-slate-900">Tin tức</a></li>
-              </ul>
+          <footer className="border-t border-slate-200 bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-center">
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-4">Về chúng tôi</h3>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li><a href="#" className="hover:text-slate-900">Giới thiệu</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Công ty</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Tin tức</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-4">Hỗ trợ</h3>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li><a href="#" className="hover:text-slate-900">Liên hệ</a></li>
+                    <li><a href="#" className="hover:text-slate-900">FAQ</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Chính sách</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-4">Pháp lý</h3>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li><a href="#" className="hover:text-slate-900">Điều khoản</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Quyền riêng tư</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Cookies</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-4">Theo dõi</h3>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li><a href="#" className="hover:text-slate-900">Facebook</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Instagram</a></li>
+                    <li><a href="#" className="hover:text-slate-900">Twitter</a></li>
+                  </ul>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-8 text-center text-sm text-slate-600">
+                <p>&copy; 2026 LazPe. Tất cả quyền được bảo vệ.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-4">Hỗ trợ</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-slate-900">Liên hệ</a></li>
-                <li><a href="#" className="hover:text-slate-900">FAQ</a></li>
-                <li><a href="#" className="hover:text-slate-900">Chính sách</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-4">Pháp lý</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-slate-900">Điều khoản</a></li>
-                <li><a href="#" className="hover:text-slate-900">Quyền riêng tư</a></li>
-                <li><a href="#" className="hover:text-slate-900">Cookies</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-4">Theo dõi</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-slate-900">Facebook</a></li>
-                <li><a href="#" className="hover:text-slate-900">Instagram</a></li>
-                <li><a href="#" className="hover:text-slate-900">Twitter</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-slate-200 pt-8 text-center text-sm text-slate-600">
-            <p>&copy; 2026 LazPe. Tất cả quyền được bảo vệ.</p>
-          </div>
-        </div>
-      </footer>
+          </footer>
         </div>
       </CartProvider>
     </WishlistProvider>

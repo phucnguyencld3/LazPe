@@ -107,11 +107,11 @@ export async function getProductDetail(id: number): Promise<Product | null> {
       const activeVariants = variants.filter((v: any) => v.status !== false);
       const minPrice = activeVariants.length > 0 ? Math.min(...activeVariants.map((v: any) => v.unitPrice ?? 0)) : (item.price ?? 0);
       const maxPrice = activeVariants.length > 0 ? Math.max(...activeVariants.map((v: any) => v.unitPrice ?? 0)) : (item.price ?? 0);
-      const minEffectivePrice = activeVariants.length > 0 
-        ? Math.min(...activeVariants.map((v: any) => v.finalPrice ?? v.unitPrice ?? 0)) 
+      const minEffectivePrice = activeVariants.length > 0
+        ? Math.min(...activeVariants.map((v: any) => v.finalPrice ?? v.unitPrice ?? 0))
         : (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined);
-      const maxEffectivePrice = activeVariants.length > 0 
-        ? Math.max(...activeVariants.map((v: any) => v.finalPrice ?? v.unitPrice ?? 0)) 
+      const maxEffectivePrice = activeVariants.length > 0
+        ? Math.max(...activeVariants.map((v: any) => v.finalPrice ?? v.unitPrice ?? 0))
         : (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined);
       const variantCount = variants.length;
 
@@ -230,9 +230,7 @@ export async function collectVoucher(id: number): Promise<{ success: boolean; me
   }
 }
 
-// =============================================
 // USER PROFILE APIs
-// =============================================
 
 export interface UserProfile {
   userId: string;
@@ -356,9 +354,177 @@ export async function uploadAvatar(
   }
 }
 
-// =============================================
+// 2FA (TWO-FACTOR AUTHENTICATION) APIs
+
+export interface TwoFaStatusResponse {
+  success: boolean;
+  isEnabled: boolean;
+  providers: string[];
+  message?: string;
+}
+
+export async function get2FaStatus(token: string): Promise<TwoFaStatusResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-status`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting 2FA status:", error);
+    return null;
+  }
+}
+
+export async function setupAuthenticator(token: string): Promise<{ success: boolean; sharedKey?: string; qrCodeUri?: string; message?: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-setup-authenticator`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error setting up authenticator:", error);
+    return null;
+  }
+}
+
+export async function enableAuthenticator(token: string, code: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-enable-authenticator`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ code }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error enabling authenticator:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function setupEmail2Fa(token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-setup-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error setting up email 2FA:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function enableEmail2Fa(token: string, code: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-enable-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ code }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error enabling email 2FA:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function disable2Fa(token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-disable`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error disabling 2FA:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function send2FaLoginEmailOtp(userId: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-send-email-login-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error sending 2FA login email OTP:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
+export async function verify2FaLogin(
+  userId: string,
+  code: string,
+  provider: string
+): Promise<{ success: boolean; token?: string; user?: any; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/2fa-verify-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId, code, provider }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      token: result.token,
+      user: result.user,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error("Error verifying 2FA login:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
 // ADDRESS MANAGEMENT APIs
-// =============================================
 
 export interface AddressItem {
   addressID: number;
@@ -568,9 +734,7 @@ export async function deleteAddress(addressId: number, token: string): Promise<{
   }
 }
 
-// =============================================
 // CART APIs
-// =============================================
 
 export interface ProductCartInfo {
   productID: number;
@@ -1236,9 +1400,7 @@ export async function submitProductReview(
   }
 }
 
-// =============================================
 // LOYALTY PROGRAM APIs
-// =============================================
 
 export interface LoyaltyProfileResponse {
   userID: string;
@@ -1495,9 +1657,7 @@ export async function updateLoyaltySettings(
   }
 }
 
-// =============================================
 // NOTIFICATION CENTER APIs
-// =============================================
 
 export interface UserNotificationItem {
   id: number;
@@ -1851,9 +2011,7 @@ export async function adminDeleteTemplate(token: string, id: number): Promise<{ 
   }
 }
 
-// =============================================
 // PRODUCT REVIEW APIs
-// =============================================
 
 export interface ReviewMedia {
   mediaID: number;

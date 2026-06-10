@@ -16,8 +16,10 @@ export default function AdminLayout({
 }>) {
   const [isAuth, setIsAuth] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Notifications states
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
@@ -31,6 +33,16 @@ export default function AdminLayout({
       setToken(currentToken);
       if (!currentToken) {
         setIsAuth(false);
+        setUser(null);
+      } else {
+        const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (savedUserJson) {
+          try {
+            setUser(JSON.parse(savedUserJson));
+          } catch (e) {
+            console.error("Error parsing user from storage:", e);
+          }
+        }
       }
     };
 
@@ -180,16 +192,19 @@ export default function AdminLayout({
         }
 
         const data = await res.json();
-        const user = data.user;
-        const roles = user?.roles || [];
-        const permissions = user?.permissions || [];
-        const hasDashboardAccess = user?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
+        const apiUser = data.user;
+        const roles = apiUser?.roles || [];
+        const permissions = apiUser?.permissions || [];
+        const hasDashboardAccess = apiUser?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
         if (!data.success || !hasDashboardAccess) {
           clearAuth();
           window.location.replace("/login");
         } else {
           setIsAuth(true);
+          setUser(apiUser);
+          const storage = localStorage.getItem("token") ? localStorage : sessionStorage;
+          storage.setItem("user", JSON.stringify(apiUser));
         }
       } catch (e) {
         clearAuth();
@@ -202,6 +217,10 @@ export default function AdminLayout({
   const isActive = (path: string) => {
     if (path === "/admin" && pathname !== "/admin") return false;
     return pathname?.startsWith(path);
+  };
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
   };
 
   if (!isAuth) {
@@ -308,13 +327,23 @@ export default function AdminLayout({
             )}
           </div>
           <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
-          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container">
-            <img 
-              alt="Admin Profile Avatar" 
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtn-RPABrqyfAIk-Bol7wq_PAmzFO0RQccPYAVIGJTLXZIE2ypug3FJrFdrIcoxyyEIp0oSyNMKOHGT-aT-oDTQSI8g3dEYp7O9MYI5prps_co8yfSkh_Cu1n-lmp7QN_H_Fg-n1KONZK_cby4aQzkl4hykD5fFHyXAhB3Ci-nKb2yI5Jlty1I9JIDwnrT_GBkPsYDSKSeyt_birkk1ZG507kN25QVu7lzA5MoOOQ1iHkIJActwwm73iL00BYzLL0xa58jmYVecLco" 
-            />
-          </div>
+          <Link href="/admin/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center">
+              {user?.avatar ? (
+                <img 
+                  alt="Admin Profile Avatar" 
+                  className="w-full h-full object-cover"
+                  src={user.avatar} 
+                />
+              ) : (
+                <span className="material-symbols-outlined text-slate-500">person</span>
+              )}
+            </div>
+            <div className="hidden md:flex flex-col items-start leading-none text-left">
+              <span className="text-xs font-bold text-slate-800">{user?.fullName || "Quản trị viên"}</span>
+              <span className="text-[10px] text-slate-500 mt-0.5">{user?.email || "admin@lazpe.com"}</span>
+            </div>
+          </Link>
         </div>
       </header>
 
@@ -393,6 +422,13 @@ export default function AdminLayout({
               >
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
                 <span className="font-label-md">Phân quyền</span>
+              </Link>
+              <Link
+                href="/admin/profile"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">account_circle</span>
+                <span className="font-label-md">Hồ sơ cá nhân</span>
               </Link>
             </div>
 
@@ -476,10 +512,17 @@ export default function AdminLayout({
             </div>
           </nav>
           
-          <div className="mt-auto px-4 pb-md pt-md">
-            <button className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md transition-transform">
+          <div className="mt-auto px-4 pb-md pt-md space-y-2">
+            <button className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md transition-transform cursor-pointer">
               <span className="material-symbols-outlined text-sm">help</span>
               Trung tâm hỗ trợ
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md shadow-rose-500/10 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">logout</span>
+              Đăng xuất
             </button>
           </div>
         </aside>
@@ -501,6 +544,43 @@ export default function AdminLayout({
           </footer>
         </main>
       </div>
+
+      {/* Custom Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-[420px] max-w-full p-8 border border-slate-100 shadow-2xl space-y-7 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-3xl">logout</span>
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-800">Xác nhận đăng xuất</h3>
+              <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị LazPe không?
+              </p>
+            </div>
+            
+            <div className="flex gap-4 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  clearAuth();
+                  window.location.replace("/login");
+                }}
+                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
