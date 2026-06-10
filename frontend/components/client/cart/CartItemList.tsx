@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus, Bolt, AlertCircle } from "lucide-react";
 import { CartInfo, CartDetailInfo } from "@/lib/api";
+import { getCurrentFlashSale, FlashSaleResponseDto } from "@/lib/features/flash-sales/flashSaleApi";
 
 interface CartItemListProps {
   cart: CartInfo;
@@ -26,6 +27,22 @@ export const CartItemList: React.FC<CartItemListProps> = ({
   handleUpdateQuantity,
   handleRemoveItem,
 }) => {
+  const [activeFlashSale, setActiveFlashSale] = useState<FlashSaleResponseDto | null>(null);
+
+  useEffect(() => {
+    const fetchFlashSale = async () => {
+      try {
+        const sale = await getCurrentFlashSale();
+        if (sale && sale.isActive && sale.status === 1) {
+          setActiveFlashSale(sale);
+        }
+      } catch (err) {
+        console.error("Cart flash sale fetch error:", err);
+      }
+    };
+    fetchFlashSale();
+  }, []);
+
   return (
     <div className="lg:col-span-8 space-y-md">
       {/* Bulk Actions Bar */}
@@ -72,6 +89,31 @@ export const CartItemList: React.FC<CartItemListProps> = ({
             ? "Gói Combo sản phẩm" 
             : `Phân loại: ${detail.variant?.color || "Tiêu chuẩn"}${detail.variant?.size ? ` - Cỡ: ${detail.variant.size}` : ""}`;
 
+          // Flash Sale checking
+          const flashSaleItem = activeFlashSale?.flashSaleItems.find((item) => {
+            if (detail.bundleID && item.itemType === 3 && item.referenceId === detail.bundleID) return true;
+            if (detail.variantID && item.itemType === 2 && item.referenceId === detail.variantID) return true;
+            if (detail.product?.productID && item.itemType === 1 && item.referenceId === detail.product.productID) return true;
+            return false;
+          });
+
+          const maxAllowedQuantity = (() => {
+            let limit = 99;
+            if (flashSaleItem) {
+              const remainingSaleQty = flashSaleItem.totalQuantity - flashSaleItem.soldQuantity;
+              limit = remainingSaleQty;
+              if (flashSaleItem.maxQuantityPerUser > 0) {
+                limit = Math.min(limit, flashSaleItem.maxQuantityPerUser);
+              }
+            }
+            return Math.max(1, limit);
+          })();
+
+          const isQtyExceeded = flashSaleItem && (
+            detail.quantity > (flashSaleItem.totalQuantity - flashSaleItem.soldQuantity) || 
+            (flashSaleItem.maxQuantityPerUser > 0 && detail.quantity > flashSaleItem.maxQuantityPerUser)
+          );
+
           return (
             <div
               key={detail.cartDetailID}
@@ -114,12 +156,31 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                     </Link>
                   )}
                 </h3>
-                <p className="text-on-surface-variant text-xs font-semibold bg-slate-50 px-2 py-0.5 rounded inline-block">
-                  {subtext}
-                </p>
+                
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <p className="text-on-surface-variant text-xs font-semibold bg-slate-50 px-2 py-0.5 rounded inline-block">
+                    {subtext}
+                  </p>
+                  {flashSaleItem && (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-white bg-gradient-to-r from-rose-600 to-orange-500 px-2 py-0.5 rounded shadow-sm">
+                      <Bolt size={8} className="fill-white animate-pulse" /> FLASH SALE
+                    </span>
+                  )}
+                </div>
+
                 <p className="text-rose-500 font-extrabold text-base pt-1">
                   ₫{price.toLocaleString("vi-VN")}
                 </p>
+
+                {isQtyExceeded && (
+                  <div className="text-[10px] text-rose-500 font-bold flex items-center justify-center sm:justify-start gap-1 mt-1 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-1 w-fit mx-auto sm:mx-0">
+                    <AlertCircle size={12} />
+                    {flashSaleItem.maxQuantityPerUser > 0 && detail.quantity > flashSaleItem.maxQuantityPerUser
+                      ? `Tối đa ${flashSaleItem.maxQuantityPerUser} sản phẩm được mua trong Flash Sale!`
+                      : "Vượt quá số lượng Flash Sale còn lại!"
+                    }
+                  </div>
+                )}
               </div>
 
               {/* Quantity & Delete Actions */}
@@ -136,7 +197,8 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   </span>
                   <button
                     onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
+                    disabled={flashSaleItem && detail.quantity >= maxAllowedQuantity}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus size={12} />
                   </button>

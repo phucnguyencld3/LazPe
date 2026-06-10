@@ -1,0 +1,142 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+
+export enum FlashSaleItemType {
+  Product = 1,
+  Variant = 2,
+  Bundle = 3
+}
+
+export enum FlashSaleStatus {
+  Upcoming = 0,
+  Active = 1,
+  Ended = 2
+}
+
+export interface CreateFlashSaleItemDto {
+  itemType: FlashSaleItemType;
+  referenceId: number;
+  discountPrice: number;
+  totalQuantity: number;
+  maxQuantityPerUser: number;
+}
+
+export interface CreateFlashSaleDto {
+  name: string;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  flashSaleItems: CreateFlashSaleItemDto[];
+}
+
+export interface UpdateFlashSaleDto {
+  name: string;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  flashSaleItems: CreateFlashSaleItemDto[];
+}
+
+export interface FlashSaleItemResponseDto {
+  id: number;
+  flashSaleId: number;
+  itemType: FlashSaleItemType;
+  referenceId: number;
+  itemName: string;
+  sku?: string;
+  imageUrl?: string;
+  originalPrice: number;
+  discountPrice: number;
+  totalQuantity: number;
+  soldQuantity: number;
+  maxQuantityPerUser: number;
+  productId?: number;
+}
+
+export interface FlashSaleResponseDto {
+  id: number;
+  name: string;
+  startTime: string;
+  endTime: string;
+  status: FlashSaleStatus;
+  isActive: boolean;
+  createdAt: string;
+  createdBy?: string;
+  flashSaleItems: FlashSaleItemResponseDto[];
+}
+
+// Fetch all flash sales (Admin)
+export async function getFlashSalesAdmin(token: string): Promise<FlashSaleResponseDto[]> {
+  const response = await fetch(`${API_BASE_URL}/FlashSale/admin`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error("Failed to fetch flash sales");
+  const data = await response.json();
+  return data || [];
+}
+
+// Fetch single flash sale detail (Admin)
+export async function getFlashSaleDetailAdmin(id: number, token: string): Promise<FlashSaleResponseDto> {
+  const response = await fetch(`${API_BASE_URL}/FlashSale/admin/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error("Failed to fetch flash sale detail");
+  const data = await response.json();
+  return data;
+}
+
+// Create flash sale (Admin)
+export async function createFlashSale(dto: CreateFlashSaleDto, token: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/FlashSale/admin`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(dto)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to create flash sale");
+  return data;
+}
+
+// Update flash sale (Admin)
+export async function updateFlashSale(id: number, dto: UpdateFlashSaleDto, token: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/FlashSale/admin/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(dto)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to update flash sale");
+  return data;
+}
+
+// Delete flash sale (Admin)
+export async function deleteFlashSale(id: number, token: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/FlashSale/admin/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to delete flash sale");
+  return data;
+}
+
+// Get current active flash sale (Client)
+export async function getCurrentFlashSale(): Promise<FlashSaleResponseDto | null> {
+  const response = await fetch(`${API_BASE_URL}/FlashSale/current`, {
+    headers: { "Content-Type": "application/json" }
+  });
+  if (!response.ok) return null;
+  const text = await response.text();
+  if (!text || text.trim() === "" || text === "null") return null;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse flash sale JSON:", e);
+    return null;
+  }
+}

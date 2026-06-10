@@ -106,21 +106,14 @@ namespace PolyBabyAPI.Services
                         }
 
                         existingDetail.Quantity = targetQuantity;
-                        existingDetail.UnitPrice = CalculateEffectiveVariantPrice(variant);
+                        existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
                     }
                 }
                 else if (existingDetail.BundleID.HasValue)
                 {
-                    var bundle = await _context.Bundles
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(b => b.BundleID == existingDetail.BundleID.Value);
-
-                    if (bundle != null)
-                    {
-                        var targetQuantity = existingDetail.Quantity + quantity;
-                        existingDetail.Quantity = targetQuantity;
-                        existingDetail.UnitPrice = bundle.Price ?? 0;
-                    }
+                    var targetQuantity = existingDetail.Quantity + quantity;
+                    existingDetail.Quantity = targetQuantity;
+                    existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
                 }
 
                 existingDetail.TotalPrice = existingDetail.UnitPrice * existingDetail.Quantity;
@@ -152,8 +145,6 @@ namespace PolyBabyAPI.Services
                     {
                         throw new ArgumentException($"Số lượng yêu cầu vượt tồn kho. Hiện chỉ còn {variant.Stock} sản phẩm.");
                     }
-
-                    newDetail.UnitPrice = variant != null ? CalculateEffectiveVariantPrice(variant) : 0;
                 }
                 else if (bundleId.HasValue)
                 {
@@ -163,9 +154,9 @@ namespace PolyBabyAPI.Services
                     {
                         throw new ArgumentException("Combo không tồn tại");
                     }
-
-                    newDetail.UnitPrice = bundle?.Price ?? 0;
                 }
+
+                newDetail.UnitPrice = await GetEffectivePriceAsync(variantId, bundleId);
                 
                 newDetail.TotalPrice = newDetail.UnitPrice * newDetail.Quantity;
                 _context.CartDetails.Add(newDetail);
@@ -209,14 +200,7 @@ namespace PolyBabyAPI.Services
 
                     detail.Quantity = quantity;
 
-                    if (detail.Variant != null)
-                    {
-                        detail.UnitPrice = CalculateEffectiveVariantPrice(detail.Variant);
-                    }
-                    else if (detail.Bundle != null)
-                    {
-                        detail.UnitPrice = detail.Bundle.Price ?? 0;
-                    }
+                    detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID);
 
                     detail.TotalPrice = detail.UnitPrice * quantity;
                 }
@@ -321,15 +305,7 @@ namespace PolyBabyAPI.Services
 
             foreach (var detail in cart.CartDetails)
             {
-                if (detail.Variant != null)
-                {
-                    detail.UnitPrice = CalculateEffectiveVariantPrice(detail.Variant);
-                }
-                else if (detail.Bundle != null)
-                {
-                    detail.UnitPrice = detail.Bundle.Price ?? 0;
-                }
-
+                detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID);
                 detail.TotalPrice = detail.UnitPrice * detail.Quantity;
             }
 
@@ -359,6 +335,75 @@ namespace PolyBabyAPI.Services
             if (cart.TotalAmount < 0) cart.TotalAmount = 0;
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<decimal> GetEffectivePriceAsync(int? variantId, int? bundleId)
+        {
+            var now = DateTime.Now;
+
+            if (bundleId.HasValue)
+            {
+                var flashSaleItem = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive 
+                        && fsi.FlashSale.StartTime <= now 
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Bundle 
+                        && fsi.ReferenceId == bundleId.Value
+                        && fsi.SoldQuantity < fsi.TotalQuantity)
+                    .FirstOrDefaultAsync();
+
+                if (flashSaleItem != null)
+                {
+                    return flashSaleItem.DiscountPrice;
+                }
+
+                var bundle = await _context.Bundles.FindAsync(bundleId.Value);
+                return bundle?.Price ?? 0;
+            }
+
+            if (variantId.HasValue)
+            {
+                var variant = await _context.Variants
+                    .Include(v => v.Product)
+                    .FirstOrDefaultAsync(v => v.VariantID == variantId.Value);
+                
+                if (variant == null) return 0;
+
+                var fsVariant = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive 
+                        && fsi.FlashSale.StartTime <= now 
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Variant 
+                        && fsi.ReferenceId == variantId.Value
+                        && fsi.SoldQuantity < fsi.TotalQuantity)
+                    .FirstOrDefaultAsync();
+
+                if (fsVariant != null)
+                {
+                    return fsVariant.DiscountPrice;
+                }
+
+                var fsProduct = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive 
+                        && fsi.FlashSale.StartTime <= now 
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Product 
+                        && fsi.ReferenceId == variant.ProductID
+                        && fsi.SoldQuantity < fsi.TotalQuantity)
+                    .FirstOrDefaultAsync();
+
+                if (fsProduct != null)
+                {
+                    return fsProduct.DiscountPrice;
+                }
+
+                return CalculateEffectiveVariantPrice(variant);
+            }
+
+            return 0;
         }
 
         private static decimal CalculateEffectiveVariantPrice(Variant variant)

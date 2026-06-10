@@ -78,9 +78,20 @@ namespace PolyBabyAPI.Data
         public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
         public DbSet<LoyaltySetting> LoyaltySettings { get; set; }
 
+        // ===== Flash Sale & Campaign =====
+        public DbSet<FlashSale> FlashSales { get; set; }
+        public DbSet<FlashSaleItem> FlashSaleItems { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ===== Flash Sale Relationships =====
+            builder.Entity<FlashSaleItem>()
+                .HasOne(fsi => fsi.FlashSale)
+                .WithMany(fs => fs.FlashSaleItems)
+                .HasForeignKey(fsi => fsi.FlashSaleId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ===== Province - District - Ward =====
             builder.Entity<District>()

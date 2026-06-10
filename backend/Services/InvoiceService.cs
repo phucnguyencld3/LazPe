@@ -220,12 +220,15 @@ namespace PolyBabyAPI.Services
                 };
                 invoice.InvoiceDetails.Add(detail);
 
-                // Trừ tồn kho
+                // Trừ tồn kho & Xử lý Flash Sale
                 if (item.VariantID.HasValue && item.Variant != null)
                 {
                     item.Variant.Stock -= item.Quantity;
                     _logger.LogInformation("Đã trừ {Quantity} sp từ Variant {VariantId}. Tồn kho mới: {NewStock}",
                         item.Quantity, item.Variant.VariantID, item.Variant.Stock);
+
+                    // Trừ số lượng Flash Sale (nếu có chiến dịch đang diễn ra)
+                    await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, item.VariantID.Value, null, item.Quantity);
                 }
                 else if (item.BundleID.HasValue && item.Bundle != null)
                 {
@@ -233,7 +236,7 @@ namespace PolyBabyAPI.Services
                         .Include(b => b.BundleItems)
                         .ThenInclude(bi => bi.Variant)
                         .FirstOrDefaultAsync(b => b.BundleID == item.BundleID);
-
+ 
                     if (bundle != null)
                     {
                         foreach (var bundleItem in bundle.BundleItems)
@@ -242,6 +245,9 @@ namespace PolyBabyAPI.Services
                             bundleItem.Variant.Stock -= deductQty;
                         }
                     }
+
+                    // Trừ số lượng Flash Sale Bundle
+                    await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, null, item.BundleID.Value, item.Quantity);
                 }
             }
 
@@ -663,7 +669,7 @@ namespace PolyBabyAPI.Services
                 _logger.LogWarning("Đơn hàng {InvoiceId} không có chi tiết sản phẩm để hoàn trả", invoice.InvoiceID);
                 return;
             }
-
+ 
             foreach (var detail in invoice.InvoiceDetails)
             {
                 if (detail.VariantID.HasValue && detail.Variant != null)
@@ -672,6 +678,9 @@ namespace PolyBabyAPI.Services
                     detail.Variant.Stock += detail.Quantity;
                     _logger.LogInformation("Hoàn trả {Qty} sp cho Variant {VId}. Kho: {Old} → {New}",
                         detail.Quantity, detail.Variant.VariantID, oldStock, detail.Variant.Stock);
+
+                    // Khôi phục số lượng Flash Sale đã bán
+                    await RestoreFlashSaleSoldQuantityAsync(detail.VariantID.Value, null, detail.Quantity, invoice.CreatedAt ?? DateTime.Now);
                 }
                 else if (detail.BundleID.HasValue && detail.Bundle != null)
                 {
@@ -683,9 +692,12 @@ namespace PolyBabyAPI.Services
                         _logger.LogInformation("Hoàn trả {Qty} sp cho Bundle Variant {VId}. Kho: {Old} → {New}",
                             restoreQty, bundleItem.Variant.VariantID, oldStock, bundleItem.Variant.Stock);
                     }
+
+                    // Khôi phục số lượng Flash Sale Bundle đã bán
+                    await RestoreFlashSaleSoldQuantityAsync(null, detail.BundleID.Value, detail.Quantity, invoice.CreatedAt ?? DateTime.Now);
                 }
             }
-
+ 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Hoàn trả kho thành công cho đơn {InvoiceId}", invoice.InvoiceID);
         }
@@ -766,16 +778,16 @@ namespace PolyBabyAPI.Services
         private async Task HandleLoyaltyOnCancelAsync(Invoice invoice)
         {
             if (invoice == null || string.IsNullOrEmpty(invoice.UserID)) return;
-
+ 
             try
             {
                 // 1. Thu hồi điểm đã tích lũy (nếu có)
                 await _loyaltyService.RevokePointsAsync(invoice.UserID, invoice.InvoiceID);
-
+ 
                 // 2. Tìm kiếm xem đơn hàng này có dùng điểm để thanh toán không và hoàn lại
                 var spendHistory = await _context.LoyaltyPointHistories
                     .FirstOrDefaultAsync(h => h.InvoiceID == invoice.InvoiceID && h.TransactionType == "SPEND");
-
+ 
                 if (spendHistory != null)
                 {
                     int pointsToRefund = Math.Abs(spendHistory.Amount);
@@ -787,6 +799,175 @@ namespace PolyBabyAPI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi xử lý Loyalty hoàn trả/thu hồi điểm khi hủy đơn {InvoiceId}", invoice.InvoiceID);
+            }
+        }
+
+        // ======== PRIVATE: XỬ LÝ KHẤU TRỪ VÀ KIỂM TRA FLASH SALE KHI THANH TOÁN ========
+        private async Task HandleFlashSaleCheckoutDeductionAsync(string userId, int? variantId, int? bundleId, int quantity)
+        {
+            var now = DateTime.Now;
+
+            if (bundleId.HasValue)
+            {
+                var fsItem = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive
+                        && fsi.FlashSale.StartTime <= now
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Bundle
+                        && fsi.ReferenceId == bundleId.Value)
+                    .FirstOrDefaultAsync();
+
+                if (fsItem != null)
+                {
+                    if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
+                    {
+                        throw new InvalidOperationException($"Combo sản phẩm đã đạt giới hạn số lượng Flash Sale. Chỉ còn {fsItem.TotalQuantity - fsItem.SoldQuantity} sản phẩm.");
+                    }
+
+                    if (fsItem.MaxQuantityPerUser > 0)
+                    {
+                        var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
+                        if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
+                        {
+                            throw new InvalidOperationException($"Bạn đã vượt quá số lượng mua tối đa cho Combo này trong đợt Flash Sale (Tối đa: {fsItem.MaxQuantityPerUser}).");
+                        }
+                    }
+
+                    fsItem.SoldQuantity += quantity;
+                }
+            }
+            else if (variantId.HasValue)
+            {
+                var variant = await _context.Variants.FindAsync(variantId.Value);
+                if (variant == null) return;
+
+                // Check Variant Sale
+                var fsItem = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive
+                        && fsi.FlashSale.StartTime <= now
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Variant
+                        && fsi.ReferenceId == variantId.Value)
+                    .FirstOrDefaultAsync();
+
+                // If not found, check Product Sale
+                if (fsItem == null)
+                {
+                    fsItem = await _context.FlashSaleItems
+                        .Include(fsi => fsi.FlashSale)
+                        .Where(fsi => fsi.FlashSale.IsActive
+                            && fsi.FlashSale.StartTime <= now
+                            && fsi.FlashSale.EndTime >= now
+                            && fsi.ItemType == FlashSaleItemType.Product
+                            && fsi.ReferenceId == variant.ProductID)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (fsItem != null)
+                {
+                    if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
+                    {
+                        throw new InvalidOperationException($"Sản phẩm đã đạt giới hạn số lượng Flash Sale. Chỉ còn {fsItem.TotalQuantity - fsItem.SoldQuantity} sản phẩm.");
+                    }
+
+                    if (fsItem.MaxQuantityPerUser > 0)
+                    {
+                        var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
+                        if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
+                        {
+                            throw new InvalidOperationException($"Bạn đã vượt quá số lượng mua tối đa cho sản phẩm này trong đợt Flash Sale (Tối đa: {fsItem.MaxQuantityPerUser}).");
+                        }
+                    }
+
+                    fsItem.SoldQuantity += quantity;
+                }
+            }
+        }
+
+        private async Task<int> GetUserFlashSaleBoughtCountAsync(string userId, int flashSaleItemId)
+        {
+            var fsItem = await _context.FlashSaleItems.FindAsync(flashSaleItemId);
+            if (fsItem == null) return 0;
+
+            var invoiceDetails = await _context.InvoiceDetails
+                .Include(id => id.Invoice)
+                .Where(id => id.Invoice.UserID == userId 
+                    && id.Invoice.Status != OrderStatus.Cancelled
+                    && !id.Invoice.IsDeleted)
+                .ToListAsync();
+
+            int count = 0;
+            foreach (var detail in invoiceDetails)
+            {
+                if (fsItem.ItemType == FlashSaleItemType.Bundle && detail.BundleID == fsItem.ReferenceId)
+                {
+                    count += detail.Quantity;
+                }
+                else if (fsItem.ItemType == FlashSaleItemType.Variant && detail.VariantID == fsItem.ReferenceId)
+                {
+                    count += detail.Quantity;
+                }
+                else if (fsItem.ItemType == FlashSaleItemType.Product && detail.VariantID.HasValue)
+                {
+                    var variant = await _context.Variants.FindAsync(detail.VariantID.Value);
+                    if (variant != null && variant.ProductID == fsItem.ReferenceId)
+                    {
+                        count += detail.Quantity;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        // ======== PRIVATE: KHÔI PHỤC SỐ LƯỢNG FLASH SALE KHI HỦY HÓA ĐƠN ========
+        private async Task RestoreFlashSaleSoldQuantityAsync(int? variantId, int? bundleId, int quantity, DateTime invoiceCreatedAt)
+        {
+            if (bundleId.HasValue)
+            {
+                var fsItem = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.StartTime <= invoiceCreatedAt
+                        && fsi.FlashSale.EndTime >= invoiceCreatedAt
+                        && fsi.ItemType == FlashSaleItemType.Bundle
+                        && fsi.ReferenceId == bundleId.Value)
+                    .FirstOrDefaultAsync();
+
+                if (fsItem != null)
+                {
+                    fsItem.SoldQuantity = Math.Max(0, fsItem.SoldQuantity - quantity);
+                }
+            }
+            else if (variantId.HasValue)
+            {
+                var variant = await _context.Variants.FindAsync(variantId.Value);
+                if (variant == null) return;
+
+                var fsItem = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.StartTime <= invoiceCreatedAt
+                        && fsi.FlashSale.EndTime >= invoiceCreatedAt
+                        && fsi.ItemType == FlashSaleItemType.Variant
+                        && fsi.ReferenceId == variantId.Value)
+                    .FirstOrDefaultAsync();
+
+                if (fsItem == null)
+                {
+                    fsItem = await _context.FlashSaleItems
+                        .Include(fsi => fsi.FlashSale)
+                        .Where(fsi => fsi.FlashSale.StartTime <= invoiceCreatedAt
+                            && fsi.FlashSale.EndTime >= invoiceCreatedAt
+                            && fsi.ItemType == FlashSaleItemType.Product
+                            && fsi.ReferenceId == variant.ProductID)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (fsItem != null)
+                {
+                    fsItem.SoldQuantity = Math.Max(0, fsItem.SoldQuantity - quantity);
+                }
             }
         }
     }

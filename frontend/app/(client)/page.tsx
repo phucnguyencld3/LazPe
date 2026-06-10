@@ -6,6 +6,7 @@ import { getProducts, getPublicVouchers, collectVoucher } from "@/lib/api";
 import { toast } from "@/lib/toast";
 
 import { HeroSection } from "@/components/client/home/HeroSection";
+import { FlashSaleSection } from "@/components/client/home/FlashSaleSection";
 import { VoucherSection } from "@/components/client/home/VoucherSection";
 import { ProductSection } from "@/components/client/home/ProductSection";
 import { CTASection } from "@/components/client/home/CTASection";
@@ -64,6 +65,8 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
+
+      <FlashSaleSection />
 
       <VoucherSection
         vouchers={vouchers}

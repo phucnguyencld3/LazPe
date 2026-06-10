@@ -13,6 +13,7 @@ import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto, FlashSaleStatus } from "@/lib/features/flash-sales/flashSaleApi";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -29,6 +30,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeFlashSale, setActiveFlashSale] = useState<FlashSaleResponseDto | null>(null);
 
   // UI Interactive States
   const [quantity, setQuantity] = useState(1);
@@ -81,6 +83,21 @@ export default function ProductDetailPage({ params }: PageProps) {
       fetchDetail();
     }
   }, [productId]);
+
+  // Fetch active flash sale
+  useEffect(() => {
+    const fetchFlashSale = async () => {
+      try {
+        const sale = await getCurrentFlashSale();
+        if (sale && sale.isActive) {
+          setActiveFlashSale(sale);
+        }
+      } catch (err) {
+        console.error("Failed to load product page flash sale:", err);
+      }
+    };
+    fetchFlashSale();
+  }, []);
 
   // Define helper to check if a variant option value is out of stock
   const isOptionValueOutOfStock = (optionName: string, value: string) => {
@@ -148,6 +165,22 @@ export default function ProductDetailPage({ params }: PageProps) {
     });
   }, [product, selectedOptions]);
 
+  const activeFlashSaleItem = useMemo(() => {
+    if (!activeFlashSale || !product) return null;
+
+    if (activeVariant) {
+      const variantItem = activeFlashSale.flashSaleItems.find(
+        (item) => item.itemType === 2 && item.referenceId === activeVariant.variantID
+      );
+      if (variantItem) return variantItem;
+    }
+
+    const productItem = activeFlashSale.flashSaleItems.find(
+      (item) => item.itemType === 1 && item.referenceId === product.id
+    );
+    return productItem;
+  }, [activeFlashSale, product, activeVariant]);
+
   // Derived Values
   const displayImage = useMemo(() => {
     if (activeVariant?.imageUrl) {
@@ -195,14 +228,35 @@ export default function ProductDetailPage({ params }: PageProps) {
 
     return product?.image;
   }, [activeVariant, product, selectedOptions]);
+
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
-  const displayDiscountPrice = activeVariant 
-    ? (activeVariant.effectiveDiscountPercent > 0 ? activeVariant.finalPrice : undefined)
-    : product?.discountPrice;
+  
+  const displayDiscountPrice = useMemo(() => {
+    if (activeFlashSaleItem) {
+      return activeFlashSaleItem.discountPrice;
+    }
+    return activeVariant 
+      ? (activeVariant.effectiveDiscountPercent > 0 ? activeVariant.finalPrice : undefined)
+      : product?.discountPrice;
+  }, [activeFlashSaleItem, activeVariant, product]);
+
   const displayStock = activeVariant ? activeVariant.stock : product?.quantity ?? 0;
   const displaySku = activeVariant ? activeVariant.sku : `LP-${product?.id}`;
   const displayInStock = activeVariant ? activeVariant.stock > 0 : product?.inStock ?? false;
   const hasDiscount = !!displayDiscountPrice && displayDiscountPrice < displayPrice;
+
+  // Maximum quantity allowed for purchase
+  const maxAllowedQuantity = useMemo(() => {
+    let limit = displayStock;
+    if (activeFlashSaleItem) {
+      const remainingSaleQty = activeFlashSaleItem.totalQuantity - activeFlashSaleItem.soldQuantity;
+      limit = Math.min(limit, remainingSaleQty);
+      if (activeFlashSaleItem.maxQuantityPerUser > 0) {
+        limit = Math.min(limit, activeFlashSaleItem.maxQuantityPerUser);
+      }
+    }
+    return Math.max(0, limit);
+  }, [displayStock, activeFlashSaleItem]);
 
   // Handle Specifications parsing (JSON mapping)
   const parsedSpecs = useMemo(() => {
@@ -242,7 +296,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   };
 
   const handleIncreaseQuantity = () => {
-    if (quantity < displayStock) {
+    if (quantity < maxAllowedQuantity) {
       setQuantity(quantity + 1);
     }
   };
@@ -372,6 +426,9 @@ export default function ProductDetailPage({ params }: PageProps) {
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
               activeVariant={activeVariant}
+              activeFlashSaleItem={activeFlashSaleItem}
+              flashSaleEndTime={activeFlashSale?.endTime}
+              flashSaleStatus={activeFlashSale?.status}
             />
           </div>
         </div>

@@ -479,6 +479,13 @@ export default function AdminLayout({
                 <span className="font-label-md">Quản lý Voucher</span>
               </Link>
               <Link
+                href="/admin/flash-sales"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">bolt</span>
+                <span className="font-label-md">Quản lý Flash Sale</span>
+              </Link>
+              <Link
                 href="/admin/loyalty"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
