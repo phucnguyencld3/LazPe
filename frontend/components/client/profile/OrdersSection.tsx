@@ -9,13 +9,15 @@ interface OrdersSectionProps {
   token: string;
   initialOrderId?: number | null;
   onClearInitialOrderId?: () => void;
+  onChangeTab?: (tabId: string) => void;
 }
 
 export function OrdersSection({
   userId,
   token,
   initialOrderId,
-  onClearInitialOrderId
+  onClearInitialOrderId,
+  onChangeTab
 }: OrdersSectionProps) {
   const [activeTab, setActiveTab] = useState<"all" | "0" | "2" | "3" | "5">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -230,6 +232,7 @@ export function OrdersSection({
         token={token}
         onBack={() => setSelectedOrderId(null)}
         onStatusUpdated={loadOrders}
+        onChangeTab={onChangeTab}
       />
     );
   }
@@ -393,7 +396,13 @@ export function OrdersSection({
                           <div className="flex gap-2 w-full sm:w-auto justify-end">
                             {order.statusCode === 3 && (
                               <button
-                                onClick={() => toast.success("Đang mở form đánh giá sản phẩm")}
+                                onClick={() => {
+                                  if (onChangeTab) {
+                                    onChangeTab("reviews");
+                                  } else {
+                                    toast.success("Đang mở form đánh giá sản phẩm");
+                                  }
+                                }}
                                 className="bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform"
                               >
                                 Đánh giá

@@ -13,45 +13,7 @@ export default function ClientLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const checkClientAccess = () => {
-      const token = getValidToken();
-      if (!token) return;
-
-      const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
-      if (savedUserJson) {
-        try {
-          const user = JSON.parse(savedUserJson);
-          const roles = user?.roles || [];
-          const permissions = user?.permissions || [];
-
-          // Chặn Admin và toàn bộ tài khoản có các quyền được gán truy cập vào trang client
-          const hasAdminAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
-
-          if (hasAdminAccess) {
-            setIsAdmin(true);
-            window.location.replace("/admin");
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    };
-
-    checkClientAccess();
-  }, [pathname]);
-
-  if (isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-500"></div>
-      </div>
-    );
-  }
 
   return (
     <WishlistProvider>

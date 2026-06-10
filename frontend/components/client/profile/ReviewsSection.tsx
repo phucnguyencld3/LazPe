@@ -73,6 +73,34 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
       const pendingData = await getPendingReviews(userId);
       if (pendingData) {
         setToReviewList(pendingData);
+        
+        // Auto-open review form if URL parameters match
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const urlInvoiceId = params.get("invoiceId");
+          const urlDetailId = params.get("detailId");
+          if (urlInvoiceId && urlDetailId) {
+            const matchedItem = pendingData.find(
+              (item: any) =>
+                String(item.invoiceID) === urlInvoiceId &&
+                String(item.invoiceDetailID) === urlDetailId
+            );
+            if (matchedItem) {
+              setWritingReviewFor(matchedItem);
+              setEditingReview(null);
+              setRating(5);
+              setComment("");
+              setAttachedMedia([]);
+              setActiveTab("to_review");
+
+              // Clear parameters so they don't auto-open on subsequent tab changes
+              const newUrl = new URL(window.location.href);
+              newUrl.searchParams.delete("invoiceId");
+              newUrl.searchParams.delete("detailId");
+              window.history.replaceState({}, "", newUrl.pathname + newUrl.search);
+            }
+          }
+        }
       }
 
       // 2. Fetch completed reviews
@@ -133,7 +161,13 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101"}/api/Upload/review-media`, {
+        let baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+        if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.endsWith('/api')) {
+          baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+        }
+        const uploadUrl = `${baseUrl}/Upload/review-media`;
+
+        const response = await fetch(uploadUrl, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`

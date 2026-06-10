@@ -279,6 +279,24 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (!cart || cart.cartDetails.length === 0) return;
+
+    // Chặn tài khoản admin/nhân viên hoặc tài khoản có bất kỳ quyền nào mua hàng
+    const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+    if (savedUserJson) {
+      try {
+        const parsedUser = JSON.parse(savedUserJson);
+        const roles = parsedUser?.roles || [];
+        const permissions = parsedUser?.permissions || [];
+        const isStaffOrAdmin = !!(parsedUser?.isAdmin || roles.includes("Admin") || roles.includes("Staff") || permissions.length > 0);
+        
+        if (isStaffOrAdmin) {
+          showAlert("error", "Tài khoản quản trị viên hoặc nhân viên không được phép thực hiện chức năng mua hàng!");
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
     
     // Check if at least one item is selected
     const selectedIds = Object.keys(checkedDetails)

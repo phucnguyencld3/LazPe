@@ -715,6 +715,7 @@ export default function ProfilePage() {
                 token={token}
                 initialOrderId={initialNotifId}
                 onClearInitialOrderId={handleClearInitialId}
+                onChangeTab={handleTabChange}
               />
             )}
 
