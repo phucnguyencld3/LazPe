@@ -82,6 +82,18 @@ export default function CheckoutPage() {
     setToken(savedToken);
     try {
       const parsedUser = JSON.parse(savedUserJson);
+
+      // Chặn Admin/Nhân viên hoặc tài khoản có quyền thực hiện mua hàng
+      const roles = parsedUser?.roles || [];
+      const permissions = parsedUser?.permissions || [];
+      const isStaffOrAdmin = !!(parsedUser?.isAdmin || roles.includes("Admin") || roles.includes("Staff") || permissions.length > 0);
+
+      if (isStaffOrAdmin) {
+        toast.error("Tài khoản quản trị viên hoặc nhân viên không được phép thực hiện mua hàng!");
+        router.replace("/");
+        return;
+      }
+
       const uid = parsedUser.id || parsedUser.userId;
       if (!uid) {
         toast.error("Không tìm thấy thông tin tài khoản!");

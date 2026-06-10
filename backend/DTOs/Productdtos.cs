@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -37,6 +37,8 @@ namespace PolyBabyAPI.DTOs
         public decimal MinEffectivePrice { get; set; }
         public decimal MaxEffectivePrice { get; set; }
         public int VariantCount { get; set; }
+        public double Rating { get; set; }
+        public int RatingCount { get; set; }
     }
 
     /// <summary>
@@ -59,6 +61,8 @@ namespace PolyBabyAPI.DTOs
 
         public CategoryDto? Category { get; set; }
         public SupplierDto? Supplier { get; set; }
+        public double Rating { get; set; }
+        public int RatingCount { get; set; }
     }
 
     /// <summary>

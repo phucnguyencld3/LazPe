@@ -128,8 +128,30 @@ namespace PolyBabyAPI.Services
                         .GroupBy(v => v.ProductID)
                         .ToDictionary(g => g.Key, g => g.ToList());
 
+                    var reviewStats = await _context.Reviews
+                        .AsNoTracking()
+                        .Where(r => !r.IsHidden && r.Variant != null && productIds.Contains(r.Variant.ProductID))
+                        .GroupBy(r => r.Variant.ProductID)
+                        .Select(g => new {
+                            ProductID = g.Key,
+                            AverageRating = g.Average(r => r.Rating),
+                            RatingCount = g.Count()
+                        })
+                        .ToDictionaryAsync(x => x.ProductID, x => x);
+
                     foreach (var product in products)
                     {
+                        if (reviewStats.TryGetValue(product.ProductID, out var stats))
+                        {
+                            product.Rating = stats.AverageRating;
+                            product.RatingCount = stats.RatingCount;
+                        }
+                        else
+                        {
+                            product.Rating = 0;
+                            product.RatingCount = 0;
+                        }
+
                         if (!variantMap.TryGetValue(product.ProductID, out var variants) || variants.Count == 0)
                         {
                             product.MinEffectivePrice = 0;
@@ -180,6 +202,17 @@ namespace PolyBabyAPI.Services
 
                 if (product == null) return null;
 
+                var reviewStats = await _context.Reviews
+                    .AsNoTracking()
+                    .Where(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == id)
+                    .GroupBy(r => r.Variant.ProductID)
+                    .Select(g => new
+                    {
+                        AverageRating = g.Average(r => r.Rating),
+                        RatingCount = g.Count()
+                    })
+                    .FirstOrDefaultAsync();
+
                 return new ProductDto
                 {
                     ProductID = product.ProductID,
@@ -203,7 +236,9 @@ namespace PolyBabyAPI.Services
                     {
                         SupplierID = product.Supplier.SupplierID,
                         SupplierName = product.Supplier.SupplierName
-                    } : null
+                    } : null,
+                    Rating = reviewStats?.AverageRating ?? 0,
+                    RatingCount = reviewStats?.RatingCount ?? 0
                 };
             }
             catch (Exception ex)
@@ -232,6 +267,17 @@ namespace PolyBabyAPI.Services
 
                 if (product == null) return null;
 
+                var reviewStats = await _context.Reviews
+                    .AsNoTracking()
+                    .Where(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == id)
+                    .GroupBy(r => r.Variant.ProductID)
+                    .Select(g => new
+                    {
+                        AverageRating = g.Average(r => r.Rating),
+                        RatingCount = g.Count()
+                    })
+                    .FirstOrDefaultAsync();
+
                 return new ProductDetailDto
                 {
                     ProductID = product.ProductID,
@@ -256,6 +302,8 @@ namespace PolyBabyAPI.Services
                         SupplierID = product.Supplier.SupplierID,
                         SupplierName = product.Supplier.SupplierName
                     } : null,
+                    Rating = reviewStats?.AverageRating ?? 0,
+                    RatingCount = reviewStats?.RatingCount ?? 0,
                     Variants = product.Variants.Select(v => new VariantDto
                     {
                         VariantID = v.VariantID,

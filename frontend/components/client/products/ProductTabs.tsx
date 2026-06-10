@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Truck, RotateCcw, ShieldCheck } from "lucide-react";
 import { Product } from "@/types";
+import { ProductReviews } from "./ProductReviews";
 
 interface ProductTabsProps {
   product: Product;
@@ -13,7 +14,7 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
   parsedSpecs,
   fallbackSpecs,
 }) => {
-  const [activeTab, setActiveTab] = useState<"description" | "specifications" | "shipping">("description");
+  const [activeTab, setActiveTab] = useState<"description" | "specifications" | "shipping" | "reviews">("description");
 
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
@@ -48,6 +49,16 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
           }`}
         >
           Chính sách giao nhận
+        </button>
+        <button
+          onClick={() => setActiveTab("reviews")}
+          className={`pb-2 text-sm font-bold border-b-2 transition-all ${
+            activeTab === "reviews"
+              ? "border-primary text-primary"
+              : "border-transparent text-slate-400 hover:text-slate-600"
+          }`}
+        >
+          Đánh giá ({product.ratingCount || 0})
         </button>
       </div>
 
@@ -109,6 +120,10 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
               </div>
             </li>
           </ul>
+        )}
+
+        {activeTab === "reviews" && (
+          <ProductReviews productId={product.id} />
         )}
       </div>
     </div>

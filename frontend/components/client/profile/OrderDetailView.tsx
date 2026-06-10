@@ -13,13 +13,15 @@ interface OrderDetailViewProps {
   token: string;
   onBack: () => void;
   onStatusUpdated?: () => void;
+  onChangeTab?: (tabId: string) => void;
 }
 
 export function OrderDetailView({ 
   orderId, 
   token, 
   onBack, 
-  onStatusUpdated 
+  onStatusUpdated,
+  onChangeTab
 }: OrderDetailViewProps) {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -525,6 +527,26 @@ export function OrderDetailView({
                             </h4>
                             {item.variantName && (
                               <p className="text-[10px] text-slate-400 font-bold mt-1">Phân loại: {item.variantName}</p>
+                            )}
+                            {order.statusCode === 3 && (
+                              <button
+                                onClick={() => {
+                                  if (onChangeTab) {
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.set("tab", "reviews");
+                                    url.searchParams.set("invoiceId", String(order.invoiceID));
+                                    url.searchParams.set("detailId", String(item.invoiceDetailID));
+                                    window.history.pushState({}, "", url.pathname + url.search);
+                                    onChangeTab("reviews");
+                                  } else {
+                                    window.location.href = `/profile?tab=reviews&invoiceId=${order.invoiceID}&detailId=${item.invoiceDetailID}`;
+                                  }
+                                }}
+                                className="text-[11px] font-bold text-primary hover:underline mt-1.5 flex items-center gap-0.5"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">rate_review</span>
+                                Đánh giá sản phẩm này
+                              </button>
                             )}
                           </div>
                         </div>

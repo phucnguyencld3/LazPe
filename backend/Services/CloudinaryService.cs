@@ -119,13 +119,41 @@ namespace PolyBabyAPI.Service
             {
                 // Lấy publicId từ URL
                 var uri = new Uri(imageUrl);
-                var segments = uri.AbsolutePath.Split('/');
-                var fileNameWithExtension = segments[^1];
-                var fileName = Path.GetFileNameWithoutExtension(fileNameWithExtension);
+                var path = uri.AbsolutePath;
+                
+                var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                
+                int uploadIndex = -1;
+                for (int i = 0; i < segments.Length; i++)
+                {
+                    if (segments[i] == "upload" || segments[i] == "private" || segments[i] == "authenticated")
+                    {
+                        uploadIndex = i;
+                        break;
+                    }
+                }
 
-                // Lấy folder path
-                var folderPath = string.Join("/", segments.Skip(3).Take(segments.Length - 4));
-                var publicId = $"{folderPath}/{fileName}";
+                if (uploadIndex == -1)
+                {
+                    // Fallback to old behavior if upload segment not found
+                    uploadIndex = 2;
+                }
+
+                int startIndex = uploadIndex + 1;
+                if (startIndex < segments.Length && segments[startIndex].StartsWith("v") && double.TryParse(segments[startIndex].Substring(1), out _))
+                {
+                    startIndex++;
+                }
+
+                var publicIdSegments = segments.Skip(startIndex).ToList();
+                if (publicIdSegments.Count == 0)
+                    return false;
+
+                var fileNameWithExtension = publicIdSegments[^1];
+                var fileName = Path.GetFileNameWithoutExtension(fileNameWithExtension);
+                
+                publicIdSegments[publicIdSegments.Count - 1] = fileName;
+                var publicId = string.Join("/", publicIdSegments);
 
                 var deletionParams = new DeletionParams(publicId);
                 var result = await _cloudinary.DestroyAsync(deletionParams);
