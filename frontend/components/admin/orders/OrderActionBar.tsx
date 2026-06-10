@@ -53,7 +53,7 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
           </button>
         )}
 
-        {(order.statusCode < 3 && order.statusCode !== 5) && (
+        {(order.statusCode === 0 || order.statusCode === 1) && (
           <button 
             onClick={onShowCancelModal}
             className="px-6 py-2.5 bg-error-container text-on-error-container hover:bg-error-container/80 font-bold rounded-full transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"

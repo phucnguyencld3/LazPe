@@ -44,58 +44,53 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
         
         {/* Body */}
         <div className="p-8">
-          <p className="text-slate-600 mb-6">Vui lòng chọn lý do hủy đơn hàng này</p>
           <form id="cancelForm" onSubmit={onSubmit} className="space-y-4">
-            <div className="grid gap-3">
-              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-primary-container hover:bg-white transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-white">
-                <input
-                  type="radio"
-                  name="cancel_reason"
-                  value="Sản phẩm hết hàng"
-                  checked={cancelReason === "Sản phẩm hết hàng"}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
-                />
-                <span className="ml-4 font-bold text-slate-700">Sản phẩm hết hàng</span>
-              </label>
-              
-              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-primary-container hover:bg-white transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-white">
-                <input
-                  type="radio"
-                  name="cancel_reason"
-                  value="Khách hàng đổi ý"
-                  checked={cancelReason === "Khách hàng đổi ý"}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
-                />
-                <span className="ml-4 font-bold text-slate-700">Khách hàng đổi ý</span>
-              </label>
-
-              <label className="group flex items-center p-4 bg-slate-50 rounded-xl border-2 border-transparent hover:border-primary-container hover:bg-white transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-white">
-                <input
-                  type="radio"
-                  name="cancel_reason"
-                  value="other"
-                  checked={cancelReason === "other"}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
-                />
-                <span className="ml-4 font-bold text-slate-700">Lý do khác</span>
-              </label>
-            </div>
-            
-            {/* Other Reason Textarea */}
-            {cancelReason === "other" && (
-              <div className="animate-in slide-in-from-top-2 mt-4">
-                <textarea
-                  value={otherReason}
-                  onChange={(e) => setOtherReason(e.target.value)}
-                  className="w-full h-32 p-4 bg-slate-50 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-0 text-sm resize-none outline-none"
-                  placeholder="Nhập lý do cụ thể..."
-                  required
-                ></textarea>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="cancelSelect" className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Vui lòng chọn lý do hủy đơn
+                </label>
+                <div className="relative">
+                  <select
+                    id="cancelSelect"
+                    value={cancelReason}
+                    onChange={(e) => {
+                      setCancelReason(e.target.value);
+                      if (e.target.value !== "other") {
+                        setOtherReason("");
+                      }
+                    }}
+                    className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-0 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer pr-10"
+                  >
+                    <option value="Sản phẩm hết hàng">Sản phẩm hết hàng</option>
+                    <option value="Khách hàng đổi ý / yêu cầu hủy">Khách hàng đổi ý / yêu cầu hủy</option>
+                    <option value="Sai thông tin đơn hàng / giao nhận">Sai thông tin đơn hàng / giao nhận</option>
+                    <option value="Đơn hàng trùng lặp">Đơn hàng trùng lặp</option>
+                    <option value="Nghi ngờ giao dịch gian lận">Nghi ngờ giao dịch gian lận</option>
+                    <option value="other">Lý do khác (Tự nhập)</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                    <span className="material-symbols-outlined">arrow_drop_down</span>
+                  </div>
+                </div>
               </div>
-            )}
+              
+              {cancelReason === "other" && (
+                <div className="animate-in slide-in-from-top-2 mt-4 space-y-2">
+                  <label htmlFor="customReason" className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    Nhập lý do chi tiết
+                  </label>
+                  <textarea
+                    id="customReason"
+                    value={otherReason}
+                    onChange={(e) => setOtherReason(e.target.value)}
+                    className="w-full h-32 p-4 bg-slate-50 rounded-xl border-2 border-slate-200 focus:border-primary focus:ring-0 text-sm font-semibold resize-none outline-none"
+                    placeholder="Vui lòng nhập lý do cụ thể..."
+                    required
+                  ></textarea>
+                </div>
+              )}
+            </div>
           </form>
         </div>
         

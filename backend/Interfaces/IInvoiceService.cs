@@ -35,5 +35,6 @@ namespace PolyBabyAPI.Interface
         Task<bool> AdminCancelAsync(int invoiceId, string? reason);
         Task<bool> ApproveCancelAsync(int invoiceId, string? reason);
         Task<bool> RejectCancelAsync(int invoiceId);
+        Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken);
     }
 }

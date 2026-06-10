@@ -243,6 +243,7 @@ try
     builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection(VnPayOptions.SectionName));
     builder.Services.AddScoped<IVnPayService, VnPayService>();
     builder.Services.AddHostedService<VnPayPendingPaymentCleanupService>();
+    builder.Services.AddHostedService<OrderAutoCompleteService>();
 
     // Cấu hình Hangfire
     builder.Services.AddHangfire(configuration => configuration

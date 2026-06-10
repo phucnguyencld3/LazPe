@@ -970,5 +970,52 @@ namespace PolyBabyAPI.Services
                 }
             }
         }
+
+        // ======== TỰ ĐỘNG HOÀN TẤT ĐƠN HÀNG SAU 7 NGÀY ĐANG GIAO ========
+        public async Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken)
+        {
+            var sevenDaysAgo = DateTime.Now.AddDays(-7);
+
+            var ordersToComplete = await _context.Invoices
+                .Where(i => i.Status == OrderStatus.Shipped 
+                            && i.ShippedAt.HasValue 
+                            && i.ShippedAt.Value <= sevenDaysAgo 
+                            && !i.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            if (ordersToComplete.Count == 0) return;
+
+            _logger.LogInformation("Tìm thấy {Count} đơn hàng đang giao hơn 7 ngày cần tự động hoàn tất.", ordersToComplete.Count);
+
+            foreach (var invoice in ordersToComplete)
+            {
+                try
+                {
+                    invoice.Status = OrderStatus.Completed;
+                    invoice.CompletedAt = DateTime.Now;
+
+                    _logger.LogInformation("Tự động hoàn tất hóa đơn {InvoiceId}", invoice.InvoiceID);
+
+                    // Tích lũy điểm Loyalty
+                    if (!string.IsNullOrEmpty(invoice.UserID))
+                    {
+                        try
+                        {
+                            await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.TotalPrice);
+                        }
+                        catch (Exception lEx)
+                        {
+                            _logger.LogError(lEx, "Lỗi tích điểm Loyalty khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi khi tự động hoàn tất hóa đơn {InvoiceId}", invoice.InvoiceID);
+                }
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }
