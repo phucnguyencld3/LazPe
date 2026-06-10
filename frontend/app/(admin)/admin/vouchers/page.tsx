@@ -29,6 +29,7 @@ export default function AdminVouchersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // all, ongoing, upcoming, expired, suspended
   const [typeFilter, setTypeFilter] = useState("all"); // all, percent, fixed
+  const [voucherTypeFilter, setVoucherTypeFilter] = useState("all"); // all, product (1), shipping (2)
   const [visibilityFilter, setVisibilityFilter] = useState("all"); // all, public, exclusive
 
   // Pagination (Client-side)
@@ -190,6 +191,9 @@ export default function AdminVouchersPage() {
       // 2. Discount Type Filter
       const matchesType = typeFilter === "all" || v.discountType === Number(typeFilter);
 
+      // 2b. Voucher Type Filter
+      const matchesVoucherType = voucherTypeFilter === "all" || v.voucherType === Number(voucherTypeFilter);
+
       // 3. Visibility Filter
       const matchesVisibility = visibilityFilter === "all" || v.visibilityType === Number(visibilityFilter);
 
@@ -209,7 +213,7 @@ export default function AdminVouchersPage() {
         matchesStatus = v.status && end < now;
       }
 
-      return matchesSearch && matchesType && matchesVisibility && matchesStatus;
+      return matchesSearch && matchesType && matchesVoucherType && matchesVisibility && matchesStatus;
     });
   };
 
@@ -229,7 +233,7 @@ export default function AdminVouchersPage() {
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, typeFilter, visibilityFilter]);
+  }, [searchTerm, statusFilter, typeFilter, voucherTypeFilter, visibilityFilter]);
 
   const getValidityBadge = (startDateStr: string, endDateStr: string, status: boolean) => {
     if (!status) {
@@ -394,6 +398,20 @@ export default function AdminVouchersPage() {
               </select>
             </div>
 
+            {/* Voucher Type filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Loại Voucher:</span>
+              <select
+                value={voucherTypeFilter}
+                onChange={e => setVoucherTypeFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700"
+              >
+                <option value="all">Tất cả</option>
+                <option value="1">Giảm giá sản phẩm</option>
+                <option value="2">Giảm phí ship</option>
+              </select>
+            </div>
+
             {/* Discount Type filter */}
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Loại giảm:</span>
@@ -444,6 +462,7 @@ export default function AdminVouchersPage() {
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
                   <th className="px-6 py-4">Mã Voucher</th>
+                  <th className="px-6 py-4">Loại Voucher</th>
                   <th className="px-6 py-4">Mức giảm</th>
                   <th className="px-6 py-4">Tỉ lệ sử dụng</th>
                   <th className="px-6 py-4">Loại phân phối</th>
@@ -466,9 +485,26 @@ export default function AdminVouchersPage() {
                         </span>
                       </td>
 
+                      {/* Voucher Type */}
+                      <td className="px-6 py-4 text-xs font-bold">
+                        {voucher.voucherType === 2 ? (
+                          <span className="inline-flex items-center gap-1.5 text-sky-600 bg-sky-50 px-2.5 py-1 rounded-xl border border-sky-100">
+                            <span className="material-symbols-outlined text-[14px]">local_shipping</span>
+                            Giảm phí ship
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-primary bg-primary/5 px-2.5 py-1 rounded-xl border border-primary/10">
+                            <span className="material-symbols-outlined text-[14px]">local_mall</span>
+                            Giảm sản phẩm
+                          </span>
+                        )}
+                      </td>
+
                       {/* Discount Amount */}
                       <td className="px-6 py-4 text-sm font-bold text-slate-800">
-                        {voucher.discountType === 1 
+                        {voucher.voucherType === 2 && voucher.isFreeShipping ? (
+                          <span className="text-sky-600 font-extrabold">Free Shipping</span>
+                        ) : voucher.discountType === 1 
                           ? `${voucher.discountValue}%` 
                           : formatCurrency(voucher.discountValue)}
                       </td>

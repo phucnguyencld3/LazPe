@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interface;
+using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Services
@@ -10,12 +11,14 @@ namespace PolyBabyAPI.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<InvoiceService> _logger;
         private readonly ILoyaltyService _loyaltyService;
+        private readonly IVoucherService _voucherService;
 
-        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService)
+        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService)
         {
             _context = context;
             _logger = logger;
             _loyaltyService = loyaltyService;
+            _voucherService = voucherService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -27,6 +30,7 @@ namespace PolyBabyAPI.Services
                 .Where(i => !i.IsDeleted)
                 .Include(i => i.User)
                 .Include(i => i.Voucher)
+                .Include(i => i.ShippingVoucher)
                 .Include(i => i.PaymentTransactions)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
@@ -52,6 +56,8 @@ namespace PolyBabyAPI.Services
 
             return await query
                 .Include(i => i.PaymentTransactions)
+                .Include(i => i.Voucher)
+                .Include(i => i.ShippingVoucher)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .OrderByDescending(i => i.CreatedAt)
@@ -66,6 +72,7 @@ namespace PolyBabyAPI.Services
                 .AsSplitQuery()
                 .Include(i => i.User)
                 .Include(i => i.Voucher)
+                .Include(i => i.ShippingVoucher)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
@@ -115,6 +122,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher) // ✅ Include Voucher từ Cart
+                .Include(c => c.ShippingVoucher) // Include ShippingVoucher từ Cart
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
 
             if (cart == null)
@@ -189,11 +197,38 @@ namespace PolyBabyAPI.Services
                 pointsDiscount = await _loyaltyService.CalculateRedemptionDiscountAsync(cart.UserID, pointsToUse);
             }
 
+            // ✅ Tính phí ship gốc dựa trên tổng tiền sau khi trừ giảm giá sản phẩm & điểm loyalty
+            decimal netTotalPrice = subTotal - (discountAmount + pointsDiscount);
+            if (netTotalPrice < 0) netTotalPrice = 0;
+            decimal originalShippingFee = CalculateShippingFee(netTotalPrice);
+
+            // ✅ Tính ShippingDiscountAmount từ shipping voucher của Cart
+            decimal shippingDiscountAmount = 0;
+            Voucher? appliedShippingVoucher = null;
+
+            if (cart.ShippingVoucherID.HasValue && cart.ShippingVoucher != null)
+            {
+                appliedShippingVoucher = cart.ShippingVoucher;
+
+                // Kiểm tra đơn hàng tối thiểu hoặc phí ship gốc đã bằng 0
+                if (subTotal < appliedShippingVoucher.MinOrderValue || originalShippingFee == 0)
+                {
+                    appliedShippingVoucher = null;
+                    shippingDiscountAmount = 0;
+                    _logger.LogWarning("Shipping Voucher {VoucherId} không đủ điều kiện hoặc phí ship bằng 0.", cart.ShippingVoucherID);
+                }
+                else
+                {
+                    shippingDiscountAmount = _voucherService.CalculateShippingDiscount(appliedShippingVoucher, originalShippingFee);
+                }
+            }
+
             // ✅ Tạo Invoice với thông tin voucher + điểm loyalty
             var invoice = new Invoice
             {
                 UserID = cart.UserID,
                 VoucherID = appliedVoucher?.VoucherID,
+                ShippingVoucherID = appliedShippingVoucher?.VoucherID,
                 PayMethod = payMethod,
                 CreatedAt = DateTime.Now,
                 Status = OrderStatus.Pending,
@@ -206,6 +241,7 @@ namespace PolyBabyAPI.Services
                 ShippingPhone = userAddress?.PhoneNumber,
                 SubTotal = subTotal,
                 DiscountAmount = discountAmount + pointsDiscount,
+                ShippingDiscountAmount = shippingDiscountAmount,
             };
 
             foreach (var item in itemsToCheckout)
@@ -254,7 +290,7 @@ namespace PolyBabyAPI.Services
             // ✅ Tính TotalPrice = SubTotal - DiscountAmount (bao gồm cả Voucher + Loyalty Points)
             invoice.TotalPrice = subTotal - invoice.DiscountAmount;
             if (invoice.TotalPrice < 0) invoice.TotalPrice = 0;
-            invoice.ShippingFee = CalculateShippingFee(invoice.TotalPrice);
+            invoice.ShippingFee = originalShippingFee;
 
             using var tx = await _context.Database.BeginTransactionAsync();
             try
@@ -321,6 +357,44 @@ namespace PolyBabyAPI.Services
                         appliedVoucher.Code, appliedVoucher.VoucherID, cart.UserID, invoice.InvoiceID, discountAmount, subTotal);
                 }
 
+                // ✅ Ghi lịch sử sử dụng voucher vận chuyển vào VoucherUsages
+                if (appliedShippingVoucher != null)
+                {
+                    var userVoucher = await _context.UserVouchers
+                        .Where(uv => uv.UserID == cart.UserID
+                            && uv.VoucherID == appliedShippingVoucher.VoucherID
+                            && uv.Status == UserVoucherStatus.Unused)
+                        .OrderBy(uv => uv.CollectedAt)
+                        .FirstOrDefaultAsync();
+
+                    if (userVoucher == null)
+                    {
+                        throw new InvalidOperationException("Voucher vận chuyển chưa tồn tại trong ví hoặc đã được sử dụng.");
+                    }
+
+                    userVoucher.Status = UserVoucherStatus.Used;
+                    userVoucher.UsedAt = DateTime.Now;
+                    userVoucher.InvoiceID = invoice.InvoiceID;
+
+                    var voucherUsage = new VoucherUsage
+                    {
+                        VoucherID = appliedShippingVoucher.VoucherID,
+                        UserID = cart.UserID,
+                        InvoiceID = invoice.InvoiceID,
+                        UsedAt = DateTime.Now,
+                        DiscountAmount = shippingDiscountAmount,
+                        OrderValue = subTotal
+                    };
+                    _context.VoucherUsages.Add(voucherUsage);
+
+                    // ✅ Tăng UsedQuantity của voucher vận chuyển
+                    appliedShippingVoucher.UsedQuantity += 1;
+
+                    _logger.LogInformation(
+                        "Shipping Voucher {Code} (ID:{VoucherId}) đã được sử dụng bởi User {UserId} cho Invoice {InvoiceId}. Giảm ship: {Discount}đ / Đơn hàng: {OrderValue}đ",
+                        appliedShippingVoucher.Code, appliedShippingVoucher.VoucherID, cart.UserID, invoice.InvoiceID, shippingDiscountAmount, subTotal);
+                }
+
                 // Xóa CartDetails đã checkout
                 _context.CartDetails.RemoveRange(itemsToCheckout);
 
@@ -332,6 +406,8 @@ namespace PolyBabyAPI.Services
                     // Xóa voucher khỏi cart vì đã dùng cho invoice
                     cart.VoucherID = null;
                     cart.DiscountAmount = 0;
+                    cart.ShippingVoucherID = null;
+                    cart.ShippingDiscountAmount = 0;
 
                     _logger.LogInformation("Checkout 1 phần: giữ lại {Count} sp trong giỏ {CartId}",
                         remainingItems.Count, cartId);
@@ -372,6 +448,7 @@ namespace PolyBabyAPI.Services
         {
             var invoice = await _context.Invoices
                 .Include(i => i.InvoiceDetails)
+                .Include(i => i.ShippingVoucher)
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId);
 
             if (invoice == null) return;
@@ -379,7 +456,22 @@ namespace PolyBabyAPI.Services
             invoice.SubTotal = invoice.InvoiceDetails.Sum(d => d.TotalPrice);
             invoice.TotalPrice = invoice.SubTotal - invoice.DiscountAmount;
             if (invoice.TotalPrice < 0) invoice.TotalPrice = 0;
+            
             invoice.ShippingFee = CalculateShippingFee(invoice.TotalPrice);
+
+            if (invoice.ShippingVoucherID.HasValue)
+            {
+                var shippingVoucher = invoice.ShippingVoucher ?? await _context.Vouchers.FindAsync(invoice.ShippingVoucherID.Value);
+                if (shippingVoucher != null)
+                {
+                    invoice.ShippingDiscountAmount = _voucherService.CalculateShippingDiscount(shippingVoucher, invoice.ShippingFee);
+                }
+            }
+            else
+            {
+                invoice.ShippingDiscountAmount = 0;
+            }
+
             await _context.SaveChangesAsync();
         }
 
@@ -705,15 +797,30 @@ namespace PolyBabyAPI.Services
         // ✅ ======== PRIVATE: HOÀN TRẢ VOUCHER KHI HỦY ĐƠN ========
         private async Task RestoreVoucherAsync(Invoice invoice)
         {
-            if (!invoice.VoucherID.HasValue) return;
+            if (!invoice.VoucherID.HasValue && !invoice.ShippingVoucherID.HasValue) return;
 
-            // Hoàn lại UsedQuantity cho voucher
-            var voucher = invoice.Voucher ?? await _context.Vouchers.FindAsync(invoice.VoucherID.Value);
-            if (voucher != null)
+            // Hoàn lại UsedQuantity cho voucher sản phẩm
+            if (invoice.VoucherID.HasValue)
             {
-                voucher.UsedQuantity = Math.Max(0, voucher.UsedQuantity - 1);
-                _logger.LogInformation("Hoàn trả voucher {Code} (ID:{VId}). UsedQuantity: {Used}",
-                    voucher.Code, voucher.VoucherID, voucher.UsedQuantity);
+                var voucher = invoice.Voucher ?? await _context.Vouchers.FindAsync(invoice.VoucherID.Value);
+                if (voucher != null)
+                {
+                    voucher.UsedQuantity = Math.Max(0, voucher.UsedQuantity - 1);
+                    _logger.LogInformation("Hoàn trả voucher {Code} (ID:{VId}). UsedQuantity: {Used}",
+                        voucher.Code, voucher.VoucherID, voucher.UsedQuantity);
+                }
+            }
+
+            // Hoàn lại UsedQuantity cho voucher vận chuyển
+            if (invoice.ShippingVoucherID.HasValue)
+            {
+                var shippingVoucher = await _context.Vouchers.FindAsync(invoice.ShippingVoucherID.Value);
+                if (shippingVoucher != null)
+                {
+                    shippingVoucher.UsedQuantity = Math.Max(0, shippingVoucher.UsedQuantity - 1);
+                    _logger.LogInformation("Hoàn trả shipping voucher {Code} (ID:{VId}). UsedQuantity: {Used}",
+                        shippingVoucher.Code, shippingVoucher.VoucherID, shippingVoucher.UsedQuantity);
+                }
             }
 
             // Xóa bản ghi VoucherUsage liên quan đến invoice này
@@ -740,9 +847,11 @@ namespace PolyBabyAPI.Services
                 userVoucher.UsedAt = null;
             }
 
-            // Xóa VoucherID + DiscountAmount khỏi invoice
+            // Xóa khỏi invoice
             invoice.VoucherID = null;
             invoice.DiscountAmount = 0;
+            invoice.ShippingVoucherID = null;
+            invoice.ShippingDiscountAmount = 0;
 
             // Tính lại TotalPrice
             invoice.TotalPrice = invoice.SubTotal;
@@ -754,9 +863,7 @@ namespace PolyBabyAPI.Services
         // ======== Helper tính phí ship ========
         private static decimal CalculateShippingFee(decimal total)
         {
-            if (total >= 300000) return 0;
-            if (total >= 100000) return 15000;
-            return 20000;
+            return 25000;
         }
 
         private static void MarkPendingPaymentsAsFailed(Invoice invoice, string responseCode)

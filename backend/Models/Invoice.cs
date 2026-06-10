@@ -48,6 +48,8 @@ namespace PolyBabyAPI.Models
         // ✅ Thêm VoucherID liên kết voucher đã sử dụng
         public int? VoucherID { get; set; }
 
+        public int? ShippingVoucherID { get; set; }
+
         [ForeignKey(nameof(UserID))]
         [ValidateNever]
         public ApplicationUser User { get; set; }
@@ -57,6 +59,10 @@ namespace PolyBabyAPI.Models
         [ValidateNever]
         public virtual Voucher? Voucher { get; set; }
 
+        [ForeignKey(nameof(ShippingVoucherID))]
+        [ValidateNever]
+        public virtual Voucher? ShippingVoucher { get; set; }
+
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tạm tính")]
         public decimal SubTotal { get; set; }
@@ -64,6 +70,11 @@ namespace PolyBabyAPI.Models
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tiền giảm giá")]
         public decimal DiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm ship")]
+        public decimal ShippingDiscountAmount { get; set; } = 0;
+
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0, double.MaxValue, ErrorMessage = "Tổng tiền không hợp lệ")]

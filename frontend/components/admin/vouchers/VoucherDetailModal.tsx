@@ -355,12 +355,18 @@ export default function VoucherDetailModal({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
-                    <span className="material-symbols-outlined text-base">percent</span>
+                    <span className="material-symbols-outlined text-base">
+                      {voucher.voucherType === 2 ? "local_shipping" : "percent"}
+                    </span>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mức giảm giá</p>
                     <p className="text-lg font-bold text-slate-800 mt-0.5">
-                      {voucher.discountType === 1 ? `${voucher.discountValue}%` : formatCurrency(voucher.discountValue)}
+                      {voucher.voucherType === 2 && voucher.isFreeShipping 
+                        ? "Free Shipping" 
+                        : voucher.discountType === 1 
+                          ? `${voucher.discountValue}%` 
+                          : formatCurrency(voucher.discountValue)}
                     </p>
                   </div>
                 </div>
@@ -396,23 +402,37 @@ export default function VoucherDetailModal({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                   <div className="flex justify-between py-1 border-b border-slate-50">
+                    <span className="font-semibold text-slate-450">Loại Voucher:</span>
+                    <span className="font-bold text-slate-800">
+                      {voucher.voucherType === 2 ? "Giảm phí vận chuyển" : "Giảm giá sản phẩm"}
+                    </span>
+                  </div>
+                  {voucher.voucherType === 2 && (
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="font-semibold text-slate-450">Miễn phí ship:</span>
+                      <span className="font-bold text-slate-800">{voucher.isFreeShipping ? "Có" : "Không"}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-1 border-b border-slate-50">
                     <span className="font-semibold text-slate-450">Mã code:</span>
                     <span className="font-bold text-slate-800">{voucher.code}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Tên chương trình:</span>
+                    <span className="font-semibold text-slate-455">Tên chương trình:</span>
                     <span className="font-semibold text-slate-800">{voucher.name}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Đơn tối thiểu:</span>
+                    <span className="font-semibold text-slate-455">Đơn tối thiểu:</span>
                     <span className="font-semibold text-slate-800">{formatCurrency(voucher.minOrderValue)}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Giảm tối đa:</span>
+                    <span className="font-semibold text-slate-455">Giảm tối đa:</span>
                     <span className="font-semibold text-slate-800">
-                      {voucher.discountType === 1 
-                        ? (voucher.maxDiscount > 0 ? formatCurrency(voucher.maxDiscount) : "Không giới hạn") 
-                        : "Không áp dụng"}
+                      {voucher.voucherType === 2 
+                        ? (voucher.maxShippingDiscount !== null && voucher.maxShippingDiscount > 0 ? formatCurrency(voucher.maxShippingDiscount) : "Không giới hạn")
+                        : (voucher.discountType === 1 
+                          ? (voucher.maxDiscount > 0 ? formatCurrency(voucher.maxDiscount) : "Không giới hạn") 
+                          : "Không áp dụng")}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">

@@ -20,8 +20,6 @@ import { CartSummary } from "@/components/client/cart/CartSummary";
 import { VoucherModal } from "@/components/client/cart/VoucherModal";
 import { EmptyCart } from "@/components/client/cart/EmptyCart";
 
-const FREE_SHIPPING_THRESHOLD = 300000;
-const SHIPPING_FEE = 30000;
 
 export default function CartPage() {
   const router = useRouter();
@@ -95,12 +93,6 @@ export default function CartPage() {
           checks[cd.cartDetailID] = true;
         });
         setCheckedDetails(checks);
-      }
-      
-      if (cart.voucher) {
-        setVoucherCodeInput(cart.voucher.code);
-      } else {
-        setVoucherCodeInput("");
       }
     } else {
       setCheckedDetails({});
@@ -278,7 +270,6 @@ export default function CartPage() {
 
   const handleApplyVoucherFromModal = async (code: string) => {
     if (!token) return;
-    setVoucherModalOpen(false);
     setVoucherCodeInput(code);
 
     try {
@@ -294,14 +285,16 @@ export default function CartPage() {
     }
   };
 
-  const handleRemoveVoucher = async () => {
+  const handleRemoveVoucher = async (type?: number) => {
     if (!token) return;
 
     try {
-      const res = await removeVoucher();
+      const res = await removeVoucher(type);
       if (res.success) {
-        setVoucherCodeInput("");
-        showAlert("success", "Đã hủy áp dụng mã giảm giá");
+        if (!type || (!res.data?.voucher && !res.data?.shippingVoucher)) {
+          setVoucherCodeInput("");
+        }
+        showAlert("success", res.message || "Đã hủy áp dụng mã giảm giá");
       } else {
         showAlert("error", res.message || "Không thể hủy mã giảm giá");
       }
@@ -376,7 +369,7 @@ export default function CartPage() {
 
   // Subtotal & totals calculated for visual checking only
   const getSelectedCalculations = () => {
-    if (!cart) return { subTotal: 0, discount: 0, shipping: 0, total: 0, selectedCount: 0 };
+    if (!cart) return { subTotal: 0, discount: 0, shipping: 0, shippingDiscount: 0, total: 0, selectedCount: 0 };
     
     let subTotal = 0;
     let selectedCount = 0;
@@ -388,9 +381,6 @@ export default function CartPage() {
       }
     });
 
-    const hasFreeShipping = subTotal >= FREE_SHIPPING_THRESHOLD;
-    const shipping = subTotal > 0 && !hasFreeShipping ? SHIPPING_FEE : 0;
-    
     // Calculate voucher discount (prorated or complete)
     let discount = 0;
     if (cart.voucher && subTotal >= cart.voucher.minOrderValue) {
@@ -404,16 +394,34 @@ export default function CartPage() {
       }
     }
 
-    const total = Math.max(0, subTotal + shipping - discount);
+    let shipping = 0;
+    if (subTotal > 0) {
+      shipping = 25000;
+    }
+    
+    // Calculate shipping voucher discount
+    let shippingDiscount = 0;
+    if (cart.shippingVoucher && subTotal >= cart.shippingVoucher.minOrderValue) {
+      if (cart.shippingVoucher.isFreeShipping) {
+        shippingDiscount = shipping;
+      } else {
+        if (cart.shippingVoucher.isPercentage) {
+          shippingDiscount = (shipping * cart.shippingVoucher.discountPercent) / 100;
+        } else {
+          shippingDiscount = cart.shippingVoucher.discountAmount;
+        }
+        if (cart.shippingVoucher.maxShippingDiscount && cart.shippingVoucher.maxShippingDiscount > 0) {
+          shippingDiscount = Math.min(shippingDiscount, cart.shippingVoucher.maxShippingDiscount);
+        }
+      }
+    }
 
-    return { subTotal, discount, shipping, total, selectedCount };
+    const total = Math.max(0, subTotal + shipping - discount - shippingDiscount);
+
+    return { subTotal, discount, shipping, shippingDiscount, total, selectedCount };
   };
 
-  const { subTotal, discount, shipping, total, selectedCount } = getSelectedCalculations();
-
-  // Shipping progress bar parameters
-  const freeShippingProgress = Math.min(100, Math.round((subTotal / FREE_SHIPPING_THRESHOLD) * 100));
-  const remainingForFreeShipping = FREE_SHIPPING_THRESHOLD - subTotal;
+  const { subTotal, discount, shipping, shippingDiscount, total, selectedCount } = getSelectedCalculations();
 
   if (loading && !cart) {
     return (
@@ -453,10 +461,9 @@ export default function CartPage() {
               subTotal={subTotal}
               discount={discount}
               shipping={shipping}
+              shippingDiscount={shippingDiscount}
               total={total}
               selectedCount={selectedCount}
-              freeShippingProgress={freeShippingProgress}
-              remainingForFreeShipping={remainingForFreeShipping}
               voucherCodeInput={voucherCodeInput}
               setVoucherCodeInput={setVoucherCodeInput}
               applyingCode={applyingCode}
@@ -510,6 +517,8 @@ export default function CartPage() {
         vouchers={vouchers}
         subTotal={subTotal}
         handleApplyVoucherFromModal={handleApplyVoucherFromModal}
+        cart={cart}
+        handleRemoveVoucher={handleRemoveVoucher}
       />
 
       {/* CONFIRMATION DIALOG MODAL */}

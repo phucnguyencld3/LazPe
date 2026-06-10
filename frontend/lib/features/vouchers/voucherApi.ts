@@ -13,6 +13,9 @@ export interface VoucherAdminInfo {
   status: boolean;
   visibilityType: number; // 1: Public, 2: Exclusive
   exclusiveType: number; // 0: None, 1: ManualCode, 2: DirectAssign
+  voucherType: number; // 1: ProductDiscount, 2: ShippingDiscount
+  isFreeShipping: boolean;
+  maxShippingDiscount: number | null;
 }
 
 export interface CreateVoucherPayload {
@@ -28,6 +31,9 @@ export interface CreateVoucherPayload {
   status: boolean;
   visibilityType: number;
   exclusiveType: number;
+  voucherType: number;
+  isFreeShipping: boolean;
+  maxShippingDiscount: number | null;
 }
 
 export interface UpdateVoucherPayload {
@@ -42,6 +48,9 @@ export interface UpdateVoucherPayload {
   status: boolean;
   visibilityType: number;
   exclusiveType: number;
+  voucherType: number;
+  isFreeShipping: boolean;
+  maxShippingDiscount: number | null;
 }
 
 export interface VoucherUsageInfo {

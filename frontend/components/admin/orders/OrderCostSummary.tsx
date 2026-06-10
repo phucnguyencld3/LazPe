@@ -20,13 +20,19 @@ export const OrderCostSummary: React.FC<OrderCostSummaryProps> = ({ order }) => 
             <span>-{formatCurrency(order.discountAmount)}</span>
           </div>
         )}
+        {order.shippingDiscountAmount && order.shippingDiscountAmount > 0 ? (
+          <div className="flex justify-between text-sky-600">
+            <span>{order.hasShippingVoucher ? `Giảm phí vận chuyển (Voucher ${order.shippingVoucherCode})` : "Giảm phí vận chuyển"}</span>
+            <span>-{formatCurrency(order.shippingDiscountAmount)}</span>
+          </div>
+        ) : null}
         <div className="flex justify-between">
           <span>Phí vận chuyển</span>
           <span>{formatCurrency(order.shippingFee)}</span>
         </div>
         <div className="border-t border-slate-200 mt-4 pt-6 flex justify-between items-center">
           <span className="text-xl font-bold text-slate-800">Tổng cộng</span>
-          <span className="text-3xl font-bold text-rose-500 tracking-tight">{formatCurrency(order.totalPrice + order.shippingFee)}</span>
+          <span className="text-3xl font-bold text-rose-500 tracking-tight">{formatCurrency(order.totalPrice + order.shippingFee - (order.shippingDiscountAmount || 0))}</span>
         </div>
       </div>
     </div>

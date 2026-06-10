@@ -23,7 +23,7 @@ interface CartContextType {
   removeFromCart: (cartDetailId: number) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
   clearCart: () => Promise<{ success: boolean; message?: string }>;
   applyVoucher: (voucherCode: string) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
-  removeVoucher: () => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
+  removeVoucher: (type?: number) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -179,7 +179,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const removeVoucher = async () => {
+  const removeVoucher = async (type?: number) => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
       return { success: false, message: "Chưa đăng nhập" };
@@ -187,7 +187,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setLoading(true);
     try {
-      const res = await apiRemoveVoucherFromCart(token);
+      const res = await apiRemoveVoucherFromCart(token, type);
       if (res.success && res.data) {
         setCart(res.data);
         setCartCount(calculateCount(res.data));

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
@@ -241,7 +241,12 @@ namespace PolyBabyAPI.Controllers
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 VisibilityType = visibilityType,
-                ExclusiveType = exclusiveType
+                ExclusiveType = exclusiveType,
+                VoucherType = Enum.IsDefined(typeof(VoucherType), request.VoucherType)
+                    ? (VoucherType)request.VoucherType
+                    : VoucherType.ProductDiscount,
+                IsFreeShipping = request.IsFreeShipping,
+                MaxShippingDiscount = request.MaxShippingDiscount
             };
 
             await _voucherService.CreateVoucherAsync(voucher);
@@ -291,6 +296,12 @@ namespace PolyBabyAPI.Controllers
             {
                 voucher.ExclusiveType = ExclusiveDistributionType.None;
             }
+
+            voucher.VoucherType = Enum.IsDefined(typeof(VoucherType), request.VoucherType)
+                ? (VoucherType)request.VoucherType
+                : voucher.VoucherType;
+            voucher.IsFreeShipping = request.IsFreeShipping;
+            voucher.MaxShippingDiscount = request.MaxShippingDiscount;
 
             await _voucherService.UpdateVoucherAsync(voucher);
 

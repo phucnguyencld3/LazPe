@@ -16,7 +16,7 @@ namespace PolyBabyAPI.Interfaces
 
         // Voucher logic
         Task<(bool Success, string Message)> ApplyVoucherAsync(int cartId, string voucherCode);
-        Task RemoveVoucherAsync(int cartId);
+        Task RemoveVoucherAsync(int cartId, int? type = null);
         Task CalculateCartTotalAsync(int cartId);
     }
 }

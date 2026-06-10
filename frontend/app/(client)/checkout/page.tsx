@@ -55,6 +55,7 @@ export default function CheckoutPage() {
   const [subTotal, setSubTotal] = useState(0);
   const [shippingFee, setShippingFee] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [shippingDiscountAmount, setShippingDiscountAmount] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
 
   // Loyalty states
@@ -116,15 +117,6 @@ export default function CheckoutPage() {
     const sum = selectedItems.reduce((acc, item) => acc + item.totalPrice, 0);
     setSubTotal(sum);
 
-    // Calculate shipping fee
-    let ship = 20000;
-    if (sum >= 300000) {
-      ship = 0;
-    } else if (sum >= 100000) {
-      ship = 15000;
-    }
-    setShippingFee(ship);
-
     // Calculate voucher discount
     let discount = 0;
     if (cart?.voucher) {
@@ -157,7 +149,33 @@ export default function CheckoutPage() {
       setLoyaltyError("Cấu trúc giá thay đổi, điểm tích lũy được gỡ bỏ.");
     }
 
-    setTotalPrice(sum + ship - discount - currentLoyaltyDiscount);
+    // Calculate shipping fee
+    let ship = 25000;
+    setShippingFee(ship);
+
+    // Calculate shipping voucher discount
+    let shipDiscount = 0;
+    if (cart?.shippingVoucher) {
+      const sv = cart.shippingVoucher;
+      if (sum >= (sv.minOrderValue || 0)) {
+        if (sv.isFreeShipping) {
+          shipDiscount = ship;
+        } else {
+          if (sv.isPercentage) {
+            shipDiscount = (ship * sv.discountPercent) / 100;
+          } else {
+            shipDiscount = sv.discountAmount;
+          }
+          if (sv.maxShippingDiscount && sv.maxShippingDiscount > 0) {
+            shipDiscount = Math.min(shipDiscount, sv.maxShippingDiscount);
+          }
+          shipDiscount = Math.min(shipDiscount, ship);
+        }
+      }
+    }
+    setShippingDiscountAmount(shipDiscount);
+
+    setTotalPrice(sum + ship - discount - currentLoyaltyDiscount - shipDiscount);
   }, [selectedItems, cart, loyaltyDiscount]);
 
   useEffect(() => {
@@ -425,6 +443,7 @@ export default function CheckoutPage() {
             subTotal={subTotal}
             shippingFee={shippingFee}
             discountAmount={discountAmount}
+            shippingDiscountAmount={shippingDiscountAmount}
             totalPrice={totalPrice}
             submitting={submitting}
             handlePlaceOrder={handlePlaceOrder}

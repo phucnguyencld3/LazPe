@@ -518,7 +518,7 @@ namespace PolyBabyAPI.Controllers
 
                 if (invoice.PayMethod == PayMethod.MobilePayment)
                 {
-                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee;
+                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                     paymentUrl = _vnPayService.CreatePaymentUrl(
                         HttpContext,
                         invoice.InvoiceID,
@@ -781,7 +781,7 @@ namespace PolyBabyAPI.Controllers
                 if (latestPending.CreatedAt.AddHours(24) < DateTime.Now)
                     return BadRequest(new { message = "Đã quá hạn 24 giờ thanh toán. Vui lòng tạo đơn hàng mới." });
 
-                var amountToPay = invoice.TotalPrice + invoice.ShippingFee;
+                var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                 var paymentUrl = _vnPayService.CreatePaymentUrl(
                     HttpContext,
                     invoice.InvoiceID,
@@ -1070,6 +1070,7 @@ namespace PolyBabyAPI.Controllers
                 UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
                 invoice.ShippingAddress,
@@ -1083,6 +1084,9 @@ namespace PolyBabyAPI.Controllers
                 HasVoucher = invoice.VoucherID.HasValue,
                 VoucherCode = invoice.Voucher?.Code,
                 VoucherName = invoice.Voucher?.Name,
+                HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
+                ShippingVoucherCode = invoice.ShippingVoucher?.Code,
+                ShippingVoucherName = invoice.ShippingVoucher?.Name,
                 ItemCount = invoice.InvoiceDetails?.Count ?? 0,
                 InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
                 {
@@ -1139,6 +1143,7 @@ namespace PolyBabyAPI.Controllers
                 UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
                 invoice.ShippingAddress,
@@ -1150,6 +1155,9 @@ namespace PolyBabyAPI.Controllers
                 HasVoucher = invoice.VoucherID.HasValue,
                 VoucherCode = invoice.Voucher?.Code,
                 VoucherName = invoice.Voucher?.Name,
+                HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
+                ShippingVoucherCode = invoice.ShippingVoucher?.Code,
+                ShippingVoucherName = invoice.ShippingVoucher?.Name,
                 ItemCount = itemCount
             };
         }
@@ -1175,9 +1183,10 @@ namespace PolyBabyAPI.Controllers
 
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
-                FinalAmount = invoice.TotalPrice + invoice.ShippingFee,
+                FinalAmount = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount,
 
                 invoice.ShippingAddress,
                 ShippingRecipientName = invoice.ShippingRecipientName ?? invoice.User?.FullName,
@@ -1196,6 +1205,19 @@ namespace PolyBabyAPI.Controllers
                     invoice.Voucher.DiscountType,
                     invoice.Voucher.DiscountValue,
                     DiscountTypeLabel = invoice.Voucher.DiscountType == 1 ? "Phần trăm" : "Tiền cố định"
+                } : null,
+
+                HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
+                ShippingVoucher = invoice.ShippingVoucher != null ? new
+                {
+                    invoice.ShippingVoucher.VoucherID,
+                    invoice.ShippingVoucher.Code,
+                    invoice.ShippingVoucher.Name,
+                    invoice.ShippingVoucher.DiscountType,
+                    invoice.ShippingVoucher.DiscountValue,
+                    invoice.ShippingVoucher.IsFreeShipping,
+                    invoice.ShippingVoucher.MaxShippingDiscount,
+                    DiscountTypeLabel = invoice.ShippingVoucher.DiscountType == 1 ? "Phần trăm" : "Tiền cố định"
                 } : null,
 
                 VoucherUsages = invoice.VoucherUsages?.Select(vu => new

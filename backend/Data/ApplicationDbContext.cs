@@ -241,7 +241,17 @@ namespace PolyBabyAPI.Data
             builder.Entity<UserVoucher>()
                 .HasIndex(uv => new { uv.UserID, uv.VoucherID, uv.Status });
 
+            builder.Entity<Cart>()
+                .HasOne(c => c.Voucher)
+                .WithMany()
+                .HasForeignKey(c => c.VoucherID)
+                .OnDelete(DeleteBehavior.NoAction);
 
+            builder.Entity<Cart>()
+                .HasOne(c => c.ShippingVoucher)
+                .WithMany()
+                .HasForeignKey(c => c.ShippingVoucherID)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // ===== Invoice =====
             builder.Entity<Invoice>()
@@ -249,6 +259,19 @@ namespace PolyBabyAPI.Data
                 .WithMany(u => u.Invoices)
                 .HasForeignKey(i => i.UserID)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<Invoice>()
+                .HasOne(i => i.Voucher)
+                .WithMany()
+                .HasForeignKey(i => i.VoucherID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Invoice>()
+                .HasOne(i => i.ShippingVoucher)
+                .WithMany()
+                .HasForeignKey(i => i.ShippingVoucherID)
+                .OnDelete(DeleteBehavior.NoAction);
+
 
             // ===== Wishlist =====
             builder.Entity<Wishlist>()

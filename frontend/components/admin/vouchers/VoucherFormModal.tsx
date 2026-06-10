@@ -40,6 +40,9 @@ export default function VoucherFormModal({
   const [status, setStatus] = useState(true);
   const [visibilityType, setVisibilityType] = useState<number>(1); // 1: Public, 2: Exclusive
   const [exclusiveType, setExclusiveType] = useState<number>(0); // 0: None, 1: ManualCode, 2: DirectAssign
+  const [voucherType, setVoucherType] = useState<number>(1); // 1: ProductDiscount, 2: ShippingDiscount
+  const [isFreeShipping, setIsFreeShipping] = useState(false);
+  const [maxShippingDiscount, setMaxShippingDiscount] = useState<number | null>(null);
 
   // Status indicators
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +64,9 @@ export default function VoucherFormModal({
       setStatus(voucher.status);
       setVisibilityType(voucher.visibilityType);
       setExclusiveType(voucher.exclusiveType);
+      setVoucherType(voucher.voucherType || 1);
+      setIsFreeShipping(voucher.isFreeShipping || false);
+      setMaxShippingDiscount(voucher.maxShippingDiscount !== null ? Number(voucher.maxShippingDiscount) : null);
     } else {
       // Clear for create mode
       setCode("");
@@ -80,6 +86,9 @@ export default function VoucherFormModal({
       setStatus(true);
       setVisibilityType(1);
       setExclusiveType(0);
+      setVoucherType(1);
+      setIsFreeShipping(false);
+      setMaxShippingDiscount(null);
     }
     setValidationErrors({});
   }, [voucher]);
@@ -154,10 +163,14 @@ export default function VoucherFormModal({
       errors.name = "Tên voucher phải chứa ít nhất 3 ký tự.";
     }
 
-    if (discountValue <= 0) {
-      errors.discountValue = "Giá trị giảm giá phải lớn hơn 0.";
-    } else if (discountType === 1 && discountValue > 100) {
-      errors.discountValue = "Giảm giá theo % không được vượt quá 100%.";
+    if (voucherType === 2 && isFreeShipping) {
+      // Free shipping has no discount value requirements
+    } else {
+      if (discountValue <= 0) {
+        errors.discountValue = "Giá trị giảm giá phải lớn hơn 0.";
+      } else if (discountType === 1 && discountValue > 100) {
+        errors.discountValue = "Giảm giá theo % không được vượt quá 100%.";
+      }
     }
 
     if (minOrderValue < 0) {
@@ -166,6 +179,12 @@ export default function VoucherFormModal({
 
     if (maxDiscount < 0) {
       errors.maxDiscount = "Giá trị giảm tối đa không được âm.";
+    }
+
+    if (voucherType === 2 && !isFreeShipping) {
+      if (maxShippingDiscount !== null && maxShippingDiscount < 0) {
+        errors.maxShippingDiscount = "Mức giảm phí ship tối đa không được âm.";
+      }
     }
 
     if (!startDate) {
@@ -208,19 +227,26 @@ export default function VoucherFormModal({
       const formattedStartDate = new Date(startDate).toISOString();
       const formattedEndDate = new Date(endDate).toISOString();
 
+      const calculatedDiscountType = (voucherType === 2 && isFreeShipping) ? 1 : discountType;
+      const calculatedDiscountValue = (voucherType === 2 && isFreeShipping) ? 100 : discountValue;
+      const calculatedMaxDiscount = discountType === 2 ? 0 : maxDiscount;
+
       if (isEditing && voucher) {
         const payload: UpdateVoucherPayload = {
           name: name.trim(),
-          discountType,
-          discountValue,
+          discountType: calculatedDiscountType,
+          discountValue: calculatedDiscountValue,
           minOrderValue,
-          maxDiscount: discountType === 2 ? 0 : maxDiscount, // fixed cash doesn't need max discount
+          maxDiscount: calculatedMaxDiscount,
           startDate: formattedStartDate,
           endDate: formattedEndDate,
           totalQuantity,
           status,
           visibilityType,
-          exclusiveType
+          exclusiveType,
+          voucherType,
+          isFreeShipping,
+          maxShippingDiscount: (voucherType === 2 && !isFreeShipping) ? maxShippingDiscount : null
         };
 
         const res = await updateVoucher(token, voucher.voucherID, payload);
@@ -229,16 +255,19 @@ export default function VoucherFormModal({
         const payload: CreateVoucherPayload = {
           code: code.toUpperCase().trim(),
           name: name.trim(),
-          discountType,
-          discountValue,
+          discountType: calculatedDiscountType,
+          discountValue: calculatedDiscountValue,
           minOrderValue,
-          maxDiscount: discountType === 2 ? 0 : maxDiscount,
+          maxDiscount: calculatedMaxDiscount,
           startDate: formattedStartDate,
           endDate: formattedEndDate,
           totalQuantity,
           status,
           visibilityType,
-          exclusiveType
+          exclusiveType,
+          voucherType,
+          isFreeShipping,
+          maxShippingDiscount: (voucherType === 2 && !isFreeShipping) ? maxShippingDiscount : null
         };
 
         const res = await createVoucher(token, payload);
@@ -288,6 +317,44 @@ export default function VoucherFormModal({
                   <span className="material-symbols-outlined text-[16px] text-slate-400">info</span>
                   Thông tin cơ bản
                 </h4>
+
+                {/* Voucher Type */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-455 uppercase mb-2">
+                    Loại Voucher
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      disabled={isEditing}
+                      onClick={() => {
+                        setVoucherType(1);
+                        setIsFreeShipping(false);
+                      }}
+                      className={`py-2 px-4 rounded-xl border font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 ${
+                        voucherType === 1
+                          ? "bg-primary text-on-primary border-primary"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">local_mall</span>
+                      Giảm sản phẩm
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isEditing}
+                      onClick={() => setVoucherType(2)}
+                      className={`py-2 px-4 rounded-xl border font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 ${
+                        voucherType === 2
+                          ? "bg-primary text-on-primary border-primary"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">local_shipping</span>
+                      Giảm phí ship
+                    </button>
+                  </div>
+                </div>
 
                 {/* Voucher Code */}
                 <div>
@@ -477,78 +544,131 @@ export default function VoucherFormModal({
                   Chính sách giảm giá
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Discount Type */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                      Loại giảm giá
+                {voucherType === 2 && (
+                  <div className="flex items-center justify-between p-3.5 bg-sky-50/50 border border-sky-100 rounded-xl">
+                    <div>
+                      <p className="text-xs font-bold text-sky-805">Miễn phí vận chuyển (Free Shipping)</p>
+                      <p className="text-[9px] text-sky-600 mt-0.5">
+                        Tự động giảm 100% toàn bộ phí vận chuyển của đơn hàng.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isFreeShipping}
+                        onChange={e => {
+                          setIsFreeShipping(e.target.checked);
+                          if (e.target.checked) {
+                            setDiscountType(1);
+                            setDiscountValue(100);
+                            setMaxDiscount(0);
+                            setMaxShippingDiscount(null);
+                          }
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5.5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-sky-600"></div>
                     </label>
-                    <select
-                      value={discountType}
-                      onChange={e => {
-                        const val = Number(e.target.value);
-                        setDiscountType(val);
-                        setDiscountValue(0);
-                        setMaxDiscount(0);
-                      }}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-700"
-                    >
-                      <option value={1}>Theo phần trăm (%)</option>
-                      <option value={2}>Tiền cố định (đ)</option>
-                    </select>
                   </div>
+                )}
 
-                  {/* Discount Value */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
-                      Giá trị giảm ({discountType === 1 ? "%" : "đ"}) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      max={discountType === 1 ? 100 : undefined}
-                      value={discountValue || ""}
-                      onChange={e => {
-                        setDiscountValue(Number(e.target.value));
-                        if (validationErrors.discountValue) {
-                          setValidationErrors(prev => {
-                            const next = { ...prev };
-                            delete next.discountValue;
-                            return next;
-                          });
-                        }
-                      }}
-                      placeholder={discountType === 1 ? "Ví dụ: 10" : "Ví dụ: 50000"}
-                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.discountValue ? "border-rose-300" : "border-slate-200"
-                        }`}
-                    />
-                    {validationErrors.discountValue && (
-                      <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.discountValue}</p>
-                    )}
-                  </div>
+                {!(voucherType === 2 && isFreeShipping) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Discount Type */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
+                        Loại giảm giá
+                      </label>
+                      <select
+                        value={discountType}
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          setDiscountType(val);
+                          setDiscountValue(0);
+                          setMaxDiscount(0);
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-700"
+                      >
+                        <option value={1}>Theo phần trăm (%)</option>
+                        <option value={2}>Tiền cố định (đ)</option>
+                      </select>
+                    </div>
 
-                  {/* Max Discount (Only for percentage) */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
-                      Mức giảm tối đa (đ)
-                    </label>
-                    <input
-                      type="number"
-                      disabled={discountType === 2}
-                      value={discountType === 2 ? "" : maxDiscount || ""}
-                      onChange={e => setMaxDiscount(Number(e.target.value))}
-                      placeholder={discountType === 2 ? "Không áp dụng" : "Không giới hạn (0)"}
-                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${discountType === 2 ? "opacity-60 cursor-not-allowed bg-slate-100 border-slate-200" : "border-slate-200"
-                        }`}
-                    />
+                    {/* Discount Value */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
+                        Giá trị giảm ({discountType === 1 ? "%" : "đ"}) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        max={discountType === 1 ? 100 : undefined}
+                        value={discountValue || ""}
+                        onChange={e => {
+                          setDiscountValue(Number(e.target.value));
+                          if (validationErrors.discountValue) {
+                            setValidationErrors(prev => {
+                              const next = { ...prev };
+                              delete next.discountValue;
+                              return next;
+                            });
+                          }
+                        }}
+                        placeholder={discountType === 1 ? "Ví dụ: 10" : "Ví dụ: 50000"}
+                        className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.discountValue ? "border-rose-300" : "border-slate-200"
+                          }`}
+                      />
+                      {validationErrors.discountValue && (
+                        <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.discountValue}</p>
+                      )}
+                    </div>
+
+                    {/* Max Discount (Only for percentage) */}
+                    <div>
+                      {voucherType === 1 ? (
+                        <>
+                          <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
+                            Mức giảm tối đa (đ)
+                          </label>
+                          <input
+                            type="number"
+                            disabled={discountType === 2}
+                            value={discountType === 2 ? "" : maxDiscount || ""}
+                            onChange={e => setMaxDiscount(Number(e.target.value))}
+                            placeholder={discountType === 2 ? "Không áp dụng" : "Không giới hạn (0)"}
+                            className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${discountType === 2 ? "opacity-60 cursor-not-allowed bg-slate-100 border-slate-200" : "border-slate-200"
+                              }`}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
+                            Mức giảm ship tối đa (đ)
+                          </label>
+                          <input
+                            type="number"
+                            disabled={discountType === 2}
+                            value={discountType === 2 ? "" : maxShippingDiscount || ""}
+                            onChange={e => setMaxShippingDiscount(e.target.value ? Number(e.target.value) : null)}
+                            placeholder={discountType === 2 ? "Không áp dụng" : "Không giới hạn"}
+                            className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${discountType === 2 ? "opacity-60 cursor-not-allowed bg-slate-100 border-slate-200" : "border-slate-200"
+                              }`}
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs text-slate-500 font-semibold">
+                    Đã chọn Miễn phí vận chuyển. Tự động giảm 100% phí ship gốc.
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Min Order Value */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
                       Đơn hàng tối thiểu (đ)
                     </label>
                     <input
@@ -562,7 +682,7 @@ export default function VoucherFormModal({
 
                   {/* Total Quantity */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-450 uppercase mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
                       Số lượng phát hành tối đa
                     </label>
                     <input

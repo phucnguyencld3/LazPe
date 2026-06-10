@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -291,7 +291,7 @@ namespace PolyBabyAPI.Controllers
         /// Hủy áp dụng mã giảm giá
         /// </summary>
         [HttpPost("remove-voucher")]
-        public async Task<IActionResult> RemoveVoucher()
+        public async Task<IActionResult> RemoveVoucher([FromQuery] int? type = null)
         {
             try
             {
@@ -302,15 +302,19 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var cart = await _cartService.GetCartByUserIdAsync(userId);
-                await _cartService.RemoveVoucherAsync(cart.CartID);
+                await _cartService.RemoveVoucherAsync(cart.CartID, type);
 
                 var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
                 var cartDto = MapCartToDto(updatedCart);
 
+                var message = type == 1 ? "Đã hủy mã giảm giá sản phẩm" 
+                            : type == 2 ? "Đã hủy mã giảm giá vận chuyển" 
+                            : "Đã hủy mã giảm giá";
+
                 return Ok(new
                 {
                     success = true,
-                    message = "Đã hủy mã giảm giá",
+                    message = message,
                     data = cartDto
                 });
             }
@@ -334,18 +338,17 @@ namespace PolyBabyAPI.Controllers
         {
             if (cart == null) return new CartDto();
 
-            var subTotal = cart.CartDetails.Sum(cd => cd.TotalPrice);
-            var discountAmount = cart.Voucher != null ? (subTotal - cart.TotalAmount) : 0;
-
             return new CartDto
             {
                 CartID = cart.CartID,
                 UserID = cart.UserID,
                 CreatedDate = cart.CreatedDate,
                 TotalAmount = cart.TotalAmount,
-                SubTotal = subTotal,
-                DiscountAmount = discountAmount,
+                SubTotal = cart.SubTotal,
+                DiscountAmount = cart.DiscountAmount,
+                ShippingDiscountAmount = cart.ShippingDiscountAmount,
                 Voucher = cart.Voucher != null ? MapVoucherToDto(cart.Voucher) : null,
+                ShippingVoucher = cart.ShippingVoucher != null ? MapVoucherToDto(cart.ShippingVoucher) : null,
                 CartDetails = cart.CartDetails.Select(MapCartDetailToDto).ToList()
             };
         }
@@ -395,14 +398,19 @@ namespace PolyBabyAPI.Controllers
                 VoucherID = voucher.VoucherID,
                 Code = voucher.Code,
                 Name = voucher.Name,
-                Description = $"Giảm {GetDiscountDescription(voucher)}",
+                Description = voucher.VoucherType == VoucherType.ShippingDiscount 
+                    ? (voucher.IsFreeShipping ? "Miễn phí vận chuyển" : $"Giảm phí vận chuyển {GetDiscountDescription(voucher)}") 
+                    : $"Giảm {GetDiscountDescription(voucher)}",
                 DiscountAmount = voucher.DiscountType == 2 ? voucher.DiscountValue : 0,
                 DiscountPercent = voucher.DiscountType == 1 ? voucher.DiscountValue : 0,
                 MinOrderValue = voucher.MinOrderValue,
                 MaxDiscount = voucher.MaxDiscount,
                 StartDate = voucher.StartDate,
                 EndDate = voucher.EndDate,
-                IsPercentage = voucher.DiscountType == 1
+                IsPercentage = voucher.DiscountType == 1,
+                VoucherType = (int)voucher.VoucherType,
+                IsFreeShipping = voucher.IsFreeShipping,
+                MaxShippingDiscount = voucher.MaxShippingDiscount
             };
         }
 

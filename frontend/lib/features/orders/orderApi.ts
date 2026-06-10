@@ -24,6 +24,10 @@ export interface OrderInfo {
   userAvatar?: string | null;
   paymentTransactions?: any[];
   invoiceDetails?: any[];
+  shippingDiscountAmount?: number;
+  hasShippingVoucher?: boolean;
+  shippingVoucherCode?: string | null;
+  shippingVoucherName?: string | null;
 }
 
 import { formatCurrency, formatDateTime } from "@/lib/utils/formatters";

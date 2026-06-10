@@ -83,6 +83,9 @@ export interface Voucher {
   remainingQuantity: number;
   visibilityType: string;
   isCollected: boolean;
+  voucherType?: number;
+  isFreeShipping?: boolean;
+  maxShippingDiscount?: number | null;
 }
 
 export interface ApiResponse<T> {

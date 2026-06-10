@@ -644,12 +644,21 @@ export function OrderDetailView({
                   <span>-{formatPrice(order.discountAmount)}</span>
                 </div>
               )}
+
+              {order.shippingDiscountAmount > 0 && (
+                <div className="flex justify-between items-center text-sky-600 font-bold">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">local_shipping</span> Giảm phí vận chuyển
+                  </span>
+                  <span>-{formatPrice(order.shippingDiscountAmount)}</span>
+                </div>
+              )}
               
               <div className="pt-3 border-t border-slate-100 flex justify-between items-end">
                 <span className="font-bold text-slate-700 text-sm md:text-base">Tổng thanh toán</span>
                 <div className="text-right">
                   <span className="font-headline-lg text-lg md:text-xl font-bold text-primary">
-                    {formatPrice(order.finalAmount || (order.totalPrice + order.shippingFee))}
+                    {formatPrice(order.finalAmount || (order.totalPrice + order.shippingFee - (order.shippingDiscountAmount || 0)))}
                   </span>
                   <p className="text-[9px] text-slate-400 mt-0.5 font-bold italic">(Đã bao gồm VAT & Phí ship)</p>
                 </div>

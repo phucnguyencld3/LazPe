@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -21,11 +21,15 @@ namespace PolyBabyAPI.DTOs
         /// <summary>Số tiền được giảm từ voucher</summary>
         public decimal DiscountAmount { get; set; }
 
+        public decimal ShippingDiscountAmount { get; set; }
+
         /// <summary>Tổng tiền phải trả = SubTotal - DiscountAmount</summary>
         public decimal TotalAmount { get; set; }
 
         /// <summary>Voucher đang áp dụng, null nếu chưa có</summary>
         public VoucherDto? Voucher { get; set; }
+
+        public VoucherDto? ShippingVoucher { get; set; }
 
         public List<CartDetailDto> CartDetails { get; set; } = new();
 
@@ -117,6 +121,10 @@ namespace PolyBabyAPI.DTOs
 
         /// <summary>true = giảm theo %, false = giảm tiền cố định</summary>
         public bool IsPercentage { get; set; }
+
+        public int VoucherType { get; set; }
+        public bool IsFreeShipping { get; set; }
+        public decimal? MaxShippingDiscount { get; set; }
     }
 
     // =============================================

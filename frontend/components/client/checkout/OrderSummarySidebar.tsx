@@ -8,6 +8,7 @@ interface OrderSummarySidebarProps {
   subTotal: number;
   shippingFee: number;
   discountAmount: number;
+  shippingDiscountAmount: number;
   totalPrice: number;
   submitting: boolean;
   handlePlaceOrder: () => void;
@@ -32,6 +33,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   subTotal,
   shippingFee,
   discountAmount,
+  shippingDiscountAmount,
   totalPrice,
   submitting,
   handlePlaceOrder,
@@ -133,6 +135,22 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 truncate">
                 {cart.voucher.name}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {cart?.shippingVoucher && (
+          <div className="mx-6 mt-4 p-3 rounded-xl border border-dashed border-sky-200 bg-sky-500/[0.02] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-base font-bold">local_shipping</span>
+            </div>
+            <div className="min-w-0 flex-grow">
+              <div className="text-xs font-bold text-slate-800">
+                Đã áp dụng mã ship: <span className="text-sky-600 font-extrabold">{cart.shippingVoucher.code}</span>
+              </div>
+              <div className="text-[10px] text-slate-500 truncate">
+                {cart.shippingVoucher.name}
               </div>
             </div>
           </div>
@@ -241,17 +259,20 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             {/* Shipping Fee */}
             <div className="flex justify-between items-center text-slate-600">
               <span>Phí vận chuyển:</span>
-              <span className={`font-semibold ${shippingFee === 0 ? "text-emerald-500 font-bold" : "text-slate-800"}`}>
-                {shippingFee === 0 ? "Miễn phí" : formatVND(shippingFee)}
+              <span className={`font-semibold ${(shippingFee - shippingDiscountAmount) === 0 ? "text-emerald-500 font-bold" : "text-slate-800"}`}>
+                {(shippingFee - shippingDiscountAmount) === 0 ? "Miễn phí" : formatVND(shippingFee)}
               </span>
             </div>
 
-            {/* Shipping free progress banner if not free */}
-            {shippingFee > 0 && (
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-500">
-                💡 Mua thêm <span className="font-bold text-rose-500">{formatVND(300000 - subTotal)}</span> để được <span className="font-bold text-emerald-500">Miễn phí vận chuyển</span>!
+            {/* Shipping Discount */}
+            {shippingDiscountAmount > 0 && (
+              <div className="flex justify-between items-center text-sky-600">
+                <span>Giảm phí vận chuyển:</span>
+                <span className="font-bold">- {formatVND(shippingDiscountAmount)}</span>
               </div>
             )}
+
+
 
             {/* Voucher Discount */}
             {discountAmount > 0 && (

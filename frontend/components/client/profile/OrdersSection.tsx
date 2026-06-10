@@ -389,7 +389,7 @@ export function OrdersSection({
                           <div className="text-sm font-semibold text-slate-700">
                             Tổng thanh toán:{" "}
                             <span className="text-lg font-bold text-primary">
-                              {formatPrice(order.totalPrice + order.shippingFee)}
+                              {formatPrice(order.totalPrice + order.shippingFee - (order.shippingDiscountAmount || 0))}
                             </span>
                           </div>
 

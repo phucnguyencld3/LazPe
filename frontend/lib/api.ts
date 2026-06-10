@@ -772,6 +772,9 @@ export interface VoucherCartInfo {
   startDate: string;
   endDate: string;
   isPercentage: boolean;
+  voucherType?: number;
+  isFreeShipping?: boolean;
+  maxShippingDiscount?: number | null;
 }
 
 export interface CartDetailInfo {
@@ -793,8 +796,10 @@ export interface CartInfo {
   createdDate: string;
   subTotal: number;
   discountAmount: number;
+  shippingDiscountAmount: number;
   totalAmount: number;
   voucher?: VoucherCartInfo | null;
+  shippingVoucher?: VoucherCartInfo | null;
   cartDetails: CartDetailInfo[];
   totalItems: number;
 }
@@ -924,10 +929,14 @@ export async function applyVoucherToCart(
 }
 
 export async function removeVoucherFromCart(
-  token: string
+  token: string,
+  type?: number
 ): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/Cart/remove-voucher`, {
+    const url = type 
+      ? `${API_BASE_URL}/Cart/remove-voucher?type=${type}` 
+      : `${API_BASE_URL}/Cart/remove-voucher`;
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

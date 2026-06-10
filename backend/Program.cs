@@ -299,6 +299,10 @@ try
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             await dbContext.Database.MigrateAsync();
+            
+            // Cập nhật tất cả voucher cũ có VoucherType = 0 thành ProductDiscount (1)
+            await dbContext.Database.ExecuteSqlRawAsync("UPDATE Vouchers SET VoucherType = 1 WHERE VoucherType = 0");
+
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
         }
         catch (Exception ex)

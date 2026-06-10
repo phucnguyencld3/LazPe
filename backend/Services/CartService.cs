@@ -30,6 +30,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.UserID == userId && c.Status == true);
 
             if (cart == null)
@@ -58,6 +59,7 @@ namespace PolyBabyAPI.Services
             return await _context.Carts
                 .Include(c => c.CartDetails)
                 .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
 
@@ -218,6 +220,7 @@ namespace PolyBabyAPI.Services
             if (cart != null)
             {
                 cart.Voucher = null; // Clear voucher too
+                cart.ShippingVoucher = null;
             }
 
             await _context.SaveChangesAsync();
@@ -263,8 +266,28 @@ namespace PolyBabyAPI.Services
                 return (false, "Voucher chưa có trong ví của bạn.");
             }
             
-            // Lưu voucher vào cart
-            cart.Voucher = voucher;
+            // Lưu voucher vào cart tương ứng loại
+            if (voucher.VoucherType == VoucherType.ShippingDiscount)
+            {
+                // Tính tạm tính & giảm giá sản phẩm để xem đơn hàng đã được freeship tự động chưa
+                decimal productDiscount = 0;
+                if (cart.Voucher != null)
+                {
+                    var productVoucherValid = await _voucherService.ValidateVoucherAsync(cart.Voucher.Code, subTotal, cart.UserID);
+                    if (productVoucherValid.IsValid)
+                    {
+                        productDiscount = _voucherService.CalculateDiscount(cart.Voucher, subTotal);
+                    }
+                }
+                decimal netTotal = subTotal - productDiscount;
+                if (netTotal < 0) netTotal = 0;
+
+                cart.ShippingVoucher = voucher;
+            }
+            else
+            {
+                cart.Voucher = voucher;
+            }
             
             await _context.SaveChangesAsync();
             await CalculateCartTotalAsync(cartId);
@@ -272,19 +295,24 @@ namespace PolyBabyAPI.Services
             return (true, "Áp dụng mã giảm giá thành công!");
         }
 
-        public async Task RemoveVoucherAsync(int cartId)
+        public async Task RemoveVoucherAsync(int cartId, int? type = null)
         {
-            var cart = await _context.Carts.Include(c => c.Voucher).FirstOrDefaultAsync(c => c.CartID == cartId);
+            var cart = await _context.Carts
+                .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
+                .FirstOrDefaultAsync(c => c.CartID == cartId);
+
             if (cart != null)
             {
-                // Để gỡ relation, ta cần set null.
-                // Nếu model Cart không có VoucherID (FK explicit) mà chỉ có navigation prop
-                // thì ta cần load nó vào context.
-                
-                // Hack: Nếu EF Core dùng Shadow Property cho FK VoucherID
-                // Cách an toàn là dùng .Reference().CurrentValue = null hoặc set navigation = null.
-                cart.Voucher = null; 
-                
+                if (type == null || type == 1)
+                {
+                    cart.Voucher = null;
+                }
+                if (type == null || type == 2)
+                {
+                    cart.ShippingVoucher = null;
+                }
+
                 await _context.SaveChangesAsync();
                 await CalculateCartTotalAsync(cartId);
             }
@@ -299,6 +327,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
 
             if (cart == null) return;
@@ -311,6 +340,7 @@ namespace PolyBabyAPI.Services
 
             decimal subTotal = cart.CartDetails.Sum(cd => cd.Quantity * cd.UnitPrice);
             decimal discount = 0;
+            decimal shippingDiscount = 0;
 
             if (cart.Voucher != null)
             {
@@ -327,10 +357,29 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            // Cart TotalAmount stores the final amount to pay? Or just subtotal? 
-            // Usually TotalAmount in Cart model implies the final value.
-            // Let's assume TotalAmount = SubTotal - Discount
-            
+            // Tính toán Shipping Discount
+            if (cart.ShippingVoucher != null)
+            {
+                var validCheck = await _voucherService.ValidateVoucherAsync(cart.ShippingVoucher.Code, subTotal, cart.UserID);
+                if (validCheck.IsValid)
+                {
+                    // Tính phí ship tạm thời dựa trên tổng tiền sau giảm giá sản phẩm
+                    decimal netTotal = subTotal - discount;
+                    if (netTotal < 0) netTotal = 0;
+
+                    decimal originalShippingFee = 25000;
+                    
+                    shippingDiscount = _voucherService.CalculateShippingDiscount(cart.ShippingVoucher, originalShippingFee);
+                }
+                else
+                {
+                    cart.ShippingVoucher = null;
+                }
+            }
+
+            cart.SubTotal = subTotal;
+            cart.DiscountAmount = discount;
+            cart.ShippingDiscountAmount = shippingDiscount;
             cart.TotalAmount = subTotal - discount;
             if (cart.TotalAmount < 0) cart.TotalAmount = 0;
 
