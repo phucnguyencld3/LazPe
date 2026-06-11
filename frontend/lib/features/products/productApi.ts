@@ -5,6 +5,7 @@ export interface AdminProductInfo {
   code: string;
   productName: string;
   description: string;
+  specifications?: string;
   price: number;
   productDiscountPercent: number;
   stock: number;
@@ -176,6 +177,7 @@ export interface AdminProductDetailInfo {
   code: string;
   productName: string;
   description: string;
+  specifications?: string;
   price: number;
   productDiscountPercent: number;
   stock: number;
@@ -496,6 +498,7 @@ export interface CreateProductPayload {
   code?: string;
   productName: string;
   description?: string;
+  specifications?: string;
   price?: number;
   productDiscountPercent?: number;
   stock?: number;
@@ -507,6 +510,7 @@ export interface CreateFullProductPayload {
   code?: string;
   productName: string;
   description?: string;
+  specifications?: string;
   price?: number;
   productDiscountPercent?: number;
   stock?: number;
@@ -586,6 +590,7 @@ export interface UpdateProductPayload {
   code?: string;
   productName: string;
   description?: string;
+  specifications?: string;
   price?: number;
   productDiscountPercent?: number;
   stock?: number;

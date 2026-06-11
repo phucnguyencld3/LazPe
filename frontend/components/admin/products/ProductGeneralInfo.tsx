@@ -14,6 +14,8 @@ interface ProductGeneralInfoProps {
   categories: CategorySelectOption[];
   selectedCategoryId: number | null;
   onCategoryChange: (catId: number | null, pathIds: number[]) => void;
+  specifications: { key: string; value: string }[];
+  onSpecificationsChange: (val: { key: string; value: string }[]) => void;
 }
 
 export function ProductGeneralInfo({
@@ -28,7 +30,9 @@ export function ProductGeneralInfo({
   onDescriptionChange,
   categories,
   selectedCategoryId,
-  onCategoryChange
+  onCategoryChange,
+  specifications,
+  onSpecificationsChange
 }: ProductGeneralInfoProps) {
 
   // Helper to trace category path from leaf to root
@@ -64,6 +68,11 @@ export function ProductGeneralInfo({
   const selectedPathIds = getCategoryPath(selectedCategoryId);
   const getCategoryName = (id: number) => {
     return categories.find(c => c.categoryID === id)?.categoryName || "";
+  };
+
+  const isSpecKeyDuplicate = (key: string) => {
+    if (!key.trim()) return false;
+    return specifications.filter(s => s.key.trim().toLowerCase() === key.trim().toLowerCase()).length > 1;
   };
 
   return (
@@ -188,6 +197,81 @@ export function ProductGeneralInfo({
               placeholder="Nhập mô tả sản phẩm ở đây để khách hàng nắm rõ thông tin sản phẩm..."
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
             />
+          </div>
+
+          {/* Specifications */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-xs font-bold text-slate-400 uppercase">
+                Thông số kỹ thuật
+              </label>
+              <button
+                type="button"
+                onClick={() => onSpecificationsChange([...specifications, { key: "", value: "" }])}
+                className="text-xs font-bold text-primary flex items-center gap-1 hover:underline cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm font-bold">add</span>
+                Thêm thông số
+              </button>
+            </div>
+            
+            {specifications.length === 0 ? (
+              <p className="text-slate-400 text-xs italic">Chưa có thông số kỹ thuật nào được thiết lập.</p>
+            ) : (
+              <div className="space-y-3">
+                {specifications.map((spec, index) => {
+                  const isDup = isSpecKeyDuplicate(spec.key);
+                  return (
+                    <div key={index} className="flex flex-col gap-1 w-full animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3 w-full">
+                        <input
+                          type="text"
+                          value={spec.key}
+                          onChange={(e) => {
+                            const newSpecs = [...specifications];
+                            newSpecs[index].key = e.target.value;
+                            onSpecificationsChange(newSpecs);
+                          }}
+                          placeholder="Tên thông số (Vd: Chất liệu, Xuất xứ...)"
+                          className={`w-1/3 px-3 py-2 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 transition-all ${
+                            isDup
+                              ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 bg-rose-50/5"
+                              : "border-slate-200 focus:ring-primary/20 focus:border-primary"
+                          }`}
+                        />
+                        <input
+                          type="text"
+                          value={spec.value}
+                          onChange={(e) => {
+                            const newSpecs = [...specifications];
+                            newSpecs[index].value = e.target.value;
+                            onSpecificationsChange(newSpecs);
+                          }}
+                          placeholder="Giá trị (Vd: Gỗ tự nhiên, Việt Nam...)"
+                          className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSpecs = specifications.filter((_, idx) => idx !== index);
+                            onSpecificationsChange(newSpecs);
+                          }}
+                          className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0 cursor-pointer active:scale-95"
+                          title="Xóa thông số này"
+                        >
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
+                      {isDup && (
+                        <span className="text-[10px] text-rose-500 font-bold ml-1.5 block">
+                          Trùng tên thông số kỹ thuật
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </section>

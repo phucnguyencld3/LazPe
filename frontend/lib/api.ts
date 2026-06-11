@@ -62,6 +62,7 @@ export async function getProducts(
           quantity: item.totalStock ?? item.stock ?? 0,
           rating: item.rating,
           ratingCount: item.ratingCount,
+          specifications: item.specifications,
         })),
         totalItems: data.totalItems ?? 0,
         totalPages: data.totalPages ?? 0,
@@ -135,6 +136,7 @@ export async function getProductDetail(id: number): Promise<Product | null> {
         ratingCount: item.ratingCount,
         variants: variants,
         productOptions: item.productOptions ?? [],
+        specifications: item.specifications,
       };
     }
     return null;

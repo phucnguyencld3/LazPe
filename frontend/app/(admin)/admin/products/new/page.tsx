@@ -62,6 +62,13 @@ export default function CreateProductPage() {
   const [code, setCode] = useState(""); // SKU code
   const [supplierId, setSupplierId] = useState<number | "">("");
   const [description, setDescription] = useState("");
+  const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>([
+    { key: "Thương hiệu", value: "LazPe" },
+    { key: "Xuất xứ", value: "Việt Nam" },
+    { key: "Chất liệu", value: "" },
+    { key: "Độ tuổi phù hợp", value: "" },
+    { key: "Tiêu chuẩn an toàn", value: "Đạt chuẩn chất lượng Châu Âu EN71 & Quy chuẩn quốc gia CR" }
+  ]);
   const [price, setPrice] = useState<number | "">("");
   const [discountPercent, setDiscountPercent] = useState<number | "">("");
   const [stock, setStock] = useState<number | "">("");
@@ -386,6 +393,9 @@ export default function CreateProductPage() {
     const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
     if (skus.length !== new Set(skus).size) return true;
 
+    const specKeys = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+    if (specKeys.length !== new Set(specKeys).size) return true;
+
     return false;
   })();
 
@@ -435,11 +445,26 @@ export default function CreateProductPage() {
       return;
     }
 
+    // Specifications validation
+    const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+    if (specKeysList.length !== new Set(specKeysList).size) {
+      toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
 
       setSaving(true);
+
+      const specsObj: Record<string, string> = {};
+      specifications.forEach(item => {
+        if (item.key.trim() && item.value.trim()) {
+          specsObj[item.key.trim()] = item.value.trim();
+        }
+      });
+      const specsJson = Object.keys(specsObj).length > 0 ? JSON.stringify(specsObj) : undefined;
 
       const payload: CreateFullProductPayload = {
         productName: productName.trim(),
@@ -447,6 +472,7 @@ export default function CreateProductPage() {
         categoryID: selectedCategoryId as number,
         supplierID: typeof supplierId === "number" ? supplierId : null,
         description: description.trim() || undefined,
+        specifications: specsJson,
         price: price === "" ? 0 : Number(price),
         productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
         stock: options.length > 0 ? totalStock : (stock === "" ? 0 : Number(stock)),
@@ -543,6 +569,8 @@ export default function CreateProductPage() {
               categories={categories}
               selectedCategoryId={selectedCategoryId}
               onCategoryChange={handleCategoryChange}
+              specifications={specifications}
+              onSpecificationsChange={setSpecifications}
             />
           </div>
 

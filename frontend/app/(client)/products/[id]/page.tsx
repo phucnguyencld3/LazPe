@@ -260,10 +260,10 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   // Handle Specifications parsing (JSON mapping)
   const parsedSpecs = useMemo(() => {
-    if (!product || !product.description) return null;
+    if (!product || !product.specifications) return null;
 
     try {
-      const cleaned = product.description.trim();
+      const cleaned = product.specifications.trim();
       if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
         const parsed = JSON.parse(cleaned);
         if (parsed && typeof parsed === "object") {
@@ -276,18 +276,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     return null;
   }, [product]);
 
-  // Fallback specifications if description is not a JSON string
-  const fallbackSpecs = useMemo(() => {
-    if (!product) return [] as [string, string][];
-    return [
-      ["Thương hiệu", "LazPe"],
-      ["Mã sản phẩm", displaySku],
-      ["Xuất xứ", "Việt Nam"],
-      ["Chất liệu", product.categoryName?.toLowerCase().includes("gỗ") ? "Gỗ tự nhiên cao cấp, sơn nước an toàn" : "Vải Cotton 100% hữu cơ, mềm mịn, thoáng khí"],
-      ["Độ tuổi phù hợp", product.categoryName?.toLowerCase().includes("gỗ") ? "Từ 2 đến 6 tuổi" : "Sơ sinh đến 3 tuổi"],
-      ["Tiêu chuẩn an toàn", "Đạt chuẩn chất lượng Châu Âu EN71 & Quy chuẩn quốc gia CR"],
-    ] as [string, string][];
-  }, [product, displaySku]);
+
 
   const handleDecreaseQuantity = () => {
     if (quantity > 1) {
@@ -436,7 +425,6 @@ export default function ProductDetailPage({ params }: PageProps) {
         <ProductTabs
           product={product}
           parsedSpecs={parsedSpecs}
-          fallbackSpecs={fallbackSpecs}
         />
 
         <RelatedProducts

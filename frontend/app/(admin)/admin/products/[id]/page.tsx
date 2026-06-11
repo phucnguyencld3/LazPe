@@ -24,6 +24,20 @@ export default function AdminProductDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Parse specifications JSON
+  const parsedSpecsList = (() => {
+    if (!product || !product.specifications) return [];
+    try {
+      const parsed = JSON.parse(product.specifications);
+      if (parsed && typeof parsed === "object") {
+        return Object.entries(parsed);
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return [];
+  })();
+
   const loadProductDetails = async () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -367,6 +381,26 @@ export default function AdminProductDetailPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Specifications Section */}
+      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm mb-8 animate-in fade-in duration-300">
+        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-6">
+          <span className="material-symbols-outlined text-primary">fact_check</span>
+          Thông số kỹ thuật sản phẩm
+        </h3>
+        {parsedSpecsList.length === 0 ? (
+          <p className="text-slate-400 font-medium text-sm italic py-4">Sản phẩm này chưa cấu hình thông số kỹ thuật.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {parsedSpecsList.map(([key, value]) => (
+              <div key={key} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col justify-center hover:border-primary/20 transition-colors">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{key}</p>
+                <p className="font-bold text-slate-800 text-sm leading-relaxed">{String(value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bottom Row: Variants & Attributes Details */}

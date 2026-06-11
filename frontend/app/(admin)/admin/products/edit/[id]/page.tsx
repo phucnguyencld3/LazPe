@@ -29,6 +29,7 @@ export default function EditProductPage() {
   const [code, setCode] = useState(""); // SKU code
   const [supplierId, setSupplierId] = useState<number | "">("");
   const [description, setDescription] = useState("");
+  const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>([]);
   const [price, setPrice] = useState<number | "">("");
   const [discountPercent, setDiscountPercent] = useState<number | "">("");
   const [stock, setStock] = useState<number | "">("");
@@ -86,6 +87,33 @@ export default function EditProductPage() {
       setSelectedCategoryId(productData.categoryID);
       setStatus(productData.status);
 
+      // Parse specifications JSON
+      let parsedSpecsList: { key: string; value: string }[] = [];
+      if (productData.specifications) {
+        try {
+          const parsed = JSON.parse(productData.specifications);
+          if (parsed && typeof parsed === "object") {
+            parsedSpecsList = Object.entries(parsed).map(([key, value]) => ({
+              key,
+              value: String(value)
+            }));
+          }
+        } catch (e) {
+          console.error("Failed to parse specifications JSON", e);
+        }
+      }
+      // If no specs exist, initialize with default slots
+      if (parsedSpecsList.length === 0) {
+        parsedSpecsList = [
+          { key: "Thương hiệu", value: "LazPe" },
+          { key: "Xuất xứ", value: "Việt Nam" },
+          { key: "Chất liệu", value: "" },
+          { key: "Độ tuổi phù hợp", value: "" },
+          { key: "Tiêu chuẩn an toàn", value: "Đạt chuẩn chất lượng Châu Âu EN71 & Quy chuẩn quốc gia CR" }
+        ];
+      }
+      setSpecifications(parsedSpecsList);
+
       // Trace category path
       if (productData.categoryID) {
         const path = buildCategoryPath(productData.categoryID, catsData);
@@ -117,6 +145,12 @@ export default function EditProductPage() {
   const discVal = Number(discountPercent) || 0;
   const finalPrice = Math.max(0, baseVal - baseVal * (discVal / 100));
 
+  const hasDuplicates = (() => {
+    const specKeys = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+    if (specKeys.length !== new Set(specKeys).size) return true;
+    return false;
+  })();
+
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,11 +170,26 @@ export default function EditProductPage() {
       return;
     }
 
+    // Specifications validation
+    const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+    if (specKeysList.length !== new Set(specKeysList).size) {
+      toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
 
       setSaving(true);
+
+      const specsObj: Record<string, string> = {};
+      specifications.forEach(item => {
+        if (item.key.trim() && item.value.trim()) {
+          specsObj[item.key.trim()] = item.value.trim();
+        }
+      });
+      const specsJson = Object.keys(specsObj).length > 0 ? JSON.stringify(specsObj) : "";
 
       const payload: UpdateProductPayload = {
         productName: productName.trim(),
@@ -148,6 +197,7 @@ export default function EditProductPage() {
         categoryID: selectedCategoryId as number,
         supplierID: typeof supplierId === "number" ? supplierId : null,
         description: description.trim() || undefined,
+        specifications: specsJson || undefined,
         price: price === "" ? 0 : Number(price),
         productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
         stock: stock === "" ? 0 : Number(stock),
@@ -228,6 +278,8 @@ export default function EditProductPage() {
               categories={categories}
               selectedCategoryId={selectedCategoryId}
               onCategoryChange={handleCategoryChange}
+              specifications={specifications}
+              onSpecificationsChange={setSpecifications}
             />
           </div>
 
@@ -285,7 +337,7 @@ export default function EditProductPage() {
             </button>
             <button
               type="submit"
-              disabled={saving || !productName.trim() || !selectedCategoryId || !supplierId}
+              disabled={saving || !productName.trim() || !selectedCategoryId || !supplierId || hasDuplicates}
               className="px-8 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
             >
               {saving ? (

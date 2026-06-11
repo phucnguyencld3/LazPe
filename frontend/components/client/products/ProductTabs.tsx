@@ -6,13 +6,11 @@ import { ProductReviews } from "./ProductReviews";
 interface ProductTabsProps {
   product: Product;
   parsedSpecs: [string, any][] | null;
-  fallbackSpecs: [string, string][];
 }
 
 export const ProductTabs: React.FC<ProductTabsProps> = ({
   product,
   parsedSpecs,
-  fallbackSpecs,
 }) => {
   const [activeTab, setActiveTab] = useState<"description" | "specifications" | "shipping" | "reviews">("description");
 
@@ -30,16 +28,18 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
         >
           Mô tả sản phẩm
         </button>
-        <button
-          onClick={() => setActiveTab("specifications")}
-          className={`pb-2 text-sm font-bold border-b-2 transition-all ${
-            activeTab === "specifications"
-              ? "border-primary text-primary"
-              : "border-transparent text-slate-400 hover:text-slate-600"
-          }`}
-        >
-          Thông số kỹ thuật
-        </button>
+        {parsedSpecs && parsedSpecs.length > 0 && (
+          <button
+            onClick={() => setActiveTab("specifications")}
+            className={`pb-2 text-sm font-bold border-b-2 transition-all ${
+              activeTab === "specifications"
+                ? "border-primary text-primary"
+                : "border-transparent text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            Thông số kỹ thuật
+          </button>
+        )}
         <button
           onClick={() => setActiveTab("shipping")}
           className={`pb-2 text-sm font-bold border-b-2 transition-all ${
@@ -66,7 +66,7 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
       <div className="p-6 sm:p-8 text-slate-600 text-sm leading-relaxed min-h-[160px]">
         {activeTab === "description" && (
           <div className="whitespace-pre-line">
-            {product.description && !(product.description.trim().startsWith("{") && product.description.trim().endsWith("}")) ? (
+            {product.description ? (
               product.description
             ) : (
               <div>
@@ -77,11 +77,11 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
         )}
 
         {/* Specifications JSON parsed Table */}
-        {activeTab === "specifications" && (
+        {activeTab === "specifications" && parsedSpecs && parsedSpecs.length > 0 && (
           <div className="max-w-2xl">
             <table className="min-w-full divide-y divide-slate-200 border border-slate-100 rounded-lg overflow-hidden">
               <tbody className="divide-y divide-slate-100 bg-white">
-                {(parsedSpecs || fallbackSpecs).map(([key, value]) => (
+                {parsedSpecs.map(([key, value]) => (
                   <tr key={key} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-slate-500 bg-slate-50/50 w-1/3">
                       {key}

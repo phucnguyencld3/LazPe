@@ -82,6 +82,7 @@ namespace PolyBabyAPI.Services
                         Code = p.Code,
                         ProductName = p.ProductName,
                         Description = p.Description,
+                        Specifications = p.Specifications,
                         Price = p.Price,
                         ProductDiscountPercent = p.ProductDiscountPercent,
                         Stock = p.Stock,
@@ -219,6 +220,7 @@ namespace PolyBabyAPI.Services
                     Code = product.Code,
                     ProductName = product.ProductName,
                     Description = product.Description,
+                    Specifications = product.Specifications,
                     Price = product.Price,
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
@@ -284,6 +286,7 @@ namespace PolyBabyAPI.Services
                     Code = product.Code,
                     ProductName = product.ProductName,
                     Description = product.Description,
+                    Specifications = product.Specifications,
                     Price = product.Price,
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
@@ -382,6 +385,7 @@ namespace PolyBabyAPI.Services
                     Code = dto.Code,
                     ProductName = dto.ProductName,
                     Description = dto.Description,
+                    Specifications = dto.Specifications,
                     Price = dto.Price,
                     ProductDiscountPercent = dto.ProductDiscountPercent,
                     Stock = dto.Stock,
@@ -524,6 +528,7 @@ namespace PolyBabyAPI.Services
                     Code = productCode,
                     ProductName = dto.ProductName,
                     Description = dto.Description ?? "",
+                    Specifications = dto.Specifications ?? "",
                     Price = dto.Price,
                     ProductDiscountPercent = dto.ProductDiscountPercent,
                     Stock = dto.Variants.Any() ? dto.Variants.Sum(v => v.Stock) : dto.Stock,
@@ -680,6 +685,7 @@ namespace PolyBabyAPI.Services
                 product.Code = dto.Code ?? product.Code;
                 product.ProductName = dto.ProductName;
                 product.Description = dto.Description;
+                product.Specifications = dto.Specifications;
                 product.Price = dto.Price;
                 product.ProductDiscountPercent = dto.ProductDiscountPercent;
                 product.Stock = dto.Stock;
