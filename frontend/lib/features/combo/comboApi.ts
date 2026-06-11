@@ -25,6 +25,7 @@ export interface BundleResponse {
   imageUrl: string;
   createdDate: string;
   items?: BundleItemResponse[];
+  stock?: number;
 }
 
 export interface AddBundleItemDto {

@@ -580,7 +580,10 @@ namespace PolyBabyAPI.Controllers
             status = b.Status,
             itemCount = b.BundleItems?.Count ?? 0,
             createdDate = b.CreatedDate,
-            imageUrl = b.ImageUrl ?? ""
+            imageUrl = b.ImageUrl ?? "",
+            stock = b.BundleItems == null || !b.BundleItems.Any()
+                ? 0
+                : b.BundleItems.Min(bi => bi.Variant != null && bi.Quantity > 0 ? (bi.Variant.Stock / bi.Quantity) : 0)
         };
 
         #endregion

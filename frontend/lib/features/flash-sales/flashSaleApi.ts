@@ -126,17 +126,17 @@ export async function deleteFlashSale(id: number, token: string): Promise<any> {
 }
 
 // Get current active flash sale (Client)
-export async function getCurrentFlashSale(): Promise<FlashSaleResponseDto | null> {
+export async function getCurrentFlashSale(): Promise<FlashSaleResponseDto[]> {
   const response = await fetch(`${API_BASE_URL}/FlashSale/current`, {
     headers: { "Content-Type": "application/json" }
   });
-  if (!response.ok) return null;
+  if (!response.ok) return [];
   const text = await response.text();
-  if (!text || text.trim() === "" || text === "null") return null;
+  if (!text || text.trim() === "" || text === "null") return [];
   try {
     return JSON.parse(text);
   } catch (e) {
     console.error("Failed to parse flash sale JSON:", e);
-    return null;
+    return [];
   }
 }

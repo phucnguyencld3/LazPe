@@ -33,112 +33,112 @@ namespace PolyBabyAPI.Controllers
         {
             var now = DateTime.Now;
 
-            // Lấy FlashSale đang diễn ra hoạt động, ưu tiên cái đang diễn ra (Active)
-            var activeSale = await _context.FlashSales
+            // Lấy tất cả FlashSale đang hoạt động (IsActive) và chưa kết thúc (EndTime >= now)
+            var activeSales = await _context.FlashSales
                 .Include(fs => fs.FlashSaleItems)
-                .Where(fs => fs.IsActive && fs.StartTime <= now && fs.EndTime >= now)
-                .OrderBy(fs => fs.EndTime)
-                .FirstOrDefaultAsync();
-
-            // Nếu không có cái đang diễn ra, tìm cái sắp diễn ra (Upcoming) gần nhất
-            if (activeSale == null)
-            {
-                activeSale = await _context.FlashSales
-                    .Include(fs => fs.FlashSaleItems)
-                    .Where(fs => fs.IsActive && fs.StartTime > now)
-                    .OrderBy(fs => fs.StartTime)
-                    .FirstOrDefaultAsync();
-            }
-
-            if (activeSale == null)
-            {
-                return Ok(null); // Không có chiến dịch sale nào
-            }
+                .Where(fs => fs.IsActive && fs.EndTime >= now)
+                .OrderBy(fs => fs.StartTime)
+                .ToListAsync();
 
             // Đồng bộ trạng thái tự động dựa trên thời gian
-            var expectedStatus = FlashSaleStatus.Upcoming;
-            if (now >= activeSale.StartTime && now <= activeSale.EndTime)
-                expectedStatus = FlashSaleStatus.Active;
-            else if (now > activeSale.EndTime)
-                expectedStatus = FlashSaleStatus.Ended;
-
-            if (activeSale.Status != expectedStatus)
+            bool statusChanged = false;
+            foreach (var sale in activeSales)
             {
-                activeSale.Status = expectedStatus;
+                var expectedStatus = FlashSaleStatus.Upcoming;
+                if (now >= sale.StartTime && now <= sale.EndTime)
+                    expectedStatus = FlashSaleStatus.Active;
+                else if (now > sale.EndTime)
+                    expectedStatus = FlashSaleStatus.Ended;
+
+                if (sale.Status != expectedStatus)
+                {
+                    sale.Status = expectedStatus;
+                    statusChanged = true;
+                }
+            }
+            if (statusChanged)
+            {
                 await _context.SaveChangesAsync();
             }
 
-            var response = new FlashSaleResponseDto
-            {
-                Id = activeSale.Id,
-                Name = activeSale.Name,
-                StartTime = activeSale.StartTime,
-                EndTime = activeSale.EndTime,
-                Status = activeSale.Status,
-                IsActive = activeSale.IsActive,
-                CreatedAt = activeSale.CreatedAt,
-                CreatedBy = activeSale.CreatedBy,
-                FlashSaleItems = new List<FlashSaleItemResponseDto>()
-            };
+            var responseList = new List<FlashSaleResponseDto>();
 
-            // Điền thông tin chi tiết tên, ảnh, giá gốc của từng item trong Flash Sale
-            foreach (var item in activeSale.FlashSaleItems)
+            foreach (var sale in activeSales)
             {
-                var itemDto = new FlashSaleItemResponseDto
+                var response = new FlashSaleResponseDto
                 {
-                    Id = item.Id,
-                    FlashSaleId = item.FlashSaleId,
-                    ItemType = item.ItemType,
-                    ReferenceId = item.ReferenceId,
-                    DiscountPrice = item.DiscountPrice,
-                    TotalQuantity = item.TotalQuantity,
-                    SoldQuantity = item.SoldQuantity,
-                    MaxQuantityPerUser = item.MaxQuantityPerUser
+                    Id = sale.Id,
+                    Name = sale.Name,
+                    StartTime = sale.StartTime,
+                    EndTime = sale.EndTime,
+                    Status = sale.Status,
+                    IsActive = sale.IsActive,
+                    CreatedAt = sale.CreatedAt,
+                    CreatedBy = sale.CreatedBy,
+                    FlashSaleItems = new List<FlashSaleItemResponseDto>()
                 };
 
-                if (item.ItemType == FlashSaleItemType.Product)
+                // Điền thông tin chi tiết tên, ảnh, giá gốc của từng item trong Flash Sale
+                foreach (var item in sale.FlashSaleItems)
                 {
-                    var product = await _context.Products
-                        .Include(p => p.Variants)
-                        .FirstOrDefaultAsync(p => p.ProductID == item.ReferenceId);
-                    if (product != null)
+                    var itemDto = new FlashSaleItemResponseDto
                     {
-                        itemDto.ItemName = product.ProductName;
-                        itemDto.OriginalPrice = product.Price;
-                        itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl;
-                        itemDto.ProductId = product.ProductID;
-                    }
-                }
-                else if (item.ItemType == FlashSaleItemType.Variant)
-                {
-                    var variant = await _context.Variants
-                        .Include(v => v.Product)
-                        .FirstOrDefaultAsync(v => v.VariantID == item.ReferenceId);
-                    if (variant != null)
+                        Id = item.Id,
+                        FlashSaleId = item.FlashSaleId,
+                        ItemType = item.ItemType,
+                        ReferenceId = item.ReferenceId,
+                        DiscountPrice = item.DiscountPrice,
+                        TotalQuantity = item.TotalQuantity,
+                        SoldQuantity = item.SoldQuantity,
+                        MaxQuantityPerUser = item.MaxQuantityPerUser
+                    };
+
+                    if (item.ItemType == FlashSaleItemType.Product)
                     {
-                        itemDto.ItemName = $"{variant.Product?.ProductName} ({variant.VariantName})";
-                        itemDto.OriginalPrice = variant.UnitPrice;
-                        itemDto.SKU = variant.SKU;
-                        itemDto.ImageUrl = variant.ImageUrl;
-                        itemDto.ProductId = variant.ProductID;
+                        var product = await _context.Products
+                            .Include(p => p.Variants)
+                            .FirstOrDefaultAsync(p => p.ProductID == item.ReferenceId);
+                        if (product != null)
+                        {
+                            itemDto.ItemName = product.ProductName;
+                            itemDto.OriginalPrice = product.Price;
+                            itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl;
+                            itemDto.ProductId = product.ProductID;
+                        }
                     }
-                }
-                else if (item.ItemType == FlashSaleItemType.Bundle)
-                {
-                    var bundle = await _context.Bundles
-                        .FirstOrDefaultAsync(b => b.BundleID == item.ReferenceId);
-                    if (bundle != null)
+                    else if (item.ItemType == FlashSaleItemType.Variant)
                     {
-                        itemDto.ItemName = bundle.Name;
-                        itemDto.OriginalPrice = bundle.OriginalPrice ?? 0;
-                        itemDto.ImageUrl = bundle.ImageUrl;
+                        var variant = await _context.Variants
+                            .Include(v => v.Product)
+                            .FirstOrDefaultAsync(v => v.VariantID == item.ReferenceId);
+                        if (variant != null)
+                        {
+                            itemDto.ItemName = $"{variant.Product?.ProductName} ({variant.VariantName})";
+                            itemDto.OriginalPrice = variant.UnitPrice;
+                            itemDto.SKU = variant.SKU;
+                            itemDto.ImageUrl = variant.ImageUrl;
+                            itemDto.ProductId = variant.ProductID;
+                        }
                     }
+                    else if (item.ItemType == FlashSaleItemType.Bundle)
+                    {
+                        var bundle = await _context.Bundles
+                            .FirstOrDefaultAsync(b => b.BundleID == item.ReferenceId);
+                        if (bundle != null)
+                        {
+                            itemDto.ItemName = bundle.Name;
+                            itemDto.OriginalPrice = bundle.OriginalPrice ?? 0;
+                            itemDto.ImageUrl = bundle.ImageUrl;
+                        }
+                    }
+
+                    response.FlashSaleItems.Add(itemDto);
                 }
 
-                response.FlashSaleItems.Add(itemDto);
+                responseList.Add(response);
             }
 
-            return Ok(response);
+            return Ok(responseList);
         }
 
         // ==========================================
@@ -282,21 +282,20 @@ namespace PolyBabyAPI.Controllers
         [HttpPost("admin")]
         public async Task<IActionResult> CreateFlashSale([FromBody] CreateFlashSaleDto dto)
         {
+            var now = DateTime.Now;
+            if (dto.StartTime < now.AddMinutes(-2))
+            {
+                return BadRequest(new { message = "Thời gian bắt đầu không được ở quá khứ." });
+            }
+
+            if (dto.EndTime <= now)
+            {
+                return BadRequest(new { message = "Thời gian kết thúc phải lớn hơn thời gian hiện tại." });
+            }
+
             if (dto.StartTime >= dto.EndTime)
             {
                 return BadRequest(new { message = "Thời gian kết thúc phải lớn hơn thời gian bắt đầu." });
-            }
-
-            // Kiểm tra xem có bị trùng lặp thời gian với chiến dịch khác đang bật hay không
-            var overlappingSale = await _context.FlashSales
-                .AnyAsync(fs => fs.IsActive && fs.Status != FlashSaleStatus.Ended
-                    && ((dto.StartTime >= fs.StartTime && dto.StartTime <= fs.EndTime)
-                        || (dto.EndTime >= fs.StartTime && dto.EndTime <= fs.EndTime)
-                        || (fs.StartTime >= dto.StartTime && fs.StartTime <= dto.EndTime)));
-
-            if (overlappingSale)
-            {
-                return BadRequest(new { message = "Khoảng thời gian này đã trùng lặp với một chiến dịch Flash Sale khác đang kích hoạt." });
             }
 
             var sale = new FlashSale
@@ -341,9 +340,19 @@ namespace PolyBabyAPI.Controllers
                 return NotFound(new { message = "Không tìm thấy chiến dịch Flash Sale." });
             }
 
-            if (sale.Status == FlashSaleStatus.Ended)
+            var now = DateTime.Now;
+
+            if (dto.EndTime <= now)
             {
-                return BadRequest(new { message = "Không thể chỉnh sửa chiến dịch Flash Sale đã kết thúc." });
+                return BadRequest(new { message = "Thời gian kết thúc phải lớn hơn thời gian hiện tại." });
+            }
+
+            if (sale.Status == FlashSaleStatus.Upcoming || dto.StartTime != sale.StartTime)
+            {
+                if (dto.StartTime < now.AddMinutes(-2))
+                {
+                    return BadRequest(new { message = "Thời gian bắt đầu không được ở quá khứ." });
+                }
             }
 
             if (dto.StartTime >= dto.EndTime)
@@ -351,22 +360,18 @@ namespace PolyBabyAPI.Controllers
                 return BadRequest(new { message = "Thời gian kết thúc phải lớn hơn thời gian bắt đầu." });
             }
 
-            // Kiểm tra trùng lặp ngoại trừ chính nó
-            var overlappingSale = await _context.FlashSales
-                .AnyAsync(fs => fs.Id != id && fs.IsActive && fs.Status != FlashSaleStatus.Ended
-                    && ((dto.StartTime >= fs.StartTime && dto.StartTime <= fs.EndTime)
-                        || (dto.EndTime >= fs.StartTime && dto.EndTime <= fs.EndTime)
-                        || (fs.StartTime >= dto.StartTime && fs.StartTime <= dto.EndTime)));
-
-            if (overlappingSale)
-            {
-                return BadRequest(new { message = "Khoảng thời gian này đã trùng lặp với một chiến dịch Flash Sale khác." });
-            }
-
             sale.Name = dto.Name;
             sale.StartTime = dto.StartTime;
             sale.EndTime = dto.EndTime;
             sale.IsActive = dto.IsActive;
+
+            // Cập nhật lại trạng thái chiến dịch dựa trên thời gian mới
+            if (now >= sale.StartTime && now <= sale.EndTime)
+                sale.Status = FlashSaleStatus.Active;
+            else if (now > sale.EndTime)
+                sale.Status = FlashSaleStatus.Ended;
+            else
+                sale.Status = FlashSaleStatus.Upcoming;
 
             // Xóa các items cũ và add lại mới (để đơn giản)
             _context.FlashSaleItems.RemoveRange(sale.FlashSaleItems);

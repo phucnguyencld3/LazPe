@@ -143,6 +143,41 @@ export default function AdminFlashSalesPage() {
       return;
     }
 
+    const start = new Date(formStartTime);
+    const end = new Date(formEndTime);
+    const now = new Date();
+
+    if (start >= end) {
+      toast.error("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+      return;
+    }
+
+    if (end <= now) {
+      toast.error("Thời gian kết thúc phải lớn hơn thời gian hiện tại.");
+      return;
+    }
+
+    // Nếu tạo mới, hoặc sửa mà thay đổi StartTime (so với ban đầu)
+    if (view === "create") {
+      // Cho phép lệch tối đa 2 phút để tránh lỗi trễ mili giây khi ấn nút gửi
+      if (start.getTime() < now.getTime() - 2 * 60 * 1000) {
+        toast.error("Thời gian bắt đầu không được ở quá khứ.");
+        return;
+      }
+    } else if (view === "edit" && activeSaleId) {
+      const originalSale = sales.find(s => s.id === activeSaleId);
+      if (originalSale) {
+        const origStart = new Date(originalSale.startTime);
+        // Nếu thay đổi start time thì không được chọn thời gian quá khứ
+        if (Math.abs(start.getTime() - origStart.getTime()) > 1000) {
+          if (start.getTime() < now.getTime() - 2 * 60 * 1000) {
+            toast.error("Thời gian bắt đầu không được ở quá khứ.");
+            return;
+          }
+        }
+      }
+    }
+
     // Validate prices and quantities
     for (const item of formItems) {
       if (item.discountPrice >= item.originalPrice) {
@@ -287,6 +322,11 @@ export default function AdminFlashSalesPage() {
   };
 
   const addProductToSale = (product: AdminProductInfo) => {
+    const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
+    if (actualStock <= 0) {
+      toast.error("Sản phẩm này đã hết hàng trong tồn kho.");
+      return;
+    }
     if (formItems.some(item => item.type === FlashSaleItemType.Product && item.refId === product.productID)) {
       toast.warning("Sản phẩm này đã được thêm vào chiến dịch.");
       return;
@@ -310,6 +350,10 @@ export default function AdminFlashSalesPage() {
   };
 
   const addVariantToSale = (variant: AdminVariantInfo, productName: string) => {
+    if (variant.stock <= 0) {
+      toast.error("Biến thể này đã hết hàng trong tồn kho.");
+      return;
+    }
     if (formItems.some(item => item.type === FlashSaleItemType.Variant && item.refId === variant.variantID)) {
       toast.warning("Biến thể này đã được thêm vào chiến dịch.");
       return;
@@ -335,6 +379,11 @@ export default function AdminFlashSalesPage() {
   };
 
   const addBundleToSale = (bundle: BundleResponse) => {
+    const bundleStock = bundle.stock !== undefined ? bundle.stock : 0;
+    if (bundleStock <= 0) {
+      toast.error("Combo này đã hết hàng trong tồn kho.");
+      return;
+    }
     if (formItems.some(item => item.type === FlashSaleItemType.Bundle && item.refId === bundle.bundleID)) {
       toast.warning("Combo này đã được thêm vào chiến dịch.");
       return;
@@ -633,15 +682,13 @@ export default function AdminFlashSalesPage() {
                               <span className="material-symbols-outlined text-lg">group</span>
                             </button>
 
-                            {sale.status !== FlashSaleStatus.Ended && (
-                              <button
-                                onClick={() => loadSaleForEdit(sale.id)}
-                                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                                title="Sửa"
-                              >
-                                <span className="material-symbols-outlined text-lg">edit</span>
-                              </button>
-                            )}
+                            <button
+                              onClick={() => loadSaleForEdit(sale.id)}
+                              className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                              title={sale.status === FlashSaleStatus.Ended ? "Gia hạn" : "Sửa"}
+                            >
+                              <span className="material-symbols-outlined text-lg">edit</span>
+                            </button>
 
                             <button
                               onClick={() => handleDeleteClick(sale)}
@@ -667,16 +714,16 @@ export default function AdminFlashSalesPage() {
             <button
               type="button"
               onClick={() => { setView("list"); handleResetForm(); }}
-              className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-full cursor-pointer transition-colors"
+              className="p-2 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-full cursor-pointer transition-colors"
             >
-              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-3xl">bolt</span>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-4xl">bolt</span>
                 {view === "create" ? "Tạo Chiến dịch Flash Sale mới" : "Chỉnh sửa Chiến dịch Flash Sale"}
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-base text-slate-500 mt-1">
                 Thiết lập thời gian và cấu hình giảm giá cho từng mặt hàng trong đợt sale.
               </p>
             </div>
@@ -685,46 +732,46 @@ export default function AdminFlashSalesPage() {
           <form onSubmit={handleSaveForm} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {/* Left Column: Basic configuration */}
             <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-5 lg:col-span-1">
-              <h3 className="font-bold text-slate-700 text-sm border-b border-slate-50 pb-2">Thông tin chiến dịch</h3>
+              <h3 className="font-bold text-slate-700 text-base border-b border-slate-50 pb-2">Thông tin chiến dịch</h3>
               
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Tên chiến dịch</label>
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Tên chiến dịch</label>
                 <input
                   type="text"
                   required
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="Ví dụ: Siêu Sale Giữa Tháng 06..."
-                  className="w-full px-4 py-2.5 bg-slate-55/30 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Thời gian bắt đầu</label>
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Thời gian bắt đầu</label>
                 <input
                   type="datetime-local"
                   required
                   value={formStartTime}
                   onChange={(e) => setFormStartTime(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-55/30 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Thời gian kết thúc</label>
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Thời gian kết thúc</label>
                 <input
                   type="datetime-local"
                   required
                   value={formEndTime}
                   onChange={(e) => setFormEndTime(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-55/30 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
               <div className="flex items-center justify-between border-t border-slate-50 pt-4">
                 <div>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Kích hoạt (Hiển thị)</span>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Bật để kích hoạt đợt sale khi đến giờ</p>
+                  <span className="text-sm font-bold text-slate-500 uppercase tracking-wide">Kích hoạt (Hiển thị)</span>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Bật để kích hoạt đợt sale khi đến giờ</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer select-none">
                   <input
@@ -741,14 +788,14 @@ export default function AdminFlashSalesPage() {
                 <button
                   type="button"
                   onClick={() => { setView("list"); handleResetForm(); }}
-                  className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  className="flex-1 py-3 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-55/10 font-bold text-sm cursor-pointer transition-colors"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={savingForm}
-                  className="flex-1 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 py-3 rounded-full bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
                 >
                   {savingForm ? (
                     <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
@@ -763,8 +810,8 @@ export default function AdminFlashSalesPage() {
             <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-50 pb-3">
                 <div>
-                  <h3 className="font-bold text-slate-700 text-sm">Danh sách mặt hàng giảm giá</h3>
-                  <p className="text-[10px] text-slate-450 font-semibold mt-0.5">
+                  <h3 className="font-bold text-slate-700 text-base">Danh sách mặt hàng giảm giá</h3>
+                  <p className="text-xs text-slate-450 font-semibold mt-0.5">
                     Thêm sản phẩm, biến thể hoặc combo và cấu hình giá Flash Sale
                   </p>
                 </div>
@@ -774,18 +821,18 @@ export default function AdminFlashSalesPage() {
                     setIsSelectorOpen(true);
                     setSelectorSearch("");
                   }}
-                  className="px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold text-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <span className="material-symbols-outlined text-base">add</span>
                   <span>Thêm mặt hàng</span>
                 </button>
               </div>
 
               {formItems.length === 0 ? (
                 <div className="py-20 text-center text-slate-450 flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-3xl">
-                  <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">shopping_cart_checkout</span>
-                  <p className="text-sm font-bold">Chưa có mặt hàng nào được chọn</p>
-                  <p className="text-xs text-slate-400 mt-1">Bấm nút "Thêm mặt hàng" phía trên để bắt đầu thêm sản phẩm</p>
+                  <span className="material-symbols-outlined text-5xl mb-2 text-slate-300">shopping_cart_checkout</span>
+                  <p className="text-base font-bold">Chưa có mặt hàng nào được chọn</p>
+                  <p className="text-sm text-slate-400 mt-1.5">Bấm nút "Thêm mặt hàng" phía trên để bắt đầu thêm sản phẩm</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -810,7 +857,7 @@ export default function AdminFlashSalesPage() {
                       >
                         {/* Thumbnail & Title */}
                         <div className="flex items-center gap-3 md:w-1/3">
-                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                          <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
                             {item.imageUrl ? (
                               <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
@@ -818,14 +865,14 @@ export default function AdminFlashSalesPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-slate-700 text-xs leading-snug line-clamp-2">{item.name}</h4>
+                            <h4 className="font-bold text-slate-700 text-sm leading-snug line-clamp-2">{item.name}</h4>
                             <div className="flex items-center gap-1.5 mt-1.5">
-                              <span className={`px-1.5 py-0.5 border text-[9px] font-bold rounded-md flex items-center gap-1 ${typeBadge}`}>
-                                <span className="material-symbols-outlined text-[10px]">{typeIcon}</span>
+                              <span className={`px-1.5 py-0.5 border text-[11px] font-bold rounded-md flex items-center gap-1 ${typeBadge}`}>
+                                <span className="material-symbols-outlined text-[12px]">{typeIcon}</span>
                                 {item.type === FlashSaleItemType.Product ? "SP" : item.type === FlashSaleItemType.Variant ? "Biến thể" : "Combo"}
                               </span>
                               {item.sku && (
-                                <span className="text-[9px] font-bold text-slate-400 font-mono">SKU: {item.sku}</span>
+                                <span className="text-xs font-bold text-slate-400 font-mono">SKU: {item.sku}</span>
                               )}
                             </div>
                           </div>
@@ -835,13 +882,13 @@ export default function AdminFlashSalesPage() {
                         <div className="flex flex-wrap items-center gap-4 flex-1 md:justify-end">
                           {/* Original Price Label */}
                           <div className="w-24 shrink-0 text-right">
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-widest">Giá gốc</span>
-                            <span className="text-xs font-bold text-slate-500 line-through mt-0.5 block">{formatCurrency(item.originalPrice)}</span>
+                            <span className="text-xs text-slate-400 font-bold block uppercase tracking-widest">Giá gốc</span>
+                            <span className="text-sm font-bold text-slate-500 line-through mt-0.5 block">{formatCurrency(item.originalPrice)}</span>
                           </div>
 
                           {/* Sale Price Input */}
                           <div className="w-28 shrink-0">
-                            <label className="text-[10px] text-slate-455 font-bold block uppercase tracking-widest">Giá Flash Sale</label>
+                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Giá Flash Sale</label>
                             <input
                               type="number"
                               required
@@ -849,13 +896,13 @@ export default function AdminFlashSalesPage() {
                               value={item.discountPrice}
                               onChange={(e) => updateItemInForm(index, "discountPrice", e.target.value)}
                               placeholder="Giá Sale"
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                             />
                           </div>
 
                           {/* Limit Stock Input */}
                           <div className="w-24 shrink-0">
-                            <label className="text-[10px] text-slate-455 font-bold block uppercase tracking-widest">Số lượng Sale</label>
+                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Số lượng Sale</label>
                             <input
                               type="number"
                               required
@@ -863,13 +910,13 @@ export default function AdminFlashSalesPage() {
                               value={item.totalQty}
                               onChange={(e) => updateItemInForm(index, "totalQty", e.target.value)}
                               placeholder="Tồn Sale"
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                             />
                           </div>
 
                           {/* User limit quantity */}
                           <div className="w-24 shrink-0">
-                            <label className="text-[10px] text-slate-455 font-bold block uppercase tracking-widest">G.Hạn/Khách</label>
+                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">G.Hạn/Khách</label>
                             <input
                               type="number"
                               required
@@ -877,7 +924,7 @@ export default function AdminFlashSalesPage() {
                               value={item.maxPerUser}
                               onChange={(e) => updateItemInForm(index, "maxPerUser", e.target.value)}
                               placeholder="Giới hạn"
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                               title="Số lượng tối đa 1 người mua (0 là không giới hạn)"
                             />
                           </div>
@@ -1057,13 +1104,13 @@ export default function AdminFlashSalesPage() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div 
             className="bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-            style={{ width: "600px", maxWidth: "100%", height: "550px", maxHeight: "90vh" }}
+            style={{ width: "1000px", maxWidth: "95vw", height: "780px", maxHeight: "90vh" }}
           >
             {/* Header */}
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-2xl font-bold animate-pulse">add_shopping_cart</span>
-                <h3 className="text-lg font-bold text-slate-900">Thêm mặt hàng vào Flash Sale</h3>
+                <h3 className="text-xl font-bold text-slate-900">Thêm mặt hàng vào Flash Sale</h3>
               </div>
               <button 
                 onClick={() => {
@@ -1083,21 +1130,21 @@ export default function AdminFlashSalesPage() {
                 <button
                   type="button"
                   onClick={() => { setSelectorTab("product"); setSelectorSearch(""); }}
-                  className={`flex-1 py-3 text-center text-xs font-bold transition-all border-b-2 ${selectorTab === "product" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-650"}`}
+                  className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "product" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
                 >
                   Sản phẩm (Product)
                 </button>
                 <button
                   type="button"
                   onClick={() => { setSelectorTab("variant"); setSelectorSearch(""); }}
-                  className={`flex-1 py-3 text-center text-xs font-bold transition-all border-b-2 ${selectorTab === "variant" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
+                  className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "variant" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
                 >
                   Biến thể (Variant)
                 </button>
                 <button
                   type="button"
                   onClick={() => { setSelectorTab("bundle"); setSelectorSearch(""); }}
-                  className={`flex-1 py-3 text-center text-xs font-bold transition-all border-b-2 ${selectorTab === "bundle" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
+                  className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "bundle" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
                 >
                   Combo (Bundle)
                 </button>
@@ -1116,7 +1163,7 @@ export default function AdminFlashSalesPage() {
                     value={selectorSearch}
                     onChange={(e) => setSelectorSearch(e.target.value)}
                     placeholder={selectorTab === "product" || selectorTab === "variant" ? "Tìm sản phẩm theo tên, mã..." : "Tìm Combo theo tên..."}
-                    className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder-slate-400"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder-slate-400"
                     autoFocus
                   />
                 </div>
@@ -1130,7 +1177,7 @@ export default function AdminFlashSalesPage() {
                 <button
                   type="button"
                   onClick={() => { setSelectedProductForVariants(null); setSelectedProductVariants([]); }}
-                  className="mb-2 text-xs font-bold text-primary flex items-center gap-1 hover:underline cursor-pointer"
+                  className="mb-2.5 text-sm font-bold text-primary flex items-center gap-1 hover:underline cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">arrow_back</span>
                   Trở lại danh sách sản phẩm
@@ -1144,153 +1191,230 @@ export default function AdminFlashSalesPage() {
               ) : selectedProductForVariants ? (
                 /* Select variant for selected product */
                 <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-                    Chọn biến thể của: <span className="text-slate-800 font-extrabold">{selectedProductForVariants.productName}</span>
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
+                    Chọn biến thể của: <span className="text-slate-800 font-extrabold text-base">{selectedProductForVariants.productName}</span>
                   </h4>
                   <div className="space-y-2">
-                    {selectedProductVariants.length === 0 ? (
-                      <p className="text-xs font-semibold text-slate-400 py-4 text-center">Sản phẩm này chưa cấu hình biến thể.</p>
-                    ) : (
-                      selectedProductVariants.map((variant) => (
+                    {(() => {
+                      const availableVariantsForSale = selectedProductVariants.filter(variant => {
+                        const isOutOfStock = variant.stock <= 0;
+                        const isAlreadyAdded = formItems.some(
+                          item => item.type === FlashSaleItemType.Variant && item.refId === variant.variantID
+                        );
+                        return !isOutOfStock && !isAlreadyAdded;
+                      });
+
+                      if (selectedProductVariants.length === 0) {
+                        return <p className="text-sm font-semibold text-slate-400 py-4 text-center">Sản phẩm này chưa cấu hình biến thể.</p>;
+                      }
+                      if (availableVariantsForSale.length === 0) {
+                        return <p className="text-sm font-semibold text-slate-400 py-4 text-center">Tất cả các biến thể đã hết hàng hoặc đã được thêm vào chiến dịch.</p>;
+                      }
+
+                      return availableVariantsForSale.map((variant) => (
                         <div 
                           key={variant.variantID}
                           onClick={() => addVariantToSale(variant, selectedProductForVariants.productName)}
-                          className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                          className="flex items-center justify-between p-3.5 border border-slate-100 rounded-xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                            <div className="w-18 h-18 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                               {variant.imageUrl ? (
                                 <img src={variant.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
                               ) : selectedProductForVariants.imageUrl ? (
                                 <img src={selectedProductForVariants.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
                               ) : (
-                                <span className="material-symbols-outlined text-slate-350">inventory_2</span>
+                                <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
                               )}
                             </div>
                             <div>
-                              <h5 className="font-bold text-slate-700 text-xs leading-snug group-hover:text-primary transition-colors">
+                              <h5 className="font-bold text-slate-700 text-sm leading-snug group-hover:text-primary transition-colors">
                                 {variant.variantName}
                               </h5>
-                              <p className="text-[9px] font-bold text-slate-400 font-mono mt-0.5">SKU: {variant.sku || "N/A"}</p>
+                              <p className="text-xs font-bold text-slate-400 font-mono mt-1">SKU: {variant.sku || "N/A"}</p>
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-bold text-slate-700 text-xs">{formatCurrency(variant.unitPrice)}</span>
-                            <p className="text-[9px] font-bold text-slate-450 mt-0.5">Tồn kho: {variant.stock}</p>
+                            <span className="font-bold text-slate-700 text-sm">{formatCurrency(variant.unitPrice)}</span>
+                            <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {variant.stock}</p>
                           </div>
                         </div>
-                      ))
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
               ) : selectorTab === "product" ? (
                 /* Select Product list */
-                selectorProducts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
-                    <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">inventory</span>
-                    <p className="text-sm font-bold">Không tìm thấy sản phẩm</p>
-                  </div>
-                ) : (
-                  selectorProducts.map((product) => (
+                (() => {
+                  const availableProductsForSale = selectorProducts.filter(product => {
+                    const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
+                    const isOutOfStock = actualStock <= 0;
+                    const isAlreadyAdded = formItems.some(
+                      item => item.type === FlashSaleItemType.Product && item.refId === product.productID
+                    );
+                    return !isOutOfStock && !isAlreadyAdded;
+                  });
+
+                  if (selectorProducts.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">inventory</span>
+                        <p className="text-base font-bold">Không tìm thấy sản phẩm</p>
+                      </div>
+                    );
+                  }
+                  if (availableProductsForSale.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">inventory</span>
+                        <p className="text-base font-bold">Không tìm thấy sản phẩm khả dụng</p>
+                        <p className="text-sm text-slate-400 mt-1.5">Tất cả sản phẩm đã hết hàng hoặc đã được thêm vào chiến dịch.</p>
+                      </div>
+                    );
+                  }
+
+                  return availableProductsForSale.map((product) => (
                     <div 
                       key={product.productID}
                       onClick={() => addProductToSale(product)}
-                      className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                           {product.imageUrl ? (
-                            <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
+                             <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="material-symbols-outlined text-slate-355">inventory_2</span>
+                            <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
                           )}
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-800 text-xs leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                          <h4 className="font-bold text-slate-800 text-sm leading-snug line-clamp-1 group-hover:text-primary transition-colors">
                             {product.productName}
                           </h4>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 block">{product.categoryName}</span>
+                          <span className="text-xs font-bold text-slate-400 uppercase mt-1 block">{product.categoryName}</span>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-bold text-slate-700 text-xs">{formatCurrency(product.price)}</span>
-                        <p className="text-[9px] font-bold text-slate-450 mt-0.5">Giá gốc</p>
+                        <span className="font-bold text-slate-700 text-sm">{formatCurrency(product.price)}</span>
+                        <p className="text-xs font-bold text-slate-450 mt-1">Giá gốc</p>
+                        <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {product.variantCount > 0 ? product.totalStock : product.stock}</p>
                       </div>
                     </div>
-                  ))
-                )
+                  ));
+                })()
               ) : selectorTab === "variant" ? (
                 /* Click product to view variants list */
-                selectorProducts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
-                    <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">inventory</span>
-                    <p className="text-sm font-bold">Không tìm thấy sản phẩm</p>
-                  </div>
-                ) : (
-                  selectorProducts.map((product) => (
+                (() => {
+                  const availableProductsForVariants = selectorProducts.filter(product => {
+                    const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
+                    return actualStock > 0;
+                  });
+
+                  if (selectorProducts.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">inventory</span>
+                        <p className="text-base font-bold">Không tìm thấy sản phẩm</p>
+                      </div>
+                    );
+                  }
+                  if (availableProductsForVariants.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">inventory</span>
+                        <p className="text-base font-bold">Không tìm thấy sản phẩm có sẵn biến thể</p>
+                        <p className="text-sm text-slate-400 mt-1.5">Tất cả sản phẩm đã hết hàng tồn kho.</p>
+                      </div>
+                    );
+                  }
+
+                  return availableProductsForVariants.map((product) => (
                     <div 
                       key={product.productID}
                       onClick={() => handleProductSelectForVariants(product)}
-                      className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
                           {product.imageUrl ? (
                             <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="material-symbols-outlined text-slate-355">inventory_2</span>
+                            <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
                           )}
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-850 text-xs leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                          <h4 className="font-bold text-slate-850 text-sm leading-snug line-clamp-1 group-hover:text-primary transition-colors">
                             {product.productName}
                           </h4>
-                          <p className="text-[9px] font-bold text-primary mt-0.5">Click để chọn biến thể ({product.variantCount} biến thể)</p>
+                          <p className="text-xs font-bold text-primary mt-1">Click để chọn biến thể ({product.variantCount} biến thể)</p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-bold text-slate-700 text-xs">{formatCurrency(product.price)}</span>
-                        <p className="text-[9px] font-bold text-slate-450 mt-0.5">Giá từ</p>
+                        <span className="font-bold text-slate-700 text-sm">{formatCurrency(product.price)}</span>
+                        <p className="text-xs font-bold text-slate-450 mt-1">Giá từ</p>
+                        <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {product.variantCount > 0 ? product.totalStock : product.stock}</p>
                       </div>
                     </div>
-                  ))
-                )
+                  ));
+                })()
               ) : (
                 /* Select Bundle list */
-                selectorBundles.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
-                    <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">collections_bookmark</span>
-                    <p className="text-sm font-bold">Không tìm thấy Combo</p>
-                  </div>
-                ) : (
-                  selectorBundles.map((bundle) => (
+                (() => {
+                  const availableBundlesForSale = selectorBundles.filter(bundle => {
+                    const isOutOfStock = (bundle.stock !== undefined ? bundle.stock : 0) <= 0;
+                    const isAlreadyAdded = formItems.some(
+                      item => item.type === FlashSaleItemType.Bundle && item.refId === bundle.bundleID
+                    );
+                    return !isOutOfStock && !isAlreadyAdded;
+                  });
+
+                  if (selectorBundles.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">collections_bookmark</span>
+                        <p className="text-base font-bold">Không tìm thấy Combo</p>
+                      </div>
+                    );
+                  }
+                  if (availableBundlesForSale.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">collections_bookmark</span>
+                        <p className="text-base font-bold">Không còn Combo khả dụng</p>
+                        <p className="text-sm text-slate-400 mt-1.5">Tất cả các Combo đã hết hàng hoặc đã được thêm vào chiến dịch.</p>
+                      </div>
+                    );
+                  }
+
+                  return availableBundlesForSale.map((bundle) => (
                     <div 
                       key={bundle.bundleID}
                       onClick={() => addBundleToSale(bundle)}
-                      className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
                           {bundle.imageUrl ? (
                             <img src={bundle.imageUrl} alt={bundle.name} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="material-symbols-outlined text-slate-355">inventory_2</span>
+                            <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
                           )}
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-850 text-xs leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                          <h4 className="font-bold text-slate-855 text-sm leading-snug line-clamp-1 group-hover:text-primary transition-colors">
                             {bundle.name}
                           </h4>
-                          <p className="text-[9px] font-bold text-slate-400 mt-0.5">Mã Combo: {bundle.code || `ID: ${bundle.bundleID}`}</p>
+                          <p className="text-xs font-bold text-slate-400 mt-1">Mã Combo: {bundle.code || `ID: ${bundle.bundleID}`}</p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-bold text-slate-700 text-xs">{formatCurrency(bundle.price)}</span>
-                        <p className="text-[9px] font-bold text-slate-450 mt-0.5">Giá Combo</p>
+                        <span className="font-bold text-slate-700 text-sm">{formatCurrency(bundle.price)}</span>
+                        <p className="text-xs font-bold text-slate-450 mt-1">Giá Combo</p>
+                        <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {bundle.stock !== undefined ? bundle.stock : 0}</p>
                       </div>
                     </div>
-                  ))
-                )
+                  ));
+                })()
               )}
             </div>
           </div>

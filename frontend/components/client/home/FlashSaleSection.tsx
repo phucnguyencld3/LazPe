@@ -7,13 +7,14 @@ import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleStatus, FlashSaleIt
 import CountdownTimer from "@/components/client/common/CountdownTimer";
 
 export const FlashSaleSection: React.FC = () => {
-  const [flashSale, setFlashSale] = useState<FlashSaleResponseDto | null>(null);
+  const [flashSales, setFlashSales] = useState<FlashSaleResponseDto[]>([]);
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchSale = async () => {
     try {
       const data = await getCurrentFlashSale();
-      setFlashSale(data);
+      setFlashSales(data || []);
     } catch (err) {
       console.error("Failed to load homepage flash sale:", err);
     } finally {
@@ -37,22 +38,66 @@ export const FlashSaleSection: React.FC = () => {
     );
   }
 
-  // If there's no active or upcoming sale, or no items, do not render the section
-  if (!flashSale || !flashSale.isActive || !flashSale.flashSaleItems || flashSale.flashSaleItems.length === 0) {
+  // Filter out disabled or empty sales
+  const validSales = flashSales.filter(
+    (fs) => fs.isActive && fs.flashSaleItems && fs.flashSaleItems.length > 0
+  );
+
+  if (validSales.length === 0) {
     return null;
   }
 
-  const isUpcoming = flashSale.status === FlashSaleStatus.Upcoming;
-  const isActive = flashSale.status === FlashSaleStatus.Active;
+  // Ensure activeTabIndex is within bounds
+  const currentSaleIndex = activeTabIndex < validSales.length ? activeTabIndex : 0;
+  const currentSale = validSales[currentSaleIndex];
+
+  const isUpcoming = currentSale.status === FlashSaleStatus.Upcoming;
+  const isActive = currentSale.status === FlashSaleStatus.Active;
   
   // Choose target countdown date based on status
-  const targetTime = isUpcoming ? flashSale.startTime : flashSale.endTime;
+  const targetTime = isUpcoming ? currentSale.startTime : currentSale.endTime;
 
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50/50 via-white to-transparent overflow-hidden">
       <div className="mx-auto max-w-7xl">
+        {/* Campaign Tabs */}
+        {validSales.length > 1 && (
+          <div className="flex items-center gap-3 mb-8 overflow-x-auto pb-2 scrollbar-none">
+            {validSales.map((sale, index) => {
+              const isSaleActive = sale.status === FlashSaleStatus.Active;
+              const isSelected = currentSaleIndex === index;
+              return (
+                <button
+                  key={sale.id}
+                  onClick={() => setActiveTabIndex(index)}
+                  className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-300 flex items-center gap-2 shrink-0 shadow-sm border ${
+                    isSelected
+                      ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white border-transparent shadow-md shadow-rose-500/20 scale-[1.02]"
+                      : "bg-white text-slate-600 hover:text-slate-900 border-slate-100 hover:border-slate-200"
+                  }`}
+                >
+                  <span>{sale.name}</span>
+                  {isSaleActive ? (
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                      isSelected ? "bg-white/20 text-white" : "bg-rose-50 text-rose-500"
+                    } animate-pulse`}>
+                      Đang chạy
+                    </span>
+                  ) : (
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                      isSelected ? "bg-white/20 text-white" : "bg-amber-50 text-amber-600"
+                    }`}>
+                      Sắp diễn ra
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Banner Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-rose-100 shadow-[0_10px_35px_rgba(244,63,94,0.06)] mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-rose-100 shadow-[0_10px_35px_rgba(244,63,94,0.06)] mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden transition-all duration-300">
           {/* Decorative background gradients */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/5 rounded-full blur-3xl -z-10"></div>
           <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-orange-400/5 rounded-full blur-2xl -z-10"></div>
@@ -73,7 +118,7 @@ export const FlashSaleSection: React.FC = () => {
                     </span>
                   )}
                 </h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{flashSale.name}</p>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">{currentSale.name}</p>
               </div>
             </div>
 
@@ -106,8 +151,8 @@ export const FlashSaleSection: React.FC = () => {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {flashSale.flashSaleItems.map((item) => {
+        <div key={currentSale.id} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 transition-all duration-300 animate-[fadeIn_0.4s_ease-out]">
+          {currentSale.flashSaleItems.map((item) => {
             const hasStock = item.totalQuantity > item.soldQuantity;
             const discountPercent = Math.round(((item.originalPrice - item.discountPrice) / item.originalPrice) * 100);
             const progressPercent = Math.min(100, Math.max(0, (item.soldQuantity / item.totalQuantity) * 100));

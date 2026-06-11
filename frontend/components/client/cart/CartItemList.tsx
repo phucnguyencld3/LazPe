@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trash2, Plus, Minus, Bolt, AlertCircle } from "lucide-react";
 import { CartInfo, CartDetailInfo } from "@/lib/api";
-import { getCurrentFlashSale, FlashSaleResponseDto } from "@/lib/features/flash-sales/flashSaleApi";
+import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto } from "@/lib/features/flash-sales/flashSaleApi";
 
 interface CartItemListProps {
   cart: CartInfo;
@@ -27,15 +27,14 @@ export const CartItemList: React.FC<CartItemListProps> = ({
   handleUpdateQuantity,
   handleRemoveItem,
 }) => {
-  const [activeFlashSale, setActiveFlashSale] = useState<FlashSaleResponseDto | null>(null);
+  const [activeFlashSales, setActiveFlashSales] = useState<FlashSaleResponseDto[]>([]);
 
   useEffect(() => {
     const fetchFlashSale = async () => {
       try {
-        const sale = await getCurrentFlashSale();
-        if (sale && sale.isActive && sale.status === 1) {
-          setActiveFlashSale(sale);
-        }
+        const sales = await getCurrentFlashSale();
+        const activeOnly = (sales || []).filter(sale => sale.isActive && sale.status === 1);
+        setActiveFlashSales(activeOnly);
       } catch (err) {
         console.error("Cart flash sale fetch error:", err);
       }
@@ -90,12 +89,19 @@ export const CartItemList: React.FC<CartItemListProps> = ({
             : `Phân loại: ${detail.variant?.color || "Tiêu chuẩn"}${detail.variant?.size ? ` - Cỡ: ${detail.variant.size}` : ""}`;
 
           // Flash Sale checking
-          const flashSaleItem = activeFlashSale?.flashSaleItems.find((item) => {
-            if (detail.bundleID && item.itemType === 3 && item.referenceId === detail.bundleID) return true;
-            if (detail.variantID && item.itemType === 2 && item.referenceId === detail.variantID) return true;
-            if (detail.product?.productID && item.itemType === 1 && item.referenceId === detail.product.productID) return true;
-            return false;
-          });
+          let flashSaleItem: FlashSaleItemResponseDto | undefined = undefined;
+          for (const sale of activeFlashSales) {
+            const matchedItem = sale.flashSaleItems.find((item) => {
+              if (detail.bundleID && item.itemType === 3 && item.referenceId === detail.bundleID) return true;
+              if (detail.variantID && item.itemType === 2 && item.referenceId === detail.variantID) return true;
+              if (detail.product?.productID && item.itemType === 1 && item.referenceId === detail.product.productID) return true;
+              return false;
+            });
+            if (matchedItem) {
+              flashSaleItem = matchedItem;
+              break;
+            }
+          }
 
           const maxAllowedQuantity = (() => {
             let limit = 99;
@@ -172,7 +178,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   ₫{price.toLocaleString("vi-VN")}
                 </p>
 
-                {isQtyExceeded && (
+                {isQtyExceeded && flashSaleItem && (
                   <div className="text-[10px] text-rose-500 font-bold flex items-center justify-center sm:justify-start gap-1 mt-1 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-1 w-fit mx-auto sm:mx-0">
                     <AlertCircle size={12} />
                     {flashSaleItem.maxQuantityPerUser > 0 && detail.quantity > flashSaleItem.maxQuantityPerUser

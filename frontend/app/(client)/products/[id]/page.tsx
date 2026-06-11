@@ -88,16 +88,39 @@ export default function ProductDetailPage({ params }: PageProps) {
   useEffect(() => {
     const fetchFlashSale = async () => {
       try {
-        const sale = await getCurrentFlashSale();
-        if (sale && sale.isActive) {
-          setActiveFlashSale(sale);
+        const sales = await getCurrentFlashSale();
+        if (sales && sales.length > 0 && product) {
+          // Find if there is an active/upcoming sale containing this product or its variants
+          let matchedSale: FlashSaleResponseDto | null = null;
+          
+          const saleContainsProduct = (sale: FlashSaleResponseDto) => {
+            return sale.flashSaleItems.some(item => {
+              if (item.itemType === 1 && item.referenceId === productId) return true;
+              if (item.itemType === 2 && product.variants?.some(v => v.variantID === item.referenceId)) return true;
+              return false;
+            });
+          };
+
+          // Prioritize active sales (status === 1)
+          const activeSales = sales.filter(s => s.isActive && s.status === 1);
+          matchedSale = activeSales.find(saleContainsProduct) || null;
+
+          // Fallback to upcoming sales (status === 0)
+          if (!matchedSale) {
+            const upcomingSales = sales.filter(s => s.isActive && s.status === 0);
+            matchedSale = upcomingSales.find(saleContainsProduct) || null;
+          }
+
+          setActiveFlashSale(matchedSale);
         }
       } catch (err) {
         console.error("Failed to load product page flash sale:", err);
       }
     };
-    fetchFlashSale();
-  }, []);
+    if (product) {
+      fetchFlashSale();
+    }
+  }, [product, productId]);
 
   // Define helper to check if a variant option value is out of stock
   const isOptionValueOutOfStock = (optionName: string, value: string) => {
