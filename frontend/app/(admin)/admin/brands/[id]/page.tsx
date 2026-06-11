@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "@/lib/toast";
 import { fetchBrandById, BrandInfo } from "@/lib/features/brands/brandApi";
@@ -14,14 +14,9 @@ import {
 import { Pagination } from "@/components/admin/shared/Pagination";
 import { formatCurrency } from "@/lib/utils/formatters";
 
-interface BrandDetailPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function BrandDetailPage({ params }: BrandDetailPageProps) {
+export default function BrandDetailPage() {
   const router = useRouter();
+  const params = useParams();
   const brandId = Number(params.id);
 
   // Brand data states

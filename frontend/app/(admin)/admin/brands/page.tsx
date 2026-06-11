@@ -45,6 +45,7 @@ export default function AdminBrandsPage() {
   const itemsPerPage = 8;
 
   // Form states (Right column)
+  const [isOpenForm, setIsOpenForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [brandName, setBrandName] = useState("");
@@ -132,6 +133,7 @@ export default function AdminBrandsPage() {
     setLogo(brand.logo || "");
     setDescription(brand.description || "");
     setStatus(brand.status);
+    setIsOpenForm(true);
 
     const input = document.getElementById("brandNameInput");
     if (input) {
@@ -147,6 +149,7 @@ export default function AdminBrandsPage() {
     setLogo("");
     setDescription("");
     setStatus(true);
+    setIsOpenForm(false);
   };
 
   const handleFormSubmit = async (e: FormEvent) => {
@@ -306,6 +309,18 @@ export default function AdminBrandsPage() {
             Xem, tạo mới, chỉnh sửa thông tin các thương hiệu của sản phẩm trong hệ thống
           </p>
         </div>
+        {!isOpenForm && (
+          <button
+            onClick={() => {
+              resetForm();
+              setIsOpenForm(true);
+            }}
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Thêm thương hiệu mới
+          </button>
+        )}
       </div>
 
       {/* Stats Bento Grid */}
@@ -363,9 +378,9 @@ export default function AdminBrandsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column - List of Brands */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className={`${isOpenForm ? "lg:col-span-8" : "lg:col-span-12"} flex flex-col gap-6 transition-all duration-300`}>
           <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
             {/* Search and Filters */}
             <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -518,16 +533,27 @@ export default function AdminBrandsPage() {
         </div>
 
         {/* Right Column - Create/Edit Form */}
-        <div className="lg:col-span-4">
-          <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm sticky top-28">
-            <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
-              <span className="material-symbols-outlined text-primary">
-                {isEditing ? "edit_note" : "add_circle"}
-              </span>
-              <h3 className="text-lg font-bold text-slate-800">
-                {isEditing ? "Chỉnh sửa thương hiệu" : "Tạo thương hiệu mới"}
-              </h3>
-            </div>
+        {isOpenForm && (
+          <div className="lg:col-span-4 animate-in slide-in-from-right duration-300">
+            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm sticky top-28">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">
+                    {isEditing ? "edit_note" : "add_circle"}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-800">
+                    {isEditing ? "Chỉnh sửa thương hiệu" : "Tạo thương hiệu mới"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer text-slate-400 hover:text-slate-600"
+                  title="Đóng bảng"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-6">
               {/* Brand Name */}
@@ -643,16 +669,14 @@ export default function AdminBrandsPage() {
 
               {/* Buttons */}
               <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-                {isEditing && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
-                    disabled={submitting}
-                  >
-                    Hủy sửa
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
+                  disabled={submitting}
+                >
+                  Hủy bỏ
+                </button>
                 <button
                   type="submit"
                   disabled={submitting || uploadingLogo}
@@ -674,6 +698,7 @@ export default function AdminBrandsPage() {
             </form>
           </div>
         </div>
+      )}
       </div>
 
       {/* Deletion Confirmation Modal */}
