@@ -659,7 +659,7 @@ export default function AdminBrandsPage() {
       {/* Deletion Confirmation Modal */}
       {brandToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full border border-slate-100 shadow-xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl p-8 w-[400px] max-w-full border border-slate-100 shadow-xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-rose-100">
                 <span className="material-symbols-outlined text-3xl">warning</span>
