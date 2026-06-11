@@ -35,6 +35,13 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   handleOpenVoucherModal,
   handleCheckout,
 }) => {
+  const hasAppliedVouchers = !!cart.voucher || !!cart.shippingVoucher;
+  const isInputMatchingApplied = voucherCodeInput === "" || 
+    (cart.voucher && voucherCodeInput === cart.voucher.code) || 
+    (cart.shippingVoucher && voucherCodeInput === cart.shippingVoucher.code);
+
+  const showChangeButton = hasAppliedVouchers && isInputMatchingApplied;
+
   return (
     <aside className="lg:col-span-4 space-y-md">
 
@@ -50,25 +57,85 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
               required
               value={voucherCodeInput}
               onChange={(e) => setVoucherCodeInput(e.target.value)}
-              disabled={!!cart.voucher && !!cart.shippingVoucher}
-              className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full focus:ring-2 focus:ring-rose-200 focus:border-rose-400 text-xs text-slate-800 disabled:opacity-75 focus:outline-none"
+              className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full focus:ring-2 focus:ring-rose-200 focus:border-rose-400 text-xs text-slate-800 focus:outline-none"
               placeholder="Nhập mã giảm giá..."
               type="text"
             />
           </div>
-          <button
-            type="submit"
-            disabled={applyingCode || !voucherCodeInput || (!!cart.voucher && !!cart.shippingVoucher)}
-            className="bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md shadow-rose-500/10 transition-all disabled:opacity-60 active:scale-95 whitespace-nowrap"
-          >
-            {applyingCode ? "Áp dụng..." : "Áp dụng"}
-          </button>
+          {showChangeButton ? (
+            <button
+              type="button"
+              onClick={handleOpenVoucherModal}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-full font-bold text-xs transition-all active:scale-95 whitespace-nowrap border border-slate-200 cursor-pointer"
+            >
+              Thay đổi
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={applyingCode || !voucherCodeInput}
+              className="bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md shadow-rose-500/10 transition-all disabled:opacity-60 active:scale-95 whitespace-nowrap cursor-pointer"
+            >
+              {applyingCode ? "Áp dụng..." : "Áp dụng"}
+            </button>
+          )}
         </form>
+
+        {/* Applied Voucher Chips inside the Voucher Section */}
+        {hasAppliedVouchers && (
+          <div className="space-y-2.5 pt-1">
+            {cart.voucher && (
+              <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl flex items-center justify-between text-xs text-rose-600">
+                <span className="font-bold flex items-center gap-1 min-w-0 truncate">
+                  <Check size={12} className="shrink-0" /> Đã áp dụng: {cart.voucher.code}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span>-₫{discount.toLocaleString("vi-VN")}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleRemoveVoucher(1);
+                      if (voucherCodeInput === cart.voucher?.code) {
+                        setVoucherCodeInput("");
+                      }
+                    }}
+                    className="hover:bg-rose-100 p-0.5 rounded-full text-rose-500 transition-colors"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {cart.shippingVoucher && (
+              <div className="p-3 bg-sky-50/50 border border-sky-100 rounded-xl flex items-center justify-between text-xs text-sky-600">
+                <span className="font-bold flex items-center gap-1 min-w-0 truncate">
+                  <Check size={12} className="shrink-0" /> Freeship: {cart.shippingVoucher.code}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span>-₫{shippingDiscount.toLocaleString("vi-VN")}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleRemoveVoucher(2);
+                      if (voucherCodeInput === cart.shippingVoucher?.code) {
+                        setVoucherCodeInput("");
+                      }
+                    }}
+                    className="hover:bg-sky-100 p-0.5 rounded-full text-sky-500 transition-colors"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {(!cart.voucher || !cart.shippingVoucher) && (
           <button
             onClick={handleOpenVoucherModal}
-            className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-rose-500 border border-dashed border-rose-200 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1"
+            className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-rose-500 border border-dashed border-rose-200 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
           >
             <Tag size={12} /> Xem danh sách mã giảm giá
           </button>
@@ -101,42 +168,6 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
             <div className="flex justify-between">
               <span>Giảm phí vận chuyển</span>
               <span className="text-sky-600 font-bold">-₫{shippingDiscount.toLocaleString("vi-VN")}</span>
-            </div>
-          )}
-          
-          {cart.voucher && (
-            <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl flex items-center justify-between text-xs text-rose-600">
-              <span className="font-bold flex items-center gap-1 min-w-0 truncate">
-                <Check size={12} className="shrink-0" /> Đã áp dụng: {cart.voucher.code}
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span>-₫{discount.toLocaleString("vi-VN")}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveVoucher(1)}
-                  className="hover:bg-rose-100 p-0.5 rounded-full text-rose-500 transition-colors"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {cart.shippingVoucher && (
-            <div className="p-3 bg-sky-50/50 border border-sky-100 rounded-xl flex items-center justify-between text-xs text-sky-600">
-              <span className="font-bold flex items-center gap-1 min-w-0 truncate">
-                <Check size={12} className="shrink-0" /> Freeship: {cart.shippingVoucher.code}
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span>-₫{shippingDiscount.toLocaleString("vi-VN")}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveVoucher(2)}
-                  className="hover:bg-sky-100 p-0.5 rounded-full text-sky-500 transition-colors"
-                >
-                  <X size={11} />
-                </button>
-              </div>
             </div>
           )}
 

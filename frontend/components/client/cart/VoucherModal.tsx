@@ -145,17 +145,14 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                   {/* Action */}
                   <div className="shrink-0 pl-2">
                     {isApplied ? (
-                      <div className="flex flex-col items-end gap-1.5">
-                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-0.5">
-                          <Check size={10} /> Đang dùng
-                        </span>
-                        <button
-                          onClick={() => handleRemoveVoucher(voucher.voucherType === 2 ? 2 : 1)}
-                          className="py-1 px-3 border border-slate-200 hover:bg-slate-100/80 text-slate-500 rounded-full font-bold text-[10px] active:scale-95 transition-all shadow-sm"
-                        >
-                          Hủy dùng
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleRemoveVoucher(voucher.voucherType === 2 ? 2 : 1)}
+                        className="py-1.5 px-4 rounded-full font-bold text-xs shadow-md active:scale-95 transition-all bg-emerald-600 hover:bg-rose-600 text-white shadow-emerald-600/5 flex items-center gap-1 min-w-[90px] justify-center group"
+                      >
+                        <Check size={12} className="shrink-0 group-hover:hidden" />
+                        <span className="group-hover:hidden">Đã chọn</span>
+                        <span className="hidden group-hover:inline">Hủy dùng</span>
+                      </button>
                     ) : isEligible ? (
                       <button
                         onClick={() => handleApplyVoucherFromModal(voucher.code)}

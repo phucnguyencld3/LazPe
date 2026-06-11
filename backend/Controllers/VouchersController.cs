@@ -62,7 +62,10 @@ namespace PolyBabyAPI.Controllers
                 v.StartDate,
                 v.EndDate,
                 RemainingQuantity = v.TotalQuantity - v.UsedQuantity,
-                VisibilityType = v.VisibilityType.ToString()
+                VisibilityType = v.VisibilityType.ToString(),
+                VoucherType = (int)v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount
             }).ToListAsync();
 
             if (string.IsNullOrWhiteSpace(userId))
@@ -82,7 +85,10 @@ namespace PolyBabyAPI.Controllers
                     v.EndDate,
                     v.RemainingQuantity,
                     v.VisibilityType,
-                    IsCollected = false
+                    IsCollected = false,
+                    v.VoucherType,
+                    v.IsFreeShipping,
+                    v.MaxShippingDiscount
                 }));
             }
 
@@ -106,7 +112,10 @@ namespace PolyBabyAPI.Controllers
                 v.EndDate,
                 v.RemainingQuantity,
                 v.VisibilityType,
-                IsCollected = collectedVoucherIds.Contains(v.VoucherID)
+                IsCollected = collectedVoucherIds.Contains(v.VoucherID),
+                v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount
             }));
         }
 
