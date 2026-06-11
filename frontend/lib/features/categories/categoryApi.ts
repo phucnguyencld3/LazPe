@@ -97,3 +97,28 @@ export const toggleCategoryStatus = async (token: string, id: number): Promise<a
   }
   return res.json();
 };
+
+export interface CategoryDetailInfo {
+  categoryID: number;
+  categoryName: string;
+  description?: string;
+  parentID: number | null;
+  parentCategoryName?: string | null;
+  level: number;
+  sortOrder?: string | null;
+  status: boolean;
+  createdAt: string;
+  createdBy?: string | null;
+  productCount: number;
+  subCategories: any[];
+  products: any[];
+}
+
+export const fetchCategoryById = async (token: string, id: number): Promise<CategoryDetailInfo> => {
+  const res = await fetch(`${API_BASE_URL}/Category/${id}/detail`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch category details");
+  const result = await res.json();
+  return result.data;
+};

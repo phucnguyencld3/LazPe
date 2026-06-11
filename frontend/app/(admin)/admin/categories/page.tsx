@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   fetchAllCategories,
@@ -25,6 +25,8 @@ import CategoryDescriptionModal from "@/components/admin/categories/CategoryDesc
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editParam = searchParams.get("edit");
 
   // Loaders
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,7 @@ export default function AdminCategoriesPage() {
   const [totalProducts, setTotalProducts] = useState(0);
 
   // Form states (Right column)
+  const [isOpenForm, setIsOpenForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
 
@@ -88,6 +91,16 @@ export default function AdminCategoriesPage() {
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // Trigger edit mode if URL contains ?edit=id
+  useEffect(() => {
+    if (editParam && categories.length > 0) {
+      const catToEdit = categories.find(c => c.categoryID === Number(editParam));
+      if (catToEdit && editId !== catToEdit.categoryID) {
+        handleEditClick(catToEdit);
+      }
+    }
+  }, [editParam, categories]);
 
   const handleExpandAll = () => {
     const nextExpanded: Record<number, boolean> = {};
@@ -140,11 +153,12 @@ export default function AdminCategoriesPage() {
     setParentID(cat.parentID || "");
     setSortOrder(cat.sortOrder || "");
     setStatus(cat.status);
+    setIsOpenForm(true);
 
-    const input = document.getElementById("categoryNameInput");
-    if (input) {
-      input.focus();
-    }
+    setTimeout(() => {
+      const input = document.getElementById("categoryNameInput");
+      input?.focus();
+    }, 100);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -168,14 +182,16 @@ export default function AdminCategoriesPage() {
     setParentID("");
     setSortOrder("");
     setStatus(true);
+    setIsOpenForm(false);
   };
 
   const handleNewRootCategory = () => {
     resetForm();
-    const input = document.getElementById("categoryNameInput");
-    if (input) {
-      input.focus();
-    }
+    setIsOpenForm(true);
+    setTimeout(() => {
+      const input = document.getElementById("categoryNameInput");
+      input?.focus();
+    }, 100);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -337,7 +353,7 @@ export default function AdminCategoriesPage() {
 
   return (
     <main className="w-full pb-20 animate-in fade-in duration-300">
-      <CategoryHeader onNewRootCategory={handleNewRootCategory} />
+      <CategoryHeader onNewRootCategory={handleNewRootCategory} showAddButton={!isOpenForm} />
 
       <CategoryStats
         totalCategories={categories.length}
@@ -345,7 +361,7 @@ export default function AdminCategoriesPage() {
         hiddenCount={categories.filter(c => !c.status).length}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <CategoryTree
           categories={categories}
           expandedIds={expandedIds}
@@ -359,22 +375,26 @@ export default function AdminCategoriesPage() {
           onEdit={handleEditClick}
           onDelete={cat => setCategoryToDelete({ id: cat.categoryID, name: cat.categoryName })}
           onShowDescription={setDescriptionCategory}
+          className={`${isOpenForm ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-300`}
         />
 
-        <CategoryForm
-          isEditing={isEditing}
-          categoryName={categoryName}
-          description={description}
-          sortOrder={sortOrder}
-          status={status}
-          submitting={submitting}
-          onCategoryNameChange={setCategoryName}
-          onDescriptionChange={setDescription}
-          onSortOrderChange={setSortOrder}
-          onStatusChange={setStatus}
-          onCancelEdit={resetForm}
-          onSubmit={handleFormSubmit}
-        />
+        {isOpenForm && (
+          <CategoryForm
+            isEditing={isEditing}
+            categoryName={categoryName}
+            description={description}
+            sortOrder={sortOrder}
+            status={status}
+            submitting={submitting}
+            onCategoryNameChange={setCategoryName}
+            onDescriptionChange={setDescription}
+            onSortOrderChange={setSortOrder}
+            onStatusChange={setStatus}
+            onCancelEdit={resetForm}
+            onSubmit={handleFormSubmit}
+            className="lg:col-span-4 animate-in slide-in-from-right duration-300"
+          />
+        )}
       </div>
 
       <CategoryDeleteModal

@@ -15,6 +15,7 @@ interface CategoryFormProps {
   onStatusChange: (value: boolean) => void;
   onCancelEdit: () => void;
   onSubmit: (event: FormEvent) => void;
+  className?: string;
 }
 
 export default function CategoryForm({
@@ -29,18 +30,29 @@ export default function CategoryForm({
   onSortOrderChange,
   onStatusChange,
   onCancelEdit,
-  onSubmit
+  onSubmit,
+  className = "lg:col-span-4"
 }: CategoryFormProps) {
   return (
-    <div className="lg:col-span-4">
+    <div className={className}>
       <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm sticky top-28">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
-          <span className="material-symbols-outlined text-primary">
-            {isEditing ? "edit_note" : "add_circle"}
-          </span>
-          <h3 className="text-lg font-bold text-slate-800">
-            {isEditing ? "Chỉnh sửa danh mục" : "Tạo danh mục mới"}
-          </h3>
+        <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-4">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">
+              {isEditing ? "edit_note" : "add_circle"}
+            </span>
+            <h3 className="text-lg font-bold text-slate-800">
+              {isEditing ? "Chỉnh sửa danh mục" : "Tạo danh mục mới"}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer text-slate-400 hover:text-slate-600"
+            title="Đóng bảng"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-6">
@@ -103,16 +115,14 @@ export default function CategoryForm({
           </div>
 
           <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-            {isEditing && (
-              <button
-                type="button"
-                onClick={onCancelEdit}
-                className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
-                disabled={submitting}
-              >
-                Hủy sửa
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
+              disabled={submitting}
+            >
+              Hủy bỏ
+            </button>
             <button
               type="submit"
               disabled={submitting}
