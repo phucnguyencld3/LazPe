@@ -2,7 +2,8 @@
 
 import type { FormEvent } from "react";
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { toast } from "@/lib/toast";
 import { Pagination } from "@/components/admin/shared/Pagination";
 import {
@@ -16,6 +17,8 @@ import {
 
 export default function AdminBrandsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editParam = searchParams.get("edit");
 
   // Loaders
   const [loading, setLoading] = useState(true);
@@ -107,6 +110,16 @@ export default function AdminBrandsPage() {
     setCurrentPage(1);
     loadBrands(1);
   }, [searchTerm, statusFilter]);
+
+  // Trigger edit mode if URL contains ?edit=id
+  useEffect(() => {
+    if (editParam && brands.length > 0) {
+      const brandToEdit = brands.find(b => b.supplierID === Number(editParam));
+      if (brandToEdit && editId !== brandToEdit.supplierID) {
+        handleEditClick(brandToEdit);
+      }
+    }
+  }, [editParam, brands]);
 
   const handlePageChange = (page: number) => {
     loadBrands(page);
@@ -463,6 +476,13 @@ export default function AdminBrandsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <Link
+                              href={`/admin/brands/${brand.supplierID}`}
+                              className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+                              title="Xem chi tiết & sản phẩm liên kết"
+                            >
+                              <span className="material-symbols-outlined text-lg">visibility</span>
+                            </Link>
                             <button
                               onClick={() => handleEditClick(brand)}
                               className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"

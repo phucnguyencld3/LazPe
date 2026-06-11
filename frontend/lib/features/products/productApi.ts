@@ -57,7 +57,8 @@ export const fetchAdminProducts = async (
   pageSize: number = 12,
   searchTerm: string = "",
   categoryId: number | null = null,
-  status: boolean | null = null
+  status: boolean | null = null,
+  supplierId: number | null = null
 ): Promise<AdminProductPagination> => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -71,6 +72,10 @@ export const fetchAdminProducts = async (
 
   if (status !== null) {
     params.append("status", status.toString());
+  }
+
+  if (supplierId !== null) {
+    params.append("supplierId", supplierId.toString());
   }
 
   const res = await fetch(`${API_BASE_URL}/Product?${params.toString()}`, {
