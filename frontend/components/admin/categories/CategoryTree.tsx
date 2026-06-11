@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CategoryInfo } from "@/lib/features/categories/categoryApi";
 
 interface CategoryTreeProps {
@@ -15,6 +16,7 @@ interface CategoryTreeProps {
   onEdit: (category: CategoryInfo) => void;
   onDelete: (category: CategoryInfo) => void;
   onShowDescription: (category: CategoryInfo) => void;
+  className?: string;
 }
 
 export default function CategoryTree({
@@ -29,7 +31,8 @@ export default function CategoryTree({
   onAddSub,
   onEdit,
   onDelete,
-  onShowDescription
+  onShowDescription,
+  className = "lg:col-span-8"
 }: CategoryTreeProps) {
   const getCategoryIcon = (name: string): string => {
     const lower = name.toLowerCase();
@@ -140,6 +143,13 @@ export default function CategoryTree({
                   </div>
 
                   <div className="flex items-center gap-xs opacity-0 group-hover/level1:opacity-100 transition-opacity">
+                    <Link
+                      href={`/admin/categories/${cat.categoryID}`}
+                      className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+                      title="Xem chi tiết & sản phẩm liên kết"
+                    >
+                      <span className="material-symbols-outlined text-lg">visibility</span>
+                    </Link>
                     <button
                       type="button"
                       onClick={() => onAddSub(cat)}
@@ -222,6 +232,13 @@ export default function CategoryTree({
                   </div>
 
                   <div className="flex items-center gap-xs opacity-0 group-hover/level2:opacity-100 transition-opacity">
+                    <Link
+                      href={`/admin/categories/${cat.categoryID}`}
+                      className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+                      title="Xem chi tiết & sản phẩm liên kết"
+                    >
+                      <span className="material-symbols-outlined text-lg">visibility</span>
+                    </Link>
                     <button
                       type="button"
                       onClick={() => onAddSub(cat)}
@@ -288,6 +305,13 @@ export default function CategoryTree({
               </div>
 
               <div className="flex items-center gap-xs opacity-0 group-hover/level3:opacity-100 transition-opacity">
+                <Link
+                  href={`/admin/categories/${cat.categoryID}`}
+                  className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+                  title="Xem chi tiết & sản phẩm liên kết"
+                >
+                  <span className="material-symbols-outlined text-lg">visibility</span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => onShowDescription(cat)}
@@ -321,7 +345,7 @@ export default function CategoryTree({
   };
 
   return (
-    <div className="lg:col-span-8 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex flex-col min-h-[600px]">
+    <div className={`${className} bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex flex-col min-h-[600px]`}>
       <div className="p-4 border-b border-outline-variant/30 bg-surface-container-low flex justify-between items-center rounded-t-2xl mb-6">
         <div className="flex items-center gap-md">
           <span className="font-headline-md text-headline-md text-primary font-semibold text-lg">Cấu trúc danh mục</span>

@@ -2,21 +2,25 @@
 
 interface CategoryHeaderProps {
   onNewRootCategory: () => void;
+  showAddButton?: boolean;
 }
 
-export default function CategoryHeader({ onNewRootCategory }: CategoryHeaderProps) {
+export default function CategoryHeader({ onNewRootCategory, showAddButton = true }: CategoryHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+    <header className="mb-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface text-3xl font-bold tracking-tight">Quản lý danh mục</h1>
+        <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý danh mục</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant/70">Quản lý cấu trúc danh mục sản phẩm đa cấp và thứ tự hiển thị</p>
       </div>
-      <button
-        onClick={onNewRootCategory}
-        className="flex items-center gap-sm px-6 py-3 rounded-full bg-primary text-on-primary font-headline-md text-headline-md bouncy-hover shadow-lg cursor-pointer"
-      >
-        <span className="material-symbols-outlined">add_circle</span>
-        Thêm danh mục mới
-      </button>
-    </div>
+      {showAddButton && (
+        <button
+          onClick={onNewRootCategory}
+          className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+        >
+          <span className="material-symbols-outlined">add_circle</span>
+          Thêm danh mục mới
+        </button>
+      )}
+    </header>
   );
 }

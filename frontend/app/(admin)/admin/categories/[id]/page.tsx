@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "@/lib/toast";
-import { fetchBrandById, BrandInfo } from "@/lib/features/brands/brandApi";
+import { fetchCategoryById, CategoryDetailInfo } from "@/lib/features/categories/categoryApi";
 import {
   AdminProductInfo,
   fetchAdminProducts,
@@ -14,14 +14,14 @@ import {
 import { Pagination } from "@/components/admin/shared/Pagination";
 import { formatCurrency } from "@/lib/utils/formatters";
 
-export default function BrandDetailPage() {
+export default function CategoryDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const brandId = Number(params.id);
+  const categoryId = Number(params.id);
 
-  // Brand data states
-  const [brand, setBrand] = useState<BrandInfo | null>(null);
-  const [loadingBrand, setLoadingBrand] = useState(true);
+  // Category data states
+  const [category, setCategory] = useState<CategoryDetailInfo | null>(null);
+  const [loadingCategory, setLoadingCategory] = useState(true);
 
   // Products data states
   const [products, setProducts] = useState<AdminProductInfo[]>([]);
@@ -40,23 +40,23 @@ export default function BrandDetailPage() {
   const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Load Brand Info
-  const loadBrandInfo = async () => {
+  // Load Category Info
+  const loadCategoryInfo = async () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) {
         router.push("/login");
         return;
       }
-      setLoadingBrand(true);
-      const data = await fetchBrandById(token, brandId);
-      setBrand(data);
+      setLoadingCategory(true);
+      const data = await fetchCategoryById(token, categoryId);
+      setCategory(data);
     } catch (err) {
       console.error(err);
-      toast.error("Không thể tải thông tin thương hiệu.");
-      router.push("/admin/brands");
+      toast.error("Không thể tải thông tin danh mục.");
+      router.push("/admin/categories");
     } finally {
-      setLoadingBrand(false);
+      setLoadingCategory(false);
     }
   };
 
@@ -76,9 +76,9 @@ export default function BrandDetailPage() {
         currentPage,
         itemsPerPage,
         searchTerm,
-        null, // categoryId
+        categoryId, // categoryId
         statusParam,
-        brandId // supplierId / brandId
+        null // supplierId
       );
 
       setProducts(paginationData.products || []);
@@ -94,13 +94,17 @@ export default function BrandDetailPage() {
 
   // Initial load
   useEffect(() => {
-    loadBrandInfo();
-  }, [brandId]);
+    if (categoryId) {
+      loadCategoryInfo();
+    }
+  }, [categoryId]);
 
   // Load products when filters or pages change
   useEffect(() => {
-    loadLinkedProducts();
-  }, [currentPage, searchTerm, selectedStatus, brandId]);
+    if (categoryId) {
+      loadLinkedProducts();
+    }
+  }, [currentPage, searchTerm, selectedStatus, categoryId]);
 
   // Toggle status of a product
   const handleToggleProductStatus = async (id: number) => {
@@ -142,7 +146,7 @@ export default function BrandDetailPage() {
         setProductToDelete(null);
         // Refresh products list and stats
         loadLinkedProducts();
-        loadBrandInfo();
+        loadCategoryInfo();
       } else {
         toast.error(res.message || "Lỗi khi xóa sản phẩm.");
       }
@@ -180,16 +184,38 @@ export default function BrandDetailPage() {
     };
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map(part => part[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
+  const getCategoryIcon = (name: string): string => {
+    const lower = name.toLowerCase();
+    if (lower.includes("sữa")) return "child_friendly";
+    if (lower.includes("đồ chơi") || lower.includes("chơi")) return "toys";
+    if (lower.includes("thời trang") || lower.includes("áo") || lower.includes("quần") || lower.includes("váy") || lower.includes("bé")) return "checkroom";
+    if (lower.includes("tã") || lower.includes("bỉm")) return "baby_changing_station";
+    if (lower.includes("dụng cụ") || lower.includes("ăn dặm")) return "flatware";
+    if (lower.includes("sách") || lower.includes("vở")) return "menu_book";
+    if (lower.includes("giày") || lower.includes("dép")) return "steps";
+    if (lower.includes("ăn") || lower.includes("uống") || lower.includes("dinh dưỡng")) return "local_cafe";
+    return "folder";
   };
 
-  if (loadingBrand && !brand) {
+  const getCategoryIconColors = (icon: string): string => {
+    switch (icon) {
+      case "child_friendly":
+      case "baby_changing_station":
+        return "bg-primary/10 text-primary";
+      case "toys":
+        return "bg-amber-100 text-amber-700";
+      case "checkroom":
+        return "bg-pink-100 text-pink-700";
+      case "flatware":
+        return "bg-indigo-100 text-indigo-700";
+      case "menu_book":
+        return "bg-teal-100 text-teal-700";
+      default:
+        return "bg-slate-100 text-slate-500";
+    }
+  };
+
+  if (loadingCategory && !category) {
     return (
       <div className="w-full h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -200,74 +226,67 @@ export default function BrandDetailPage() {
     );
   }
 
+  const categoryIcon = category ? getCategoryIcon(category.categoryName) : "folder";
+  const iconColors = getCategoryIconColors(categoryIcon);
+
   return (
     <main className="w-full pb-20 animate-in fade-in duration-300">
       {/* Top Header Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-6">
           <button
-            onClick={() => router.push("/admin/brands")}
+            onClick={() => router.push("/admin/categories")}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer font-bold"
           >
             <span className="material-symbols-outlined">arrow_back</span>
             <span>Quay lại</span>
           </button>
-          {brand && (
+          {category && (
             <>
               <div className="h-6 w-px bg-outline-variant/30"></div>
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Thương hiệu: {brand.supplierName}</h2>
+              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Danh mục: {category.categoryName}</h2>
             </>
           )}
         </div>
-        {brand && (
+        {category && (
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => {
-                router.push(`/admin/brands?edit=${brand.supplierID}`);
+                router.push(`/admin/categories?edit=${category.categoryID}`);
               }}
               className="px-6 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
             >
               <span className="material-symbols-outlined text-lg">edit</span>
-              Chỉnh sửa thương hiệu
+              Chỉnh sửa danh mục
             </button>
           </div>
         )}
       </div>
 
-      {brand && (
+      {category && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Side: Brand Profile Card */}
+          {/* Left Side: Category Profile Card */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm space-y-6">
               
               {/* Header profile info */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-28 h-28 rounded-3xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-2 mb-4 shadow-inner">
-                  {brand.logo ? (
-                    <img
-                      src={brand.logo}
-                      alt={brand.supplierName}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-primary-container/30 text-primary font-bold text-2xl flex items-center justify-center">
-                      {getInitials(brand.supplierName)}
-                    </div>
-                  )}
+                <div className={`w-24 h-24 rounded-full ${iconColors} flex items-center justify-center mb-4 shadow-sm`}>
+                  <span className="material-symbols-outlined text-4xl">{categoryIcon}</span>
                 </div>
                 
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">{brand.supplierName}</h2>
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight">{category.categoryName}</h2>
                 <div className="mt-2.5">
-                  {brand.status ? (
+                  {category.status ? (
                     <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      Đang hoạt động
+                      Đang hiển thị
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                      Ngừng hoạt động
+                      Đã ẩn
                     </span>
                   )}
                 </div>
@@ -278,30 +297,52 @@ export default function BrandDetailPage() {
               {/* Attributes info */}
               <div className="space-y-4 text-xs font-semibold text-slate-500">
                 <div className="flex justify-between items-center">
-                  <span>Mã thương hiệu:</span>
-                  <span className="text-slate-800 font-bold">#{brand.supplierID}</span>
+                  <span>Mã danh mục:</span>
+                  <span className="text-slate-800 font-bold">#{category.categoryID}</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span>Cấp danh mục:</span>
+                  <span className="text-slate-800 font-bold">Cấp {category.level}</span>
+                </div>
+                {category.parentCategoryName && (
+                  <div className="flex justify-between items-center">
+                    <span>Danh mục cha:</span>
+                    <span className="text-slate-800 font-bold">{category.parentCategoryName}</span>
+                  </div>
+                )}
+                {category.sortOrder && (
+                  <div className="flex justify-between items-center">
+                    <span>Thứ tự hiển thị:</span>
+                    <span className="text-slate-800 font-bold">{category.sortOrder}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span>Ngày khởi tạo:</span>
                   <span className="text-slate-800 font-bold">
-                    {new Date(brand.createdAt).toLocaleDateString("vi-VN")}
+                    {new Date(category.createdAt).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
+                {category.createdBy && (
+                  <div className="flex justify-between items-center">
+                    <span>Người tạo:</span>
+                    <span className="text-slate-800 font-bold">{category.createdBy}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span>Tổng sản phẩm:</span>
                   <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-extrabold text-[11px]">
-                    {brand.productCount} sản phẩm
+                    {category.productCount} sản phẩm
                   </span>
                 </div>
               </div>
 
-              {brand.description && (
+              {category.description && (
                 <>
                   <hr className="border-slate-50" />
                   <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Mô tả chi tiết</h4>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Mô tả danh mục</h4>
                     <p className="text-xs text-slate-600 leading-relaxed font-semibold">
-                      {brand.description}
+                      {category.description}
                     </p>
                   </div>
                 </>
@@ -318,7 +359,7 @@ export default function BrandDetailPage() {
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">Danh sách Sản phẩm Liên kết</h3>
                   <p className="text-xs text-slate-400 font-semibold mt-1">
-                    Tìm thấy {totalItems} sản phẩm thuộc thương hiệu này
+                    Tìm thấy {totalItems} sản phẩm thuộc danh mục này
                   </p>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -365,7 +406,7 @@ export default function BrandDetailPage() {
                 ) : products.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                     <span className="material-symbols-outlined text-4xl text-slate-200 mb-2">inventory</span>
-                    <p className="text-xs font-bold">Thương hiệu này chưa liên kết sản phẩm nào</p>
+                    <p className="text-xs font-bold">Danh mục này chưa liên kết sản phẩm nào</p>
                     {searchTerm && (
                       <p className="text-[10px] text-slate-400 mt-1">Không tìm thấy sản phẩm khớp với từ khóa tìm kiếm</p>
                     )}
