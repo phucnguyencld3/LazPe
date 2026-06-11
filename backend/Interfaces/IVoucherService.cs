@@ -15,5 +15,6 @@ namespace PolyBabyAPI.Interfaces
         // Logic nghiệp vụ
         Task<(bool IsValid, string Message)> ValidateVoucherAsync(string code, decimal orderValue, string userId);
         decimal CalculateDiscount(Voucher voucher, decimal orderValue);
+        decimal CalculateShippingDiscount(Voucher voucher, decimal shippingFee);
     }
 }

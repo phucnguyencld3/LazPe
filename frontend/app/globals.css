@@ -49,6 +49,18 @@
   --color-inverse-surface: #2e3132;
   --color-surface-variant: #e1e3e4;
 
+  /* Warning colors (amber/yellow) */
+  --color-warning: #b45309;
+  --color-on-warning: #ffffff;
+  --color-warning-container: #fef3c7;
+  --color-on-warning-container: #92400e;
+
+  /* Success colors (green) */
+  --color-success: #15803d;
+  --color-on-success: #ffffff;
+  --color-success-container: #dcfce7;
+  --color-on-success-container: #14532d;
+
   --font-headline-md: var(--font-quicksand);
   --font-headline-lg: var(--font-quicksand);
   --font-display-lg: var(--font-quicksand);
@@ -57,7 +69,7 @@
   --font-label-sm: var(--font-quicksand);
   --font-headline-lg-mobile: var(--font-quicksand);
   --font-body-lg: var(--font-plus-jakarta-sans);
-  
+
   --spacing-sm: 12px;
   --spacing-md: 24px;
   --spacing-xs: 4px;
@@ -67,7 +79,17 @@
   --spacing-xl: 80px;
   --spacing-lg: 48px;
   --spacing-margin-mobile: 16px;
-  
+  --max-w-xs: 20rem;
+  --max-w-sm: 24rem;
+  --max-w-md: 28rem;
+  --max-w-lg: 32rem;
+  --max-w-xl: 36rem;
+  --max-w-2xl: 42rem;
+  --max-w-3xl: 48rem;
+  --max-w-4xl: 56rem;
+  --max-w-5xl: 64rem;
+  --max-w-6xl: 72rem;
+  --max-w-7xl: 80rem;
   --radius-DEFAULT: 1rem;
   --radius-lg: 2rem;
   --radius-xl: 3rem;
@@ -101,4 +123,155 @@ body {
 .bouncy-hover:hover {
   transform: scale(1.02);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.client-scaled-layout {
+  zoom: 0.95;
+}
+
+.admin-scaled-layout {
+  zoom: 0.75;
+}
+
+/* Category Tree View Custom Styles */
+.tree-line {
+  position: absolute;
+  left: -20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #d6c2c3;
+}
+
+.tree-node-content {
+  transition: background-color 0.2s;
+}
+
+.tree-node-content:hover {
+  background-color: rgba(135, 78, 88, 0.05);
+}
+
+.category-tree-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.category-tree-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.category-tree-container::-webkit-scrollbar-thumb {
+  background: #d6c2c3;
+  border-radius: 10px;
+}
+
+/* Tiptap Editor Styling */
+.tiptap {
+  outline: none;
+  min-height: 200px;
+  padding: 12px;
+}
+.tiptap p {
+  margin-bottom: 0.5rem;
+}
+.tiptap h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.tiptap h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.tiptap strong {
+  font-weight: bold;
+}
+.tiptap em {
+  font-style: italic;
+}
+.tiptap a {
+  color: #f43f5e;
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.tiptap img {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 10px 0;
+  display: block;
+}
+
+/* Image Resizing Controls */
+[data-resize-container] {
+  position: relative;
+  display: inline-block !important;
+  max-width: 100%;
+  line-height: 0;
+}
+
+[data-resize-wrapper] {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* Hide handles by default, show them on selection or hover */
+.ProseMirror-selectednode [data-resize-handle],
+[data-resize-container]:hover [data-resize-handle] {
+  opacity: 1;
+}
+
+[data-resize-handle] {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #f43f5e; /* Rose 500 */
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+[data-resize-handle="top-left"] {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+[data-resize-handle="top-right"] {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+[data-resize-handle="bottom-left"] {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+[data-resize-handle="bottom-right"] {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+
+/* Active resizing state: dashed border */
+[data-resize-state="true"] {
+  outline: 2px dashed #f43f5e;
 }

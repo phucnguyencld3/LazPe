@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -15,6 +15,7 @@ namespace PolyBabyAPI.DTOs
         public string Code { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string? Specifications { get; set; }
         public decimal Price { get; set; }
         public decimal ProductDiscountPercent { get; set; }
         public int Stock { get; set; }
@@ -37,6 +38,8 @@ namespace PolyBabyAPI.DTOs
         public decimal MinEffectivePrice { get; set; }
         public decimal MaxEffectivePrice { get; set; }
         public int VariantCount { get; set; }
+        public double Rating { get; set; }
+        public int RatingCount { get; set; }
     }
 
     /// <summary>
@@ -48,6 +51,7 @@ namespace PolyBabyAPI.DTOs
         public string Code { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string? Specifications { get; set; }
         public decimal Price { get; set; }
         public decimal ProductDiscountPercent { get; set; }
         public int Stock { get; set; }
@@ -59,6 +63,8 @@ namespace PolyBabyAPI.DTOs
 
         public CategoryDto? Category { get; set; }
         public SupplierDto? Supplier { get; set; }
+        public double Rating { get; set; }
+        public int RatingCount { get; set; }
     }
 
     /// <summary>
@@ -139,6 +145,8 @@ namespace PolyBabyAPI.DTOs
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
 
+        public string? Specifications { get; set; }
+
         [Range(0, double.MaxValue, ErrorMessage = "Giá không hợp lệ")]
         public decimal Price { get; set; } = 0;
 
@@ -171,6 +179,8 @@ namespace PolyBabyAPI.DTOs
 
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
+
+        public string? Specifications { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Giá không hợp lệ")]
         public decimal Price { get; set; }

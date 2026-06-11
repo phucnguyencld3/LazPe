@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
@@ -31,7 +31,7 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Hoàn tất")]
         Completed = 3,
 
-        [Display(Name = "Yêu cầu hủy")]
+        [Display(Name = "Chờ duyệt hủy")]
         CancelRequested = 4,
 
         [Display(Name = "Đã hủy")]
@@ -48,6 +48,8 @@ namespace PolyBabyAPI.Models
         // ✅ Thêm VoucherID liên kết voucher đã sử dụng
         public int? VoucherID { get; set; }
 
+        public int? ShippingVoucherID { get; set; }
+
         [ForeignKey(nameof(UserID))]
         [ValidateNever]
         public ApplicationUser User { get; set; }
@@ -57,6 +59,10 @@ namespace PolyBabyAPI.Models
         [ValidateNever]
         public virtual Voucher? Voucher { get; set; }
 
+        [ForeignKey(nameof(ShippingVoucherID))]
+        [ValidateNever]
+        public virtual Voucher? ShippingVoucher { get; set; }
+
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tạm tính")]
         public decimal SubTotal { get; set; }
@@ -64,6 +70,11 @@ namespace PolyBabyAPI.Models
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tiền giảm giá")]
         public decimal DiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm ship")]
+        public decimal ShippingDiscountAmount { get; set; } = 0;
+
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0, double.MaxValue, ErrorMessage = "Tổng tiền không hợp lệ")]
@@ -77,6 +88,26 @@ namespace PolyBabyAPI.Models
 
         [MaxLength(500, ErrorMessage = "Địa chỉ giao hàng tối đa 500 ký tự")]
         public string? ShippingAddress { get; set; }
+
+        [MaxLength(100)]
+        public string? ShippingProvince { get; set; }
+
+        [MaxLength(100)]
+        public string? ShippingDistrict { get; set; }
+
+        [MaxLength(100)]
+        public string? ShippingWard { get; set; }
+
+        [MaxLength(500)]
+        public string? ShippingStreetAddress { get; set; }
+
+        [MaxLength(100, ErrorMessage = "Tên người nhận tối đa 100 ký tự")]
+        [Display(Name = "Tên người nhận")]
+        public string? ShippingRecipientName { get; set; }
+
+        [MaxLength(15, ErrorMessage = "Số điện thoại người nhận tối đa 15 ký tự")]
+        [Display(Name = "Số điện thoại nhận hàng")]
+        public string? ShippingPhone { get; set; }
 
         [Display(Name = "Trạng thái đơn hàng")]
         [Required(ErrorMessage = "Trạng thái đơn hàng không được để trống")]

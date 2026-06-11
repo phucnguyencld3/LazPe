@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
+import { toast } from "@/lib/toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -20,6 +21,8 @@ export default function UserDetailsPage() {
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [lockReason, setLockReason] = useState("");
   const [lockDays, setLockDays] = useState(0);
+  const [lockType, setLockType] = useState<string>("permanent");
+  const [reasonType, setReasonType] = useState<string>("policy");
   const [isLocking, setIsLocking] = useState(false);
 
   const [isPermModalOpen, setIsPermModalOpen] = useState(false);
@@ -48,7 +51,13 @@ export default function UserDetailsPage() {
         });
         const userData = await userRes.json();
         if (userData.success) {
-          setUser(userData.data);
+          const u = userData.data;
+          if (u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")) {
+            toast.error("Không thể xem hoặc chỉnh sửa tài khoản Quản trị viên.");
+            router.push("/admin/users");
+            return;
+          }
+          setUser(u);
         } else {
           console.error(userData.message);
         }
@@ -93,15 +102,18 @@ export default function UserDetailsPage() {
         const data = await res.json();
         if (data.success) {
           setUser({ ...user, isLocked: false, status: true });
+          toast.success("Mở khóa tài khoản thành công!");
         } else {
-          alert(data.message || "Lỗi mở khóa");
+          toast.error(data.message || "Lỗi mở khóa");
         }
       } catch (e) {
         console.error(e);
       }
     } else {
-      setLockReason("");
+      setReasonType("policy");
+      setLockReason("Vi phạm điều khoản dịch vụ");
       setLockDays(0);
+      setLockType("permanent");
       setIsLockModalOpen(true);
     }
   };
@@ -123,8 +135,9 @@ export default function UserDetailsPage() {
       if (data.success) {
         setUser({ ...user, isLocked: true, status: false });
         setIsLockModalOpen(false);
+        toast.success("Khóa tài khoản thành công!");
       } else {
-        alert(data.message || "Lỗi khóa tài khoản");
+        toast.error(data.message || "Lỗi khóa tài khoản");
       }
     } catch(e) {
       console.error(e);
@@ -133,6 +146,21 @@ export default function UserDetailsPage() {
     }
   };
 
+  const handleReasonTypeChange = (val: string) => {
+    setReasonType(val);
+    if (val === "policy") {
+      setLockReason("Vi phạm điều khoản dịch vụ");
+    } else if (val === "spam") {
+      setLockReason("Spam quảng cáo, tin nhắn rác");
+    } else if (val === "fraud") {
+      setLockReason("Hành vi gian lận, lừa đảo");
+    } else if (val === "abusive") {
+      setLockReason("Ngôn từ xúc phạm, thiếu văn hóa");
+    } else if (val === "custom") {
+      setLockReason("");
+    }
+  };
+ 
   // Toggle single permission for user (grant / revoke)
   const togglePermission = async (permission: any, isCurrentlyGranted: boolean) => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -168,12 +196,13 @@ export default function UserDetailsPage() {
             action: permission.action
           }]);
         }
+        toast.success(isCurrentlyGranted ? `Đã thu hồi quyền "${permission.name}"` : `Đã gán quyền "${permission.name}"`);
       } else {
-        alert(data.message || `Lỗi khi thực hiện phân quyền`);
+        toast.error(data.message || `Lỗi khi thực hiện phân quyền`);
       }
     } catch (err) {
       console.error(err);
-      alert("Đã xảy ra lỗi kết nối");
+      toast.error("Đã xảy ra lỗi kết nối");
     } finally {
       setTogglingPermissionIds(prev => prev.filter(pid => pid !== permission.id));
     }
@@ -231,7 +260,7 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-lg">
+    <div className="w-full pb-lg">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
@@ -272,7 +301,7 @@ export default function UserDetailsPage() {
           
           <div className="flex flex-wrap gap-sm justify-center">
             <button
-              onClick={() => setIsPermModalOpen(true)}
+              onClick={() => router.push(`/admin/users/${id}/permissions`)}
               className="bg-secondary text-on-secondary px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md"
             >
               <span className="material-symbols-outlined text-sm">security</span>
@@ -374,7 +403,7 @@ export default function UserDetailsPage() {
               Vai trò &amp; Quyền hạn của Người dùng
             </h3>
             <button
-              onClick={() => setIsPermModalOpen(true)}
+              onClick={() => router.push(`/admin/users/${id}/permissions`)}
               className="text-primary font-label-md font-bold hover:underline bg-transparent border-none cursor-pointer"
             >
               Sửa quyền
@@ -441,59 +470,128 @@ export default function UserDetailsPage() {
 
       {/* Lock Modal */}
       {isLockModalOpen && isMounted && createPortal(
-        <div className="fixed inset-0 w-full h-full bg-black/50 flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div 
-            className="bg-surface-container-lowest p-lg rounded-xl shadow-2xl border border-outline-variant/20 shrink-0"
-            style={{ width: "448px", maxWidth: "calc(100vw - 32px)" }}
+            className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-6 w-[448px] max-w-[calc(100vw-32px)] shrink-0 animate-in fade-in zoom-in-95 duration-200"
           >
-            <h3 className="font-headline-md text-headline-md text-error mb-sm font-bold flex items-center gap-2">
-              <span className="material-symbols-outlined text-[28px]">lock</span> Khóa người dùng
-            </h3>
-            <p className="text-on-surface-variant font-body-md mb-md">Vui lòng nhập lý do khóa tài khoản này.</p>
-            <div className="space-y-md my-md">
+            <div className="flex items-center gap-2.5 text-rose-600 mb-2">
+              <span className="material-symbols-outlined text-[24px]">lock</span>
+              <h3 className="text-lg font-bold text-slate-800">Khóa tài khoản</h3>
+            </div>
+            <p className="text-slate-500 text-xs font-semibold mb-4 leading-relaxed">
+              Vui lòng nhập lý do và thời gian tạm khóa cho tài khoản này. Người dùng sẽ không thể đăng nhập trong thời gian bị khóa.
+            </p>
+            <div className="space-y-4">
               <div>
-                <label className="block text-label-sm font-bold text-on-surface-variant mb-xs">Lý do khóa</label>
-                <textarea 
-                  className="w-full p-sm rounded-lg border border-outline-variant bg-surface-container-low font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50" 
-                  rows={3} 
-                  placeholder="Vi phạm chính sách..."
-                  value={lockReason} 
-                  onChange={(e) => setLockReason(e.target.value)}
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Lý do khóa tài khoản</label>
+                <select 
+                  value={reasonType} 
+                  onChange={(e) => handleReasonTypeChange(e.target.value)}
                   disabled={isLocking}
-                />
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700"
+                >
+                  <option value="policy">Vi phạm điều khoản dịch vụ</option>
+                  <option value="spam">Spam quảng cáo, tin nhắn rác</option>
+                  <option value="fraud">Hành vi gian lận, lừa đảo</option>
+                  <option value="abusive">Ngôn từ xúc phạm, thiếu văn hóa</option>
+                  <option value="custom">Khác (Tự nhập lý do)</option>
+                </select>
+
+                {reasonType === "custom" && (
+                  <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Nhập lý do chi tiết <span className="text-rose-500">*</span></label>
+                    <textarea 
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 min-h-[70px]" 
+                      rows={2} 
+                      placeholder="Nhập lý do khóa cụ thể..."
+                      value={lockReason} 
+                      onChange={(e) => setLockReason(e.target.value)}
+                      disabled={isLocking}
+                    />
+                  </div>
+                )}
               </div>
+              
               <div>
-                <label className="block text-label-sm font-bold text-on-surface-variant mb-xs">Số ngày khóa (0 = vĩnh viễn)</label>
-                <input 
-                  type="number" 
-                  className="w-full p-sm rounded-lg border border-outline-variant bg-surface-container-low font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                  value={lockDays} 
-                  onChange={(e) => setLockDays(Number(e.target.value))}
-                  min={0}
-                  disabled={isLocking}
-                />
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Thời hạn khóa tài khoản</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Vĩnh viễn", value: "permanent", days: 0 },
+                    { label: "1 ngày", value: "1", days: 1 },
+                    { label: "3 ngày", value: "3", days: 3 },
+                    { label: "7 ngày (1 tuần)", value: "7", days: 7 },
+                    { label: "30 ngày (1 tháng)", value: "30", days: 30 },
+                    { label: "Tùy chỉnh", value: "custom", days: -1 },
+                  ].map((preset) => {
+                    const isActive = preset.value === "custom" 
+                      ? !["permanent", "1", "3", "7", "30"].includes(lockType)
+                      : lockType === preset.value;
+                    return (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => {
+                          setLockType(preset.value);
+                          if (preset.days !== -1) {
+                            setLockDays(preset.days);
+                          } else {
+                            setLockDays(prev => prev === 0 || [1,3,7,30].includes(prev) ? 5 : prev);
+                          }
+                        }}
+                        className={`py-2 px-1 text-xs font-bold rounded-xl border text-center transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                            : "bg-white text-slate-650 border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {lockType === "custom" && (
+                  <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Số ngày khóa cụ thể</label>
+                    <div className="relative flex items-center">
+                      <input 
+                        type="number" 
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
+                        value={lockDays} 
+                        onChange={(e) => setLockDays(Math.max(1, Number(e.target.value)))}
+                        min={1}
+                        disabled={isLocking}
+                      />
+                      <span className="absolute right-4 text-xs font-bold text-slate-400">ngày</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="flex justify-end gap-sm mt-lg">
+            
+            <div className="flex justify-end gap-3 mt-6 border-t border-slate-100 pt-4">
               <button 
                 onClick={() => setIsLockModalOpen(false)} 
                 disabled={isLocking}
-                className="px-md py-sm rounded-full font-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 transition-all cursor-pointer disabled:opacity-50"
               >
                 Hủy
               </button>
               <button 
                 onClick={confirmLock} 
                 disabled={isLocking}
-                className="px-md py-sm rounded-full font-label-md font-bold bg-error text-on-error hover:bg-[#93000a] shadow-sm transition-colors disabled:opacity-70 flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all cursor-pointer disabled:opacity-70 flex items-center gap-1.5"
               >
                 {isLocking ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Đang xử lý...
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                    <span>Đang xử lý...</span>
                   </>
                 ) : (
-                  "Xác nhận khóa"
+                  <>
+                    <span className="material-symbols-outlined text-sm">lock</span>
+                    <span>Xác nhận khóa</span>
+                  </>
                 )}
               </button>
             </div>

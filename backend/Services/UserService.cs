@@ -34,11 +34,17 @@ namespace PolyBabyAPI.Services
         public async Task<(List<UserDto> users, int totalCount)> GetUsersPagedAsync(
             string? search = null,
             int page = 1,
-            int pageSize = 10)
+            int pageSize = 10,
+            bool onlyWithPermissions = false)
         {
             try
             {
                 var query = _context.Users.AsQueryable();
+
+                if (onlyWithPermissions)
+                {
+                    query = query.Where(u => u.RoleTemplateId != null || _context.UserPermissions.Any(up => up.UserId == u.Id));
+                }
 
                 // Filter by search
                 if (!string.IsNullOrEmpty(search))
@@ -163,6 +169,9 @@ namespace PolyBabyAPI.Services
                     user.LockoutEnd = DateTimeOffset.MaxValue;
                 }
 
+                // Cập nhật trạng thái Status = false khi khóa
+                user.Status = false;
+
                 var result = await _userManager.UpdateAsync(user);
                 
                 if (result.Succeeded)
@@ -237,6 +246,9 @@ namespace PolyBabyAPI.Services
                 // Set LockoutEnd về null
                 user.LockoutEnd = null;
                 user.AccessFailedCount = 0;
+                
+                // Cập nhật trạng thái Status = true khi mở khóa
+                user.Status = true;
 
                 var result = await _userManager.UpdateAsync(user);
                 

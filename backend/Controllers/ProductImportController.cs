@@ -1,1 +1,497 @@
-using ClosedXML.Excel; using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore; using PolyBabyAPI.Data; using PolyBabyAPI.Filters; using PolyBabyAPI.Models; using System.Globalization; using System.Text;  namespace PolyBabyAPI.Controllers {     [Route("api/[controller]")]     [ApiController]     [Authorize]     public class ProductImportController : ControllerBase     {         private readonly ApplicationDbContext _context;         private readonly ILogger<ProductImportController> _logger;          public ProductImportController(ApplicationDbContext context, ILogger<ProductImportController> logger)         {             _context = context;             _logger = logger;         }          [HttpGet("template")]         [Permission("Product.Create")]         public IActionResult DownloadTemplate()         {             using var workbook = new XLWorkbook();              var productsSheet = workbook.Worksheets.Add("Products");             productsSheet.Cell(1, 1).Value = "ProductCode";             productsSheet.Cell(1, 2).Value = "ProductName";             productsSheet.Cell(1, 3).Value = "Description";             productsSheet.Cell(1, 4).Value = "CategoryName";             productsSheet.Cell(1, 5).Value = "SupplierName";             productsSheet.Cell(1, 6).Value = "BasePrice";             productsSheet.Cell(1, 7).Value = "Status";             productsSheet.Cell(1, 8).Value = "Option1Name";             productsSheet.Cell(1, 9).Value = "Option1Values";             productsSheet.Cell(1, 10).Value = "Option2Name";             productsSheet.Cell(1, 11).Value = "Option2Values";              productsSheet.Cell(2, 1).Value = "SP-AO-001";             productsSheet.Cell(2, 2).Value = "Áo body bé trai";             productsSheet.Cell(2, 3).Value = "Chất liệu cotton mềm mại";             productsSheet.Cell(2, 4).Value = "Quần áo bé trai";             productsSheet.Cell(2, 5).Value = "LazPe";             productsSheet.Cell(2, 6).Value = 99000;             productsSheet.Cell(2, 7).Value = "true";             productsSheet.Cell(2, 8).Value = "Màu sắc";             productsSheet.Cell(2, 9).Value = "Đỏ|Xanh";             productsSheet.Cell(2, 10).Value = "Size";             productsSheet.Cell(2, 11).Value = "S|M";              var variantsSheet = workbook.Worksheets.Add("Variants");             variantsSheet.Cell(1, 1).Value = "ProductCode";             variantsSheet.Cell(1, 2).Value = "VariantName";             variantsSheet.Cell(1, 3).Value = "SKU";             variantsSheet.Cell(1, 4).Value = "UnitPrice";             variantsSheet.Cell(1, 5).Value = "Stock";             variantsSheet.Cell(1, 6).Value = "ImageUrl";             variantsSheet.Cell(1, 7).Value = "Description";             variantsSheet.Cell(1, 8).Value = "Option1Value";             variantsSheet.Cell(1, 9).Value = "Option2Value";             variantsSheet.Cell(1, 10).Value = "Status";              variantsSheet.Cell(2, 1).Value = "SP-AO-001";             variantsSheet.Cell(2, 2).Value = "Áo body bé trai - Đỏ - S";             variantsSheet.Cell(2, 3).Value = "SPAO001-DO-S";             variantsSheet.Cell(2, 4).Value = 99000;             variantsSheet.Cell(2, 5).Value = 25;             variantsSheet.Cell(2, 6).Value = "";             variantsSheet.Cell(2, 7).Value = "Biến thể màu Đỏ size S";             variantsSheet.Cell(2, 8).Value = "Đỏ";             variantsSheet.Cell(2, 9).Value = "S";             variantsSheet.Cell(2, 10).Value = "true";              variantsSheet.Cell(3, 1).Value = "SP-AO-001";             variantsSheet.Cell(3, 2).Value = "Áo body bé trai - Xanh - M";             variantsSheet.Cell(3, 3).Value = "SPAO001-XANH-M";             variantsSheet.Cell(3, 4).Value = 109000;             variantsSheet.Cell(3, 5).Value = 15;             variantsSheet.Cell(3, 6).Value = "";             variantsSheet.Cell(3, 7).Value = "Biến thể màu xanh size M";             variantsSheet.Cell(3, 8).Value = "Xanh";             variantsSheet.Cell(3, 9).Value = "M";             variantsSheet.Cell(3, 10).Value = "true";              productsSheet.Columns().AdjustToContents();             variantsSheet.Columns().AdjustToContents();              using var stream = new MemoryStream();             workbook.SaveAs(stream);             stream.Position = 0;              return File(                 stream.ToArray(),                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",                 "product-import-template.xlsx");         }          [HttpPost("excel")]         [Permission("Product.Create")]         public async Task<IActionResult> ImportExcel([FromForm] IFormFile file)         {             if (file == null || file.Length == 0)             {                 return BadRequest(new { success = false, message = "Vui lòng chọn file Excel" });             }              var ext = Path.GetExtension(file.FileName);             if (!".xlsx".Equals(ext, StringComparison.OrdinalIgnoreCase))             {                 return BadRequest(new { success = false, message = "Chỉ hỗ trợ file .xlsx" });             }              var errors = new List<string>();              try             {                 using var stream = file.OpenReadStream();                 using var workbook = new XLWorkbook(stream);                  var productsSheet = workbook.Worksheets.FirstOrDefault(w => w.Name.Equals("Products", StringComparison.OrdinalIgnoreCase))                     ?? FindSheetByHeaders(workbook, new[] { "ProductCode", "ProductName", "CategoryName", "SupplierName", "BasePrice" });                  var variantsSheet = workbook.Worksheets.FirstOrDefault(w => w.Name.Equals("Variants", StringComparison.OrdinalIgnoreCase))                     ?? FindSheetByHeaders(workbook, new[] { "ProductCode", "VariantName", "UnitPrice", "Stock" });                  if (productsSheet == null || variantsSheet == null)                 {                     return BadRequest(new                     {                         success = false,                         message = "File không đúng mẫu. Cần có sheet 'Products' và 'Variants'."                     });                 }                  var productInputs = ParseProducts(productsSheet, errors);                 var variantInputs = ParseVariants(variantsSheet, errors);                  if (errors.Any())                 {                     return BadRequest(new                     {                         success = false,                         message = "Dữ liệu import không hợp lệ",                         errors                     });                 }                  await using var tx = await _context.Database.BeginTransactionAsync();                  var now = DateTime.Now;                 var createdBy = User.Identity?.Name ?? "System";                  var categories = await _context.Categories.AsNoTracking().ToListAsync();                 var suppliers = await _context.Suppliers.AsNoTracking().ToListAsync();                  var existingProducts = await _context.Products                     .AsNoTracking()                     .Select(p => new { p.Code, p.ProductName })                     .ToListAsync();                  var usedProductCodes = existingProducts                     .Where(p => !string.IsNullOrWhiteSpace(p.Code))                     .Select(p => p.Code)                     .ToHashSet(StringComparer.OrdinalIgnoreCase);                  var existingProductNames = existingProducts                     .Where(p => !string.IsNullOrWhiteSpace(p.ProductName))                     .Select(p => NormalizeText(p.ProductName))                     .ToHashSet(StringComparer.OrdinalIgnoreCase);                  var productsToCreate = new List<ProductImportInput>();                 var codeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);                 var skippedProductCodes = new List<string>();                 var skippedProductNames = new List<string>();                 var importNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);                  foreach (var input in productInputs)                 {                     var normalizedName = NormalizeText(input.ProductName);                     if (existingProductNames.Contains(normalizedName) || !importNameSet.Add(normalizedName))                     {                         skippedProductCodes.Add(input.ProductCode);                         skippedProductNames.Add(input.ProductName);                         continue;                     }                      var finalCode = BuildUniqueProductCode(input.ProductCode, usedProductCodes);                     codeMap[input.ProductCode] = finalCode;                      productsToCreate.Add(new ProductImportInput                     {                         ProductCode = finalCode,                         ProductName = input.ProductName,                         Description = input.Description,                         CategoryName = input.CategoryName,                         SupplierName = input.SupplierName,                         BasePrice = input.BasePrice,                         Status = input.Status,                         Options = input.Options                     });                 }                  if (!productsToCreate.Any())                 {                     await tx.RollbackAsync();                     return Ok(new                     {                         success = true,                         message = "Không có sản phẩm mới để import (tên sản phẩm đã tồn tại)",                         data = new                         {                             totalProducts = 0,                             totalVariants = 0,                             skippedProductCodes = skippedProductCodes.Distinct(StringComparer.OrdinalIgnoreCase).ToList(),                             skippedProductNames = skippedProductNames.Distinct(StringComparer.OrdinalIgnoreCase).ToList(),                             skippedProducts = skippedProductCodes.Count,                             skippedVariants = variantInputs.Count                         }                     });                 }                  var createdProducts = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);                 var productInputMap = productsToCreate.ToDictionary(p => p.ProductCode, StringComparer.OrdinalIgnoreCase);                 var productOptionValueMap = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);                 var usedSkus = (await _context.Variants                     .AsNoTracking()                     .Select(v => v.SKU)                     .ToListAsync())                     .Where(s => !string.IsNullOrWhiteSpace(s))                     .ToHashSet(StringComparer.OrdinalIgnoreCase);                  foreach (var input in productsToCreate)                 {                     var category = categories.FirstOrDefault(c => c.CategoryName.Equals(input.CategoryName, StringComparison.OrdinalIgnoreCase));                     if (category == null)                     {                         errors.Add($"Không tìm thấy danh mục '{input.CategoryName}' cho mã {input.ProductCode}");                         continue;                     }                      var supplier = suppliers.FirstOrDefault(s => s.SupplierName.Equals(input.SupplierName, StringComparison.OrdinalIgnoreCase));                     if (supplier == null)                     {                         errors.Add($"Không tìm thấy thương hiệu '{input.SupplierName}' cho mã {input.ProductCode}");                         continue;                     }                      var product = new Product                     {                         Code = input.ProductCode,                         ProductName = input.ProductName,                         Description = input.Description,                         CategoryID = category.CategoryID,                         SupplierID = supplier.SupplierID,                         Price = input.BasePrice,                         Stock = 0,                         Status = input.Status,                         CreatedAt = now,                         CreatedBy = createdBy                     };                      _context.Products.Add(product);                     createdProducts[input.ProductCode] = product;                 }                  if (errors.Any())                 {                     await tx.RollbackAsync();                     return BadRequest(new { success = false, message = "Dữ liệu import không hợp lệ", errors });                 }                  await _context.SaveChangesAsync();                  foreach (var input in productsToCreate)                 {                     if (!createdProducts.TryGetValue(input.ProductCode, out var product))                         continue;                      var optionValueMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);                     var optionDefs = input.Options.Where(o => !string.IsNullOrWhiteSpace(o.Name) && o.Values.Any()).ToList();                     var displayOrder = 1;                      foreach (var optionDef in optionDefs)                     {                         var option = new ProductOption                         {                             ProductID = product.ProductID,                             Name = optionDef.Name,                             DisplayOrder = displayOrder++,                             CreatedAt = now,                             CreatedBy = createdBy                         };                         _context.ProductOptions.Add(option);                         await _context.SaveChangesAsync();                          var valueOrder = 1;                         foreach (var valueDef in optionDef.Values)                         {                             var pov = new ProductOptionValue                             {                                 ProductOptionID = option.ProductOptionID,                                 Value = valueDef,                                 Price = 0,                                 DisplayOrder = valueOrder++,                                 CreatedAt = now,                                 CreatedBy = createdBy                             };                             _context.ProductOptionValues.Add(pov);                             await _context.SaveChangesAsync();                              optionValueMap[BuildOptionKey(optionDef.Name, valueDef)] = pov.ProductOptionValueID;                         }                     }                      productOptionValueMap[input.ProductCode] = optionValueMap;                 }                  var createdVariants = 0;                 var skippedVariants = 0;                 foreach (var input in variantInputs)                 {                     if (!codeMap.TryGetValue(input.ProductCode, out var mappedCode))                     {                         skippedVariants++;                         continue;                     }                      if (!createdProducts.TryGetValue(mappedCode, out var product))                     {                         errors.Add($"Biến thể tham chiếu mã sản phẩm không tồn tại trong sheet Products: {input.ProductCode}");                         continue;                     }                      var sku = BuildValidSku(input.SKU, product.Code, usedSkus);                      var variant = new Variant                     {                         ProductID = product.ProductID,                         VariantName = string.IsNullOrWhiteSpace(input.VariantName)                             ? product.ProductName                             : input.VariantName,                         SKU = sku,                         UnitPrice = input.UnitPrice,                         Stock = input.Stock,                         ImageUrl = input.ImageUrl,                         Description = string.IsNullOrWhiteSpace(input.Description)                             ? $"Biến thể {input.VariantName}"                             : input.Description,                         Status = input.Status,                         CreatedAt = now,                         CreatedBy = createdBy                     };                      _context.Variants.Add(variant);                     await _context.SaveChangesAsync();                      if (productOptionValueMap.TryGetValue(mappedCode, out var optionMap) && productInputMap.TryGetValue(mappedCode, out var productInput))                     {                         for (var idx = 0; idx < input.OptionValues.Count; idx++)                         {                             if (idx >= productInput.Options.Count)                                 break;                              var selectedValue = input.OptionValues[idx];                             if (string.IsNullOrWhiteSpace(selectedValue))                                 continue;                              var optionName = productInput.Options[idx].Name;                             var key = BuildOptionKey(optionName, selectedValue);                             if (!optionMap.TryGetValue(key, out var optionValueId))                             {                                 errors.Add($"Không tìm thấy option/value '{optionName} - {selectedValue}' cho sản phẩm {input.ProductCode}");                                 continue;                             }                              _context.VariantOptionValues.Add(new VariantOptionValue                             {                                 VariantID = variant.VariantID,                                 ProductOptionValueID = optionValueId                             });                         }                     }                      createdVariants++;                 }                  if (errors.Any())                 {                     await tx.RollbackAsync();                     return BadRequest(new { success = false, message = "Dữ liệu import không hợp lệ", errors });                 }                  foreach (var product in createdProducts.Values)                 {                     product.Stock = await _context.Variants                         .Where(v => v.ProductID == product.ProductID)                         .SumAsync(v => v.Stock);                 }                  await _context.SaveChangesAsync();                 await tx.CommitAsync();                  return Ok(new                 {                     success = true,                     message = "Import dữ liệu sản phẩm và biến thể thành công",                     data = new                     {                         totalProducts = createdProducts.Count,                         totalVariants = createdVariants,                         skippedProductCodes = skippedProductCodes.Distinct(StringComparer.OrdinalIgnoreCase).ToList(),                         skippedProductNames = skippedProductNames.Distinct(StringComparer.OrdinalIgnoreCase).ToList(),                         skippedProducts = skippedProductCodes.Count,                         skippedVariants                     }                 });             }             catch (Exception ex)             {                 _logger.LogError(ex, "Error importing product excel file");                 return StatusCode(500, new { success = false, message = "Có lỗi xẩy ra khi import file Excel" });             }         }          private static List<ProductImportInput> ParseProducts(IXLWorksheet sheet, List<string> errors)         {             var result = new List<ProductImportInput>();             var headers = GetHeaderMap(sheet);             var row = 2;              while (true)             {                 var productCode = GetByHeader(sheet, headers, row, "ProductCode");                 var productName = GetByHeader(sheet, headers, row, "ProductName");                  if (string.IsNullOrWhiteSpace(productCode) && string.IsNullOrWhiteSpace(productName))                     break;                  if (string.IsNullOrWhiteSpace(productCode))                     errors.Add($"Products row {row}: ProductCode là bắt buộc");                 if (string.IsNullOrWhiteSpace(productName))                     errors.Add($"Products row {row}: ProductName là bắt buộc");                  var categoryName = GetByHeader(sheet, headers, row, "CategoryName");                 var supplierName = GetByHeader(sheet, headers, row, "SupplierName");                  if (string.IsNullOrWhiteSpace(categoryName))                     errors.Add($"Products row {row}: CategoryName là bắt buộc");                 if (string.IsNullOrWhiteSpace(supplierName))                     errors.Add($"Products row {row}: SupplierName là bắt buộc");                  if (!TryParseDecimal(GetString(sheet, row, 6), out var basePrice))                     errors.Add($"Products row {row}: BasePrice không hợp lệ");                  var status = ParseBool(GetString(sheet, row, 7), true);                  var option1Name = GetString(sheet, row, 8);                 var option1Values = SplitValues(GetString(sheet, row, 9));                 var option2Name = GetString(sheet, row, 10);                 var option2Values = SplitValues(GetString(sheet, row, 11));                  var options = new List<ProductOptionImportInput>();                 if (!string.IsNullOrWhiteSpace(option1Name) && option1Values.Any())                     options.Add(new ProductOptionImportInput(option1Name, option1Values));                  if (!string.IsNullOrWhiteSpace(option2Name) && option2Values.Any())                     options.Add(new ProductOptionImportInput(option2Name, option2Values));                  result.Add(new ProductImportInput                 {                     ProductCode = productCode,                     ProductName = productName,                     Description = GetByHeader(sheet, headers, row, "Description"),                     CategoryName = categoryName,                     SupplierName = supplierName,                     BasePrice = basePrice,                     Status = status,                     Options = options                 });                  row++;             }              var dupCodes = result                 .GroupBy(x => x.ProductCode, StringComparer.OrdinalIgnoreCase)                 .Where(g => g.Count() > 1)                 .Select(g => g.Key)                 .ToList();              if (dupCodes.Any())             {                 errors.AddRange(dupCodes.Select(c => $"Products: trùng ProductCode trong file: {c}"));             }              return result;         }          private static List<VariantImportInput> ParseVariants(IXLWorksheet sheet, List<string> errors)         {             var result = new List<VariantImportInput>();             var headers = GetHeaderMap(sheet);             var row = 2;              while (true)             {                 var productCode = GetByHeader(sheet, headers, row, "ProductCode");                 var variantName = GetByHeader(sheet, headers, row, "VariantName");                  if (string.IsNullOrWhiteSpace(productCode) && string.IsNullOrWhiteSpace(variantName))                     break;                  if (string.IsNullOrWhiteSpace(productCode))                     errors.Add($"Variants row {row}: ProductCode là bắt buộc");                  if (!TryParseDecimal(GetString(sheet, row, 4), out var unitPrice))                     errors.Add($"Variants row {row}: UnitPrice không hợp lệ");                  if (!int.TryParse(GetString(sheet, row, 5), out var stock))                     errors.Add($"Variants row {row}: Stock không hợp lệ");                  var optionValues = new List<string>                 {                     GetString(sheet, row, 8),                     GetString(sheet, row, 9)                 };                  result.Add(new VariantImportInput                 {                     ProductCode = productCode,                     VariantName = variantName,                     SKU = GetByHeader(sheet, headers, row, "SKU"),                     UnitPrice = unitPrice,                     Stock = stock,                     ImageUrl = GetByHeader(sheet, headers, row, "ImageUrl"),                     Description = GetByHeader(sheet, headers, row, "Description"),                     Status = ParseBool(GetByHeader(sheet, headers, row, "Status"), true),                     OptionValues = optionValues                 });                  row++;             }              return result;         }          private static string GetString(IXLWorksheet sheet, int row, int col)         {             return sheet.Cell(row, col).GetString().Trim();         }          private static Dictionary<string, int> GetHeaderMap(IXLWorksheet sheet)         {             var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);             var lastCol = Math.Max(1, sheet.Row(1).LastCellUsed()?.Address.ColumnNumber ?? 1);             for (var col = 1; col <= lastCol; col++)             {                 var raw = sheet.Cell(1, col).GetString();                 var normalized = NormalizeText(raw);                 if (!string.IsNullOrWhiteSpace(normalized) && !map.ContainsKey(normalized))                 {                     map[normalized] = col;                 }             }             return map;         }          private static string GetByHeader(IXLWorksheet sheet, Dictionary<string, int> headers, int row, string headerName)         {             var key = NormalizeText(headerName);             if (!headers.TryGetValue(key, out var col))                 return string.Empty;              return GetString(sheet, row, col);         }          private static IXLWorksheet? FindSheetByHeaders(XLWorkbook workbook, IEnumerable<string> requiredHeaders)         {             var normalizedRequired = requiredHeaders.Select(NormalizeText).ToList();             foreach (var ws in workbook.Worksheets)             {                 var headers = GetHeaderMap(ws);                 if (normalizedRequired.All(h => headers.ContainsKey(h)))                 {                     return ws;                 }             }              return null;         }          private static string BuildOptionKey(string optionName, string optionValue)         {             return $"{NormalizeText(optionName)}|{NormalizeText(optionValue)}";         }          private static string BuildUniqueProductCode(string? rawCode, HashSet<string> usedCodes)         {             var baseCode = (rawCode ?? string.Empty).Trim().ToUpperInvariant();             if (string.IsNullOrWhiteSpace(baseCode))             {                 baseCode = "SP";             }              if (baseCode.Length > 50)             {                 baseCode = baseCode[..50];             }              if (!usedCodes.Contains(baseCode))             {                 usedCodes.Add(baseCode);                 return baseCode;             }              var prefix = baseCode.Length > 45 ? baseCode[..45] : baseCode;             var i = 1;             while (i <= 9999)             {                 var candidate = $"{prefix}-{i:D3}";                 if (candidate.Length > 50)                 {                     candidate = candidate[..50];                 }                  if (!usedCodes.Contains(candidate))                 {                     usedCodes.Add(candidate);                     return candidate;                 }                  i++;             }              var fallback = $"SP-{Guid.NewGuid().ToString("N")[..8]}".ToUpperInvariant();             usedCodes.Add(fallback);             return fallback;         }          private static string BuildValidSku(string? rawSku, string productCode, HashSet<string> usedSkus)         {             static string KeepAlphaNumeric(string input)             {                 return new string(input.Where(char.IsLetterOrDigit).ToArray());             }              var candidate = KeepAlphaNumeric((rawSku ?? string.Empty).Trim()).ToUpperInvariant();             if (string.IsNullOrWhiteSpace(candidate))             {                 candidate = KeepAlphaNumeric(productCode).ToUpperInvariant();             }              if (candidate.Length > 10)             {                 candidate = candidate[..10];             }              if (string.IsNullOrWhiteSpace(candidate))             {                 candidate = "SKU";             }              if (!usedSkus.Contains(candidate))             {                 usedSkus.Add(candidate);                 return candidate;             }              var basePart = candidate.Length > 6 ? candidate[..6] : candidate;             var suffix = 1;             while (suffix <= 9999)             {                 var next = $"{basePart}{suffix:0000}";                 if (next.Length > 10)                 {                     next = next[..10];                 }                  if (!usedSkus.Contains(next))                 {                     usedSkus.Add(next);                     return next;                 }                  suffix++;             }              var fallback = $"SKU{Guid.NewGuid().ToString("N")[..7]}".ToUpperInvariant();             fallback = fallback.Length > 10 ? fallback[..10] : fallback;             usedSkus.Add(fallback);             return fallback;         }          private static string NormalizeText(string? input)         {             if (string.IsNullOrWhiteSpace(input))                 return string.Empty;              var normalized = input.Trim().Normalize(NormalizationForm.FormKC).ToLowerInvariant();             while (normalized.Contains("  "))             {                 normalized = normalized.Replace("  ", " ");             }              normalized = normalized.Replace(" (", "(").Replace(") ", ")");             return normalized;         }          private static bool TryParseDecimal(string input, out decimal value)         {             var normalized = (input ?? string.Empty).Trim().Replace(" ", string.Empty);             return decimal.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out value)                 || decimal.TryParse(normalized, NumberStyles.Any, CultureInfo.GetCultureInfo("vi-VN"), out value);         }          private static bool ParseBool(string input, bool defaultValue)         {             if (string.IsNullOrWhiteSpace(input))                 return defaultValue;              return input.Trim().ToLowerInvariant() switch             {                 "1" or "true" or "yes" or "active" or "hoatdong" or "hoạt động" => true,                 "0" or "false" or "no" or "inactive" or "ngunghoatdong" or "ngừng hoạt động" => false,                 _ => defaultValue             };         }          private static List<string> SplitValues(string input)         {             return (input ?? string.Empty)                 .Split('|', StringSplitOptions.RemoveEmptyEntries)                 .Select(v => v.Trim())                 .Where(v => !string.IsNullOrWhiteSpace(v))                 .Distinct(StringComparer.OrdinalIgnoreCase)                 .ToList();         }          private sealed class ProductImportInput         {             public string ProductCode { get; set; } = string.Empty;             public string ProductName { get; set; } = string.Empty;             public string Description { get; set; } = string.Empty;             public string CategoryName { get; set; } = string.Empty;             public string SupplierName { get; set; } = string.Empty;             public decimal BasePrice { get; set; }             public bool Status { get; set; }             public List<ProductOptionImportInput> Options { get; set; } = new();         }          private sealed record ProductOptionImportInput(string Name, List<string> Values);          private sealed class VariantImportInput         {             public string ProductCode { get; set; } = string.Empty;             public string VariantName { get; set; } = string.Empty;             public string SKU { get; set; } = string.Empty;             public decimal UnitPrice { get; set; }             public int Stock { get; set; }             public string? ImageUrl { get; set; }             public string? Description { get; set; }             public bool Status { get; set; }             public List<string> OptionValues { get; set; } = new();         }     } } 
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PolyBabyAPI.Data;
+using PolyBabyAPI.Filters;
+using PolyBabyAPI.Models;
+using PolyBabyAPI.DTOs;
+using System.Globalization;
+using System.Security.Claims;
+
+namespace PolyBabyAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class ProductImportController : ControllerBase
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly ILogger<ProductImportController> _logger;
+
+        public ProductImportController(ApplicationDbContext context, ILogger<ProductImportController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        // ─────────────────────────────────────────────
+        // GET /api/ProductImport/template
+        // ─────────────────────────────────────────────
+        [HttpGet("template")]
+        [AllowAnonymous]
+        public IActionResult DownloadTemplate()
+        {
+            using var workbook = new XLWorkbook();
+
+            var productsSheet = workbook.Worksheets.Add("Products");
+            productsSheet.Cell(1, 1).Value = "ProductCode";
+            productsSheet.Cell(1, 2).Value = "ProductName";
+            productsSheet.Cell(1, 3).Value = "Description";
+            productsSheet.Cell(1, 4).Value = "CategoryName";
+            productsSheet.Cell(1, 5).Value = "SupplierName";
+            productsSheet.Cell(1, 6).Value = "BasePrice";
+            productsSheet.Cell(1, 7).Value = "Status";
+            productsSheet.Cell(1, 8).Value = "Option1Name";
+            productsSheet.Cell(1, 9).Value = "Option1Values";
+            productsSheet.Cell(1, 10).Value = "Option2Name";
+            productsSheet.Cell(1, 11).Value = "Option2Values";
+
+            productsSheet.Cell(2, 1).Value = "SP-AO-001";
+            productsSheet.Cell(2, 2).Value = "Áo body bé trai";
+            productsSheet.Cell(2, 3).Value = "Chất liệu cotton mềm mại";
+            productsSheet.Cell(2, 4).Value = "Quần áo bé trai";
+            productsSheet.Cell(2, 5).Value = "LazPe";
+            productsSheet.Cell(2, 6).Value = "150000";
+            productsSheet.Cell(2, 7).Value = "true";
+            productsSheet.Cell(2, 8).Value = "Màu sắc";
+            productsSheet.Cell(2, 9).Value = "Xanh, Đỏ";
+            productsSheet.Cell(2, 10).Value = "Kích cỡ";
+            productsSheet.Cell(2, 11).Value = "S, M, L";
+
+            var variantsSheet = workbook.Worksheets.Add("Variants");
+            variantsSheet.Cell(1, 1).Value = "ProductCode";
+            variantsSheet.Cell(1, 2).Value = "SKU";
+            variantsSheet.Cell(1, 3).Value = "Option1Value";
+            variantsSheet.Cell(1, 4).Value = "Option2Value";
+            variantsSheet.Cell(1, 5).Value = "Price";
+            variantsSheet.Cell(1, 6).Value = "Stock";
+            variantsSheet.Cell(1, 7).Value = "ImageUrl";
+
+            variantsSheet.Cell(2, 1).Value = "SP-AO-001";
+            variantsSheet.Cell(2, 2).Value = "SP-AO-001-001";
+            variantsSheet.Cell(2, 3).Value = "Xanh";
+            variantsSheet.Cell(2, 4).Value = "S";
+            variantsSheet.Cell(2, 5).Value = "150000";
+            variantsSheet.Cell(2, 6).Value = "10";
+            variantsSheet.Cell(2, 7).Value = "";
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var content = stream.ToArray();
+
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProductImportTemplate.xlsx");
+        }
+
+        // ─────────────────────────────────────────────
+        // POST /api/ProductImport/validate
+        // ─────────────────────────────────────────────
+        [HttpPost("validate")]
+        [Permission("Product.Create")]
+        public async Task<IActionResult> ValidateImport(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Vui lòng tải lên file Excel");
+
+            var response = new ValidateImportResponseDto();
+
+            try
+            {
+                using var stream = new MemoryStream();
+                await file.CopyToAsync(stream);
+                using var workbook = new XLWorkbook(stream);
+
+                var productsSheet = workbook.Worksheet("Products");
+                var variantsSheet = workbook.Worksheet("Variants");
+
+                if (productsSheet == null || variantsSheet == null)
+                    return BadRequest("File không đúng định dạng mẫu. Cần có 2 sheet 'Products' và 'Variants'.");
+
+                // Parse Products
+                var productRows = productsSheet.RowsUsed().Skip(1);
+                var inFileDataProducts = new HashSet<string>();
+
+                foreach (var row in productRows)
+                {
+                    string code = row.Cell(1).GetString().Trim();
+                    if (string.IsNullOrEmpty(code)) continue;
+
+                    var pDto = new ProductImportDto
+                    {
+                        ExcelRow = row.RowNumber().ToString(),
+                        ProductCode = code,
+                        ProductName = row.Cell(2).GetString().Trim(),
+                        Description = row.Cell(3).GetString().Trim(),
+                        CategoryName = row.Cell(4).GetString().Trim(),
+                        SupplierName = row.Cell(5).GetString().Trim(),
+                        BasePrice = decimal.TryParse(row.Cell(6).GetString(), out var bp) ? bp : 0,
+                        Status = row.Cell(7).GetString().Trim(),
+                        Option1Name = row.Cell(8).GetString().Trim(),
+                        Option1Values = row.Cell(9).GetString().Trim(),
+                        Option2Name = row.Cell(10).GetString().Trim(),
+                        Option2Values = row.Cell(11).GetString().Trim()
+                    };
+
+                    if (string.IsNullOrEmpty(pDto.ProductName))
+                    {
+                        pDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "ProductName", Message = "Tên sản phẩm trống" });
+                    }
+
+                    if (string.IsNullOrEmpty(pDto.CategoryName))
+                    {
+                        pDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "CategoryName", Message = "Danh mục trống" });
+                    }
+                    else
+                    {
+                        var cat = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == pDto.CategoryName);
+                        if (cat == null)
+                        {
+                            pDto.IsValid = false;
+                            response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "CategoryName", Message = $"Danh mục '{pDto.CategoryName}' không tồn tại" });
+                        }
+                        else pDto.CategoryId = cat.CategoryID;
+                    }
+
+                    if (string.IsNullOrEmpty(pDto.SupplierName))
+                    {
+                        pDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "SupplierName", Message = "Nhà cung cấp trống" });
+                    }
+                    else
+                    {
+                        var sup = await _context.Suppliers.FirstOrDefaultAsync(s => s.SupplierName == pDto.SupplierName);
+                        if (sup == null)
+                        {
+                            pDto.IsValid = false;
+                            response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "SupplierName", Message = $"Nhà cung cấp '{pDto.SupplierName}' không tồn tại" });
+                        }
+                        else pDto.SupplierId = sup.SupplierID;
+                    }
+
+                    if (inFileDataProducts.Contains(pDto.ProductCode))
+                    {
+                        pDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Products", Row = pDto.ExcelRow, Field = "ProductCode", Message = "Mã sản phẩm trùng lặp trong file Excel" });
+                    }
+                    else
+                    {
+                        inFileDataProducts.Add(pDto.ProductCode);
+                    }
+
+                    var existingProd = await _context.Products.FirstOrDefaultAsync(p => p.Code == pDto.ProductCode);
+                    if (existingProd != null)
+                    {
+                        response.Duplicates.Add(new ImportDuplicateDto { Sheet = "Products", Row = pDto.ExcelRow, ItemCode = pDto.ProductCode, ResolvingAction = "Skip" });
+                    }
+
+                    response.Products.Add(pDto);
+                }
+
+                // Parse Variants
+                var variantRows = variantsSheet.RowsUsed().Skip(1);
+                var inFileSkus = new HashSet<string>();
+
+                foreach (var row in variantRows)
+                {
+                    string pCode = row.Cell(1).GetString().Trim();
+                    string sku = row.Cell(2).GetString().Trim();
+                    if (string.IsNullOrEmpty(pCode) && string.IsNullOrEmpty(sku)) continue;
+
+                    var vDto = new VariantImportDto
+                    {
+                        ExcelRow = row.RowNumber().ToString(),
+                        ProductCode = pCode,
+                        SKU = sku,
+                        Option1Value = row.Cell(3).GetString().Trim(),
+                        Option2Value = row.Cell(4).GetString().Trim(),
+                        Price = decimal.TryParse(row.Cell(5).GetString(), out var vp) ? vp : 0,
+                        Stock = int.TryParse(row.Cell(6).GetString(), out var st) ? st : 0,
+                        ImageUrl = row.Cell(7).GetString().Trim()
+                    };
+
+                    if (!inFileDataProducts.Contains(vDto.ProductCode))
+                    {
+                        vDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Variants", Row = vDto.ExcelRow, Field = "ProductCode", Message = $"Mã sản phẩm '{vDto.ProductCode}' không tồn tại trong sheet Products" });
+                    }
+
+                    if (inFileSkus.Contains(vDto.SKU))
+                    {
+                        vDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Variants", Row = vDto.ExcelRow, Field = "SKU", Message = "SKU trùng lặp trong file Excel" });
+                    }
+                    else if (!string.IsNullOrEmpty(vDto.SKU))
+                    {
+                        inFileSkus.Add(vDto.SKU);
+                    }
+
+                    if (string.IsNullOrEmpty(vDto.SKU))
+                    {
+                        vDto.IsValid = false;
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Variants", Row = vDto.ExcelRow, Field = "SKU", Message = "SKU không được để trống" });
+                    }
+
+                    var existingVar = await _context.Variants.FirstOrDefaultAsync(v => v.SKU == vDto.SKU);
+                    if (existingVar != null)
+                    {
+                        response.Duplicates.Add(new ImportDuplicateDto { Sheet = "Variants", Row = vDto.ExcelRow, ItemCode = vDto.SKU, ResolvingAction = "Skip" });
+                    }
+
+                    response.Variants.Add(vDto);
+                }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating Excel import");
+                return StatusCode(500, "Có lỗi xảy ra khi đọc file Excel.");
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // POST /api/ProductImport/commit
+        // ─────────────────────────────────────────────
+        [HttpPost("commit")]
+        [Permission("Product.Create")]
+        public async Task<IActionResult> CommitImport([FromBody] ImportCommitRequestDto request)
+        {
+            if (request == null || !request.Products.Any())
+                return BadRequest("Không có dữ liệu hợp lệ để import.");
+
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
+
+            // Pre-load all categories & suppliers to resolve name → ID
+            // Use GroupBy to handle duplicate names gracefully (take first match)
+            var allCategoriesRaw = await _context.Categories.ToListAsync();
+            var allCategories = allCategoriesRaw
+                .GroupBy(c => c.CategoryName.ToLower())
+                .ToDictionary(g => g.Key, g => g.First().CategoryID);
+
+            var allSuppliersRaw = await _context.Suppliers.ToListAsync();
+            var allSuppliers = allSuppliersRaw
+                .GroupBy(s => s.SupplierName.ToLower())
+                .ToDictionary(g => g.Key, g => g.First().SupplierID);
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var actionDict = request.ActionableDuplicates
+                    .GroupBy(d => d.ItemCode)
+                    .ToDictionary(g => g.Key, g => g.First().ResolvingAction);
+
+                var productCodeMap = new Dictionary<string, int>(); // excel code → DB ProductID
+
+                // ── Products ──────────────────────────────────────────────
+                foreach (var pDto in request.Products)
+                {
+                    if (!pDto.IsValid) continue;
+
+                    // Resolve CategoryId / SupplierId from name if ID is 0
+                    int resolvedCategoryId = pDto.CategoryId;
+                    if (resolvedCategoryId <= 0 && !string.IsNullOrEmpty(pDto.CategoryName))
+                        allCategories.TryGetValue(pDto.CategoryName.ToLower(), out resolvedCategoryId);
+
+                    int resolvedSupplierId = pDto.SupplierId;
+                    if (resolvedSupplierId <= 0 && !string.IsNullOrEmpty(pDto.SupplierName))
+                        allSuppliers.TryGetValue(pDto.SupplierName.ToLower(), out resolvedSupplierId);
+
+                    if (resolvedCategoryId <= 0)
+                    {
+                        _logger.LogWarning("Bỏ qua sản phẩm {Code}: không tìm thấy danh mục '{Cat}'", pDto.ProductCode, pDto.CategoryName);
+                        continue;
+                    }
+
+                    // Determine action (Skip / Update / CreateNew)
+                    string finalCode = pDto.ProductCode;
+                    bool skip = false, update = false;
+
+                    if (actionDict.TryGetValue(pDto.ProductCode, out var prodAction))
+                    {
+                        if (prodAction == "Skip")        skip = true;
+                        else if (prodAction == "Update") update = true;
+                        else if (prodAction == "CreateNew") finalCode = pDto.ProductCode + "-" + Guid.NewGuid().ToString()[..4];
+                    }
+
+                    if (skip)
+                    {
+                        var extId = await _context.Products
+                            .Where(p => p.Code == pDto.ProductCode)
+                            .Select(p => p.ProductID)
+                            .FirstOrDefaultAsync();
+                        if (extId > 0) productCodeMap[pDto.ProductCode] = extId;
+                        continue;
+                    }
+
+                    Product prod;
+                    if (update)
+                    {
+                        prod = await _context.Products
+                            .Include(p => p.ProductOptions)
+                            .FirstOrDefaultAsync(p => p.Code == pDto.ProductCode);
+                        if (prod == null) continue;
+
+                        prod.ProductName = pDto.ProductName;
+                        prod.Description = string.IsNullOrEmpty(pDto.Description) ? prod.Description : pDto.Description;
+                        prod.CategoryID  = resolvedCategoryId;
+                        prod.SupplierID  = resolvedSupplierId > 0 ? resolvedSupplierId : prod.SupplierID;
+                        prod.Price       = pDto.BasePrice;
+                        prod.Status      = pDto.Status?.ToLower() == "true";
+                    }
+                    else
+                    {
+                        prod = new Product
+                        {
+                            Code        = finalCode,
+                            ProductName = pDto.ProductName,
+                            Description = string.IsNullOrEmpty(pDto.Description) ? "Nhập từ Excel" : pDto.Description,
+                            CategoryID  = resolvedCategoryId,
+                            SupplierID  = resolvedSupplierId > 0 ? resolvedSupplierId : allSuppliers.Values.FirstOrDefault(),
+                            Price       = pDto.BasePrice,
+                            Status      = pDto.Status?.ToLower() != "false",
+                            CreatedAt   = DateTime.Now,
+                            CreatedBy   = currentUserId
+                        };
+                        _context.Products.Add(prod);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    productCodeMap[pDto.ProductCode] = prod.ProductID;
+
+                    // Create Options
+                    if (!string.IsNullOrEmpty(pDto.Option1Name))
+                    {
+                        bool exists = await _context.ProductOptions
+                            .AnyAsync(o => o.ProductID == prod.ProductID && o.Name == pDto.Option1Name);
+                        if (!exists)
+                        {
+                            _context.ProductOptions.Add(new ProductOption
+                            {
+                                ProductID = prod.ProductID, Name = pDto.Option1Name, DisplayOrder = 1, CreatedBy = currentUserId
+                            });
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(pDto.Option2Name))
+                    {
+                        bool exists = await _context.ProductOptions
+                            .AnyAsync(o => o.ProductID == prod.ProductID && o.Name == pDto.Option2Name);
+                        if (!exists)
+                        {
+                            _context.ProductOptions.Add(new ProductOption
+                            {
+                                ProductID = prod.ProductID, Name = pDto.Option2Name, DisplayOrder = 2, CreatedBy = currentUserId
+                            });
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                // ── Variants ──────────────────────────────────────────────
+                foreach (var vDto in request.Variants)
+                {
+                    if (!vDto.IsValid) continue;
+                    if (!productCodeMap.TryGetValue(vDto.ProductCode, out int prodId)) continue;
+
+                    var prod = await _context.Products
+                        .Include(p => p.ProductOptions)
+                        .ThenInclude(po => po.ProductOptionValues)
+                        .FirstOrDefaultAsync(p => p.ProductID == prodId);
+                    if (prod == null) continue;
+
+                    string finalSku = vDto.SKU;
+                    bool skip = false, update = false;
+
+                    if (actionDict.TryGetValue(vDto.SKU, out var varAction))
+                    {
+                        if (varAction == "Skip")        skip = true;
+                        else if (varAction == "Update") update = true;
+                        else if (varAction == "CreateNew") finalSku = vDto.SKU + "-" + Guid.NewGuid().ToString()[..4];
+                    }
+
+                    if (skip) continue;
+
+                    string variantName = $"{prod.ProductName} - {vDto.Option1Value} {vDto.Option2Value}".Trim(' ', '-').Trim();
+
+                    if (update)
+                    {
+                        var existing = await _context.Variants.FirstOrDefaultAsync(v => v.SKU == vDto.SKU);
+                        if (existing != null)
+                        {
+                            existing.VariantName = string.IsNullOrEmpty(variantName) ? existing.VariantName : variantName;
+                            existing.UnitPrice   = vDto.Price;
+                            existing.Stock       = vDto.Stock;
+                            existing.ImageUrl    = vDto.ImageUrl;
+                            existing.Description = $"Biến thể {variantName}";
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        var newVariant = new Variant
+                        {
+                            ProductID   = prod.ProductID,
+                            SKU         = finalSku,
+                            VariantName = string.IsNullOrEmpty(variantName) ? prod.ProductName : variantName,
+                            UnitPrice   = vDto.Price,
+                            Stock       = vDto.Stock,
+                            ImageUrl    = vDto.ImageUrl,
+                            Description = string.IsNullOrEmpty(variantName) ? "Biến thể nhập từ Excel" : $"Biến thể {variantName}",
+                            CreatedAt   = DateTime.Now,
+                            CreatedBy   = currentUserId,
+                            Status      = true
+                        };
+                        _context.Variants.Add(newVariant);
+                        await _context.SaveChangesAsync();
+
+                        // Associate Option Values
+                        var options = prod.ProductOptions.OrderBy(o => o.DisplayOrder).ToList();
+
+                        async Task LinkOptionValue(ProductOption opt, string valueStr)
+                        {
+                            if (string.IsNullOrEmpty(valueStr)) return;
+                            var ov = opt.ProductOptionValues.FirstOrDefault(v => v.Value == valueStr);
+                            if (ov == null)
+                            {
+                                ov = new ProductOptionValue
+                                {
+                                    ProductOptionID = opt.ProductOptionID,
+                                    Value = valueStr,
+                                    CreatedBy = currentUserId
+                                };
+                                _context.ProductOptionValues.Add(ov);
+                                await _context.SaveChangesAsync();
+                                opt.ProductOptionValues.Add(ov);
+                            }
+                            _context.VariantOptionValues.Add(new VariantOptionValue
+                            {
+                                VariantID = newVariant.VariantID,
+                                ProductOptionValueID = ov.ProductOptionValueID
+                            });
+                        }
+
+                        if (options.Count > 0) await LinkOptionValue(options[0], vDto.Option1Value);
+                        if (options.Count > 1) await LinkOptionValue(options[1], vDto.Option2Value);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { message = "Import thành công!" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error committing Excel import");
+                var isDev = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+                var detail = isDev
+                    ? $"{ex.Message} | {ex.InnerException?.Message}"
+                    : "Vui lòng kiểm tra lại dữ liệu và thử lại.";
+                return StatusCode(500, $"Có lỗi xảy ra khi lưu dữ liệu: {detail}");
+            }
+        }
+    }
+}

@@ -41,8 +41,14 @@ export interface Product {
   id: number;
   name: string;
   description: string;
+  specifications?: string;
   price: number;
   discountPrice?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  minEffectivePrice?: number;
+  maxEffectivePrice?: number;
+  variantCount?: number;
   image?: string;
   rating?: number;
   ratingCount?: number;
@@ -78,6 +84,9 @@ export interface Voucher {
   remainingQuantity: number;
   visibilityType: string;
   isCollected: boolean;
+  voucherType?: number;
+  isFreeShipping?: boolean;
+  maxShippingDiscount?: number | null;
 }
 
 export interface ApiResponse<T> {

@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.DTOs;
+using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interfaces
@@ -37,10 +37,20 @@ namespace PolyBabyAPI.Interfaces
         Task<IEnumerable<ReviewComment>> GetReviewCommentsAsync(int reviewId);
         Task<bool> DeleteCommentAsync(int commentId, string userId);
 
+        // User specific functions
+        Task<IEnumerable<Review>> GetUserReviewsAsync(string userId, int page = 1, int pageSize = 10);
+        Task<int> GetUserReviewCountAsync(string userId);
+        Task<IEnumerable<PendingReviewItemDto>> GetPendingReviewsAsync(string userId);
+
         // Admin functions
         Task<bool> HideReviewAsync(int reviewId);
         Task<bool> ShowReviewAsync(int reviewId);
         Task<bool> HideCommentAsync(int commentId);
+        Task<bool> CensorReviewAsync(string actorId, CensorReviewDto dto);
+        Task<ReviewAdminStatsDto> GetReviewAdminStatsAsync();
+        Task<ModerationDashboardDto> GetModerationDashboardAsync();
+        Task<IEnumerable<ReviewCensorshipLogDto>> GetCensorshipLogsAsync(int reviewId);
+        Task<LoyaltySetting> GetLoyaltySettingAsync();
+        Task<bool> UpdateLoyaltySettingAsync(LoyaltySetting setting);
     }
 }
-

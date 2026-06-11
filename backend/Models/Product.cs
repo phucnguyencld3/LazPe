@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.Models
@@ -23,6 +23,9 @@ namespace PolyBabyAPI.Models
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
+
+        [Display(Name = "Thông số kỹ thuật (JSON)")]
+        public string? Specifications { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Giá")]

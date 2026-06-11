@@ -142,5 +142,49 @@ namespace PolyBabyAPI.Services
 
             return discountAmount;
         }
+
+        public decimal CalculateShippingDiscount(Voucher voucher, decimal shippingFee)
+        {
+            if (voucher.VoucherType != VoucherType.ShippingDiscount)
+            {
+                return 0;
+            }
+
+            if (voucher.IsFreeShipping)
+            {
+                return shippingFee;
+            }
+
+            decimal discountAmount = 0;
+
+            if (voucher.DiscountType == 1) // Phần trăm
+            {
+                discountAmount = shippingFee * (voucher.DiscountValue / 100);
+            }
+            else // Tiền mặt cố định
+            {
+                discountAmount = voucher.DiscountValue;
+            }
+
+            // Kiểm tra giảm tối đa (sử dụng MaxShippingDiscount hoặc MaxDiscount)
+            var maxCap = voucher.MaxShippingDiscount ?? voucher.MaxDiscount;
+            if (maxCap > 0 && discountAmount > maxCap)
+            {
+                discountAmount = maxCap;
+            }
+
+            // Không được giảm quá phí vận chuyển thực tế
+            if (discountAmount > shippingFee)
+            {
+                discountAmount = shippingFee;
+            }
+
+            if (discountAmount < 0)
+            {
+                discountAmount = 0;
+            }
+
+            return discountAmount;
+        }
     }
 }

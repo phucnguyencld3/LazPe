@@ -30,6 +30,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.UserID == userId && c.Status == true);
 
             if (cart == null)
@@ -58,6 +59,7 @@ namespace PolyBabyAPI.Services
             return await _context.Carts
                 .Include(c => c.CartDetails)
                 .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
 
@@ -106,21 +108,14 @@ namespace PolyBabyAPI.Services
                         }
 
                         existingDetail.Quantity = targetQuantity;
-                        existingDetail.UnitPrice = CalculateEffectiveVariantPrice(variant);
+                        existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
                     }
                 }
                 else if (existingDetail.BundleID.HasValue)
                 {
-                    var bundle = await _context.Bundles
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(b => b.BundleID == existingDetail.BundleID.Value);
-
-                    if (bundle != null)
-                    {
-                        var targetQuantity = existingDetail.Quantity + quantity;
-                        existingDetail.Quantity = targetQuantity;
-                        existingDetail.UnitPrice = bundle.Price ?? 0;
-                    }
+                    var targetQuantity = existingDetail.Quantity + quantity;
+                    existingDetail.Quantity = targetQuantity;
+                    existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
                 }
 
                 existingDetail.TotalPrice = existingDetail.UnitPrice * existingDetail.Quantity;
@@ -152,8 +147,6 @@ namespace PolyBabyAPI.Services
                     {
                         throw new ArgumentException($"Số lượng yêu cầu vượt tồn kho. Hiện chỉ còn {variant.Stock} sản phẩm.");
                     }
-
-                    newDetail.UnitPrice = variant != null ? CalculateEffectiveVariantPrice(variant) : 0;
                 }
                 else if (bundleId.HasValue)
                 {
@@ -163,9 +156,9 @@ namespace PolyBabyAPI.Services
                     {
                         throw new ArgumentException("Combo không tồn tại");
                     }
-
-                    newDetail.UnitPrice = bundle?.Price ?? 0;
                 }
+
+                newDetail.UnitPrice = await GetEffectivePriceAsync(variantId, bundleId);
                 
                 newDetail.TotalPrice = newDetail.UnitPrice * newDetail.Quantity;
                 _context.CartDetails.Add(newDetail);
@@ -209,14 +202,7 @@ namespace PolyBabyAPI.Services
 
                     detail.Quantity = quantity;
 
-                    if (detail.Variant != null)
-                    {
-                        detail.UnitPrice = CalculateEffectiveVariantPrice(detail.Variant);
-                    }
-                    else if (detail.Bundle != null)
-                    {
-                        detail.UnitPrice = detail.Bundle.Price ?? 0;
-                    }
+                    detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID);
 
                     detail.TotalPrice = detail.UnitPrice * quantity;
                 }
@@ -234,6 +220,7 @@ namespace PolyBabyAPI.Services
             if (cart != null)
             {
                 cart.Voucher = null; // Clear voucher too
+                cart.ShippingVoucher = null;
             }
 
             await _context.SaveChangesAsync();
@@ -279,8 +266,28 @@ namespace PolyBabyAPI.Services
                 return (false, "Voucher chưa có trong ví của bạn.");
             }
             
-            // Lưu voucher vào cart
-            cart.Voucher = voucher;
+            // Lưu voucher vào cart tương ứng loại
+            if (voucher.VoucherType == VoucherType.ShippingDiscount)
+            {
+                // Tính tạm tính & giảm giá sản phẩm để xem đơn hàng đã được freeship tự động chưa
+                decimal productDiscount = 0;
+                if (cart.Voucher != null)
+                {
+                    var productVoucherValid = await _voucherService.ValidateVoucherAsync(cart.Voucher.Code, subTotal, cart.UserID);
+                    if (productVoucherValid.IsValid)
+                    {
+                        productDiscount = _voucherService.CalculateDiscount(cart.Voucher, subTotal);
+                    }
+                }
+                decimal netTotal = subTotal - productDiscount;
+                if (netTotal < 0) netTotal = 0;
+
+                cart.ShippingVoucher = voucher;
+            }
+            else
+            {
+                cart.Voucher = voucher;
+            }
             
             await _context.SaveChangesAsync();
             await CalculateCartTotalAsync(cartId);
@@ -288,19 +295,24 @@ namespace PolyBabyAPI.Services
             return (true, "Áp dụng mã giảm giá thành công!");
         }
 
-        public async Task RemoveVoucherAsync(int cartId)
+        public async Task RemoveVoucherAsync(int cartId, int? type = null)
         {
-            var cart = await _context.Carts.Include(c => c.Voucher).FirstOrDefaultAsync(c => c.CartID == cartId);
+            var cart = await _context.Carts
+                .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
+                .FirstOrDefaultAsync(c => c.CartID == cartId);
+
             if (cart != null)
             {
-                // Để gỡ relation, ta cần set null.
-                // Nếu model Cart không có VoucherID (FK explicit) mà chỉ có navigation prop
-                // thì ta cần load nó vào context.
-                
-                // Hack: Nếu EF Core dùng Shadow Property cho FK VoucherID
-                // Cách an toàn là dùng .Reference().CurrentValue = null hoặc set navigation = null.
-                cart.Voucher = null; 
-                
+                if (type == null || type == 1)
+                {
+                    cart.Voucher = null;
+                }
+                if (type == null || type == 2)
+                {
+                    cart.ShippingVoucher = null;
+                }
+
                 await _context.SaveChangesAsync();
                 await CalculateCartTotalAsync(cartId);
             }
@@ -315,26 +327,20 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
 
             if (cart == null) return;
 
             foreach (var detail in cart.CartDetails)
             {
-                if (detail.Variant != null)
-                {
-                    detail.UnitPrice = CalculateEffectiveVariantPrice(detail.Variant);
-                }
-                else if (detail.Bundle != null)
-                {
-                    detail.UnitPrice = detail.Bundle.Price ?? 0;
-                }
-
+                detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID);
                 detail.TotalPrice = detail.UnitPrice * detail.Quantity;
             }
 
             decimal subTotal = cart.CartDetails.Sum(cd => cd.Quantity * cd.UnitPrice);
             decimal discount = 0;
+            decimal shippingDiscount = 0;
 
             if (cart.Voucher != null)
             {
@@ -351,14 +357,102 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            // Cart TotalAmount stores the final amount to pay? Or just subtotal? 
-            // Usually TotalAmount in Cart model implies the final value.
-            // Let's assume TotalAmount = SubTotal - Discount
-            
+            // Tính toán Shipping Discount
+            if (cart.ShippingVoucher != null)
+            {
+                var validCheck = await _voucherService.ValidateVoucherAsync(cart.ShippingVoucher.Code, subTotal, cart.UserID);
+                if (validCheck.IsValid)
+                {
+                    // Tính phí ship tạm thời dựa trên tổng tiền sau giảm giá sản phẩm
+                    decimal netTotal = subTotal - discount;
+                    if (netTotal < 0) netTotal = 0;
+
+                    decimal originalShippingFee = 25000;
+                    
+                    shippingDiscount = _voucherService.CalculateShippingDiscount(cart.ShippingVoucher, originalShippingFee);
+                }
+                else
+                {
+                    cart.ShippingVoucher = null;
+                }
+            }
+
+            cart.SubTotal = subTotal;
+            cart.DiscountAmount = discount;
+            cart.ShippingDiscountAmount = shippingDiscount;
             cart.TotalAmount = subTotal - discount;
             if (cart.TotalAmount < 0) cart.TotalAmount = 0;
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<decimal> GetEffectivePriceAsync(int? variantId, int? bundleId)
+        {
+            var now = DateTime.Now;
+
+            if (bundleId.HasValue)
+            {
+                var flashSaleItem = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive 
+                        && fsi.FlashSale.StartTime <= now 
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Bundle 
+                        && fsi.ReferenceId == bundleId.Value
+                        && fsi.SoldQuantity < fsi.TotalQuantity)
+                    .FirstOrDefaultAsync();
+
+                if (flashSaleItem != null)
+                {
+                    return flashSaleItem.DiscountPrice;
+                }
+
+                var bundle = await _context.Bundles.FindAsync(bundleId.Value);
+                return bundle?.Price ?? 0;
+            }
+
+            if (variantId.HasValue)
+            {
+                var variant = await _context.Variants
+                    .Include(v => v.Product)
+                    .FirstOrDefaultAsync(v => v.VariantID == variantId.Value);
+                
+                if (variant == null) return 0;
+
+                var fsVariant = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive 
+                        && fsi.FlashSale.StartTime <= now 
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Variant 
+                        && fsi.ReferenceId == variantId.Value
+                        && fsi.SoldQuantity < fsi.TotalQuantity)
+                    .FirstOrDefaultAsync();
+
+                if (fsVariant != null)
+                {
+                    return fsVariant.DiscountPrice;
+                }
+
+                var fsProduct = await _context.FlashSaleItems
+                    .Include(fsi => fsi.FlashSale)
+                    .Where(fsi => fsi.FlashSale.IsActive 
+                        && fsi.FlashSale.StartTime <= now 
+                        && fsi.FlashSale.EndTime >= now
+                        && fsi.ItemType == FlashSaleItemType.Product 
+                        && fsi.ReferenceId == variant.ProductID
+                        && fsi.SoldQuantity < fsi.TotalQuantity)
+                    .FirstOrDefaultAsync();
+
+                if (fsProduct != null)
+                {
+                    return fsProduct.DiscountPrice;
+                }
+
+                return CalculateEffectiveVariantPrice(variant);
+            }
+
+            return 0;
         }
 
         private static decimal CalculateEffectiveVariantPrice(Variant variant)

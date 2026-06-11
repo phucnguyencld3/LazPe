@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: lazpe-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    autoDeploy: true # Thay đổi thành true nếu muốn tự động deploy khi push code
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Giá trị này bạn sẽ điền trực tiếp trên trang Dashboard của Render
+      - key: JwtSettings__SecretKey
+        sync: false # Giá trị này bạn sẽ điền trực tiếp trên trang Dashboard của Render
+      - key: JwtSettings__Issuer
+        value: "https://lazpe-backend.onrender.com"
+      - key: JwtSettings__Audience
+        value: "https://lazpe-frontend.onrender.com"
+      - key: VnPay__ReturnUrl
+        value: "https://lazpe-backend.onrender.com/api/payment/vnpay-return"
+      - key: VnPay__FrontendBaseUrl
+        value: "https://lazpe-frontend.onrender.com"
+      - key: Cloudinary__CloudName
+        sync: false # Giá trị của bạn: dmqow0hu4
+      - key: Cloudinary__ApiKey
+        sync: false # Giá trị của bạn: 622594698344116
+      - key: Cloudinary__ApiSecret
+        sync: false # Lấy từ appsettings.json
+      - key: EmailSettings__SmtpPassword
+        sync: false # Mật khẩu ứng dụng Gmail (xyuq altp vmsp hvfi)
+      - key: Ghn__Token
+        sync: false # Token GHN
+
+  - type: web
+    name: lazpe-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    autoDeploy: true # Thay đổi thành true nếu muốn tự động deploy khi push code
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: lazpe-backend
+          envVarKey: RENDER_EXTERNAL_URL
+      # Nối chuỗi /api vào sau URL ở trên (ví dụ: https://lazpe-backend.onrender.com/api)
+      # Render sẽ tự động gán giá trị RENDER_EXTERNAL_URL của backend vào NEXT_PUBLIC_API_URL

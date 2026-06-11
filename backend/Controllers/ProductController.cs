@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -250,6 +250,38 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Tạo mới sản phẩm hoàn chỉnh kèm Options và Variants trong một Transaction (admin)
+        /// </summary>
+        [HttpPost("full")]
+        [Permission("Product.Create")]
+        public async Task<IActionResult> CreateFullProduct([FromBody] CreateFullProductDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors);
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = errors.Select(e => e.ErrorMessage).ToList() });
+                }
+
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "System";
+                dto.CreatedBy = userId;
+
+                var result = await _productService.CreateFullProductAsync(dto);
+
+                if (result.Success)
+                    return Ok(new { success = true, data = result.Data, message = result.Message });
+
+                return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating full product: {ProductName}", dto?.ProductName);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi tạo sản phẩm" });
+            }
+        }
+
+        /// <summary>
         /// Cập nhật thông tin một sản phẩm theo ID (admin)
         /// </summary>
         /// <param name="id">ID của sản phẩm</param>
@@ -328,6 +360,25 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error toggling product status {ProductId}", id);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật trạng thái sản phẩm" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy thống kê số lượng sản phẩm (admin)
+        /// </summary>
+        [HttpGet("admin-stats")]
+        [Permission("Product.Read")]
+        public async Task<IActionResult> GetProductStats()
+        {
+            try
+            {
+                var stats = await _productService.GetProductStatsAsync();
+                return Ok(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting product stats");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy thống kê sản phẩm" });
             }
         }
 

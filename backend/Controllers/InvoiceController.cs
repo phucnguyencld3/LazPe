@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +19,7 @@ namespace PolyBabyAPI.Controllers
         private readonly ILogger<InvoiceController> _logger;
         private readonly ApplicationDbContext _context;
         private readonly IVnPayService _vnPayService;
+        private readonly INotificationService _notificationService;
 
 
         public InvoiceController(
@@ -26,13 +27,15 @@ namespace PolyBabyAPI.Controllers
             UserManager<ApplicationUser> userManager,
             ILogger<InvoiceController> logger,
             ApplicationDbContext context,
-            IVnPayService vnPayService)
+            IVnPayService vnPayService,
+            INotificationService notificationService)
         {
             _invoiceService = invoiceService;
             _userManager = userManager;
             _logger = logger;
             _context = context;
             _vnPayService = vnPayService;
+            _notificationService = notificationService;
         }
 
         // ======================== GET ENDPOINTS ============================
@@ -347,6 +350,7 @@ namespace PolyBabyAPI.Controllers
                 var addresses = await _context.UserAddresses
                     .Where(a => a.UserID == user.Id)
                     .Include(a => a.Province)
+                    .Include(a => a.District)
                     .Include(a => a.Ward)
                     .OrderByDescending(a => a.IsDefault)
                     .AsNoTracking()
@@ -357,8 +361,9 @@ namespace PolyBabyAPI.Controllers
                         a.StreetAddress,
                         a.IsDefault,
                         ProvinceName = a.Province != null ? a.Province.Name : "",
+                        DistrictName = a.District != null ? a.District.Name : "",
                         WardName = a.Ward != null ? a.Ward.Name : "",
-                        FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
+                        FullAddress = $"{a.StreetAddress}, {(a.Ward != null ? a.Ward.Name : "")}, {(a.District != null ? a.District.Name : "")}, {(a.Province != null ? a.Province.Name : "")}"
                     })
                     .ToListAsync();
 
@@ -387,6 +392,7 @@ namespace PolyBabyAPI.Controllers
                 var defaultAddress = await _context.UserAddresses
                     .Where(a => a.UserID == user.Id && a.IsDefault)
                     .Include(a => a.Province)
+                    .Include(a => a.District)
                     .Include(a => a.Ward)
                     .AsNoTracking()
                     .FirstOrDefaultAsync();
@@ -396,6 +402,7 @@ namespace PolyBabyAPI.Controllers
                     defaultAddress = await _context.UserAddresses
                         .Where(a => a.UserID == user.Id)
                         .Include(a => a.Province)
+                        .Include(a => a.District)
                         .Include(a => a.Ward)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
@@ -411,6 +418,7 @@ namespace PolyBabyAPI.Controllers
                     defaultAddress.StreetAddress,
                     defaultAddress.IsDefault,
                     ProvinceName = defaultAddress.Province?.Name ?? "",
+                    DistrictName = defaultAddress.District?.Name ?? "",
                     WardName = defaultAddress.Ward?.Name ?? "",
                     FullAddress = GetFullAddressFromUserAddress(defaultAddress)
                 };
@@ -427,7 +435,7 @@ namespace PolyBabyAPI.Controllers
         // ======================== CREATE ENDPOINTS ============================
 
         /// <summary>
-        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động)
+        /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động + points quy đổi)
         /// </summary>
         [HttpPost("create-from-cart/{cartId}")]
         //[Authorize]
@@ -436,7 +444,8 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] PayMethod? payMethod,
             [FromQuery] int? addressId,
             [FromQuery] string? shippingAddress,
-            [FromBody] CreateFromCartRequest? body)
+            [FromBody] CreateFromCartRequest? body,
+            [FromQuery] int pointsToUse = 0)
         {
             try
             {
@@ -446,6 +455,7 @@ namespace PolyBabyAPI.Controllers
 
                 // Xác định địa chỉ giao hàng
                 string address;
+                UserAddress? matchedAddress = null;
 
                 if (!string.IsNullOrWhiteSpace(shippingAddress))
                 {
@@ -456,6 +466,7 @@ namespace PolyBabyAPI.Controllers
                     var selectedAddress = await _context.UserAddresses
                         .Where(a => a.AddressID == addressId.Value && a.UserID == user.Id)
                         .Include(a => a.Province)
+                        .Include(a => a.District)
                         .Include(a => a.Ward)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
@@ -464,12 +475,14 @@ namespace PolyBabyAPI.Controllers
                         return BadRequest(new { message = "Địa chỉ không tồn tại hoặc không thuộc về người dùng" });
 
                     address = GetFullAddressFromUserAddress(selectedAddress);
+                    matchedAddress = selectedAddress;
                 }
                 else
                 {
                     var defaultAddress = await _context.UserAddresses
                         .Where(a => a.UserID == user.Id && a.IsDefault)
                         .Include(a => a.Province)
+                        .Include(a => a.District)
                         .Include(a => a.Ward)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
@@ -479,6 +492,7 @@ namespace PolyBabyAPI.Controllers
                         defaultAddress = await _context.UserAddresses
                             .Where(a => a.UserID == user.Id)
                             .Include(a => a.Province)
+                            .Include(a => a.District)
                             .Include(a => a.Ward)
                             .AsNoTracking()
                             .FirstOrDefaultAsync();
@@ -488,12 +502,13 @@ namespace PolyBabyAPI.Controllers
                         return BadRequest(new { message = "Vui lòng thêm địa chỉ giao hàng trước khi đặt hàng" });
 
                     address = GetFullAddressFromUserAddress(defaultAddress);
+                    matchedAddress = defaultAddress;
                 }
 
                 // ✅ Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
 
-                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds);
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress, pointsToUse);
 
                 _logger.LogInformation(
                     "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",
@@ -503,12 +518,34 @@ namespace PolyBabyAPI.Controllers
 
                 if (invoice.PayMethod == PayMethod.MobilePayment)
                 {
-                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee;
+                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                     paymentUrl = _vnPayService.CreatePaymentUrl(
                         HttpContext,
                         invoice.InvoiceID,
                         amountToPay,
                         $"Thanh toan don hang #{invoice.InvoiceID}");
+                }
+ 
+                try
+                {
+                    var notifDto = new CreateNotificationDto
+                    {
+                        Title = "Đơn hàng mới",
+                        ShortDescription = $"Khách hàng {user.FullName} vừa đặt đơn hàng #{invoice.InvoiceID}",
+                        Content = $"<p>Đơn hàng mới <strong>#{invoice.InvoiceID}</strong> đã được đặt thành công bởi khách hàng <strong>{user.FullName}</strong> ({user.Email}).</p><p>Tổng giá trị: {invoice.TotalPrice:N0} đ.</p>",
+                        Type = NotificationType.Order,
+                        Priority = NotificationPriority.High,
+                        ActionType = ActionType.CustomUrl,
+                        ActionUrl = $"/admin/orders/{invoice.InvoiceID}",
+                        TargetType = TargetType.Role,
+                        TargetValue = "Admin",
+                        PublishedAt = DateTime.UtcNow
+                    };
+                    await _notificationService.CreateNotificationAsync(notifDto, "System");
+                }
+                catch (Exception nEx)
+                {
+                    _logger.LogError(nEx, "Error sending order notification to admin");
                 }
 
                 return CreatedAtAction(nameof(GetById), new { id = invoice.InvoiceID }, new
@@ -527,7 +564,8 @@ namespace PolyBabyAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating invoice from cart {CartId}", cartId);
-                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = ex.Message });
+                var errorMsg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
+                return StatusCode(500, new { success = false, message = "Lỗi khi tạo hóa đơn", error = errorMsg });
             }
         }
 
@@ -598,6 +636,32 @@ namespace PolyBabyAPI.Controllers
                 if (!result)
                     return BadRequest(new { message = "Không thể xác nhận đơn hàng. Kiểm tra lại trạng thái." });
 
+                try
+                {
+                    var invoice = await _invoiceService.GetByIdAsync(id);
+                    if (invoice != null)
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Đơn hàng đã được xác nhận",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã được xác nhận.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                }
+                catch (Exception nEx)
+                {
+                    _logger.LogError(nEx, "Error sending order confirmation notification to user");
+                }
+
                 return Ok(new { message = "Xác nhận đơn hàng thành công" });
             }
             catch (Exception ex)
@@ -620,6 +684,32 @@ namespace PolyBabyAPI.Controllers
                 var result = await _invoiceService.MarkShippedAsync(id);
                 if (!result)
                     return BadRequest(new { message = "Không thể cập nhật trạng thái giao hàng. Kiểm tra lại trạng thái." });
+
+                try
+                {
+                    var invoice = await _invoiceService.GetByIdAsync(id);
+                    if (invoice != null)
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Đơn hàng đang được vận chuyển",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã bắt đầu được vận chuyển.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                }
+                catch (Exception nEx)
+                {
+                    _logger.LogError(nEx, "Error sending order shipping notification to user");
+                }
 
                 return Ok(new { message = "Cập nhật trạng thái giao hàng thành công" });
             }
@@ -691,7 +781,7 @@ namespace PolyBabyAPI.Controllers
                 if (latestPending.CreatedAt.AddHours(24) < DateTime.Now)
                     return BadRequest(new { message = "Đã quá hạn 24 giờ thanh toán. Vui lòng tạo đơn hàng mới." });
 
-                var amountToPay = invoice.TotalPrice + invoice.ShippingFee;
+                var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                 var paymentUrl = _vnPayService.CreatePaymentUrl(
                     HttpContext,
                     invoice.InvoiceID,
@@ -740,10 +830,18 @@ namespace PolyBabyAPI.Controllers
                 if (user == null)
                     return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
 
-                var result = await _invoiceService.RequestCancelAsync(id, user.Id, request?.Reason);
-                if (!result)
-                    return BadRequest(new { message = "Không thể gửi yêu cầu hủy. Kiểm tra lại trạng thái đơn hàng." });
-                return Ok(new { message = "Gửi yêu cầu hủy thành công. Chúng tôi sẽ xem xét sớm nhất." });
+                var newStatus = await _invoiceService.RequestCancelAsync(id, user.Id, request?.Reason);
+                if (newStatus == null)
+                    return BadRequest(new { message = "Không thể hủy đơn hàng. Kiểm tra lại trạng thái đơn hàng." });
+
+                if (newStatus == OrderStatus.Cancelled)
+                {
+                    return Ok(new { success = true, message = "Hủy đơn hàng thành công!" });
+                }
+                else
+                {
+                    return Ok(new { success = true, message = "Gửi yêu cầu hủy thành công. Vui lòng chờ phê duyệt." });
+                }
             }
             catch (Exception ex)
             {
@@ -765,9 +863,36 @@ namespace PolyBabyAPI.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(new { message = "Lý do hủy tối đa 500 ký tự." });
 
+                var invoice = await _invoiceService.GetByIdAsync(id);
+
                 var result = await _invoiceService.AdminCancelAsync(id, request?.Reason);
                 if (!result)
                     return BadRequest(new { message = "Không thể hủy đơn hàng. Kiểm tra lại trạng thái." });
+
+                if (invoice != null)
+                {
+                    try
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Đơn hàng đã bị hủy",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} của bạn đã bị hủy.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã bị hủy bởi quản trị viên.</p><p>Lý do: {request?.Reason ?? "Không có lý do cụ thể"}</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.High,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                    catch (Exception nEx)
+                    {
+                        _logger.LogError(nEx, "Error sending order cancellation notification to user");
+                    }
+                }
 
                 return Ok(new { message = "Hủy đơn hàng thành công. Hàng và voucher đã được hoàn trả." });
             }
@@ -788,9 +913,36 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+
                 var result = await _invoiceService.ApproveCancelAsync(id, null);
                 if (!result)
                     return BadRequest(new { message = "Không thể phê duyệt hủy. Kiểm tra lại trạng thái." });
+
+                if (invoice != null)
+                {
+                    try
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Yêu cầu hủy đơn được chấp nhận",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceID} đã được phê duyệt.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được phê duyệt thành công. Tiền, hàng và voucher (nếu có) đã được xử lý hoàn trả.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                    catch (Exception nEx)
+                    {
+                        _logger.LogError(nEx, "Error sending cancel approval notification to user");
+                    }
+                }
 
                 return Ok(new { message = "Phê duyệt hủy đơn hàng thành công. Hàng và voucher đã được hoàn trả." });
             }
@@ -811,9 +963,36 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+
                 var result = await _invoiceService.RejectCancelAsync(id);
                 if (!result)
                     return BadRequest(new { message = "Không thể từ chối hủy. Kiểm tra lại trạng thái." });
+
+                if (invoice != null)
+                {
+                    try
+                    {
+                        var notifDto = new CreateNotificationDto
+                        {
+                            Title = "Yêu cầu hủy đơn bị từ chối",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceID} đã bị từ chối.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã bị từ chối. Đơn hàng của bạn sẽ tiếp tục được xử lý và giao đến bạn.</p>",
+                            Type = NotificationType.Order,
+                            Priority = NotificationPriority.Medium,
+                            ActionType = ActionType.CustomUrl,
+                            ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                            TargetType = TargetType.SpecificUsers,
+                            TargetValue = invoice.UserID,
+                            PublishedAt = DateTime.UtcNow
+                        };
+                        await _notificationService.CreateNotificationAsync(notifDto, "System");
+                    }
+                    catch (Exception nEx)
+                    {
+                        _logger.LogError(nEx, "Error sending cancel rejection notification to user");
+                    }
+                }
 
                 return Ok(new { message = "Từ chối hủy đơn hàng thành công" });
             }
@@ -866,6 +1045,9 @@ namespace PolyBabyAPI.Controllers
             if (userAddress.Ward != null && !string.IsNullOrWhiteSpace(userAddress.Ward.Name))
                 parts.Add(userAddress.Ward.Name);
 
+            if (userAddress.District != null && !string.IsNullOrWhiteSpace(userAddress.District.Name))
+                parts.Add(userAddress.District.Name);
+
             if (userAddress.Province != null && !string.IsNullOrWhiteSpace(userAddress.Province.Name))
                 parts.Add(userAddress.Province.Name);
 
@@ -885,11 +1067,15 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
                 invoice.ShippingAddress,
+                ShippingRecipientName = invoice.ShippingRecipientName ?? invoice.User?.FullName,
+                ShippingPhone = invoice.ShippingPhone ?? invoice.User?.PhoneNumber,
                 PayMethod = invoice.PayMethod?.GetDisplayName(),
                 PayMethodCode = (int?)invoice.PayMethod,
                 Status = invoice.Status.GetDisplayName(),
@@ -898,6 +1084,9 @@ namespace PolyBabyAPI.Controllers
                 HasVoucher = invoice.VoucherID.HasValue,
                 VoucherCode = invoice.Voucher?.Code,
                 VoucherName = invoice.Voucher?.Name,
+                HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
+                ShippingVoucherCode = invoice.ShippingVoucher?.Code,
+                ShippingVoucherName = invoice.ShippingVoucher?.Name,
                 ItemCount = invoice.InvoiceDetails?.Count ?? 0,
                 InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
                 {
@@ -951,8 +1140,10 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
                 invoice.ShippingAddress,
@@ -964,6 +1155,9 @@ namespace PolyBabyAPI.Controllers
                 HasVoucher = invoice.VoucherID.HasValue,
                 VoucherCode = invoice.Voucher?.Code,
                 VoucherName = invoice.Voucher?.Name,
+                HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
+                ShippingVoucherCode = invoice.ShippingVoucher?.Code,
+                ShippingVoucherName = invoice.ShippingVoucher?.Name,
                 ItemCount = itemCount
             };
         }
@@ -985,14 +1179,18 @@ namespace PolyBabyAPI.Controllers
                 UserFullName = invoice.User?.FullName,
                 UserEmail = invoice.User?.Email,
                 UserPhone = invoice.User?.PhoneNumber,
+                UserAvatar = invoice.User?.Avatar,
 
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
-                FinalAmount = invoice.TotalPrice + invoice.ShippingFee,
+                FinalAmount = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount,
 
                 invoice.ShippingAddress,
+                ShippingRecipientName = invoice.ShippingRecipientName ?? invoice.User?.FullName,
+                ShippingPhone = invoice.ShippingPhone ?? invoice.User?.PhoneNumber,
                 PayMethod = invoice.PayMethod?.GetDisplayName(),
                 PayMethodCode = (int?)invoice.PayMethod,
                 Status = invoice.Status.GetDisplayName(),
@@ -1007,6 +1205,19 @@ namespace PolyBabyAPI.Controllers
                     invoice.Voucher.DiscountType,
                     invoice.Voucher.DiscountValue,
                     DiscountTypeLabel = invoice.Voucher.DiscountType == 1 ? "Phần trăm" : "Tiền cố định"
+                } : null,
+
+                HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
+                ShippingVoucher = invoice.ShippingVoucher != null ? new
+                {
+                    invoice.ShippingVoucher.VoucherID,
+                    invoice.ShippingVoucher.Code,
+                    invoice.ShippingVoucher.Name,
+                    invoice.ShippingVoucher.DiscountType,
+                    invoice.ShippingVoucher.DiscountValue,
+                    invoice.ShippingVoucher.IsFreeShipping,
+                    invoice.ShippingVoucher.MaxShippingDiscount,
+                    DiscountTypeLabel = invoice.ShippingVoucher.DiscountType == 1 ? "Phần trăm" : "Tiền cố định"
                 } : null,
 
                 VoucherUsages = invoice.VoucherUsages?.Select(vu => new

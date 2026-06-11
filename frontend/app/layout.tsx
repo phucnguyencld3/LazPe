@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Quicksand, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +26,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PolyBaby",
-  description: "PolyBaby frontend",
+  title: "LazPe",
+  description: "Nền tảng thương mại điện tử LazPe",
+  icons: {
+    icon: "/logo/icon_logo.svg",
+    shortcut: "/logo/icon_logo.svg",
+    apple: "/logo/icon_logo.svg",
+  },
 };
 
 export default function RootLayout({
@@ -44,6 +50,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-body-md bg-background text-on-background">
         {children}
+        <Toaster richColors position="top-right" closeButton visibleToasts={3} />
       </body>
     </html>
   );

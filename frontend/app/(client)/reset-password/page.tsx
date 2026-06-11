@@ -36,7 +36,8 @@ function ResetPasswordContent() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5101/api/Authentication/reset-password-by-session", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+      const response = await fetch(`${API_BASE_URL}/Authentication/reset-password-by-session`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

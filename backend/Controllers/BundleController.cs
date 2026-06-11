@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Filters;
@@ -331,7 +331,7 @@ namespace PolyBabyAPI.Controllers
         [HttpPost("upload-image")]
         [Consumes("multipart/form-data")]
         [Permission("Bundle.Update")]
-        public async Task<IActionResult> UploadBundleImage(IFormFile file)
+        public async Task<IActionResult> UploadBundleImage([FromForm] IFormFile file, [FromForm] string? oldImageUrl = null)
         {
             try
             {
@@ -345,7 +345,7 @@ namespace PolyBabyAPI.Controllers
                 if (file.Length > 5 * 1024 * 1024)
                     return BadRequest(new { success = false, message = "File ảnh không được vượt quá 5MB" });
 
-                var imageUrl = await _cloudinaryService.UploadImageAsync(file, "polystation/Bundles");
+                var imageUrl = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, "polystation/Bundles");
 
                 if (string.IsNullOrEmpty(imageUrl))
                     return StatusCode(500, new { success = false, message = "Upload ảnh thất bại" });

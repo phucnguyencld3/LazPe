@@ -6,6 +6,7 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
+*.lnk
 .Spotlight-V100
 .Trashes
 
@@ -52,7 +53,7 @@ nuget.config.local
 **/*.key
 
 # Entity Framework
-**/Migrations/*.Designer.cs
+# **/Migrations/*.Designer.cs
 # (nếu muốn commit migration thì xóa dòng trên)
 
 # Test results

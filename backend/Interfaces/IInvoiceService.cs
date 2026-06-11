@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interface
 {
@@ -16,7 +16,7 @@ namespace PolyBabyAPI.Interface
         /// Nếu selectedCartDetailIds != null → chỉ tạo từ các CartDetail đã chọn, giữ lại phần còn lại.
         /// Nếu selectedCartDetailIds == null → tạo từ toàn bộ giỏ hàng.
         /// </summary>
-        Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null);
+        Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null, UserAddress? userAddress = null, int pointsToUse = 0);
 
         Task RecalculateTotalAsync(int invoiceId);
 
@@ -31,9 +31,10 @@ namespace PolyBabyAPI.Interface
         Task<bool> ConfirmAsync(int invoiceId);
         Task<bool> MarkShippedAsync(int invoiceId);
         Task<bool> MarkCompletedByUserAsync(int invoiceId, string userId);
-        Task<bool> RequestCancelAsync(int invoiceId, string userId, string? reason);
+        Task<OrderStatus?> RequestCancelAsync(int invoiceId, string userId, string? reason);
         Task<bool> AdminCancelAsync(int invoiceId, string? reason);
         Task<bool> ApproveCancelAsync(int invoiceId, string? reason);
         Task<bool> RejectCancelAsync(int invoiceId);
+        Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken);
     }
 }

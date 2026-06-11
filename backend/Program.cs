@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -15,6 +17,7 @@ using PolyBabyAPI.Service;
 using PolyBabyAPI.Services;
 using PolyBabyAPI.Settings;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +62,20 @@ try
             ValidAudience = jwtSettings["Audience"],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && 
+                    (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub")))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     })
     .AddCookie(options =>
@@ -112,7 +129,7 @@ try
     {
         options.AddPolicy("AllowMVC", policy =>
         {
-            policy.WithOrigins("https://localhost:7102", "http://localhost:5102", "https://localhost:7101", "http://localhost:5101", "http://localhost:3000")
+            policy.SetIsOriginAllowed(origin => true) // Cho phép tất cả các domain (kể cả Render URL)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -126,10 +143,11 @@ try
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition =
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.Converters.Add(new PolyBabyAPI.Helpers.CustomDateTimeConverter());
     });
 
     // API Controllers và Swagger
-    builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
 
     // Cấu hình Swagger đơn giản (không lỗi)
@@ -181,11 +199,14 @@ try
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
     // Core business services
+    builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<IBundleService, BundleService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<IVoucherService, VoucherService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+    builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+    builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 
     // Product services
     builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -195,7 +216,10 @@ try
     builder.Services.AddScoped<IVariantService, VariantService>(); 
 
     // Address service
-    builder.Services.AddHttpClient<AddressApiService>();
+    builder.Services.AddHttpClient<AddressApiService>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(5);
+    });
     builder.Services.AddScoped<AddressApiService>();
 
     builder.Services.AddHttpClient();
@@ -207,13 +231,64 @@ try
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
 
+    // Đăng ký Chat & SignalR
+    builder.Services.AddSignalR().AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.PayloadSerializerOptions.Converters.Add(new PolyBabyAPI.Helpers.CustomDateTimeConverter());
+    });
+    builder.Services.AddHostedService<ChatCleanupService>();
+
     // sau các service registration hiện có 
     builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection(VnPayOptions.SectionName));
     builder.Services.AddScoped<IVnPayService, VnPayService>();
     builder.Services.AddHostedService<VnPayPendingPaymentCleanupService>();
+    builder.Services.AddHostedService<OrderAutoCompleteService>();
+
+    // Cấu hình Hangfire
+    builder.Services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true
+        }));
+    builder.Services.AddHangfireServer();
+
+    // Register job services
+    builder.Services.AddScoped<LoyaltyMonthlyVoucherJob>();
+    builder.Services.AddScoped<LoyaltyCycleResetJob>();
+    builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
+
+    // Cấu hình Rate Limiter (Chống DDoS/Spam request)
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                factory: partition => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 100, // Tối đa 1000 request ở dev, 100 ở prod
+                    QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
+                    Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
+                }));
+                
+        options.OnRejected = async (context, token) =>
+        {
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
+            await context.HttpContext.Response.WriteAsync("{\"error\": \"Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.\"}", cancellationToken: token);
+        };
+    });
 
     var app = builder.Build();
 
@@ -222,6 +297,12 @@ try
     {
         try
         {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await dbContext.Database.MigrateAsync();
+            
+            // Cập nhật tất cả voucher cũ có VoucherType = 0 thành ProductDiscount (1)
+            await dbContext.Database.ExecuteSqlRawAsync("UPDATE Vouchers SET VoucherType = 1 WHERE VoucherType = 0");
+
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
         }
         catch (Exception ex)
@@ -251,9 +332,49 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("AllowMVC");
+    app.UseRateLimiter();
     app.UseAuthentication(); 
     app.UseAuthorization();  
 
+    // Hangfire Dashboard
+    app.UseHangfireDashboard("/hangfire");
+
+    // Đăng ký Recurring Jobs cho Loyalty
+    try
+    {
+        var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+        
+        // 1. Job phát voucher hàng tháng (Chạy 00:00 ngày 1 hàng tháng)
+        recurringJobManager.AddOrUpdate<LoyaltyMonthlyVoucherJob>(
+            "loyalty-monthly-voucher-issuance",
+            job => job.ExecuteAsync(),
+            Cron.Monthly(1, 0, 0),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 2. Job reset cuối kỳ (Chạy 00:00 ngày 1/1 và 1/7 hàng năm)
+        recurringJobManager.AddOrUpdate<LoyaltyCycleResetJob>(
+            "loyalty-end-of-cycle-reset",
+            job => job.ExecuteAsync(),
+            "0 0 1 1,7 *",
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 3. Job phát quà sinh nhật hàng ngày (Chạy 00:05 hàng ngày)
+        recurringJobManager.AddOrUpdate<LoyaltyBirthdayGiftJob>(
+            "loyalty-daily-birthday-gift-issuance",
+            job => job.ExecuteAsync(),
+            Cron.Daily(0, 5),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Lỗi cấu hình Hangfire Recurring Jobs: {ex.Message}");
+    }
+
+    app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
+    app.MapHub<PolyBabyAPI.Hubs.NotificationHub>("/notificationHub");
     app.MapControllers();
     app.MapControllerRoute(
         name: "areas",
@@ -270,6 +391,11 @@ try
     );
 
     app.MapRazorPages();
+
+    // Health Check endpoints cho UptimeRobot (Hỗ trợ cả GET và HEAD)
+    var healthCheck = () => Results.Ok(new { status = "UP", message = "Backend API is running!" });
+    app.MapMethods("/", new[] { "GET", "HEAD" }, healthCheck);
+    app.MapMethods("/api", new[] { "GET", "HEAD" }, healthCheck);
 
     Console.WriteLine("PolyBaby API starting...");
     app.Run();

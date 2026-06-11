@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -61,6 +61,9 @@ namespace PolyBabyAPI.DTOs
         public DateTime RegisterDate { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool Status { get; set; }
+        public bool ReceiveEmailNotifications { get; set; }
+        public bool ReceiveOrderUpdates { get; set; }
+        public bool ReceivePromotions { get; set; }
     }
 
     /// <summary>
@@ -98,6 +101,10 @@ namespace PolyBabyAPI.DTOs
 
         /// <summary>URL Cloudinary sau khi upload riêng, null = giữ nguyên</summary>
         public string? Avatar { get; set; }
+
+        public bool? ReceiveEmailNotifications { get; set; }
+        public bool? ReceiveOrderUpdates { get; set; }
+        public bool? ReceivePromotions { get; set; }
     }
 
     /// <summary>
@@ -196,11 +203,9 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Tên tỉnh/thành phố là bắt buộc")]
         public string ProvinceName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Mã quận/huyện là bắt buộc")]
-        public string DistrictCode { get; set; } = string.Empty;
+        public string? DistrictCode { get; set; }
 
-        [Required(ErrorMessage = "Tên quận/huyện là bắt buộc")]
-        public string DistrictName { get; set; } = string.Empty;
+        public string? DistrictName { get; set; }
 
         [Required(ErrorMessage = "Mã phường/xã là bắt buộc")]
         public string WardCode { get; set; } = string.Empty;
