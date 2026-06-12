@@ -131,6 +131,13 @@ try
         builder.Configuration.GetSection("Cloudinary")
     );
 
+    // Cấu hình Gemini
+    builder.Services.Configure<GeminiSettings>(
+        builder.Configuration.GetSection("Gemini")
+    );
+    builder.Services.AddHttpClient<IGeminiService, GeminiService>();
+
+
     // Cấu hình CORS
     builder.Services.AddCors(options =>
     {

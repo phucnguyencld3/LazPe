@@ -69,6 +69,7 @@ export default function CustomerChatWidget() {
   const [isClosed, setIsClosed] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
+  const [isAiMode, setIsAiMode] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
@@ -240,14 +241,13 @@ export default function CustomerChatWidget() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sessionId) return;
+    if (!sessionId && !isAiMode) return;
     if (!inputText.trim()) return;
 
-    // --- OPTIMISTIC UI UPDATE ---
     const tempId = -Date.now();
     const tempMsg: Message = {
       id: tempId,
-      chatSessionId: sessionId,
+      chatSessionId: sessionId || "ai-session",
       senderId: null,
       senderName: guestName || "Khách hàng",
       isFromAdmin: false,
@@ -256,13 +256,49 @@ export default function CustomerChatWidget() {
       createdAt: new Date().toISOString()
     };
 
-    // Thêm tin nhắn tạm vào danh sách ngay lập tức để tạo cảm giác phản hồi tức thì
     setMessages((prev) => [...prev, tempMsg]);
 
     const textToSend = inputText.trim();
-
-    // Reset các trường nhập liệu trên giao diện ngay lập tức
     setInputText("");
+
+    if (isAiMode) {
+      // Chat with AI
+      try {
+        // Optimistically add AI typing indicator
+        setIsAdminTyping(true);
+        
+        const res = await fetch(`${API_BASE}/api/chatbot/ask`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message: textToSend }),
+        });
+
+        setIsAdminTyping(false);
+        
+        if (res.ok) {
+          const data = await res.json();
+          const aiMsg: Message = {
+            id: Date.now() + 1,
+            chatSessionId: "ai-session",
+            senderId: "ai",
+            senderName: "LazPe AI",
+            isFromAdmin: true,
+            messageText: data.text,
+            imageUrl: null,
+            createdAt: new Date().toISOString()
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+        } else {
+          toast.error("AI không thể phản hồi lúc này.");
+        }
+      } catch (e) {
+        setIsAdminTyping(false);
+        toast.error("Lỗi kết nối AI.");
+      }
+      return;
+    }
 
     const formData = new FormData();
     formData.append("messageText", textToSend);
@@ -282,7 +318,6 @@ export default function CustomerChatWidget() {
 
       const data = await res.json();
       if (!data.success) {
-        // Nếu lỗi, xóa tin nhắn tạm và thông báo
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
@@ -420,10 +455,12 @@ export default function CustomerChatWidget() {
           <div className="bg-[#0068ff] text-white px-4 py-3.5 flex items-center justify-between select-none">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-base text-white">
-                LP
+                {isAiMode ? "AI" : "LP"}
               </div>
               <div>
-                <h3 className="font-semibold text-base leading-tight">Hỗ trợ LazPe</h3>
+                <h3 className="font-semibold text-base leading-tight">
+                  {isAiMode ? "LazPe AI Assistant" : "Hỗ trợ LazPe"}
+                </h3>
                 <span className="text-xs text-blue-100 flex items-center gap-1.5 mt-0.5">
                   <span className="h-2 w-2 rounded-full bg-[#4eff8a] inline-block animate-pulse"></span>
                   Trực tuyến
@@ -433,8 +470,13 @@ export default function CustomerChatWidget() {
 
             {/* Header Action Icons */}
             <div className="flex items-center gap-2 text-white/90">
-              <span className="material-symbols-outlined hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-xl">phone</span>
-              <span className="material-symbols-outlined hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-xl">videocam</span>
+              <button
+                onClick={() => setIsAiMode(!isAiMode)}
+                className={`text-xs px-2 py-1 rounded-full border transition-colors ${isAiMode ? "bg-white text-[#0068ff] border-white" : "bg-transparent border-white hover:bg-white/10"}`}
+                title="Chuyển đổi chế độ AI / Nhân viên"
+              >
+                {isAiMode ? "AI Mode" : "Human"}
+              </button>
               <button
                 onClick={toggleOpen}
                 className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer text-xl"
