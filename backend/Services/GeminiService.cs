@@ -589,11 +589,12 @@ namespace PolyBabyAPI.Services
 
         private string GetNextApiKey()
         {
-            if (_settings.ApiKeys != null && _settings.ApiKeys.Count > 0)
+            var validKeys = _settings.ApiKeys?.Where(k => !string.IsNullOrEmpty(k) && k != "YOUR_API_KEY_HERE").ToList();
+            if (validKeys != null && validKeys.Count > 0)
             {
-                int index = System.Threading.Interlocked.Increment(ref _keyIndex) % _settings.ApiKeys.Count;
-                if (index < 0) index += _settings.ApiKeys.Count;
-                return _settings.ApiKeys[index];
+                int index = System.Threading.Interlocked.Increment(ref _keyIndex) % validKeys.Count;
+                if (index < 0) index += validKeys.Count;
+                return validKeys[index];
             }
             return _settings.ApiKey;
         }
