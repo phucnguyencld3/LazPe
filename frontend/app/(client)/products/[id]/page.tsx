@@ -11,8 +11,10 @@ import { ProductImageGallery } from "@/components/client/products/ProductImageGa
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
+import { ProductRecommendations } from "@/components/client/products/ProductRecommendations";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { logProductView } from "@/lib/recommendationApi";
 import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto, FlashSaleStatus } from "@/lib/features/flash-sales/flashSaleApi";
 
 interface PageProps {
@@ -27,7 +29,6 @@ export default function ProductDetailPage({ params }: PageProps) {
   // Core Product State
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeFlashSale, setActiveFlashSale] = useState<FlashSaleResponseDto | null>(null);
@@ -53,20 +54,14 @@ export default function ProductDetailPage({ params }: PageProps) {
         if (data) {
           setProduct(data);
           
+          // Log view
+          logProductView(productId);
+          
           // Fetch related products in the same category
           const related = await getProducts(1, 4, undefined, data.categoryId);
           if (related) {
             const filtered = (related.items || []).filter((p) => p.id !== data.id);
             setRelatedProducts(filtered);
-          }
-
-          // Fetch recommended products
-          const recommended = await getProducts(1, 4);
-          if (recommended) {
-            const filtered = (recommended.items || []).filter(
-              (p) => p.id !== data.id && p.categoryId !== data.categoryId
-            );
-            setRecommendedProducts(filtered);
           }
         } else {
           setError("Không tìm thấy thông tin sản phẩm.");
@@ -452,8 +447,9 @@ export default function ProductDetailPage({ params }: PageProps) {
 
         <RelatedProducts
           relatedProducts={relatedProducts}
-          recommendedProducts={recommendedProducts}
         />
+
+        <ProductRecommendations limit={5} excludeProductId={productId} />
       </div>
     </div>
   );

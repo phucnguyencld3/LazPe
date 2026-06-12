@@ -119,6 +119,13 @@ try
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
+    // Cấu hình MongoDb
+    builder.Services.Configure<PolyBabyAPI.Settings.MongoDbSettings>(
+        builder.Configuration.GetSection("MongoDbSettings")
+    );
+    builder.Services.AddSingleton<PolyBabyAPI.Interfaces.IMongoDbService, PolyBabyAPI.Services.MongoDbService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IRecommendationService, PolyBabyAPI.Services.RecommendationService>();
+
     // Cấu hình Cloudinary
     builder.Services.Configure<CloudinarySettings>(
         builder.Configuration.GetSection("Cloudinary")
@@ -264,6 +271,7 @@ try
     builder.Services.AddScoped<LoyaltyMonthlyVoucherJob>();
     builder.Services.AddScoped<LoyaltyCycleResetJob>();
     builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
+    builder.Services.AddScoped<PolyBabyAPI.Jobs.ModelTrainingJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -365,6 +373,14 @@ try
             "loyalty-daily-birthday-gift-issuance",
             job => job.ExecuteAsync(),
             Cron.Daily(0, 5),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 4. Job huấn luyện AI Model (Đang set chạy mỗi phút để test)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.ModelTrainingJob>(
+            "ai-model-training",
+            job => job.ExecuteAsync(),
+            Cron.Minutely(), // Chạy mỗi phút
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

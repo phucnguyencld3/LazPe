@@ -4,44 +4,55 @@ services:
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    autoDeploy: true # Thay đổi thành true nếu muốn tự động deploy khi push code
+    autoDeploy: true # Tự động deploy khi push code mới lên main branch
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: ConnectionStrings__DefaultConnection
-        sync: false # Giá trị này bạn sẽ điền trực tiếp trên trang Dashboard của Render
+        sync: false # Nhập chuỗi kết nối SQL Server Production của bạn ở Render Dashboard
       - key: JwtSettings__SecretKey
-        sync: false # Giá trị này bạn sẽ điền trực tiếp trên trang Dashboard của Render
+        sync: false # Nhập khoá bảo mật JWT bí mật (khoảng 32 kí tự trở lên)
       - key: JwtSettings__Issuer
         value: "https://lazpe-backend.onrender.com"
       - key: JwtSettings__Audience
         value: "https://lazpe-frontend.onrender.com"
+      - key: VnPay__TmnCode
+        value: "NP27BCCF"
+      - key: VnPay__HashSecret
+        sync: false # Mã bảo mật HashSecret VnPay của bạn
+      - key: VnPay__BaseUrl
+        value: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
       - key: VnPay__ReturnUrl
         value: "https://lazpe-backend.onrender.com/api/payment/vnpay-return"
       - key: VnPay__FrontendBaseUrl
         value: "https://lazpe-frontend.onrender.com"
       - key: Cloudinary__CloudName
-        sync: false # Giá trị của bạn: dmqow0hu4
+        value: "dmqow0hu4"
       - key: Cloudinary__ApiKey
-        sync: false # Giá trị của bạn: 622594698344116
+        value: "622594698344116"
       - key: Cloudinary__ApiSecret
-        sync: false # Lấy từ appsettings.json
+        sync: false # Lấy từ appsettings.json hoặc Dashboard Cloudinary của bạn
       - key: EmailSettings__SmtpPassword
         sync: false # Mật khẩu ứng dụng Gmail (xyuq altp vmsp hvfi)
       - key: Ghn__Token
-        sync: false # Token GHN
+        sync: false # Token GHN để tính phí ship
+      - key: MongoDbSettings__ConnectionString
+        sync: false # Nhập MongoDB Connection String để lưu log đề xuất AI (ML.NET)
+      - key: MongoDbSettings__DatabaseName
+        value: "LazPeDB"
 
   - type: web
     name: lazpe-frontend
     env: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
-    autoDeploy: true # Thay đổi thành true nếu muốn tự động deploy khi push code
+    autoDeploy: true
     envVars:
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
           name: lazpe-backend
           envVarKey: RENDER_EXTERNAL_URL
-      # Nối chuỗi /api vào sau URL ở trên (ví dụ: https://lazpe-backend.onrender.com/api)
-      # Render sẽ tự động gán giá trị RENDER_EXTERNAL_URL của backend vào NEXT_PUBLIC_API_URL
+      # Lưu ý: Khi tạo Blueprint trên Render, hãy thêm hậu tố "/api" vào sau URL API_URL 
+      # Ví dụ: nếu RENDER_EXTERNAL_URL là https://lazpe-backend.onrender.com
+      # Hãy đảm bảo cấu hình NEXT_PUBLIC_API_URL có giá trị là https://lazpe-backend.onrender.com/api

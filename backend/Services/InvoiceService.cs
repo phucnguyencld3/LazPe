@@ -12,13 +12,15 @@ namespace PolyBabyAPI.Services
         private readonly ILogger<InvoiceService> _logger;
         private readonly ILoyaltyService _loyaltyService;
         private readonly IVoucherService _voucherService;
+        private readonly IRecommendationService _recommendationService;
 
-        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService)
+        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService, IRecommendationService recommendationService)
         {
             _context = context;
             _logger = logger;
             _loyaltyService = loyaltyService;
             _voucherService = voucherService;
+            _recommendationService = recommendationService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -265,6 +267,9 @@ namespace PolyBabyAPI.Services
 
                     // Trừ số lượng Flash Sale (nếu có chiến dịch đang diễn ra)
                     await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, item.VariantID.Value, null, item.Quantity);
+
+                    // Thêm Log AI Purchase
+                    await _recommendationService.LogInteractionAsync(cart.UserID, item.Variant.ProductID, PolyBabyAPI.Models.Mongo.InteractionType.Purchase);
                 }
                 else if (item.BundleID.HasValue && item.Bundle != null)
                 {

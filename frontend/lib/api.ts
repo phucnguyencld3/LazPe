@@ -244,6 +244,11 @@ export interface UserProfile {
   registerDate: string;
   emailConfirmed: boolean;
   status: boolean;
+  momFavoriteColors?: string | null;
+  childGender?: string | null;
+  childAgeMonths?: number | null;
+  childWeightKg?: number | null;
+  isOnboarded?: boolean;
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
@@ -277,6 +282,11 @@ export async function updateUserProfile(
     phoneNumber?: string;
     dateOfBirth?: string | null;
     avatar?: string;
+    momFavoriteColors?: string | null;
+    childGender?: string | null;
+    childAgeMonths?: number | null;
+    childWeightKg?: number | null;
+    isOnboarded?: boolean;
   }
 ): Promise<{ success: boolean; message?: string }> {
   try {

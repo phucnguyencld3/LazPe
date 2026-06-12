@@ -1,0 +1,22 @@
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using PolyBabyAPI.Interfaces;
+using PolyBabyAPI.Models.Mongo;
+using PolyBabyAPI.Settings;
+
+namespace PolyBabyAPI.Services
+{
+    public class MongoDbService : IMongoDbService
+    {
+        private readonly IMongoDatabase _database;
+
+        public MongoDbService(IOptions<MongoDbSettings> mongoDbSettings)
+        {
+            var mongoClient = new MongoClient(mongoDbSettings.Value.ConnectionString);
+            _database = mongoClient.GetDatabase(mongoDbSettings.Value.DatabaseName);
+        }
+
+        public IMongoCollection<UserInteraction> UserInteractions =>
+            _database.GetCollection<UserInteraction>("UserInteractions");
+    }
+}

@@ -9,11 +9,13 @@ namespace PolyBabyAPI.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IVoucherService _voucherService;
+        private readonly IRecommendationService _recommendationService;
 
-        public CartService(ApplicationDbContext context, IVoucherService voucherService)
+        public CartService(ApplicationDbContext context, IVoucherService voucherService, IRecommendationService recommendationService)
         {
             _context = context;
             _voucherService = voucherService;
+            _recommendationService = recommendationService;
         }
 
         public async Task<Cart> GetCartByUserIdAsync(string userId)
@@ -166,6 +168,16 @@ namespace PolyBabyAPI.Services
 
             await _context.SaveChangesAsync();
             await CalculateCartTotalAsync(cart.CartID);
+
+            // Log AI
+            if (variantId.HasValue)
+            {
+                var variant = await _context.Variants.FindAsync(variantId.Value);
+                if (variant != null)
+                {
+                    await _recommendationService.LogInteractionAsync(userId, variant.ProductID, PolyBabyAPI.Models.Mongo.InteractionType.Cart);
+                }
+            }
         }
 
         public async Task RemoveFromCartAsync(int cartDetailId)

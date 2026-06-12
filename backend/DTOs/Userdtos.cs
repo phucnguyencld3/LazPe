@@ -64,6 +64,11 @@ namespace PolyBabyAPI.DTOs
         public bool ReceiveEmailNotifications { get; set; }
         public bool ReceiveOrderUpdates { get; set; }
         public bool ReceivePromotions { get; set; }
+        public string? MomFavoriteColors { get; set; }
+        public string? ChildGender { get; set; }
+        public int? ChildAgeMonths { get; set; }
+        public double? ChildWeightKg { get; set; }
+        public bool IsOnboarded { get; set; }
     }
 
     /// <summary>
@@ -105,6 +110,11 @@ namespace PolyBabyAPI.DTOs
         public bool? ReceiveEmailNotifications { get; set; }
         public bool? ReceiveOrderUpdates { get; set; }
         public bool? ReceivePromotions { get; set; }
+        public string? MomFavoriteColors { get; set; }
+        public string? ChildGender { get; set; }
+        public int? ChildAgeMonths { get; set; }
+        public double? ChildWeightKg { get; set; }
+        public bool? IsOnboarded { get; set; }
     }
 
     /// <summary>

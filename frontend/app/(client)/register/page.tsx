@@ -141,9 +141,13 @@ export default function RegisterPage() {
           localStorage.setItem("user", JSON.stringify(data.user));
         }
 
-        // Redirect to homepage after a short delay
+        // Redirect to onboarding or homepage after a short delay
         setTimeout(() => {
-          window.location.href = "/";
+          if (data.user && !data.user.isOnboarded) {
+            window.location.href = "/onboarding";
+          } else {
+            window.location.href = "/";
+          }
         }, 1500);
       } else {
         setError(data.message || "Mã OTP không chính xác hoặc đã hết hạn.");

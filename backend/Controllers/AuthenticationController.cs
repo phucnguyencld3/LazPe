@@ -183,7 +183,8 @@ namespace PolyBabyAPI.Controllers
                         avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                         roles = userRoles ?? new List<string>(),
                         permissions = userPermissions.Select(p => p.Name).ToList(), // THÊM permissions
-                        isAdmin = isAdmin
+                        isAdmin = isAdmin,
+                        isOnboarded = user.IsOnboarded
                     }
                 });
             }
@@ -494,7 +495,8 @@ namespace PolyBabyAPI.Controllers
                             avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                             roles = userRoles ?? new List<string>(),
                             permissions = userPermissions.Select(p => p.Name).ToList(),
-                            isAdmin = userRoles?.Contains("Admin") ?? false
+                            isAdmin = userRoles?.Contains("Admin") ?? false,
+                            isOnboarded = user.IsOnboarded
                         }
                     });
                 }
@@ -587,7 +589,8 @@ namespace PolyBabyAPI.Controllers
                         registerDate = user.RegisterDate,
                         roles = roles,
                         permissions = userPermissions.Select(p => p.Name).ToList(),
-                        isAdmin = roles.Contains("Admin")
+                        isAdmin = roles.Contains("Admin"),
+                        isOnboarded = user.IsOnboarded
                     }
                 });
             }
