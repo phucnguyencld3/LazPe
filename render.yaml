@@ -41,13 +41,13 @@ services:
       - key: MongoDbSettings__DatabaseName
         value: "LazPeDB"
       - key: Gemini__ApiKey
-        value: "AQ.Ab8RN6LB1TKH62OOM_drb7qUm6vgYDio4Glh7EaJMGXoUCo2yA"
+        value: "<YOUR_GEMINI_API_KEY>"
       - key: Gemini__ApiKeys__0
-        value: "AQ.Ab8RN6LB1TKH62OOM_drb7qUm6vgYDio4Glh7EaJMGXoUCo2yA"
+        value: "<YOUR_GEMINI_API_KEY>"
       - key: Gemini__ApiKeys__1
-        value: "AQ.Ab8RN6JXZBHpIGoYXrj0AiNk1ZGByaakQQYFdsb2JjuahmMGuw"
+        value: "<YOUR_GEMINI_API_KEY>"
       - key: Gemini__ApiKeys__2
-        value: "AQ.Ab8RN6Itu0-JkmOknT14RfA1xFeFxYzF-Shl7dG6s5WUntnbqA"
+        value: "<YOUR_GEMINI_API_KEY>"
 
   - type: web
     name: lazpe-frontend
