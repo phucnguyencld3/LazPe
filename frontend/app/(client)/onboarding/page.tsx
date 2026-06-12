@@ -95,7 +95,7 @@ export default function OnboardingPage() {
       const profilePayload = {
         fullName: user.fullName || "Khách Hàng",
         email: user.email || "",
-        phoneNumber: user.phoneNumber || "",
+        phoneNumber: user.phoneNumber || undefined,
         avatar: user.avatar,
         momFavoriteColors: selectedColors.join(", "),
         childGender: gender || null,
@@ -148,7 +148,7 @@ export default function OnboardingPage() {
       const profilePayload = {
         fullName: user.fullName || "Khách Hàng",
         email: user.email || "",
-        phoneNumber: user.phoneNumber || "",
+        phoneNumber: user.phoneNumber || undefined,
         avatar: user.avatar,
         isOnboarded: true
       };

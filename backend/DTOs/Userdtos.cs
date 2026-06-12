@@ -98,9 +98,16 @@ namespace PolyBabyAPI.DTOs
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty;
 
+        private string? _phoneNumber;
+
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
         [StringLength(13)]
-        public string? PhoneNumber { get; set; }
+        public string? PhoneNumber
+        {
+            get => _phoneNumber;
+            set => _phoneNumber = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+
 
         public DateTime? DateOfBirth { get; set; }
 

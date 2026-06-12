@@ -225,7 +225,7 @@ export default function ProfilePage() {
       const result = await updateUserProfile(userProfile.userId, token, {
         fullName: profileForm.fullName,
         email: profileForm.email,
-        phoneNumber: profileForm.phoneNumber,
+        phoneNumber: profileForm.phoneNumber || undefined,
         dateOfBirth: profileForm.dateOfBirth ? new Date(profileForm.dateOfBirth).toISOString() : null,
         avatar: userProfile.avatar,
         momFavoriteColors: profileForm.momFavoriteColors || undefined,
