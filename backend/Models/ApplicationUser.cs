@@ -61,6 +61,10 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Đã hoàn thành onboarding")]
         public bool IsOnboarded { get; set; } = false;
 
+        // Refresh Token
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+
         // Navigation Properties
         public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
         public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
