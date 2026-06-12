@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
@@ -17,13 +17,9 @@ import { useCart } from "@/context/CartContext";
 import { logProductView } from "@/lib/recommendationApi";
 import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto, FlashSaleStatus } from "@/lib/features/flash-sales/flashSaleApi";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function ProductDetailPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const productId = Number(resolvedParams.id);
+export default function ProductDetailPage() {
+  const params = useParams();
+  const productId = Number(params.id);
   const router = useRouter();
 
   // Core Product State

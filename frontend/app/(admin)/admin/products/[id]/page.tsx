@@ -351,7 +351,7 @@ export default function AdminProductDetailPage() {
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">
                     <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Tổng tồn kho</p>
-                    <p className="text-2xl font-bold text-slate-800">{product.stock}</p>
+                    <p className="text-2xl font-bold text-slate-800">{product.variants.length > 0 ? totalVariantStock : product.stock}</p>
                     <p className="text-[10px] text-secondary font-bold mt-1">Sản phẩm gốc</p>
                   </div>
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">

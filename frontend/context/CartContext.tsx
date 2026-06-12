@@ -66,6 +66,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshCart();
+
+    const handleCartUpdatedEvent = () => {
+      refreshCart();
+    };
+    
+    window.addEventListener("cart_updated", handleCartUpdatedEvent);
+    
+    return () => {
+      window.removeEventListener("cart_updated", handleCartUpdatedEvent);
+    };
   }, []);
 
   const addToCart = async (data: { variantID?: number; bundleID?: number; quantity: number }) => {

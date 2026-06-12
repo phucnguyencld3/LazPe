@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: number;
@@ -70,9 +72,12 @@ export default function CustomerChatWidget() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
   const [isAiMode, setIsAiMode] = useState(true);
+  const [showEndChatModal, setShowEndChatModal] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "")
@@ -80,8 +85,24 @@ export default function CustomerChatWidget() {
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isAdminTyping]);
+    if (isOpen) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  }, [messages, isAdminTyping, isOpen]);
+
+  // Auto-close after 15 minutes of inactivity
+  useEffect(() => {
+    if (!isStarted || !sessionId || isClosed) return;
+
+    const timeout = setTimeout(() => {
+      handleResetChat();
+      toast.info("Cuộc trò chuyện đã tự động kết thúc do bạn không hoạt động trong 15 phút.");
+    }, 15 * 60 * 1000);
+
+    return () => clearTimeout(timeout);
+  }, [messages, isStarted, sessionId, isClosed]);
 
   // Load existing session on mount
   useEffect(() => {
@@ -191,6 +212,11 @@ export default function CustomerChatWidget() {
       }
     });
 
+    connection.on("CartUpdated", () => {
+      // Dispatch a custom event so header cart updates if listening
+      window.dispatchEvent(new Event("cart_updated"));
+    });
+
     connection
       .start()
       .then(() => {
@@ -239,12 +265,70 @@ export default function CustomerChatWidget() {
     }
   };
 
+  // Thêm state hàng chờ cho AI
+  const [aiMessageQueue, setAiMessageQueue] = useState<{ id: number, text: string }[]>([]);
+
+  // Effect xử lý hàng chờ AI tuần tự
+  useEffect(() => {
+    if (isAiMode && aiMessageQueue.length > 0 && !isAdminTyping) {
+      const nextItem = aiMessageQueue[0];
+      processAiMessage(nextItem.id, nextItem.text);
+    }
+  }, [aiMessageQueue, isAdminTyping, isAiMode]);
+
+  const processAiMessage = async (tempId: number, textToSend: string) => {
+    try {
+      setIsAdminTyping(true);
+      
+      const res = await fetch(`${API_BASE}/api/chatbot/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sessionId || "ai-session", message: textToSend }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Tạo tin nhắn AI
+        const aiMsg: Message = {
+          id: Date.now() + Math.random(),
+          chatSessionId: sessionId || "ai-session",
+          senderId: "ai",
+          senderName: "LazPe AI",
+          isFromAdmin: true,
+          messageText: data.text,
+          imageUrl: null,
+          createdAt: new Date().toISOString()
+        };
+
+        // Cập nhật state: xóa trạng thái "Đang gửi" của tin nhắn user, thêm tin nhắn AI
+        setMessages((prev) => {
+          const updatedMessages = prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m);
+          return [...updatedMessages, aiMsg];
+        });
+      } else {
+        const errData = await res.json().catch(() => null);
+        const errMsg = errData?.error || "AI không thể phản hồi lúc này.";
+        toast.error(errMsg);
+        // Gửi lỗi, xóa tin nhắn tạm
+        setMessages((prev) => prev.filter(m => m.id !== tempId));
+      }
+    } catch (e) {
+      toast.error("Lỗi kết nối AI.");
+      setMessages((prev) => prev.filter(m => m.id !== tempId));
+    } finally {
+      setIsAdminTyping(false);
+      // Xóa khỏi hàng chờ để xử lý câu tiếp theo
+      setAiMessageQueue(prev => prev.slice(1));
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sessionId && !isAiMode) return;
     if (!inputText.trim()) return;
 
-    const tempId = -Date.now();
+    const tempId = -(Date.now() + Math.random());
     const tempMsg: Message = {
       id: tempId,
       chatSessionId: sessionId || "ai-session",
@@ -260,43 +344,13 @@ export default function CustomerChatWidget() {
 
     const textToSend = inputText.trim();
     setInputText("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
 
     if (isAiMode) {
-      // Chat with AI
-      try {
-        // Optimistically add AI typing indicator
-        setIsAdminTyping(true);
-        
-        const res = await fetch(`${API_BASE}/api/chatbot/ask`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ message: textToSend }),
-        });
-
-        setIsAdminTyping(false);
-        
-        if (res.ok) {
-          const data = await res.json();
-          const aiMsg: Message = {
-            id: Date.now() + 1,
-            chatSessionId: "ai-session",
-            senderId: "ai",
-            senderName: "LazPe AI",
-            isFromAdmin: true,
-            messageText: data.text,
-            imageUrl: null,
-            createdAt: new Date().toISOString()
-          };
-          setMessages((prev) => [...prev, aiMsg]);
-        } else {
-          toast.error("AI không thể phản hồi lúc này.");
-        }
-      } catch (e) {
-        setIsAdminTyping(false);
-        toast.error("Lỗi kết nối AI.");
-      }
+      // Cho vào hàng chờ, AI sẽ tự động xử lý tuần tự qua useEffect
+      setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
       return;
     }
 
@@ -334,7 +388,7 @@ export default function CustomerChatWidget() {
   const sendSticker = async (stickerUrl: string) => {
     if (!sessionId) return;
 
-    const tempId = -Date.now();
+    const tempId = -(Date.now() + Math.random());
     const tempMsg: Message = {
       id: tempId,
       chatSessionId: sessionId,
@@ -376,8 +430,13 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
+
+    // Auto-resize logic
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+
     if (hubConnectionRef.current && sessionId) {
       hubConnectionRef.current.invoke(
         "SendTypingStatus",
@@ -388,7 +447,17 @@ export default function CustomerChatWidget() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (inputText.trim()) {
+        handleSend(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
   const handleResetChat = async () => {
+    setShowEndChatModal(false);
     localStorage.removeItem("chat_session_id");
     setSessionId(null);
     setIsClosed(false);
@@ -477,6 +546,15 @@ export default function CustomerChatWidget() {
               >
                 {isAiMode ? "AI Mode" : "Human"}
               </button>
+              {isStarted && (
+                <button
+                  onClick={() => setShowEndChatModal(true)}
+                  className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer text-xl"
+                  title="Kết thúc trò chuyện"
+                >
+                  delete
+                </button>
+              )}
               <button
                 onClick={toggleOpen}
                 className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer text-xl"
@@ -559,7 +637,25 @@ export default function CustomerChatWidget() {
                               }}
                             />
                           ) : (
-                            msg.messageText && <p className="whitespace-pre-wrap">{msg.messageText}</p>
+                            msg.messageText && (
+                              <div className="prose prose-sm prose-slate max-w-none break-words leading-relaxed">
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    img: ({ node, ...props }) => (
+                                      <img
+                                        {...props}
+                                        className="max-w-[200px] h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 mt-2 shadow-sm"
+                                        onClick={() => setZoomedImage(typeof props.src === 'string' ? props.src : null)}
+                                        alt={props.alt || "Image"}
+                                      />
+                                    )
+                                  }}
+                                >
+                                  {msg.messageText}
+                                </ReactMarkdown>
+                              </div>
+                            )
                           )}
                         </div>
                         {msg.id < 0 && (
@@ -576,7 +672,9 @@ export default function CustomerChatWidget() {
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce"></span>
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce delay-75"></span>
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce delay-150"></span>
-                    <span className="ml-1 text-[11px] font-medium text-slate-600">Nhân viên đang soạn tin...</span>
+                    <span className="ml-1 text-[11px] font-medium text-slate-600">
+                      {isAiMode ? "LazPe AI đang suy nghĩ..." : "Nhân viên đang soạn tin..."}
+                    </span>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -679,13 +777,15 @@ export default function CustomerChatWidget() {
                 </div>
 
                 {/* Text input form */}
-                <form onSubmit={handleSend} className="p-3 flex items-center gap-2">
-                  <input
-                    type="text"
+                <form onSubmit={handleSend} className="p-3 flex items-end gap-2">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
                     value={inputText}
                     onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
                     placeholder="Nhập tin nhắn..."
-                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:border-[#0068ff] focus:ring-1 focus:ring-blue-500/10 text-slate-800"
+                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-[20px] text-sm focus:outline-none focus:border-[#0068ff] focus:ring-1 focus:ring-blue-500/10 text-slate-800 resize-none max-h-[84px] overflow-y-auto min-h-[40px] leading-relaxed"
                   />
                   <button
                     type="submit"
@@ -697,6 +797,54 @@ export default function CustomerChatWidget() {
                 </form>
               </div>
             )
+          )}
+
+          {/* End Chat Confirm Modal Overlay */}
+          {showEndChatModal && (
+            <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl w-[320px] shadow-2xl p-6 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-3xl">delete_sweep</span>
+                </div>
+                <h3 className="font-bold text-lg text-slate-800 mb-2">Kết thúc trò chuyện?</h3>
+                <p className="text-sm text-slate-500 mb-6">Bạn có chắc chắn muốn xóa lịch sử và kết thúc cuộc trò chuyện này không?</p>
+                <div className="flex w-full gap-3">
+                  <button 
+                    onClick={() => setShowEndChatModal(false)}
+                    className="flex-1 py-2.5 rounded-xl font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button 
+                    onClick={() => handleResetChat()}
+                    className="flex-1 py-2.5 rounded-xl font-medium bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shadow-red-200"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image Zoom Modal */}
+          {zoomedImage && (
+            <div 
+              className="absolute inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 animate-in fade-in cursor-zoom-out"
+              onClick={() => setZoomedImage(null)}
+            >
+              <button 
+                className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 material-symbols-outlined rounded-full bg-black/20 hover:bg-black/40 transition-colors"
+                onClick={(e) => { e.stopPropagation(); setZoomedImage(null); }}
+              >
+                close
+              </button>
+              <img 
+                src={zoomedImage} 
+                alt="Zoomed" 
+                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           )}
         </div>
       )}

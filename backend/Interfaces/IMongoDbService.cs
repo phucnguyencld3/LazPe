@@ -6,5 +6,6 @@ namespace PolyBabyAPI.Interfaces
     public interface IMongoDbService
     {
         IMongoCollection<UserInteraction> UserInteractions { get; }
+        IMongoCollection<KnowledgeArticle> KnowledgeArticles { get; }
     }
 }

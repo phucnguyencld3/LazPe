@@ -383,11 +383,11 @@ try
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
-        // 4. Job huấn luyện AI Model (Đang set chạy mỗi phút để test)
+        // 4. Job huấn luyện AI Model (Chạy lúc 2 giờ sáng và 2 giờ chiều)
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.ModelTrainingJob>(
             "ai-model-training",
             job => job.ExecuteAsync(),
-            Cron.Minutely(), // Chạy mỗi phút
+            "0 2,14 * * *", // Chạy lúc 2:00 AM và 2:00 PM mỗi ngày
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

@@ -18,5 +18,8 @@ namespace PolyBabyAPI.Services
 
         public IMongoCollection<UserInteraction> UserInteractions =>
             _database.GetCollection<UserInteraction>("UserInteractions");
+
+        public IMongoCollection<KnowledgeArticle> KnowledgeArticles =>
+            _database.GetCollection<KnowledgeArticle>("KnowledgeArticles");
     }
 }
