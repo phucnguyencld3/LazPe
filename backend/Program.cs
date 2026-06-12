@@ -21,6 +21,9 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load appsettings.Local.json for local development secrets (ignored by Git)
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 try
 {
     // Kết nối cơ sở dữ liệu
