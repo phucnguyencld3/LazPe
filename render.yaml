@@ -40,6 +40,14 @@ services:
         sync: false # Nhập MongoDB Connection String để lưu log đề xuất AI (ML.NET)
       - key: MongoDbSettings__DatabaseName
         value: "LazPeDB"
+      - key: Gemini__ApiKey
+        sync: false # Nhập Gemini API Key chính của bạn ở Render Dashboard
+      - key: Gemini__ApiKeys__0
+        sync: false # (Tùy chọn) Nhập Gemini API Key dự phòng 1
+      - key: Gemini__ApiKeys__1
+        sync: false # (Tùy chọn) Nhập Gemini API Key dự phòng 2
+      - key: Gemini__ApiKeys__2
+        sync: false # (Tùy chọn) Nhập Gemini API Key dự phòng 3
 
   - type: web
     name: lazpe-frontend
