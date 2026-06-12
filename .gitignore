@@ -105,3 +105,5 @@ logs/
 .parcelcache
 .DS_Store
 /mockups/
+**/RecommendationModel.zip
+
