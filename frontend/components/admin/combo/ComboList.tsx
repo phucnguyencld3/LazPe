@@ -242,14 +242,16 @@ export const ComboList: React.FC<ComboListProps> = ({
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex flex-wrap items-center gap-4 flex-1">
             {/* Search Box */}
-            <div className="relative min-w-[260px] flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <div className="flex-1 min-w-[260px] relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                search
+              </span>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm kiếm combo theo tên, mã..."
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
 
@@ -295,7 +297,7 @@ export const ComboList: React.FC<ComboListProps> = ({
               onClick={() => setViewMode("grid")}
               className={`p-1.5 rounded-lg transition-all ${
                 viewMode === "grid" 
-                  ? "bg-white text-primary shadow-xs" 
+                  ? "bg-white text-primary shadow-sm border border-slate-100" 
                   : "text-slate-400 hover:text-slate-600"
               }`}
               title="Xem dạng lưới"
@@ -306,7 +308,7 @@ export const ComboList: React.FC<ComboListProps> = ({
               onClick={() => setViewMode("table")}
               className={`p-1.5 rounded-lg transition-all ${
                 viewMode === "table" 
-                  ? "bg-white text-primary shadow-xs" 
+                  ? "bg-white text-primary shadow-sm border border-slate-100" 
                   : "text-slate-400 hover:text-slate-600"
               }`}
               title="Xem dạng bảng"
@@ -330,7 +332,7 @@ export const ComboList: React.FC<ComboListProps> = ({
           </div>
         ) : viewMode === "grid" ? (
           /* Bento/Grid Layout */
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filteredBundles.map((bundle) => (
               <div 
                 key={bundle.bundleID}
@@ -342,7 +344,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                     <img 
                       src={bundle.imageUrl} 
                       alt={bundle.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <span className="material-symbols-outlined text-4xl text-slate-300">inventory_2</span>
@@ -586,7 +588,7 @@ export const ComboList: React.FC<ComboListProps> = ({
       {/* Custom Delete Confirmation Modal */}
       {bundleToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-[400px] max-w-[90vw] overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex flex-col items-center text-center space-y-4">
               <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-error">
                 <AlertTriangle size={24} />
