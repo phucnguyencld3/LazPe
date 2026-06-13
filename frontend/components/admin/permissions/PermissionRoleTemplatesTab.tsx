@@ -239,17 +239,17 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
           </button>
         </header>
       ) : (
-        <div className="flex justify-between items-center mb-md gap-md flex-wrap">
+        <div className="flex justify-between items-center mb-8 gap-4 flex-wrap border-b border-slate-100 pb-4">
           <div>
-            <p className="font-body-md text-on-surface-variant/70">
+            <p className="font-medium text-slate-500 text-sm">
               Thiết lập các gói quyền mặc định (ví dụ: Staff, Manager) để gán nhanh cho nhân sự của hệ thống.
             </p>
           </div>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-lg py-md bg-primary text-on-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-sm shrink-0 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-sm hover:shadow-md shrink-0 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
+            <span className="material-symbols-outlined text-[18px]">add</span>
             Tạo Gói Quyền
           </button>
         </div>

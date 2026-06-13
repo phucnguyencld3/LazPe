@@ -169,6 +169,7 @@ export async function getCategories(): Promise<Category[] | null> {
         image: item.image ?? "",
         parentId: item.parentID ?? item.parentId ?? null,
         level: item.level ?? 0,
+        productCount: item.productCount ?? 0,
       }));
     }
     return null;

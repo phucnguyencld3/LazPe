@@ -99,25 +99,25 @@ export default function PermissionCenterPage() {
       />
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-outline-variant/30 mb-md">
+      <div className="flex bg-slate-50 p-1.5 rounded-2xl w-fit mb-6 shadow-inner border border-slate-100">
         <button
           onClick={() => setActiveTab("users")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === "users"
-              ? "border-primary text-primary"
-              : "border-transparent text-on-surface-variant/70 hover:text-primary"
+          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-xl transition-all cursor-pointer ${activeTab === "users"
+              ? "bg-white text-primary shadow-sm"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">manage_accounts</span>
+          <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
           Phân quyền tài khoản ({totalCount})
         </button>
         <button
           onClick={() => setActiveTab("templates")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === "templates"
-              ? "border-primary text-primary"
-              : "border-transparent text-on-surface-variant/70 hover:text-primary"
+          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-xl transition-all cursor-pointer ${activeTab === "templates"
+              ? "bg-white text-primary shadow-sm"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">settings_suggest</span>
+          <span className="material-symbols-outlined text-[18px]">settings_suggest</span>
           Quản lý Gói Quyền
         </button>
       </div>

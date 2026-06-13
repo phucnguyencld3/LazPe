@@ -212,6 +212,7 @@ namespace PolyBabyAPI.DTOs
         public int? ParentID { get; set; }
         public int Level { get; set; }
         public bool Status { get; set; }
+        public int ProductCount { get; set; }
     }
 
     /// <summary>

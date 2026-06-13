@@ -108,6 +108,12 @@ html {
 body {
   min-height: 100%;
   margin: 0;
+  font-family: var(--font-plus-jakarta-sans), system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-quicksand), system-ui, -apple-system, sans-serif;
 }
 
 .material-symbols-outlined {
@@ -130,7 +136,7 @@ body {
 }
 
 .admin-scaled-layout {
-  zoom: 0.75;
+  zoom: 0.85;
 }
 
 /* Category Tree View Custom Styles */
@@ -149,6 +155,29 @@ body {
 
 .tree-node-content:hover {
   background-color: rgba(135, 78, 88, 0.05);
+}
+
+/* Custom Sidebar Scrollbar */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .category-tree-container::-webkit-scrollbar {
