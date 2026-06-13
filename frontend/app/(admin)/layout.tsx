@@ -262,12 +262,16 @@ export default function AdminLayout({
       </div>
 
       {/* Top Navigation Shell (Desktop) */}
-      <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
-        <div className="flex items-center gap-sm ml-72">
-          {/* Logo shifted to avoid being completely covered by sidebar, if needed. Or just leave it as is if it matches mockup. We'll leave it as in mockup */}
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Laz<span className="text-rose-500">Pe</span>
-          </h1>
+      <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between w-full h-16 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
+        <div className="flex items-center gap-sm ml-72 flex-1 max-w-2xl pr-8">
+          <div className="relative w-full group">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] group-focus-within:text-primary transition-colors">search</span>
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm nhanh mã đơn hàng, sản phẩm, email khách hàng..." 
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm outline-none text-slate-700 font-medium" 
+            />
+          </div>
         </div>
         <div className="flex items-center gap-md">
           <div className="relative">
@@ -396,42 +400,68 @@ export default function AdminLayout({
             <p className="font-label-sm text-label-sm text-on-surface-variant">Hệ thống quản lý LazPe</p>
           </div>
           
-          <nav className="flex-1 space-y-md">
-            {/* Tổng quan */}
+          <nav className="flex-1 space-y-md pb-4">
+            {/* TRUNG TÂM ĐIỀU HÀNH */}
             <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tổng quan</span>
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Trung tâm điều hành</span>
               <Link
                 href="/admin"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">dashboard</span>
-                <span className="text-[14.5px] font-semibold">Tổng quan</span>
+                <span className="text-[14.5px] font-semibold">Bảng điều khiển</span>
+              </Link>
+              <Link
+                href="/admin/statistics"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">bar_chart</span>
+                <span className="text-[14.5px] font-semibold">Thống kê doanh thu</span>
               </Link>
             </div>
 
-            {/* Sản phẩm */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Sản phẩm</span>
+            {/* QUẢN LÝ KINH DOANH */}
+            <div className="space-y-1 pt-2">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Quản lý kinh doanh</span>
+              <Link
+                href="/admin/orders"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">shopping_cart</span>
+                <span className="text-[14.5px] font-semibold">Xử lý Đơn hàng</span>
+              </Link>
+              <Link
+                href="/admin/reviews"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">gavel</span>
+                <span className="text-[14.5px] font-semibold">Kiểm duyệt Đánh giá</span>
+              </Link>
+            </div>
+
+            {/* QUẢN LÝ SẢN PHẨM */}
+            <div className="space-y-1 pt-2">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Danh mục sản phẩm</span>
               <Link
                 href="/admin/products"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">inventory_2</span>
-                <span className="text-[14.5px] font-semibold">Sản phẩm</span>
+                <span className="text-[14.5px] font-semibold">Kho Sản phẩm</span>
               </Link>
               <Link
                 href="/admin/combo"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">inventory</span>
-                <span className="text-[14.5px] font-semibold">Combo</span>
+                <span className="text-[14.5px] font-semibold">Gói Combo</span>
               </Link>
               <Link
                 href="/admin/categories"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">category</span>
-                <span className="text-[14.5px] font-semibold">Danh mục</span>
+                <span className="text-[14.5px] font-semibold">Phân loại Danh mục</span>
               </Link>
               <Link
                 href="/admin/brands"
@@ -442,115 +472,74 @@ export default function AdminLayout({
               </Link>
             </div>
 
-            {/* Tài khoản */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tài khoản</span>
-              <Link
-                href="/admin/users"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">group</span>
-                <span className="text-[14.5px] font-semibold">Người dùng</span>
-              </Link>
-              <Link
-                href="/admin/permissions"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-                <span className="text-[14.5px] font-semibold">Phân quyền</span>
-              </Link>
-              <Link
-                href="/admin/profile"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">account_circle</span>
-                <span className="text-[14.5px] font-semibold">Hồ sơ cá nhân</span>
-              </Link>
-            </div>
-
-            {/* Đơn hàng */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đơn hàng</span>
-              <Link
-                href="/admin/orders"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">shopping_cart</span>
-                <span className="text-[14.5px] font-semibold">Đơn hàng</span>
-              </Link>
-            </div>
-
-            {/* Tin nhắn hỗ trợ */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Hỗ trợ</span>
-              <Link
-                href="/admin/chats"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">chat</span>
-                <span className="text-[14.5px] font-semibold">Tin nhắn</span>
-              </Link>
-            </div>
-
-            {/* Thống kê */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thống kê</span>
-              <Link
-                href="/admin/statistics"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">bar_chart</span>
-                <span className="text-[14.5px] font-semibold">Thống kê</span>
-              </Link>
-            </div>
-
-            {/* Loyalty & Vouchers */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Khuyến mãi & Loyalty</span>
+            {/* MARKETING & ƯU ĐÃI */}
+            <div className="space-y-1 pt-2">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Marketing & Ưu đãi</span>
               <Link
                 href="/admin/vouchers"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">confirmation_number</span>
-                <span className="text-[14.5px] font-semibold">Quản lý Voucher</span>
+                <span className="text-[14.5px] font-semibold">Mã giảm giá (Voucher)</span>
               </Link>
               <Link
                 href="/admin/flash-sales"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">bolt</span>
-                <span className="text-[14.5px] font-semibold">Quản lý Flash Sale</span>
+                <span className="text-[14.5px] font-semibold">Chiến dịch Flash Sale</span>
               </Link>
               <Link
                 href="/admin/loyalty"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">loyalty</span>
-                <span className="text-[14.5px] font-semibold">Quản lý Loyalty</span>
+                <span className="text-[14.5px] font-semibold">Chương trình Loyalty</span>
               </Link>
             </div>
 
-            {/* Đánh giá */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đánh giá sản phẩm</span>
+            {/* NHÂN SỰ & NGƯỜI DÙNG */}
+            <div className="space-y-1 pt-2">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Nhân sự & Người dùng</span>
               <Link
-                href="/admin/reviews"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                href="/admin/users"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
-                <span className="material-symbols-outlined">gavel</span>
-                <span className="text-[14.5px] font-semibold">Kiểm duyệt đánh giá</span>
+                <span className="material-symbols-outlined">group</span>
+                <span className="text-[14.5px] font-semibold">Tài khoản Hệ thống</span>
+              </Link>
+              <Link
+                href="/admin/permissions"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+                <span className="text-[14.5px] font-semibold">Phân quyền Truy cập</span>
+              </Link>
+              <Link
+                href="/admin/profile"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">account_circle</span>
+                <span className="text-[14.5px] font-semibold">Hồ sơ của tôi</span>
               </Link>
             </div>
 
-            {/* Thông báo */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thông báo</span>
+            {/* TƯƠNG TÁC HỆ THỐNG */}
+            <div className="space-y-1 pt-2">
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tương tác hệ thống</span>
+              <Link
+                href="/admin/chats"
+                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+              >
+                <span className="material-symbols-outlined">chat</span>
+                <span className="text-[14.5px] font-semibold">Tin nhắn Hỗ trợ</span>
+              </Link>
               <Link
                 href="/admin/notifications"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">notifications</span>
-                <span className="text-[14.5px] font-semibold">Quản lý thông báo</span>
+                <span className="text-[14.5px] font-semibold">Thông báo nội bộ</span>
               </Link>
             </div>
           </nav>

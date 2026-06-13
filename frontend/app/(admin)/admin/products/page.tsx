@@ -371,6 +371,7 @@ export default function AdminProductsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center w-16">STT</th>
                 <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sản phẩm</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá bán</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Tồn kho</th>
@@ -381,24 +382,28 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20">
+                  <td colSpan={6} className="text-center py-20">
                     <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
                     <p className="text-slate-400 mt-4 font-semibold text-sm">Đang tải dữ liệu sản phẩm...</p>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20">
+                  <td colSpan={6} className="text-center py-20">
                     <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">inventory</span>
                     <p className="text-slate-400 font-bold text-sm">Không tìm thấy sản phẩm nào.</p>
                   </td>
                 </tr>
               ) : (
-                products.map((product) => {
+                products.map((product, index) => {
                   const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
                   const stockDetails = getStockBadge(actualStock);
+                  const stt = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
                     <tr key={product.productID} className="hover:bg-slate-50/30 transition-colors group">
+                      <td className="px-6 py-5 text-center">
+                        <span className="font-bold text-slate-400 text-sm">{stt}</span>
+                      </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">

@@ -285,11 +285,11 @@ export default function UserPermissionsPage() {
               {user.email || "Chưa cập nhật email"}
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <span className="bg-indigo-50 text-indigo-600 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+              <span className="bg-primary/10 text-primary border border-primary/20 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">person</span>
                 ID: {user.id}
               </span>
-              <span className="bg-cyan-50 text-cyan-600 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 border border-cyan-100">
+              <span className="bg-secondary/10 text-secondary text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 border border-secondary/20">
                 <span className="material-symbols-outlined text-[14px]">shield</span>
                 {totalSelectedCount} QUYỀN ĐANG CHỌN
               </span>
@@ -298,7 +298,7 @@ export default function UserPermissionsPage() {
         </div>
         <button
           onClick={() => router.push(`/admin/users/${id}`)}
-          className="flex items-center gap-2 px-6 py-2.5 border border-indigo-200 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-50 active:scale-98 transition-all shrink-0 w-full md:w-auto justify-center"
+          className="flex items-center gap-2 px-6 py-2.5 border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-primary/5 active:scale-98 transition-all shrink-0 w-full md:w-auto justify-center"
         >
           <span className="material-symbols-outlined text-lg">person</span>
           Xem chi tiết
@@ -311,7 +311,7 @@ export default function UserPermissionsPage() {
         <select 
           value={selectedTemplateId || ""} 
           onChange={(e) => handleTemplateChange(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
+          className="w-full md:w-1/2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-medium"
         >
           <option value="">-- Không sử dụng gói (Chỉ cấu hình quyền thủ công) --</option>
           {templates.map(t => (
@@ -320,7 +320,7 @@ export default function UserPermissionsPage() {
         </select>
         {selectedTemplateId && (
           <p className="text-xs text-slate-500 mt-2 font-medium">
-            Nhân viên này sẽ thừa hưởng toàn bộ <strong className="text-indigo-600">{templatePermissionIds.length} quyền</strong> từ gói.
+            Nhân viên này sẽ thừa hưởng toàn bộ <strong className="text-primary">{templatePermissionIds.length} quyền</strong> từ gói.
             Bạn có thể tích thêm (Override Add) hoặc bỏ tích (Override Deny) các quyền hạn bên dưới.
           </p>
         )}
@@ -381,7 +381,7 @@ export default function UserPermissionsPage() {
                 : "Tìm kiếm và tích chọn các quyền hạn để gán thêm mới cho tài khoản người dùng."}
             </p>
           </div>
-          <span className="bg-emerald-50 text-emerald-600 text-[10px] px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider border border-emerald-100 shrink-0 self-start sm:self-center">
+          <span className="bg-primary/10 text-primary text-[10px] px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider border border-primary/20 shrink-0 self-start sm:self-center">
             {totalSelectedCount} QUYỀN CHỌN
           </span>
         </div>
@@ -396,12 +396,12 @@ export default function UserPermissionsPage() {
               placeholder="Tìm kiếm nhanh mã quyền hoặc mô tả..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 focus:outline-none transition-all text-sm text-slate-800"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all text-sm text-slate-800"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="absolute right-4 text-slate-400 hover:text-rose-500 transition-colors"
+                className="absolute right-4 text-slate-400 hover:text-primary transition-colors"
               >
                 <span className="material-symbols-outlined text-lg">clear</span>
               </button>
@@ -410,9 +410,9 @@ export default function UserPermissionsPage() {
 
           {/* Select All Row */}
           {filteredPermissions.length > 0 && (
-            <div className="flex items-center gap-3 text-indigo-600 font-bold text-sm bg-indigo-50/30 p-4 rounded-xl border border-indigo-50/50">
+            <div className="flex items-center gap-3 text-primary font-bold text-sm bg-primary/5 p-4 rounded-xl border border-primary/20">
               <input
-                className="w-5 h-5 rounded border-indigo-200 text-indigo-600 focus:ring-indigo-500 transition-all accent-indigo-600 cursor-pointer"
+                className="w-5 h-5 rounded border-primary/30 text-primary focus:ring-primary transition-all accent-primary cursor-pointer"
                 id="select-all"
                 type="checkbox"
                 checked={isAllSelected}
@@ -450,7 +450,7 @@ export default function UserPermissionsPage() {
                       <div>
                         {/* Group Header */}
                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                          <div className="flex items-center gap-2 text-indigo-600">
+                          <div className="flex items-center gap-2 text-primary">
                             <span className="material-symbols-outlined text-xl">
                               {getResourceIcon(resource)}
                             </span>
@@ -462,7 +462,7 @@ export default function UserPermissionsPage() {
                             type="checkbox"
                             checked={isGroupAllSelected}
                             onChange={() => handleToggleGroup(groupPerms, !isGroupAllSelected)}
-                            className="w-4.5 h-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer"
+                            className="w-4.5 h-4.5 rounded border-slate-300 text-primary focus:ring-primary accent-primary cursor-pointer"
                           />
                         </div>
 
@@ -488,14 +488,14 @@ export default function UserPermissionsPage() {
                                     checked={isChecked}
                                     disabled={isDisabled}
                                     onChange={() => !isDisabled && handleTogglePermission(perm.id)}
-                                    className={`w-4 h-4 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed mt-0.5 ${
-                                      overrideStatus === 'add' ? 'text-indigo-600 accent-indigo-600' : 
-                                      isFromTemplate ? 'text-emerald-500 accent-emerald-500' : 
+                                    className={`w-4 h-4 rounded border-slate-300 focus:ring-primary cursor-pointer disabled:cursor-not-allowed mt-0.5 ${
+                                      overrideStatus === 'add' ? 'text-primary accent-primary' : 
+                                      isFromTemplate ? 'text-secondary accent-secondary' : 
                                       'text-slate-600 accent-slate-600'
                                     }`}
                                     id={`perm-${perm.id}`}
                                   />
-                                  <div className="shrink-0 w-9 h-9 bg-white rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors shadow-sm">
+                                  <div className="shrink-0 w-9 h-9 bg-white rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
                                     <span className="material-symbols-outlined text-[18px]">
                                       {getResourceIcon(resource)}
                                     </span>
@@ -507,9 +507,9 @@ export default function UserPermissionsPage() {
                                       title={perm.name}
                                     >
                                       {perm.name}
-                                      {overrideStatus === 'add' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Thêm</span>}
-                                      {overrideStatus === 'deny' && <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold line-through">Cấm</span>}
-                                      {!overrideStatus && isFromTemplate && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Gói</span>}
+                                      {overrideStatus === 'add' && <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Thêm</span>}
+                                      {overrideStatus === 'deny' && <span className="text-[10px] bg-error/10 text-error border border-error/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold line-through">Cấm</span>}
+                                      {!overrideStatus && isFromTemplate && <span className="text-[10px] bg-secondary/10 text-secondary border border-secondary/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Gói</span>}
                                     </label>
                                     <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed" title={perm.description}>
                                       {perm.description || "Không có mô tả chi tiết"}
@@ -520,7 +520,7 @@ export default function UserPermissionsPage() {
                                 {isChecked && !isDisabled && (
                                   <button
                                     onClick={() => handleTogglePermission(perm.id)}
-                                    className="p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all self-start shrink-0"
+                                    className="p-1.5 text-slate-400 hover:bg-error/10 hover:text-error rounded-lg transition-all self-start shrink-0"
                                     title="Thu hồi nhanh"
                                   >
                                     <span className="material-symbols-outlined text-lg">delete</span>
@@ -552,7 +552,7 @@ export default function UserPermissionsPage() {
         <button
           onClick={handleSaveChange}
           disabled={saving}
-          className="px-10 py-3.5 bg-rose-500 text-white font-bold text-sm rounded-xl hover:bg-rose-600 active:scale-[0.98] soft-shadow hover:shadow-lg transition-all cursor-pointer flex items-center gap-2 disabled:opacity-70"
+          className="px-10 py-3.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:scale-105 active:scale-95 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-2 disabled:opacity-70"
         >
           {saving ? (
             <>
