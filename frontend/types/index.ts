@@ -67,6 +67,7 @@ export interface Category {
   image?: string;
   parentId?: number | null;
   level?: number;
+  productCount?: number;
 }
 
 export interface Voucher {

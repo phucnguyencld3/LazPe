@@ -203,16 +203,16 @@ export default function AdminProductsPage() {
         <div className="flex items-center gap-sm shrink-0">
           <button
             onClick={() => router.push("/admin/products/import")}
-            className="border border-secondary text-secondary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-sm font-bold cursor-pointer"
+            className="border border-secondary text-secondary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined">upload_file</span>
+            <span className="material-symbols-outlined text-[18px]">upload_file</span>
             Import Excel
           </button>
           <button
             onClick={() => toast.info("Tính năng xuất dữ liệu chưa khả dụng")}
-            className="border border-primary text-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-sm font-bold cursor-pointer"
+            className="border border-primary text-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined">file_export</span>
+            <span className="material-symbols-outlined text-[18px]">file_export</span>
             Xuất dữ liệu
           </button>
           <button
@@ -220,77 +220,77 @@ export default function AdminProductsPage() {
               toast.info("Điều hướng sang trang tạo sản phẩm mới");
               router.push("/admin/products/new");
             }}
-            className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >
-            <span className="material-symbols-outlined">add_circle</span>
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
             Thêm sản phẩm mới
           </button>
         </div>
       </header>
 
-      {/* Stats Bento Grid */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Card 1: Total */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">inventory</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">inventory</span>
             </div>
-            <span className="px-2 py-1 bg-secondary-container/20 text-secondary text-[10px] font-bold rounded-full">
-              +5% tháng này
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng sản phẩm</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Tổng sản phẩm</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.totalProducts ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.totalProducts ?? "..."}</span>
         </div>
 
         {/* Card 2: Active */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-secondary-container/20 flex items-center justify-center text-secondary">
-              <span className="material-symbols-outlined">check_circle</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang kinh doanh</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Đang kinh doanh</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.activeProducts ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.activeProducts ?? "..."}</span>
         </div>
 
         {/* Card 3: Out of stock */}
-        <div className="bg-rose-50/50 p-6 rounded-[2rem] shadow-sm border border-rose-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center text-error">
-              <span className="material-symbols-outlined">warning</span>
+        <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+          (stats?.outOfStockProducts ?? 0) > 0
+            ? "bg-rose-50/50 border-rose-100"
+            : "bg-white border-slate-100"
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              (stats?.outOfStockProducts ?? 0) > 0
+                ? "bg-rose-100 text-error"
+                : "bg-slate-100 text-slate-500"
+            }`}>
+              <span className="material-symbols-outlined text-[20px]">warning</span>
             </div>
-            <span className="px-2 py-1 bg-error text-white text-[10px] font-bold rounded-full">
-              Cảnh báo
-            </span>
+            <span className={`text-xs font-bold uppercase tracking-wider ${
+              (stats?.outOfStockProducts ?? 0) > 0 ? "text-rose-950/60" : "text-slate-500"
+            }`}>Hết hàng</span>
           </div>
-          <div>
-            <p className="text-rose-900/60 text-xs font-bold uppercase tracking-widest">Hết hàng</p>
-            <h3 className="text-3xl font-bold text-error mt-1">{stats?.outOfStockProducts ?? "..."}</h3>
+          <div className="flex items-center gap-2">
+            {(stats?.outOfStockProducts ?? 0) > 0 && (
+              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-full">
+                Cảnh báo
+              </span>
+            )}
+            <span className={`text-2xl font-extrabold ${
+              (stats?.outOfStockProducts ?? 0) > 0 ? "text-error" : "text-slate-800"
+            }`}>{stats?.outOfStockProducts ?? "..."}</span>
           </div>
         </div>
 
         {/* Card 4: New products */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
-              <span className="material-symbols-outlined">new_releases</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">new_releases</span>
             </div>
-            <span className="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">
-              Mới
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm mới</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Sản phẩm mới</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">
-              {stats?.newProducts ?? "..."} <span className="text-xs text-slate-400 font-normal normal-case">Tuần này</span>
-            </h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.newProducts ?? "..."}</span>
         </div>
       </div>
 
@@ -460,17 +460,20 @@ export default function AdminProductsPage() {
                       </td>
 
                       <td className="px-6 py-5 text-center">
-                        <button
-                          onClick={() => handleToggleStatus(product.productID)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-bold inline-block cursor-pointer transition-all ${
-                            product.status
-                              ? "bg-secondary-container text-on-secondary-container"
-                              : "bg-slate-100 text-slate-500"
-                          }`}
-                          title="Click để đổi trạng thái"
-                        >
-                          {product.status ? "Đang bán" : "Đã ẩn"}
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase min-w-[55px] text-right ${product.status ? "text-secondary" : "text-slate-400"}`}>
+                            {product.status ? "Đang bán" : "Đã ẩn"}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={product.status}
+                              onChange={() => handleToggleStatus(product.productID)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                          </label>
+                        </div>
                       </td>
 
                       <td className="px-8 py-5 text-center">

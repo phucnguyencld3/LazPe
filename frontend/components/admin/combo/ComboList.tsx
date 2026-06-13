@@ -38,7 +38,7 @@ export const ComboList: React.FC<ComboListProps> = ({
   const [loading, setLoading] = useState(true);
   
   // View mode: grid or table
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -189,77 +189,57 @@ export const ComboList: React.FC<ComboListProps> = ({
         </button>
       </header>
 
-      {/* Stats Cards Bento Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Combos */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-              <Tag size={20} />
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary shrink-0">
+              <Tag size={18} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Tổng số
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng số Combo</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Tổng số Combo</p>
-            <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{loading ? "..." : totalCombos}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : totalCombos}</span>
         </div>
 
         {/* Active Combos */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-secondary-container/20 flex items-center justify-center text-secondary">
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
-            <span className="px-2 py-0.5 bg-green-50 text-secondary text-[10px] font-bold rounded-full border border-green-100">
-              Đang bán
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Đang hoạt động</p>
-            <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{loading ? "..." : activeCombos}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : activeCombos}</span>
         </div>
 
         {/* Inactive Combos */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
               <span className="material-symbols-outlined text-[20px]">pause_circle</span>
             </div>
-            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full border border-amber-100">
-              Tạm ẩn
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tạm ẩn</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Tạm dừng hoạt động</p>
-            <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{loading ? "..." : inactiveCombos}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : inactiveCombos}</span>
         </div>
 
         {/* Average Discount */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-11 h-11 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500">
-              <TrendingDown size={20} />
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+              <TrendingDown size={18} />
             </div>
-            <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full border border-rose-100">
-              Chiết khấu
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Giảm giá trung bình</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Giảm giá trung bình</p>
-            <h3 className="text-3xl font-extrabold text-rose-500 mt-1">{loading ? "..." : `${avgDiscount}%`}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-rose-500">{loading ? "..." : `${avgDiscount}%`}</span>
         </div>
       </div>
 
       {/* Filter and Content Card */}
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
         {/* Tool Filter Bar */}
-        <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/30">
+        <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex flex-wrap items-center gap-4 flex-1">
             {/* Search Box */}
             <div className="relative min-w-[260px] flex-1 max-w-md">
@@ -269,7 +249,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm kiếm combo theo tên, mã..."
-                className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
 
@@ -277,9 +257,9 @@ export const ComboList: React.FC<ComboListProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[150px] cursor-pointer"
+              className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[150px] cursor-pointer"
             >
-              <option value="all">Trạng thái (Tất cả)</option>
+              <option value="all">Tất cả trạng thái</option>
               <option value="active">Đang hoạt động</option>
               <option value="inactive">Tạm ngưng</option>
             </select>
@@ -288,7 +268,7 @@ export const ComboList: React.FC<ComboListProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[170px] cursor-pointer"
+              className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[170px] cursor-pointer"
             >
               <option value="newest">Mới nhất</option>
               <option value="oldest">Cũ nhất</option>
@@ -301,10 +281,10 @@ export const ComboList: React.FC<ComboListProps> = ({
             {(searchTerm || statusFilter !== "all" || sortBy !== "newest") && (
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 text-slate-500 hover:text-primary rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 font-bold text-xs cursor-pointer"
+                className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer animate-in fade-in duration-200"
               >
                 <RotateCcw size={14} />
-                <span>Đặt lại bộ lọc</span>
+                <span>Xóa bộ lọc</span>
               </button>
             )}
           </div>
@@ -480,19 +460,24 @@ export const ComboList: React.FC<ComboListProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Combo</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Mã</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá gốc</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá Combo</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Giảm giá</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                  <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Hành động</th>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                  <th className="px-4 py-4 text-center w-12">STT</th>
+                  <th className="px-8 py-4">Combo</th>
+                  <th className="px-6 py-4">Mã</th>
+                  <th className="px-6 py-4">Giá gốc</th>
+                  <th className="px-6 py-4">Giá Combo</th>
+                  <th className="px-6 py-4 text-center">Giảm giá</th>
+                  <th className="px-6 py-4 text-center">Trạng thái</th>
+                  <th className="px-8 py-4 text-center">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredBundles.map((bundle) => (
-                  <tr key={bundle.bundleID} className="hover:bg-slate-50/30 transition-colors group">
+                {filteredBundles.map((bundle, index) => (
+                  <tr key={bundle.bundleID} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                    {/* STT */}
+                    <td className="px-4 py-4 text-center text-xs font-semibold text-slate-400">
+                      {index + 1}
+                    </td>
                     {/* Item Detail */}
                     <td className="px-8 py-4">
                       <div className="flex items-center gap-4">

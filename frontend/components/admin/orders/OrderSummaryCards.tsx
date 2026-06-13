@@ -27,51 +27,91 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Card 1: Tổng đơn hàng */}
-      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] border border-primary-container/30 hover:shadow-lg transition-all duration-300">
-        <p className="text-label-md text-on-surface-variant font-medium">Tổng đơn hàng</p>
-        <h3 className="text-display-lg font-display-lg text-primary my-2 leading-none">
-          {totalOrders.toLocaleString()}
-        </h3>
-        <div className="flex items-center gap-1 text-secondary text-label-sm font-semibold">
-          <span className="material-symbols-outlined text-[16px]">trending_up</span>
-          <span>+12% so với tháng trước</span>
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+            <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đơn hàng</span>
+            <span className="text-[10px] text-secondary font-semibold flex items-center gap-0.5 mt-0.5">
+              <span className="material-symbols-outlined text-[12px]">trending_up</span>
+              +12% so với tháng trước
+            </span>
+          </div>
         </div>
+        <span className="text-2xl font-extrabold text-slate-800">
+          {totalOrders.toLocaleString()}
+        </span>
       </div>
 
       {/* Card 2: Đang xử lý */}
-      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] border border-secondary-container/30 hover:shadow-lg transition-all duration-300">
-        <p className="text-label-md text-on-surface-variant font-medium">Đang xử lý</p>
-        <h3 className="text-display-lg font-display-lg text-secondary my-2 leading-none">
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">pending_actions</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang xử lý</span>
+            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Cần xử lý ngay</span>
+          </div>
+        </div>
+        <span className="text-2xl font-extrabold text-slate-800">
           {pending.toLocaleString()}
-        </h3>
-        <p className="text-label-sm text-on-surface-variant font-medium">Cần xử lý ngay</p>
+        </span>
       </div>
 
       {/* Card 3: Doanh thu hôm nay */}
-      <div className="bg-surface-container-lowest p-md rounded-lg shadow-[0_10px_20px_rgba(135,78,88,0.08)] hover:shadow-lg transition-all duration-300">
-        <p className="text-label-md text-on-surface-variant font-medium">Doanh thu hôm nay</p>
-        <h3 className="text-display-lg font-display-lg text-on-background my-2 leading-none">
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">payments</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu hôm nay</span>
+            <span className="text-[10px] text-slate-400 font-semibold mt-0.5" title={formatCurrency(todayRevenue)}>
+              {formatCompactRevenue(todayRevenue)} VNĐ
+            </span>
+          </div>
+        </div>
+        <span className="text-2xl font-extrabold text-slate-800">
           {formatCompactRevenue(todayRevenue)}
-        </h3>
-        <p className="text-label-sm text-on-surface-variant font-medium">VNĐ ({formatCurrency(todayRevenue)})</p>
+        </span>
       </div>
 
       {/* Card 4: Đơn hàng bị hủy */}
-      <div className="bg-primary text-on-primary p-md rounded-lg shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all duration-300 min-h-[160px]">
-        <div>
-          <p className="text-label-md opacity-90 font-medium">Đơn hàng bị hủy</p>
-          <h3 className="text-display-lg font-display-lg my-1 leading-none text-white">
-            {cancelledCount.toString().padStart(2, "0")}
-          </h3>
+      <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+        cancelledCount > 0 
+          ? 'bg-rose-50/50 border-rose-100' 
+          : 'bg-white border-slate-100'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            cancelledCount > 0 
+              ? 'bg-rose-100 text-error' 
+              : 'bg-slate-100 text-slate-500'
+          }`}>
+            <span className="material-symbols-outlined text-[20px]">cancel</span>
+          </div>
+          <div className="flex flex-col">
+            <span className={`text-xs font-bold uppercase tracking-wider ${cancelledCount > 0 ? 'text-rose-950/60' : 'text-slate-500'}`}>
+              Đơn bị hủy
+            </span>
+            {onViewRequests && (
+              <button
+                onClick={onViewRequests}
+                className="text-[10px] text-primary hover:underline font-bold text-left mt-0.5 cursor-pointer"
+              >
+                Xem yêu cầu
+              </button>
+            )}
+          </div>
         </div>
-        <button
-          onClick={onViewRequests}
-          className="bg-white/20 hover:bg-white/30 text-white text-label-md py-2 px-4 rounded-full transition-all text-center font-bold active:scale-95 cursor-pointer mt-2"
-        >
-          Xem yêu cầu
-        </button>
+        <span className={`text-2xl font-extrabold ${cancelledCount > 0 ? 'text-error' : 'text-slate-800'}`}>
+          {cancelledCount.toString().padStart(2, "0")}
+        </span>
       </div>
     </div>
   );

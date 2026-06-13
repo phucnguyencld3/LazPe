@@ -1275,7 +1275,7 @@ export default function AdminLoyaltyPage() {
               fetchTiers();
               setShowRevocationModal(true);
             }}
-            className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-102 active:scale-95 transition-all font-bold cursor-pointer"
+            className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">remove_circle</span> Thu hồi Đặc quyền / Điểm
           </button>
@@ -1520,9 +1520,9 @@ export default function AdminLoyaltyPage() {
                       setEditingEarnPolicy(null);
                       setShowEarnModal(true);
                     }}
-                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
+                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm quy tắc
                   </button>
                 </div>
@@ -1593,9 +1593,9 @@ export default function AdminLoyaltyPage() {
                       setEditingRedeemPolicy(null);
                       setShowRedeemModal(true);
                     }}
-                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
+                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm quy tắc
                   </button>
                 </div>
@@ -1678,9 +1678,9 @@ export default function AdminLoyaltyPage() {
                       setEditingTier(null);
                       setShowTierModal(true);
                     }}
-                    className="bg-primary text-on-primary px-md py-sm rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer text-sm"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-base">add_circle</span>
+                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm mới
                   </button>
                 </div>
@@ -2106,14 +2106,14 @@ export default function AdminLoyaltyPage() {
                   <button
                     onClick={handleTriggerBirthdayJob}
                     disabled={triggeringBirthdayJob}
-                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs font-bold cursor-pointer disabled:opacity-50"
+                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">calendar_today</span>
                     {triggeringBirthdayJob ? "Đang chạy Job..." : "Chạy Job sinh nhật hôm nay"}
                   </button>
                   <button
                     onClick={() => setShowManualBirthdayModal(true)}
-                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">card_giftcard</span>
                     Phát quà thủ công

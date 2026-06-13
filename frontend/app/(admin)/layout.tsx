@@ -25,6 +25,7 @@ export default function AdminLayout({
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Synchronize token and isAuth with auth state
   useEffect(() => {
@@ -236,8 +237,32 @@ export default function AdminLayout({
 
   return (
     <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative admin-scaled-layout">
-      {/* Top Navigation Shell */}
-      <header className="sticky top-0 z-40 flex items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
+      {/* Mobile Top Navigation */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="material-symbols-outlined p-2 hover:bg-slate-100 rounded-full cursor-pointer text-slate-700"
+          >
+            menu
+          </button>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Laz<span className="text-rose-500">Pe</span>
+          </h1>
+        </div>
+        <Link href="/admin/profile" className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+            {user?.avatar ? (
+              <img alt="Avatar" className="w-full h-full object-cover" src={user.avatar} />
+            ) : (
+              <span className="material-symbols-outlined text-slate-500 text-sm">person</span>
+            )}
+          </div>
+        </Link>
+      </div>
+
+      {/* Top Navigation Shell (Desktop) */}
+      <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
         <div className="flex items-center gap-sm ml-72">
           {/* Logo shifted to avoid being completely covered by sidebar, if needed. Or just leave it as is if it matches mockup. We'll leave it as in mockup */}
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -351,8 +376,16 @@ export default function AdminLayout({
       </header>
 
       <div className="flex flex-1">
+        {/* Mobile Backdrop */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
         {/* Sidebar Shell */}
-        <aside className="fixed left-0 top-0 h-full w-72 py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 transition-all overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+        <aside className={`fixed left-0 top-0 h-full w-72 py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 transition-transform duration-300 overflow-y-auto sidebar-scroll ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`} style={{ scrollbarWidth: "thin" }}>
           <div className="px-md mb-lg">
             <div className="flex items-center gap-sm mb-xs">
               <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
@@ -372,7 +405,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">dashboard</span>
-                <span className="font-label-md">Tổng quan</span>
+                <span className="text-[14.5px] font-semibold">Tổng quan</span>
               </Link>
             </div>
 
@@ -384,28 +417,28 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">inventory_2</span>
-                <span className="font-label-md">Sản phẩm</span>
+                <span className="text-[14.5px] font-semibold">Sản phẩm</span>
               </Link>
               <Link
                 href="/admin/combo"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">inventory</span>
-                <span className="font-label-md">Combo</span>
+                <span className="text-[14.5px] font-semibold">Combo</span>
               </Link>
               <Link
                 href="/admin/categories"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">category</span>
-                <span className="font-label-md">Danh mục</span>
+                <span className="text-[14.5px] font-semibold">Danh mục</span>
               </Link>
               <Link
                 href="/admin/brands"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">verified</span>
-                <span className="font-label-md">Thương hiệu</span>
+                <span className="text-[14.5px] font-semibold">Thương hiệu</span>
               </Link>
             </div>
 
@@ -417,21 +450,21 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">group</span>
-                <span className="font-label-md">Người dùng</span>
+                <span className="text-[14.5px] font-semibold">Người dùng</span>
               </Link>
               <Link
                 href="/admin/permissions"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-                <span className="font-label-md">Phân quyền</span>
+                <span className="text-[14.5px] font-semibold">Phân quyền</span>
               </Link>
               <Link
                 href="/admin/profile"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">account_circle</span>
-                <span className="font-label-md">Hồ sơ cá nhân</span>
+                <span className="text-[14.5px] font-semibold">Hồ sơ cá nhân</span>
               </Link>
             </div>
 
@@ -443,7 +476,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">shopping_cart</span>
-                <span className="font-label-md">Đơn hàng</span>
+                <span className="text-[14.5px] font-semibold">Đơn hàng</span>
               </Link>
             </div>
 
@@ -455,7 +488,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">chat</span>
-                <span className="font-label-md">Tin nhắn</span>
+                <span className="text-[14.5px] font-semibold">Tin nhắn</span>
               </Link>
             </div>
 
@@ -467,7 +500,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">bar_chart</span>
-                <span className="font-label-md">Thống kê</span>
+                <span className="text-[14.5px] font-semibold">Thống kê</span>
               </Link>
             </div>
 
@@ -479,21 +512,21 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">confirmation_number</span>
-                <span className="font-label-md">Quản lý Voucher</span>
+                <span className="text-[14.5px] font-semibold">Quản lý Voucher</span>
               </Link>
               <Link
                 href="/admin/flash-sales"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">bolt</span>
-                <span className="font-label-md">Quản lý Flash Sale</span>
+                <span className="text-[14.5px] font-semibold">Quản lý Flash Sale</span>
               </Link>
               <Link
                 href="/admin/loyalty"
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">loyalty</span>
-                <span className="font-label-md">Quản lý Loyalty</span>
+                <span className="text-[14.5px] font-semibold">Quản lý Loyalty</span>
               </Link>
             </div>
 
@@ -505,7 +538,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">gavel</span>
-                <span className="font-label-md">Kiểm duyệt đánh giá</span>
+                <span className="text-[14.5px] font-semibold">Kiểm duyệt đánh giá</span>
               </Link>
             </div>
 
@@ -517,7 +550,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
               >
                 <span className="material-symbols-outlined">notifications</span>
-                <span className="font-label-md">Quản lý thông báo</span>
+                <span className="text-[14.5px] font-semibold">Quản lý thông báo</span>
               </Link>
             </div>
           </nav>
@@ -538,7 +571,7 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 ml-72 flex flex-col ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-margin-desktop min-h-0"}`}>
+        <main className={`flex-1 lg:ml-72 flex flex-col ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>

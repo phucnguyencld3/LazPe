@@ -12,50 +12,54 @@ export default function CategoryStats({
   hiddenCount
 }: CategoryStatsProps) {
   return (
-    <div className="mt-lg mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-md">
-      <div className="p-md rounded-xl bg-white shadow-sm border border-slate-100 flex items-center gap-md group hover:-translate-y-1 transition-transform">
-        <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary shrink-0">
-          <span className="material-symbols-outlined text-[24px]">account_tree</span>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
+      {/* Card 1: Total Categories */}
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">account_tree</span>
+          </div>
+          <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng danh mục</span>
         </div>
-        <div>
-          <p className="font-label-sm text-label-sm text-on-surface-variant text-xs text-slate-400 font-semibold">Tổng danh mục</p>
-          <h4 className="font-headline-md text-headline-md text-on-surface text-2xl font-bold text-slate-800">{totalCategories}</h4>
-        </div>
+        <span className="text-2xl font-extrabold text-slate-800">{totalCategories}</span>
       </div>
 
-      <div className="p-md rounded-xl bg-white shadow-sm border border-slate-100 flex items-center gap-md group hover:-translate-y-1 transition-transform">
-        <div className="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
-          <span className="material-symbols-outlined text-[24px]">shopping_bag</span>
+      {/* Card 2: Linked Products */}
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
+          </div>
+          <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm liên kết</span>
         </div>
-        <div>
-          <p className="font-label-sm text-label-sm text-on-surface-variant text-xs text-slate-400 font-semibold">Sản phẩm liên kết</p>
-          <h4 className="font-headline-md text-headline-md text-on-surface text-2xl font-bold text-slate-800">
-            {totalProducts.toLocaleString()}
-          </h4>
-        </div>
+        <span className="text-2xl font-extrabold text-slate-800">{totalProducts.toLocaleString()}</span>
       </div>
 
-      <div className="p-md rounded-xl bg-white shadow-sm border border-slate-100 flex items-center gap-md group hover:-translate-y-1 transition-transform">
-        <div className="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary shrink-0">
-          <span className="material-symbols-outlined text-[24px]">visibility</span>
+      {/* Card 3: Hidden/Empty Categories */}
+      <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+        hiddenCount > 0 
+          ? 'bg-rose-50/50 border-rose-100' 
+          : 'bg-white border-slate-100'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            hiddenCount > 0 
+              ? 'bg-rose-100 text-error' 
+              : 'bg-slate-100 text-slate-500'
+          }`}>
+            <span className="material-symbols-outlined text-[20px]">warning</span>
+          </div>
+          <span className={`text-xs font-bold uppercase tracking-wider ${hiddenCount > 0 ? 'text-rose-950/60' : 'text-slate-500'}`}>
+            Danh mục ẩn/trống
+          </span>
         </div>
-        <div>
-          <p className="font-label-sm text-label-sm text-on-surface-variant text-xs text-slate-400 font-semibold">Lượt xem danh mục</p>
-          <h4 className="font-headline-md text-headline-md text-on-surface text-2xl font-bold text-slate-800">
-            {totalCategories > 0 ? (totalCategories * 365 + 1240).toLocaleString() + "+" : 0}
-          </h4>
-        </div>
-      </div>
-
-      <div className="p-md rounded-xl bg-white shadow-sm border border-slate-100 flex items-center gap-md group hover:-translate-y-1 transition-transform">
-        <div className="w-12 h-12 rounded-full bg-outline-variant flex items-center justify-center text-on-surface-variant shrink-0">
-          <span className="material-symbols-outlined text-[24px]">warning</span>
-        </div>
-        <div>
-          <p className="font-label-sm text-label-sm text-on-surface-variant text-xs text-slate-400 font-semibold">Danh mục ẩn/trống</p>
-          <h4 className="font-headline-md text-headline-md text-on-surface text-2xl font-bold text-slate-800">
-            {hiddenCount}
-          </h4>
+        <div className="flex items-center gap-2">
+          {hiddenCount > 0 && (
+            <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-full">
+              Lưu ý
+            </span>
+          )}
+          <span className={`text-2xl font-extrabold ${hiddenCount > 0 ? 'text-error' : 'text-slate-800'}`}>{hiddenCount}</span>
         </div>
       </div>
     </div>

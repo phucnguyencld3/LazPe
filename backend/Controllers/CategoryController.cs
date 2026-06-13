@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -44,7 +44,8 @@ namespace PolyBabyAPI.Controllers
                     SortOrder = c.SortOrder,
                     Status = c.Status,
                     CreatedAt = c.CreatedAt,
-                    CreatedBy = c.CreatedBy
+                    CreatedBy = c.CreatedBy,
+                    ProductCount = c.Products?.Count ?? 0
                 }).ToList();
 
                 return Ok(new
@@ -158,7 +159,8 @@ namespace PolyBabyAPI.Controllers
                     SortOrder = category.SortOrder,
                     Status = category.Status,
                     CreatedAt = category.CreatedAt,
-                    CreatedBy = category.CreatedBy
+                    CreatedBy = category.CreatedBy,
+                    ProductCount = category.Products?.Count ?? 0
                 };
 
                 return Ok(new

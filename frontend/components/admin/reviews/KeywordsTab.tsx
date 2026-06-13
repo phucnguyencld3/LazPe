@@ -187,21 +187,25 @@ export const KeywordsTab: React.FC<KeywordsTabProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                <th className="py-4 px-6">ID</th>
-                <th className="py-4 px-6">Từ khóa</th>
-                <th className="py-4 px-6">Mức độ</th>
-                <th className="py-4 px-6">Phân loại</th>
-                <th className="py-4 px-6">Ngày tạo</th>
-                <th className="py-4 px-6 text-right">Thao tác</th>
+              <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                <th className="px-6 py-4 text-center w-[80px]">STT</th>
+                <th className="px-6 py-4">ID</th>
+                <th className="px-6 py-4">Từ khóa</th>
+                <th className="px-6 py-4">Mức độ</th>
+                <th className="px-6 py-4">Phân loại</th>
+                <th className="px-6 py-4">Ngày tạo</th>
+                <th className="px-6 py-4 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm text-slate-605 font-semibold">
               {keywords
                 .filter((k) => k.word.toLowerCase().includes(keywordSearch.toLowerCase()))
-                .map((k) => (
-                  <tr key={k.keywordID} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-4 px-6 text-slate-400">#{k.keywordID}</td>
+                .map((k, index) => (
+                  <tr key={k.keywordID} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                    <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-slate-400">#{k.keywordID}</td>
                     <td className="py-4 px-6 font-extrabold text-slate-800">{k.word}</td>
                     <td className="py-4 px-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold border ${

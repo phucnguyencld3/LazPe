@@ -35,18 +35,21 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
 
   const getTabClass = (isActive: boolean, isError: boolean = false) => {
     if (isActive) {
-      return "px-6 py-2 bg-primary text-on-primary rounded-full font-bold transition-all whitespace-nowrap cursor-pointer shadow-sm active:scale-95 duration-200";
+      if (isError) {
+        return "px-5 py-2.5 bg-rose-600 text-white rounded-2xl font-bold text-xs shadow-md shadow-rose-600/20 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
+      }
+      return "px-5 py-2.5 bg-primary text-on-primary rounded-2xl font-bold text-xs shadow-md shadow-primary/20 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
     }
     if (isError) {
-      return "px-6 py-2 bg-surface hover:bg-red-50 text-error rounded-full font-label-md transition-all whitespace-nowrap border border-outline-variant/30 cursor-pointer active:scale-95 duration-200";
+      return "px-5 py-2.5 bg-slate-50 hover:bg-rose-50 hover:text-error text-slate-600 rounded-2xl font-bold text-xs border border-slate-200 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
     }
-    return "px-6 py-2 bg-surface hover:bg-primary-container/20 text-on-surface rounded-full font-label-md transition-all whitespace-nowrap border border-outline-variant/30 cursor-pointer active:scale-95 duration-200";
+    return "px-5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs border border-slate-200 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
   };
 
   return (
-    <div className="bg-surface-container-lowest p-md rounded-lg shadow-sm border border-outline-variant/20 space-y-md">
+    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
       {/* Status Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setStatusFilter(null)}
           className={getTabClass(statusFilter === null)}
@@ -86,64 +89,71 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-end gap-md">
+      <div className="p-6 flex flex-wrap items-center gap-4 bg-slate-50/50">
         {/* Search */}
-        <div className="flex-1 min-w-[280px] space-y-1">
-          <label className="text-label-sm text-on-surface-variant ml-2 block">Tìm kiếm</label>
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">
-              search
-            </span>
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-14 pl-12 pr-4 bg-surface rounded-full border-2 border-transparent focus:border-primary focus:ring-0 transition-all text-body-md outline-none"
-              placeholder="Mã đơn hàng, tên khách hàng..."
-              type="text"
-            />
-          </div>
+        <div className="flex-1 min-w-[260px] relative">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            search
+          </span>
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            placeholder="Mã đơn hàng, tên khách hàng..."
+            type="text"
+          />
         </div>
 
         {/* Date Range */}
-        <div className="w-64 space-y-1">
-          <label className="text-label-sm text-on-surface-variant ml-2 block">Khoảng thời gian</label>
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">
-              calendar_today
-            </span>
-            <input
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full h-14 pl-12 pr-4 bg-surface rounded-full border-2 border-transparent focus:border-primary focus:ring-0 transition-all text-body-md outline-none"
-              placeholder="01/10/2023 - 31/10/2023"
-              type="text"
-            />
-          </div>
+        <div className="relative min-w-[200px]">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            calendar_today
+          </span>
+          <input
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            placeholder="Khoảng thời gian..."
+            type="text"
+          />
         </div>
 
         {/* Price Value */}
-        <div className="w-48 space-y-1">
-          <label className="text-label-sm text-on-surface-variant ml-2 block">Giá trị đơn</label>
-          <select
-            value={orderValue}
-            onChange={(e) => setOrderValue(e.target.value)}
-            className="w-full h-14 px-6 bg-surface rounded-full border-2 border-transparent focus:border-primary focus:ring-0 transition-all text-body-md appearance-none outline-none cursor-pointer"
-          >
-            <option>Mọi mức giá</option>
-            <option>Dưới 500k</option>
-            <option>500k - 2M</option>
-            <option>Trên 2M</option>
-          </select>
-        </div>
+        <select
+          value={orderValue}
+          onChange={(e) => setOrderValue(e.target.value)}
+          className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+        >
+          <option>Mọi mức giá</option>
+          <option>Dưới 500k</option>
+          <option>500k - 2M</option>
+          <option>Trên 2M</option>
+        </select>
 
         {/* Filter Action Button */}
         <button
           onClick={handleFilterClick}
-          className="h-14 px-8 bg-secondary hover:bg-secondary/90 text-on-secondary rounded-full font-bold shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+          className="px-5 py-3 bg-primary text-on-primary rounded-2xl font-bold text-sm shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
         >
-          <span className="material-symbols-outlined">filter_list</span>
+          <span className="material-symbols-outlined text-[18px]">filter_list</span>
           Lọc dữ liệu
         </button>
+
+        {/* Reset Filters button */}
+        {(searchTerm || dateRange || orderValue !== "Mọi mức giá" || statusFilter !== null) && (
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setDateRange("");
+              setOrderValue("Mọi mức giá");
+              setStatusFilter(null);
+            }}
+            className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">clear</span>
+            Xóa bộ lọc
+          </button>
+        )}
       </div>
     </div>
   );
