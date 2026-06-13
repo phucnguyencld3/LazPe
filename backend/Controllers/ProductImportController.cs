@@ -38,26 +38,28 @@ namespace PolyBabyAPI.Controllers
             productsSheet.Cell(1, 1).Value = "ProductCode";
             productsSheet.Cell(1, 2).Value = "ProductName";
             productsSheet.Cell(1, 3).Value = "Description";
-            productsSheet.Cell(1, 4).Value = "CategoryName";
-            productsSheet.Cell(1, 5).Value = "SupplierName";
-            productsSheet.Cell(1, 6).Value = "BasePrice";
-            productsSheet.Cell(1, 7).Value = "Status";
-            productsSheet.Cell(1, 8).Value = "Option1Name";
-            productsSheet.Cell(1, 9).Value = "Option1Values";
-            productsSheet.Cell(1, 10).Value = "Option2Name";
-            productsSheet.Cell(1, 11).Value = "Option2Values";
+            productsSheet.Cell(1, 4).Value = "Specifications";
+            productsSheet.Cell(1, 5).Value = "CategoryName";
+            productsSheet.Cell(1, 6).Value = "SupplierName";
+            productsSheet.Cell(1, 7).Value = "BasePrice";
+            productsSheet.Cell(1, 8).Value = "Status";
+            productsSheet.Cell(1, 9).Value = "Option1Name";
+            productsSheet.Cell(1, 10).Value = "Option1Values";
+            productsSheet.Cell(1, 11).Value = "Option2Name";
+            productsSheet.Cell(1, 12).Value = "Option2Values";
 
             productsSheet.Cell(2, 1).Value = "SP-AO-001";
             productsSheet.Cell(2, 2).Value = "Áo body bé trai";
             productsSheet.Cell(2, 3).Value = "Chất liệu cotton mềm mại";
-            productsSheet.Cell(2, 4).Value = "Quần áo bé trai";
-            productsSheet.Cell(2, 5).Value = "LazPe";
-            productsSheet.Cell(2, 6).Value = "150000";
-            productsSheet.Cell(2, 7).Value = "true";
-            productsSheet.Cell(2, 8).Value = "Màu sắc";
-            productsSheet.Cell(2, 9).Value = "Xanh, Đỏ";
-            productsSheet.Cell(2, 10).Value = "Kích cỡ";
-            productsSheet.Cell(2, 11).Value = "S, M, L";
+            productsSheet.Cell(2, 4).Value = "Chất liệu: Cotton 100% | Xuất xứ: Việt Nam | Độ tuổi: 1-3 tuổi";
+            productsSheet.Cell(2, 5).Value = "Quần áo bé trai";
+            productsSheet.Cell(2, 6).Value = "LazPe";
+            productsSheet.Cell(2, 7).Value = "150000";
+            productsSheet.Cell(2, 8).Value = "true";
+            productsSheet.Cell(2, 9).Value = "Màu sắc";
+            productsSheet.Cell(2, 10).Value = "Xanh, Đỏ";
+            productsSheet.Cell(2, 11).Value = "Kích cỡ";
+            productsSheet.Cell(2, 12).Value = "S, M, L";
 
             var variantsSheet = workbook.Worksheets.Add("Variants");
             variantsSheet.Cell(1, 1).Value = "ProductCode";
@@ -122,14 +124,15 @@ namespace PolyBabyAPI.Controllers
                         ProductCode = code,
                         ProductName = row.Cell(2).GetString().Trim(),
                         Description = row.Cell(3).GetString().Trim(),
-                        CategoryName = row.Cell(4).GetString().Trim(),
-                        SupplierName = row.Cell(5).GetString().Trim(),
-                        BasePrice = decimal.TryParse(row.Cell(6).GetString(), out var bp) ? bp : 0,
-                        Status = row.Cell(7).GetString().Trim(),
-                        Option1Name = row.Cell(8).GetString().Trim(),
-                        Option1Values = row.Cell(9).GetString().Trim(),
-                        Option2Name = row.Cell(10).GetString().Trim(),
-                        Option2Values = row.Cell(11).GetString().Trim()
+                        Specifications = row.Cell(4).GetString().Trim(),
+                        CategoryName = row.Cell(5).GetString().Trim(),
+                        SupplierName = row.Cell(6).GetString().Trim(),
+                        BasePrice = decimal.TryParse(row.Cell(7).GetString(), out var bp) ? bp : 0,
+                        Status = row.Cell(8).GetString().Trim(),
+                        Option1Name = row.Cell(9).GetString().Trim(),
+                        Option1Values = row.Cell(10).GetString().Trim(),
+                        Option2Name = row.Cell(11).GetString().Trim(),
+                        Option2Values = row.Cell(12).GetString().Trim()
                     };
 
                     if (string.IsNullOrEmpty(pDto.ProductName))
@@ -335,6 +338,7 @@ namespace PolyBabyAPI.Controllers
 
                         prod.ProductName = pDto.ProductName;
                         prod.Description = string.IsNullOrEmpty(pDto.Description) ? prod.Description : pDto.Description;
+                        prod.Specifications = string.IsNullOrEmpty(pDto.Specifications) ? prod.Specifications : ParseSpecificationsToJson(pDto.Specifications);
                         prod.CategoryID  = resolvedCategoryId;
                         prod.SupplierID  = resolvedSupplierId > 0 ? resolvedSupplierId : prod.SupplierID;
                         prod.Price       = pDto.BasePrice;
@@ -347,6 +351,7 @@ namespace PolyBabyAPI.Controllers
                             Code        = finalCode,
                             ProductName = pDto.ProductName,
                             Description = string.IsNullOrEmpty(pDto.Description) ? "Nhập từ Excel" : pDto.Description,
+                            Specifications = ParseSpecificationsToJson(pDto.Specifications),
                             CategoryID  = resolvedCategoryId,
                             SupplierID  = resolvedSupplierId > 0 ? resolvedSupplierId : allSuppliers.Values.FirstOrDefault(),
                             Price       = pDto.BasePrice,
@@ -492,6 +497,36 @@ namespace PolyBabyAPI.Controllers
                     : "Vui lòng kiểm tra lại dữ liệu và thử lại.";
                 return StatusCode(500, $"Có lỗi xảy ra khi lưu dữ liệu: {detail}");
             }
+        }
+        private string ParseSpecificationsToJson(string specRaw)
+        {
+            if (string.IsNullOrWhiteSpace(specRaw)) return "{}";
+
+            var specsDict = new Dictionary<string, string>();
+            var parts = specRaw.Split('|', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in parts)
+            {
+                var kv = part.Split(':', 2);
+                if (kv.Length == 2)
+                {
+                    var key = kv[0].Trim();
+                    var val = kv[1].Trim();
+                    if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(val))
+                    {
+                        specsDict[key] = val;
+                    }
+                }
+                else if (kv.Length == 1)
+                {
+                    var key = kv[0].Trim();
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        specsDict[key] = "";
+                    }
+                }
+            }
+
+            return System.Text.Json.JsonSerializer.Serialize(specsDict);
         }
     }
 }

@@ -278,8 +278,11 @@ export default function ProductDetailPage() {
 
     try {
       const cleaned = product.specifications.trim();
-      if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+      if ((cleaned.startsWith("{") && cleaned.endsWith("}")) || (cleaned.startsWith("[") && cleaned.endsWith("]"))) {
         const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => [item.key || "", item.value || ""] as [string, any]);
+        }
         if (parsed && typeof parsed === "object") {
           return Object.entries(parsed);
         }

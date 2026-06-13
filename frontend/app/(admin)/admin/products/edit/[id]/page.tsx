@@ -92,7 +92,12 @@ export default function EditProductPage() {
       if (productData.specifications) {
         try {
           const parsed = JSON.parse(productData.specifications);
-          if (parsed && typeof parsed === "object") {
+          if (Array.isArray(parsed)) {
+            parsedSpecsList = parsed.map((item: any) => ({
+              key: String(item.key || ""),
+              value: String(item.value || "")
+            }));
+          } else if (parsed && typeof parsed === "object") {
             parsedSpecsList = Object.entries(parsed).map(([key, value]) => ({
               key,
               value: String(value)

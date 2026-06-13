@@ -29,6 +29,9 @@ export default function AdminProductDetailPage() {
     if (!product || !product.specifications) return [];
     try {
       const parsed = JSON.parse(product.specifications);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item: any) => [item.key || "", item.value || ""]);
+      }
       if (parsed && typeof parsed === "object") {
         return Object.entries(parsed);
       }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/lib/toast";
 import { 
     fetchCategoriesForSelect, 
@@ -11,9 +11,90 @@ interface ImportResolutionModalProps {
     previewData: any;
     onClose: () => void;
     onCommit: (data: any) => void;
+    onUpdatePreviewData: (data: any) => void;
 }
 
-export default function ImportResolutionModal({ previewData, onClose, onCommit }: ImportResolutionModalProps) {
+interface SearchableSelectProps {
+    value: string;
+    onChange: (val: string) => void;
+    options: string[];
+    placeholder: string;
+}
+
+function SearchableSelect({ value, onChange, options, placeholder }: SearchableSelectProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const filtered = options.filter(opt => 
+        (opt || "").toLowerCase().includes(search.toLowerCase())
+    );
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        setSearch(value || "");
+    }, [value]);
+
+    return (
+        <div ref={containerRef} className="relative w-full">
+            <div className="flex items-center border border-slate-300 rounded-lg bg-white px-2 py-1.5 text-xs focus-within:ring-1 focus-within:ring-primary focus-within:border-primary">
+                <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        onChange(e.target.value);
+                        setIsOpen(true);
+                    }}
+                    onFocus={() => setIsOpen(true)}
+                    placeholder={placeholder}
+                    className="w-full focus:outline-none bg-transparent text-slate-800"
+                />
+                <span 
+                    className="material-symbols-outlined text-sm text-slate-400 cursor-pointer select-none"
+                    onClick={() => setIsOpen(!isOpen)}
+                >
+                    {isOpen ? "arrow_drop_up" : "arrow_drop_down"}
+                </span>
+            </div>
+            
+            {isOpen && (
+                <ul className="absolute z-50 left-0 right-0 bottom-full mb-1 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg text-xs">
+                    {filtered.length > 0 ? (
+                        filtered.map((opt, idx) => (
+                            <li
+                                key={idx}
+                                onClick={() => {
+                                    onChange(opt);
+                                    setSearch(opt);
+                                    setIsOpen(false);
+                                }}
+                                className={`px-3 py-2 cursor-pointer hover:bg-slate-100 text-slate-800 transition-colors ${
+                                    opt === value ? "bg-slate-50 font-bold" : ""
+                                }`}
+                            >
+                                {opt}
+                            </li>
+                        ))
+                    ) : (
+                        <li className="px-3 py-2 text-slate-400 italic">Không tìm thấy kết quả</li>
+                    )}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+export default function ImportResolutionModal({ previewData, onClose, onCommit, onUpdatePreviewData }: ImportResolutionModalProps) {
     const [products, setProducts] = useState<any[]>(previewData.products || []);
     const [variants, setVariants] = useState<any[]>(previewData.variants || []);
     const [errors, setErrors] = useState<any[]>(previewData.errors || []);
@@ -51,6 +132,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
             case "CategoryName": return "categoryName";
             case "SupplierName": return "supplierName";
             case "BasePrice": return "basePrice";
+            case "Specifications": return "specifications";
             case "SKU": return "sku";
             case "Price": return "price";
             case "Stock": return "stock";
@@ -65,6 +147,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
             case "CategoryName": return "Tên danh mục";
             case "SupplierName": return "Tên nhà cung cấp";
             case "BasePrice": return "Giá cơ bản";
+            case "Specifications": return "Thông số kỹ thuật";
             case "SKU": return "Mã SKU";
             case "Price": return "Giá bán";
             case "Stock": return "Tồn kho";
@@ -200,6 +283,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
         });
 
         setErrors(newErrors);
+        return newErrors;
     };
 
     const startEditing = (idx: number, currentVal: any) => {
@@ -245,12 +329,24 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
         setEditValue("");
 
         // Run validation immediately
-        revalidateData(updatedProducts, updatedVariants);
+        const newErrors = revalidateData(updatedProducts, updatedVariants);
         toast.success("Đã cập nhật dữ liệu.");
+
+        onUpdatePreviewData({
+            ...previewData,
+            products: updatedProducts,
+            variants: updatedVariants,
+            errors: newErrors
+        });
     };
 
     const handleActionChange = (itemCode: string, action: string) => {
-        setDuplicates(prev => prev.map(d => d.itemCode === itemCode ? { ...d, resolvingAction: action } : d));
+        const updatedDuplicates = duplicates.map(d => d.itemCode === itemCode ? { ...d, resolvingAction: action } : d);
+        setDuplicates(updatedDuplicates);
+        onUpdatePreviewData({
+            ...previewData,
+            duplicates: updatedDuplicates
+        });
     };
 
     const toggleSelection = (itemCode: string) => {
@@ -273,9 +369,14 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
             toast.error("Vui lòng chọn ít nhất 1 mục");
             return;
         }
-        setDuplicates(prev => prev.map(d => selectedItems.has(d.itemCode) ? { ...d, resolvingAction: action } : d));
+        const updatedDuplicates = duplicates.map(d => selectedItems.has(d.itemCode) ? { ...d, resolvingAction: action } : d);
+        setDuplicates(updatedDuplicates);
         toast.success(`Đã áp dụng hành động cho ${selectedItems.size} mục.`);
         setSelectedItems(new Set());
+        onUpdatePreviewData({
+            ...previewData,
+            duplicates: updatedDuplicates
+        });
     };
 
     const handleCommit = () => {
@@ -311,7 +412,7 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                 <span className="material-symbols-outlined">error</span>
                                 Dữ liệu lỗi (Nhấp đúp hoặc bấm Sửa để chỉnh sửa trực tiếp)
                             </h3>
-                            <div className="border border-rose-200 rounded-2xl overflow-hidden shadow-sm">
+                            <div className="border border-rose-200 rounded-2xl overflow-visible shadow-sm">
                                 <table className="w-full text-left bg-rose-50/30 table-fixed">
                                     <thead className="bg-rose-100 text-rose-800 text-sm">
                                         <tr>
@@ -338,30 +439,22 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit }
                                                     <td className="p-3 font-bold text-slate-600">{err.sheet}</td>
                                                     <td className="p-3 text-slate-500">{err.row}</td>
                                                     <td className="p-3 text-rose-600 font-medium">{getFieldLabel(err.field)}</td>
-                                                    <td className="p-3 overflow-hidden text-ellipsis whitespace-nowrap">
+                                                    <td className={`p-3 ${isEditing ? "overflow-visible" : "overflow-hidden text-ellipsis whitespace-nowrap"}`}>
                                                         {isEditing ? (
                                                             err.field === "CategoryName" ? (
-                                                                <select 
+                                                                <SearchableSelect 
                                                                     value={editValue} 
-                                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                                    className="w-full rounded-lg border border-slate-300 p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary bg-white text-slate-800"
-                                                                >
-                                                                    <option value="">-- Chọn danh mục --</option>
-                                                                    {allCategories.map(c => (
-                                                                        <option key={c.categoryID} value={c.categoryName}>{c.categoryName}</option>
-                                                                    ))}
-                                                                </select>
+                                                                    onChange={(val) => setEditValue(val)}
+                                                                    options={allCategories.map(c => c.categoryName)}
+                                                                    placeholder="Tìm hoặc chọn danh mục..."
+                                                                />
                                                             ) : err.field === "SupplierName" ? (
-                                                                <select 
+                                                                <SearchableSelect 
                                                                     value={editValue} 
-                                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                                    className="w-full rounded-lg border border-slate-300 p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary bg-white text-slate-800"
-                                                                >
-                                                                    <option value="">-- Chọn nhà cung cấp --</option>
-                                                                    {allSuppliers.map(s => (
-                                                                        <option key={s.supplierID} value={s.supplierName}>{s.supplierName}</option>
-                                                                    ))}
-                                                                </select>
+                                                                    onChange={(val) => setEditValue(val)}
+                                                                    options={allSuppliers.map(s => s.supplierName)}
+                                                                    placeholder="Tìm hoặc chọn nhà cung cấp..."
+                                                                />
                                                             ) : (
                                                                 <input 
                                                                     type="text" 

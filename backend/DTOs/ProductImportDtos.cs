@@ -16,6 +16,7 @@ namespace PolyBabyAPI.DTOs
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string Specifications { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
         public int CategoryId { get; set; }
         public string SupplierName { get; set; } = string.Empty;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import ImportResolutionModal from "@/components/admin/products/ImportResolutionModal";
@@ -18,6 +18,27 @@ export default function ImportPage() {
     const [showResolutionModal, setShowResolutionModal] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Load draft from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem("lazpe_import_draft");
+        if (saved) {
+            try {
+                setPreviewData(JSON.parse(saved));
+            } catch (e) {
+                console.error("Lỗi khi đọc bản nháp import:", e);
+            }
+        }
+    }, []);
+
+    // Save draft to localStorage whenever previewData changes
+    useEffect(() => {
+        if (previewData) {
+            localStorage.setItem("lazpe_import_draft", JSON.stringify(previewData));
+        } else {
+            localStorage.removeItem("lazpe_import_draft");
+        }
+    }, [previewData]);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -143,6 +164,7 @@ export default function ImportPage() {
 
             if (res.ok) {
                 toast.success("Import thành công!");
+                localStorage.removeItem("lazpe_import_draft");
                 router.push("/admin/products");
             } else {
                 const text = await res.text();
@@ -167,6 +189,13 @@ export default function ImportPage() {
                     </button>
                     <h1 className="font-headline-md text-headline-md text-primary font-bold">Import Sản Phẩm</h1>
                 </div>
+                <button
+                    onClick={downloadTemplate}
+                    className="flex items-center gap-2 border border-primary text-primary px-5 py-2.5 rounded-full font-bold hover:bg-primary/5 transition-all text-sm shadow-sm"
+                >
+                    <span className="material-symbols-outlined text-base">download</span>
+                    Tải File Excel Mẫu
+                </button>
             </header>
 
             {!previewData && (
@@ -235,6 +264,7 @@ export default function ImportPage() {
                                         <>
                                             <th className="p-4">Mã SP</th>
                                             <th className="p-4">Tên SP</th>
+                                            <th className="p-4">Thông số KT</th>
                                             <th className="p-4">Danh mục</th>
                                             <th className="p-4">Nhà cung cấp</th>
                                             <th className="p-4">Giá cơ bản</th>
@@ -264,6 +294,7 @@ export default function ImportPage() {
                                                 <>
                                                     <td className="p-4 font-bold">{item.productCode}</td>
                                                     <td className="p-4">{item.productName}</td>
+                                                    <td className="p-4 text-xs text-slate-500 max-w-[200px] truncate" title={item.specifications}>{item.specifications}</td>
                                                     <td className="p-4">{item.categoryName}</td>
                                                     <td className="p-4">{item.supplierName}</td>
                                                     <td className="p-4">{item.basePrice}</td>
@@ -316,6 +347,7 @@ export default function ImportPage() {
                     previewData={previewData} 
                     onClose={() => setShowResolutionModal(false)}
                     onCommit={commitData}
+                    onUpdatePreviewData={(updatedData) => setPreviewData(updatedData)}
                 />
             )}
         </main>
