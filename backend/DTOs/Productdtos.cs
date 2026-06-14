@@ -143,7 +143,6 @@ namespace PolyBabyAPI.DTOs
         [StringLength(200, ErrorMessage = "Tên không được vượt quá 200 ký tự")]
         public string ProductName { get; set; } = string.Empty;
 
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
 
         public string? Specifications { get; set; }
@@ -178,7 +177,6 @@ namespace PolyBabyAPI.DTOs
         [StringLength(200, ErrorMessage = "Tên không được vượt quá 200 ký tự")]
         public string ProductName { get; set; } = string.Empty;
 
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
 
         public string? Specifications { get; set; }
