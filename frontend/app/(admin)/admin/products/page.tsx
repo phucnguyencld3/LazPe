@@ -40,6 +40,7 @@ export default function AdminProductsPage() {
   // Deletion Modal states
   const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Load select list categories & stats once
   const loadInitialData = async (token: string) => {
@@ -140,6 +141,7 @@ export default function AdminProductsPage() {
   // Trigger custom confirmation modal
   const handleDeleteClick = (id: number, name: string) => {
     setProductToDelete({ id, name });
+    setDeleteConfirmText("");
   };
 
   // Perform actual deletion
@@ -436,7 +438,9 @@ export default function AdminProductsPage() {
                       
                       <td className="px-6 py-5">
                         <div className="font-bold text-slate-800 text-sm">
-                          {formatCurrency(product.price)}
+                          {product.variantCount > 0 && product.minPrice !== product.maxPrice
+                            ? `${formatCurrency(product.minPrice)} - ${formatCurrency(product.maxPrice)}`
+                            : formatCurrency(product.variantCount > 0 && product.minPrice > 0 ? product.minPrice : product.price)}
                         </div>
                         {product.productDiscountPercent > 0 && (
                           <div className="text-[10px] font-bold text-red-500 mt-0.5">
@@ -552,9 +556,22 @@ export default function AdminProductsPage() {
             
             {/* Body */}
             <div className="p-6">
-              <p className="text-slate-600 text-sm leading-relaxed mb-6">
+              <p className="text-slate-600 text-sm leading-relaxed mb-4">
                 Bạn có chắc chắn muốn xóa sản phẩm <strong className="text-slate-800">"{productToDelete.name}"</strong> không? Hành động này không thể hoàn tác và sẽ xóa toàn bộ các biến thể liên quan nếu sản phẩm chưa phát sinh đơn hàng.
               </p>
+              
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Vui lòng nhập <span className="text-error">tôi đồng ý xóa</span> để xác nhận:
+                </label>
+                <input 
+                  type="text" 
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="tôi đồng ý xóa"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
+                />
+              </div>
               
               <div className="flex justify-end gap-3">
                 <button
@@ -566,8 +583,8 @@ export default function AdminProductsPage() {
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  disabled={deletingId !== null}
+                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={deletingId !== null || deleteConfirmText.trim().toLowerCase() !== "tôi đồng ý xóa"}
                 >
                   {deletingId !== null ? (
                     <>

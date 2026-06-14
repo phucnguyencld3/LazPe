@@ -24,6 +24,7 @@ export default function AdminProductDetailPage() {
   // Deletion Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const mainImageUrl = useMemo(() => {
     if (!product) return null;
@@ -115,6 +116,7 @@ export default function AdminProductDetailPage() {
   // Trigger custom confirmation modal
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
+    setDeleteConfirmText("");
   };
 
   // Perform actual deletion
@@ -595,9 +597,22 @@ export default function AdminProductDetailPage() {
             
             {/* Body */}
             <div className="p-6">
-              <p className="text-slate-600 text-sm leading-relaxed mb-6">
+              <p className="text-slate-600 text-sm leading-relaxed mb-4">
                 Bạn có chắc chắn muốn xóa sản phẩm <strong className="text-slate-800">"{product.productName}"</strong> không? Hành động này không thể hoàn tác và sẽ xóa toàn bộ các biến thể liên quan nếu sản phẩm chưa phát sinh đơn hàng.
               </p>
+              
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Vui lòng nhập <span className="text-error">tôi đồng ý xóa</span> để xác nhận:
+                </label>
+                <input 
+                  type="text" 
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="tôi đồng ý xóa"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
+                />
+              </div>
               
               <div className="flex justify-end gap-3">
                 <button
@@ -609,8 +624,8 @@ export default function AdminProductDetailPage() {
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  disabled={deleting}
+                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={deleting || deleteConfirmText.trim().toLowerCase() !== "tôi đồng ý xóa"}
                 >
                   {deleting ? (
                     <>

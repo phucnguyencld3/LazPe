@@ -447,7 +447,7 @@ const handleUploadProductImage = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5169/api";
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
     const res = await fetch(`${API_BASE_URL}/Upload/image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
