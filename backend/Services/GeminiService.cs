@@ -266,6 +266,7 @@ namespace PolyBabyAPI.Services
                         var productsQuery = dbContext.Products
                             .Include(p => p.Category)
                             .Include(p => p.Variants) // Load Variants để lấy ID
+                            .Include(p => p.Images)   // Load Images để fallback ảnh sản phẩm
                             .AsQueryable();
 
                         if (!string.IsNullOrEmpty(keyword))
@@ -296,13 +297,29 @@ namespace PolyBabyAPI.Services
                                 Description = p.Description != null && p.Description.Length > 200 ? p.Description.Substring(0, 200) + "..." : p.Description,
                                 p.Price,
                                 Stock = p.Stock,
+                                // Ưu tiên ảnh sản phẩm gốc trước, nếu không có thì dùng ảnh biến thể
+                                ImageUrl = p.Images
+                                    .OrderBy(i => i.DisplayOrder)
+                                    .Select(i => i.ImageUrl)
+                                    .FirstOrDefault()
+                                    ?? p.Variants
+                                        .Where(v => v.ImageUrl != null && v.ImageUrl != "")
+                                        .OrderBy(v => v.VariantID)
+                                        .Select(v => v.ImageUrl)
+                                        .FirstOrDefault(),
                                 Variants = p.Variants.Where(v => v.Stock > 0 && v.Status).Select(v => new
                                 {
                                     v.VariantID,
                                     v.VariantName,
                                     v.UnitPrice,
                                     v.Stock,
-                                    v.ImageUrl
+                                    // Nếu biến thể không có ảnh, fallback về ảnh sản phẩm gốc
+                                    ImageUrl = (v.ImageUrl != null && v.ImageUrl != "")
+                                        ? v.ImageUrl
+                                        : p.Images
+                                            .OrderBy(i => i.DisplayOrder)
+                                            .Select(i => i.ImageUrl)
+                                            .FirstOrDefault()
                                 }).ToList()
                             })
                             .Take(20) // Trả về tối đa 20 sản phẩm để AI có đủ dữ liệu tự chọn lọc

@@ -1000,7 +1000,13 @@ namespace PolyBabyAPI.Services
         {
             var totalProducts = await _context.Products.CountAsync();
             var activeProducts = await _context.Products.CountAsync(p => p.Status);
-            var outOfStockProducts = await _context.Products.CountAsync(p => p.Stock == 0);
+            // S\u1ea3n ph\u1ea9m \u0111\u01b0\u1ee3c coi l\u00e0 h\u1ebft h\u00e0ng khi:
+            // - Kh\u00f4ng c\u00f3 bi\u1ebfn th\u1ec3: Stock g\u1ed1c == 0
+            // - C\u00f3 bi\u1ebfn th\u1ec3: T\u1ed5ng t\u1ed3n kho bi\u1ebfn th\u1ec3 == 0
+            var outOfStockProducts = await _context.Products
+                .CountAsync(p => p.Variants.Any()
+                    ? p.Variants.Sum(v => v.Stock) == 0
+                    : p.Stock == 0);
             
             var oneWeekAgo = DateTime.Now.AddDays(-7);
             var newProducts = await _context.Products.CountAsync(p => p.CreatedAt >= oneWeekAgo);

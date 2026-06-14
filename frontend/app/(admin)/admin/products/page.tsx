@@ -88,9 +88,11 @@ export default function AdminProductsPage() {
 
       // Client-side fallback filter for Out of Stock if selected
       if (selectedStatus === "outOfStock") {
-        // Fetch a larger page size or filter on page. Since we are doing paginated count:
-        // We'll filter what is fetched, or let's assume if client filters outOfStock, we filter products:
-        fetchedProducts = fetchedProducts.filter(p => p.stock === 0);
+        // Dùng totalStock nếu sản phẩm có biến thể, ngược lại dùng stock gốc
+        fetchedProducts = fetchedProducts.filter(p => {
+          const actualStock = p.variantCount > 0 ? p.totalStock : p.stock;
+          return actualStock === 0;
+        });
       }
 
       setProducts(fetchedProducts);
