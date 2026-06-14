@@ -238,8 +238,8 @@ export default function AdminVouchersPage() {
   const getValidityBadge = (startDateStr: string, endDateStr: string, status: boolean) => {
     if (!status) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-550 border border-rose-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-450"></span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-550">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
           Tạm khóa
         </span>
       );
@@ -250,21 +250,21 @@ export default function AdminVouchersPage() {
 
     if (now < start) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-550"></span>
           Sắp diễn ra
         </span>
       );
     } else if (now > end) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           Hết hạn
         </span>
       );
     } else {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           Đang hoạt động
         </span>
@@ -469,7 +469,7 @@ export default function AdminVouchersPage() {
                       </td>
                       {/* Code */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1.5 bg-primary/5 border border-dashed border-primary/30 rounded-xl text-xs font-bold text-primary tracking-wider font-mono">
+                        <span className="text-xs font-bold text-primary tracking-wider font-mono">
                           {voucher.code}
                         </span>
                       </td>
@@ -477,12 +477,12 @@ export default function AdminVouchersPage() {
                       {/* Voucher Type */}
                       <td className="px-6 py-4 text-xs font-bold">
                         {voucher.voucherType === 2 ? (
-                          <span className="inline-flex items-center gap-1.5 text-sky-600 bg-sky-50 px-2.5 py-1 rounded-xl border border-sky-100">
+                          <span className="inline-flex items-center gap-1.5 text-sky-600 text-xs font-bold">
                             <span className="material-symbols-outlined text-[14px]">local_shipping</span>
                             Giảm phí ship
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 text-primary bg-primary/5 px-2.5 py-1 rounded-xl border border-primary/10">
+                          <span className="inline-flex items-center gap-1.5 text-primary text-xs font-bold">
                             <span className="material-symbols-outlined text-[14px]">local_mall</span>
                             Giảm sản phẩm
                           </span>
@@ -518,25 +518,25 @@ export default function AdminVouchersPage() {
                       <td className="px-6 py-4">
                         {voucher.visibilityType === 1 ? (
                           voucher.exclusiveType === 2 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-50 text-teal-650 border border-teal-100">
-                              <span className="material-symbols-outlined text-[12px]">send</span>
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-650">
+                              <span className="material-symbols-outlined text-[14px]">send</span>
                               Công khai - Phát tự động
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-650 border border-emerald-100">
-                              <span className="material-symbols-outlined text-[12px]">public</span>
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-650">
+                              <span className="material-symbols-outlined text-[14px]">public</span>
                               Công khai
                             </span>
                           )
                         ) : (
                           voucher.exclusiveType === 1 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
-                              <span className="material-symbols-outlined text-[12px]">vpn_key</span>
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600">
+                              <span className="material-symbols-outlined text-[14px]">vpn_key</span>
                               Độc quyền - Nhập mã
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">
-                              <span className="material-symbols-outlined text-[12px]">lock</span>
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-600">
+                              <span className="material-symbols-outlined text-[14px]">lock</span>
                               Độc quyền - Phát trực tiếp
                             </span>
                           )

@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -25,7 +26,7 @@ export default function AdminUsersPage() {
   }, [searchTerm]);
 
   // Reset page when search term changes
-  useEffect(() => setPage(1), [debouncedSearch]);
+  useEffect(() => setPage(1), [debouncedSearch, statusFilter]);
 
   // Fetch data
   useEffect(() => {
@@ -39,9 +40,18 @@ export default function AdminUsersPage() {
         setStats(statsData);
 
         const usersData = await fetchUsers(token, debouncedSearch, page);
-        const filteredList = (usersData.data || []).filter(
-          (u: any) => !u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")
-        );
+        const filteredList = (usersData.data || []).filter((u: any) => {
+          // Remove admins
+          if (u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")) {
+            return false;
+          }
+          // Filter by status
+          if (statusFilter === "active" && u.isLocked) return false;
+          if (statusFilter === "locked" && !u.isLocked) return false;
+          
+          return true;
+        });
+
         setUsers(filteredList);
         setTotalPages(usersData.pagination.totalPages);
         setTotalCount(usersData.pagination.totalCount - (usersData.data.length - filteredList.length));
@@ -52,11 +62,12 @@ export default function AdminUsersPage() {
       }
     };
     loadData();
-  }, [page, debouncedSearch, router]);
+  }, [page, debouncedSearch, statusFilter, router]);
 
   const resetSearch = () => {
     setSearchTerm("");
     setDebouncedSearch("");
+    setStatusFilter("all");
     setPage(1);
   };
 
@@ -81,12 +92,6 @@ export default function AdminUsersPage() {
       <div className="space-y-lg">
         <UserStats stats={stats} />
         
-        <UserFilters 
-          searchTerm={searchTerm} 
-          onSearchChange={setSearchTerm} 
-          onReset={resetSearch} 
-        />
-        
         <UserTable 
           users={users}
           loading={loading}
@@ -95,6 +100,11 @@ export default function AdminUsersPage() {
           totalCount={totalCount}
           onPageChange={setPage}
           onRowClick={goToDetails}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          onReset={resetSearch}
         />
       </div>
     </div>

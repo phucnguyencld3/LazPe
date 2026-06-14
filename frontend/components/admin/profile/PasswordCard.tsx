@@ -66,12 +66,10 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
+    <div className="bg-surface rounded-3xl border border-outline-variant p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
       <div>
-        <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
-          <Key size={20} className="text-rose-500" /> Đổi Mật Khẩu
-        </h3>
-        <p className="text-sm text-slate-400 font-semibold mt-1">Bảo vệ tài khoản bằng cách sử dụng mật khẩu mạnh.</p>
+        <h3 className="font-headline-sm text-headline-sm text-primary font-bold">Bảo Mật</h3>
+        <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Đảm bảo tài khoản của bạn đang sử dụng mật khẩu mạnh.</p>
       </div>
 
       <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -158,7 +156,7 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
           <button
             type="submit"
             disabled={changingPassword}
-            className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 transition-all cursor-pointer"
+            className="px-6 py-3 bg-primary hover:opacity-90 text-on-primary rounded-xl text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
           >
             {changingPassword ? (
               <>
