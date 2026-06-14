@@ -187,19 +187,25 @@ export default function ImportPage() {
         <main className="w-full pb-20">
             <header className="mb-lg flex items-center justify-between">
                 <div>
-                    <button onClick={() => router.back()} className="text-primary flex items-center gap-xs font-bold text-sm mb-2 hover:underline">
-                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                    <h1 className="font-headline-md text-headline-md text-primary font-bold">Import Sản Phẩm</h1>
+                    <p className="font-body-md text-body-md text-on-surface-variant/70">Tải lên file Excel để thêm nhiều sản phẩm và biến thể cùng lúc</p>
+                </div>
+                <div className="flex items-center gap-sm shrink-0">
+                    <button
+                        onClick={() => router.back()}
+                        className="border border-secondary text-secondary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                         Quay lại
                     </button>
-                    <h1 className="font-headline-md text-headline-md text-primary font-bold">Import Sản Phẩm</h1>
+                    <button
+                        onClick={downloadTemplate}
+                        className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">download</span>
+                        Tải File Excel Mẫu
+                    </button>
                 </div>
-                <button
-                    onClick={downloadTemplate}
-                    className="flex items-center gap-2 border border-primary text-primary px-5 py-2.5 rounded-full font-bold hover:bg-primary/5 transition-all text-sm shadow-sm"
-                >
-                    <span className="material-symbols-outlined text-base">download</span>
-                    Tải File Excel Mẫu
-                </button>
             </header>
 
             {!previewData && (
@@ -316,7 +322,7 @@ export default function ImportPage() {
                                                 </>
                                             )}
                                             <td className="p-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(item.isValid, hasDuplicate, hasWarning)}`}>
+                                                <span className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(item.isValid, hasDuplicate, hasWarning)}`}>
                                                     {getStatusLabel(item.isValid, hasDuplicate, hasWarning)}
                                                 </span>
                                             </td>

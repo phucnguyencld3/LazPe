@@ -177,6 +177,44 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Handle Export to Excel
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      toast.loading("Đang tạo file Excel...");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api'}/ProductImport/export`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      toast.dismiss();
+      if (!res.ok) {
+        toast.error("Lỗi khi xuất dữ liệu.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ProductsExport_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Xuất dữ liệu thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.dismiss();
+      toast.error("Không thể kết nối đến máy chủ.");
+    }
+  };
+
   // Helpers for Stock status indicators
   const getStockBadge = (stock: number) => {
     if (stock === 0) {
@@ -217,7 +255,7 @@ export default function AdminProductsPage() {
             Import Excel
           </button>
           <button
-            onClick={() => toast.info("Tính năng xuất dữ liệu chưa khả dụng")}
+            onClick={handleExport}
             className="border border-primary text-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">file_export</span>

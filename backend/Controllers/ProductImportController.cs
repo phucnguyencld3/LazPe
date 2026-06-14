@@ -88,6 +88,117 @@ namespace PolyBabyAPI.Controllers
         }
 
         // ─────────────────────────────────────────────
+        // GET /api/ProductImport/export
+        // ─────────────────────────────────────────────
+        [HttpGet("export")]
+        [Permission("Product.View")]
+        public async Task<IActionResult> ExportData()
+        {
+            var products = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Supplier)
+                .Include(p => p.ProductOptions)
+                    .ThenInclude(po => po.ProductOptionValues)
+                .Include(p => p.Images)
+                .Include(p => p.Variants)
+                    .ThenInclude(v => v.VariantOptionValues)
+                    .ThenInclude(vov => vov.ProductOptionValue)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+
+            // Products Sheet
+            var productsSheet = workbook.Worksheets.Add("Products");
+            productsSheet.Cell(1, 1).Value = "ProductCode";
+            productsSheet.Cell(1, 2).Value = "ProductName";
+            productsSheet.Cell(1, 3).Value = "Description";
+            productsSheet.Cell(1, 4).Value = "Specifications";
+            productsSheet.Cell(1, 5).Value = "CategoryName";
+            productsSheet.Cell(1, 6).Value = "SupplierName";
+            productsSheet.Cell(1, 7).Value = "BasePrice";
+            productsSheet.Cell(1, 8).Value = "Status";
+            productsSheet.Cell(1, 9).Value = "Option1Name";
+            productsSheet.Cell(1, 10).Value = "Option1Values";
+            productsSheet.Cell(1, 11).Value = "Option2Name";
+            productsSheet.Cell(1, 12).Value = "Option2Values";
+            productsSheet.Cell(1, 13).Value = "ImageUrls";
+
+            int productRow = 2;
+            var variantsSheet = workbook.Worksheets.Add("Variants");
+            variantsSheet.Cell(1, 1).Value = "ProductCode";
+            variantsSheet.Cell(1, 2).Value = "SKU";
+            variantsSheet.Cell(1, 3).Value = "Option1Value";
+            variantsSheet.Cell(1, 4).Value = "Option2Value";
+            variantsSheet.Cell(1, 5).Value = "Price";
+            variantsSheet.Cell(1, 6).Value = "Stock";
+            variantsSheet.Cell(1, 7).Value = "ImageUrl";
+
+            int variantRow = 2;
+
+            foreach (var p in products)
+            {
+                var options = p.ProductOptions.OrderBy(o => o.DisplayOrder).ToList();
+                var opt1 = options.FirstOrDefault(o => o.DisplayOrder == 1);
+                var opt2 = options.FirstOrDefault(o => o.DisplayOrder == 2);
+
+                string opt1Values = opt1 != null ? string.Join(", ", opt1.ProductOptionValues.Select(v => v.Value)) : "";
+                string opt2Values = opt2 != null ? string.Join(", ", opt2.ProductOptionValues.Select(v => v.Value)) : "";
+
+                var imageUrls = string.Join(", ", p.Images.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl));
+
+                productsSheet.Cell(productRow, 1).Value = p.Code;
+                productsSheet.Cell(productRow, 2).Value = p.ProductName;
+                productsSheet.Cell(productRow, 3).Value = p.Description;
+                productsSheet.Cell(productRow, 4).Value = p.Specifications;
+                productsSheet.Cell(productRow, 5).Value = p.Category?.CategoryName ?? "";
+                productsSheet.Cell(productRow, 6).Value = p.Supplier?.SupplierName ?? "";
+                productsSheet.Cell(productRow, 7).Value = p.Price;
+                productsSheet.Cell(productRow, 8).Value = p.Status ? "true" : "false";
+                productsSheet.Cell(productRow, 9).Value = opt1?.Name ?? "";
+                productsSheet.Cell(productRow, 10).Value = opt1Values;
+                productsSheet.Cell(productRow, 11).Value = opt2?.Name ?? "";
+                productsSheet.Cell(productRow, 12).Value = opt2Values;
+                productsSheet.Cell(productRow, 13).Value = imageUrls;
+
+                productRow++;
+
+                foreach (var v in p.Variants)
+                {
+                    string option1Value = "";
+                    string option2Value = "";
+
+                    if (opt1 != null)
+                    {
+                        var vov1 = v.VariantOptionValues.FirstOrDefault(vov => vov.ProductOptionValue.ProductOptionID == opt1.ProductOptionID);
+                        if (vov1 != null) option1Value = vov1.ProductOptionValue.Value;
+                    }
+
+                    if (opt2 != null)
+                    {
+                        var vov2 = v.VariantOptionValues.FirstOrDefault(vov => vov.ProductOptionValue.ProductOptionID == opt2.ProductOptionID);
+                        if (vov2 != null) option2Value = vov2.ProductOptionValue.Value;
+                    }
+
+                    variantsSheet.Cell(variantRow, 1).Value = p.Code;
+                    variantsSheet.Cell(variantRow, 2).Value = v.SKU;
+                    variantsSheet.Cell(variantRow, 3).Value = option1Value;
+                    variantsSheet.Cell(variantRow, 4).Value = option2Value;
+                    variantsSheet.Cell(variantRow, 5).Value = v.UnitPrice;
+                    variantsSheet.Cell(variantRow, 6).Value = v.Stock;
+                    variantsSheet.Cell(variantRow, 7).Value = v.ImageUrl;
+                    variantRow++;
+                }
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var content = stream.ToArray();
+            var fileName = $"ProductsExport_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        // ─────────────────────────────────────────────
         // POST /api/ProductImport/validate
         // ─────────────────────────────────────────────
         [HttpPost("validate")]
