@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   VoucherAdminInfo,
@@ -12,19 +13,16 @@ import {
   updateVoucher
 } from "@/lib/features/vouchers/voucherApi";
 
-interface VoucherFormModalProps {
+interface VoucherFormProps {
   voucher: VoucherAdminInfo | null; // null for Create, object for Edit
   token: string;
-  onClose: () => void;
-  onSaveSuccess: (message: string) => void;
 }
 
-export default function VoucherFormModal({
+export default function VoucherForm({
   voucher,
-  token,
-  onClose,
-  onSaveSuccess
-}: VoucherFormModalProps) {
+  token
+}: VoucherFormProps) {
+  const router = useRouter();
   const isEditing = !!voucher;
 
   // Form states
@@ -43,6 +41,7 @@ export default function VoucherFormModal({
   const [voucherType, setVoucherType] = useState<number>(1); // 1: ProductDiscount, 2: ShippingDiscount
   const [isFreeShipping, setIsFreeShipping] = useState(false);
   const [maxShippingDiscount, setMaxShippingDiscount] = useState<number | null>(null);
+  const [usageLimitPerUser, setUsageLimitPerUser] = useState<number>(1);
 
   // Status indicators
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +66,7 @@ export default function VoucherFormModal({
       setVoucherType(voucher.voucherType || 1);
       setIsFreeShipping(voucher.isFreeShipping || false);
       setMaxShippingDiscount(voucher.maxShippingDiscount !== null ? Number(voucher.maxShippingDiscount) : null);
+      setUsageLimitPerUser(voucher.usageLimitPerUser || 1);
     } else {
       // Clear for create mode
       setCode("");
@@ -89,6 +89,7 @@ export default function VoucherFormModal({
       setVoucherType(1);
       setIsFreeShipping(false);
       setMaxShippingDiscount(null);
+      setUsageLimitPerUser(1);
     }
     setValidationErrors({});
   }, [voucher]);
@@ -209,6 +210,10 @@ export default function VoucherFormModal({
       errors.totalQuantity = `Tổng số lượng không thể nhỏ hơn số lượng đã dùng (${voucher.usedQuantity}).`;
     }
 
+    if (usageLimitPerUser < 1) {
+      errors.usageLimitPerUser = "Giới hạn sử dụng mỗi người tối thiểu là 1.";
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -246,11 +251,13 @@ export default function VoucherFormModal({
           exclusiveType,
           voucherType,
           isFreeShipping,
-          maxShippingDiscount: (voucherType === 2 && !isFreeShipping) ? maxShippingDiscount : null
+          maxShippingDiscount: (voucherType === 2 && !isFreeShipping) ? maxShippingDiscount : null,
+          usageLimitPerUser
         };
 
         const res = await updateVoucher(token, voucher.voucherID, payload);
-        onSaveSuccess(res.message || "Cập nhật voucher thành công!");
+        toast.success(res.message || "Cập nhật voucher thành công!");
+        router.push("/admin/vouchers");
       } else {
         const payload: CreateVoucherPayload = {
           code: code.toUpperCase().trim(),
@@ -267,11 +274,13 @@ export default function VoucherFormModal({
           exclusiveType,
           voucherType,
           isFreeShipping,
-          maxShippingDiscount: (voucherType === 2 && !isFreeShipping) ? maxShippingDiscount : null
+          maxShippingDiscount: (voucherType === 2 && !isFreeShipping) ? maxShippingDiscount : null,
+          usageLimitPerUser
         };
 
         const res = await createVoucher(token, payload);
-        onSaveSuccess(res.message || "Tạo voucher mới thành công!");
+        toast.success(res.message || "Tạo voucher mới thành công!");
+        router.push("/admin/vouchers");
       }
     } catch (err: any) {
       console.error(err);
@@ -282,8 +291,7 @@ export default function VoucherFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
 
         {/* Modal Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
@@ -296,16 +304,17 @@ export default function VoucherFormModal({
             </h3>
           </div>
           <button
-            onClick={onClose}
-            className="p-1 rounded-full text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-all cursor-pointer"
-            title="Đóng"
+            type="button"
+            onClick={() => router.push("/admin/vouchers")}
+            className="pr-4 pl-3 py-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+            title="Quay lại"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-xl">arrow_back</span> Quay lại
           </button>
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6" style={{ scrollbarWidth: "thin" }}>
+        <form onSubmit={handleSubmit} className="px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* Cột trái: Thông tin cơ bản & Phân phối */}
@@ -708,6 +717,35 @@ export default function VoucherFormModal({
                       <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.totalQuantity}</p>
                     )}
                   </div>
+
+                  {/* Usage Limit Per User */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-455 uppercase mb-1.5">
+                      Giới hạn dùng/Người
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={usageLimitPerUser || ""}
+                      onChange={e => {
+                        setUsageLimitPerUser(Number(e.target.value));
+                        if (validationErrors.usageLimitPerUser) {
+                          setValidationErrors(prev => {
+                            const next = { ...prev };
+                            delete next.usageLimitPerUser;
+                            return next;
+                          });
+                        }
+                      }}
+                      placeholder="Ví dụ: 1"
+                      className={`w-full px-3 py-2 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-855 ${validationErrors.usageLimitPerUser ? "border-rose-300" : "border-slate-200"
+                        }`}
+                    />
+                    {validationErrors.usageLimitPerUser && (
+                      <p className="text-[10px] text-rose-500 font-semibold mt-1">{validationErrors.usageLimitPerUser}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -782,7 +820,7 @@ export default function VoucherFormModal({
         <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => router.push("/admin/vouchers")}
             disabled={submitting}
             className="px-5 py-2 rounded-full border border-slate-200 text-slate-550 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
           >
@@ -808,8 +846,6 @@ export default function VoucherFormModal({
             )}
           </button>
         </div>
-
       </div>
-    </div>
   );
 }

@@ -255,7 +255,8 @@ namespace PolyBabyAPI.Controllers
                     ? (VoucherType)request.VoucherType
                     : VoucherType.ProductDiscount,
                 IsFreeShipping = request.IsFreeShipping,
-                MaxShippingDiscount = request.MaxShippingDiscount
+                MaxShippingDiscount = request.MaxShippingDiscount,
+                UsageLimitPerUser = request.UsageLimitPerUser
             };
 
             await _voucherService.CreateVoucherAsync(voucher);
@@ -311,6 +312,7 @@ namespace PolyBabyAPI.Controllers
                 : voucher.VoucherType;
             voucher.IsFreeShipping = request.IsFreeShipping;
             voucher.MaxShippingDiscount = request.MaxShippingDiscount;
+            voucher.UsageLimitPerUser = request.UsageLimitPerUser;
 
             await _voucherService.UpdateVoucherAsync(voucher);
 

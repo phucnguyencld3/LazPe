@@ -102,15 +102,15 @@ namespace PolyBabyAPI.Services
                 return (false, $"Đơn hàng tối thiểu để áp dụng mã này là {voucher.MinOrderValue:N0}đ.");
             }
 
-            // Kiểm tra xem user này đã dùng voucher này chưa (nếu cần giới hạn 1 lần/user)
-            var hasUsed = await _context.VoucherUsages
-                .AnyAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
+            // Kiểm tra giới hạn số lần sử dụng của mỗi user
+            var usedCount = await _context.VoucherUsages
+                .CountAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
             
-            // Tùy nghiệp vụ: nếu muốn chặn user dùng lại thì mở comment dưới
-            // if (hasUsed)
-            // {
-            //     return (false, "Bạn đã sử dụng mã giảm giá này rồi.");
-            // }
+            if (usedCount >= voucher.UsageLimitPerUser)
+            {
+                return (false, "Bạn đã hết lượt sử dụng mã giảm giá này.");
+            }
+
 
             return (true, "Mã giảm giá hợp lệ.");
         }

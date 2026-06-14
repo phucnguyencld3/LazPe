@@ -4,8 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { Pagination } from "@/components/admin/shared/Pagination";
-import VoucherFormModal from "@/components/admin/vouchers/VoucherFormModal";
-import VoucherDetailModal from "@/components/admin/vouchers/VoucherDetailModal";
 import {
   VoucherAdminInfo,
   fetchAllVouchers,
@@ -36,10 +34,6 @@ export default function AdminVouchersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Modal control states
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedVoucherForEdit, setSelectedVoucherForEdit] = useState<VoucherAdminInfo | null>(null);
-  const [selectedVoucherForDetail, setSelectedVoucherForDetail] = useState<VoucherAdminInfo | null>(null);
   const [voucherToDelete, setVoucherToDelete] = useState<VoucherAdminInfo | null>(null);
   const [voucherToToggle, setVoucherToToggle] = useState<VoucherAdminInfo | null>(null);
 
@@ -109,17 +103,15 @@ export default function AdminVouchersPage() {
   };
 
   const handleOpenCreateForm = () => {
-    setSelectedVoucherForEdit(null);
-    setIsFormOpen(true);
+    router.push('/admin/vouchers/create');
   };
 
   const handleOpenEditForm = (voucher: VoucherAdminInfo) => {
-    setSelectedVoucherForEdit(voucher);
-    setIsFormOpen(true);
+    router.push(`/admin/vouchers/${voucher.voucherID}/edit`);
   };
 
   const handleOpenDetailModal = (voucher: VoucherAdminInfo) => {
-    setSelectedVoucherForDetail(voucher);
+    router.push(`/admin/vouchers/${voucher.voucherID}`);
   };
 
   const handleDeleteClick = (voucher: VoucherAdminInfo) => {
@@ -174,12 +166,6 @@ export default function AdminVouchersPage() {
     }
   };
 
-  const handleSaveSuccess = (message: string) => {
-    toast.success(message);
-    setIsFormOpen(false);
-    setSelectedVoucherForEdit(null);
-    if (token) loadVouchers(token);
-  };
 
   // Filter vouchers based on parameters
   const getFilteredVouchers = () => {
@@ -620,28 +606,9 @@ export default function AdminVouchersPage() {
         )}
       </div>
 
-      {/* Form Modal (Create / Edit) */}
-      {isFormOpen && token && (
-        <VoucherFormModal
-          voucher={selectedVoucherForEdit}
-          token={token}
-          onClose={() => {
-            setIsFormOpen(false);
-            setSelectedVoucherForEdit(null);
-          }}
-          onSaveSuccess={handleSaveSuccess}
-        />
-      )}
 
-      {/* Detail / History Modal */}
-      {selectedVoucherForDetail && token && (
-        <VoucherDetailModal
-          voucher={selectedVoucherForDetail}
-          token={token}
-          onClose={() => setSelectedVoucherForDetail(null)}
-          onRefreshVoucher={handleRefresh}
-        />
-      )}
+
+
 
       {/* Confirmation Modal: Delete */}
       {voucherToDelete && (
