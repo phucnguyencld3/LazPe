@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
@@ -19,16 +19,39 @@ export default function AdminProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // Deletion Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const mainImageUrl = useMemo(() => {
+    if (!product) return null;
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls[0] || null;
+    }
+    if (product.variants && product.variants.length > 0) {
+      const imgVar = product.variants.find(v => v.imageUrl && v.imageUrl.trim() !== "");
+      if (imgVar && imgVar.imageUrl) return imgVar.imageUrl;
+    }
+    return null;
+  }, [product]);
+
+  // Update selectedImage if it's null and we now have a mainImageUrl
+  useEffect(() => {
+    if (mainImageUrl && !selectedImage) {
+      setSelectedImage(mainImageUrl);
+    }
+  }, [mainImageUrl, selectedImage]);
 
   // Parse specifications JSON
   const parsedSpecsList = (() => {
     if (!product || !product.specifications) return [];
     try {
       const parsed = JSON.parse(product.specifications);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item: any) => [item.key || "", item.value || ""]);
+      }
       if (parsed && typeof parsed === "object") {
         return Object.entries(parsed);
       }
@@ -140,17 +163,6 @@ export default function AdminProductDetailPage() {
     );
   }
 
-  // Get first variant image or fallback to box icon
-  const getProductImage = () => {
-    if (product.variants && product.variants.length > 0) {
-      const imgVar = product.variants.find(v => v.imageUrl && v.imageUrl.trim() !== "");
-      if (imgVar) return imgVar.imageUrl;
-    }
-    return null;
-  };
-
-  const mainImageUrl = getProductImage();
-
   // Get effective price: discount applied
   const salePrice = product.productDiscountPercent > 0
     ? product.price * (1 - product.productDiscountPercent / 100)
@@ -239,23 +251,38 @@ export default function AdminProductDetailPage() {
             {/* Image Box */}
             <div className="md:col-span-2">
               <div className="aspect-[0.9] bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden group relative flex items-center justify-center">
-                {mainImageUrl ? (
+                {selectedImage ? (
                   <img
-                    src={mainImageUrl}
+                    src={selectedImage}
                     alt={product.productName}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <span className="material-symbols-outlined text-slate-300 text-5xl">inventory_2</span>
                 )}
-                {mainImageUrl && (
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4">
+                {selectedImage && (
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4 pointer-events-none">
                     <div className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-primary shadow-sm">
                       <span className="material-symbols-outlined text-lg">zoom_in</span>
                     </div>
                   </div>
                 )}
               </div>
+              
+              {/* Thumbnail Gallery */}
+              {product.imageUrls && product.imageUrls.length > 0 && (
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {product.imageUrls.map((url, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setSelectedImage(url)}
+                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 cursor-pointer shrink-0 transition-all ${selectedImage === url ? 'border-primary shadow-sm' : 'border-transparent hover:border-primary/50'}`}
+                    >
+                      <img src={url} className="w-full h-full object-cover" alt="Gallery item" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details Box */}

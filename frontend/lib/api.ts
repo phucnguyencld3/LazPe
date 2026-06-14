@@ -128,6 +128,7 @@ export async function getProductDetail(id: number): Promise<Product | null> {
         maxEffectivePrice,
         variantCount,
         image: finalImage,
+        imageUrls: item.imageUrls,
         categoryId: item.categoryID ?? item.categoryId,
         categoryName: item.category?.categoryName,
         inStock: item.status !== false && finalStock > 0,

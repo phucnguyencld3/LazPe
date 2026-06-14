@@ -39,7 +39,6 @@ namespace PolyBabyAPI.Models
         public string? ImageUrl { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập mô tả")]
-        [MaxLength(500, ErrorMessage = "Mô tả tối đa 1000 ký tự")]
         public string Description { get; set; }
 
         // ✅ SỬA: CreatedAt thay vì CreateDate

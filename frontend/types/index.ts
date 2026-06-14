@@ -50,6 +50,7 @@ export interface Product {
   maxEffectivePrice?: number;
   variantCount?: number;
   image?: string;
+  imageUrls?: string[];
   rating?: number;
   ratingCount?: number;
   categoryId: number;

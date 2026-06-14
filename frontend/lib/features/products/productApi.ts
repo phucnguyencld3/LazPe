@@ -196,6 +196,7 @@ export interface AdminProductDetailInfo {
   } | null;
   variants: AdminVariantInfo[];
   productOptions: AdminProductOption[];
+  imageUrls?: string[];
 }
 
 export const fetchAdminProductDetail = async (token: string, id: string): Promise<AdminProductDetailInfo> => {
@@ -517,6 +518,7 @@ export interface CreateFullProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status?: boolean;
+  images?: string[];
   options: {
     name: string;
     displayOrder: number;
@@ -564,6 +566,10 @@ export const createProduct = async (token: string, payload: CreateProductPayload
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.errors) {
+      const messages = Object.values(errorData.errors).flat().join(", ");
+      throw new Error(messages || errorData.title || "Failed to create product");
+    }
     throw new Error(errorData.message || "Failed to create product");
   }
   return res.json();
@@ -581,6 +587,10 @@ export const createFullProduct = async (token: string, payload: CreateFullProduc
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.errors) {
+      const messages = Object.values(errorData.errors).flat().join(", ");
+      throw new Error(messages || errorData.title || "Failed to create full product");
+    }
     throw new Error(errorData.message || "Failed to create full product");
   }
   return res.json();
@@ -597,6 +607,8 @@ export interface UpdateProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status: boolean;
+  images?: string[];
+  clearVariantImages?: boolean;
 }
 
 export const updateProduct = async (token: string, id: number, payload: UpdateProductPayload): Promise<any> => {
@@ -611,6 +623,10 @@ export const updateProduct = async (token: string, id: number, payload: UpdatePr
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.errors) {
+      const messages = Object.values(errorData.errors).flat().join(", ");
+      throw new Error(messages || errorData.title || "Failed to update product");
+    }
     throw new Error(errorData.message || "Failed to update product");
   }
   return res.json();

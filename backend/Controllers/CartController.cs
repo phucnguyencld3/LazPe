@@ -416,7 +416,8 @@ namespace PolyBabyAPI.Controllers
 
         private string? GetProductImageUrl(Product product)
         {
-            return "/assets/img/products/default-product.jpg";
+            var img = product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
+            return !string.IsNullOrEmpty(img) ? img : "/assets/img/products/default-product.jpg";
         }
 
         private string GenerateProductSlug(string productName)

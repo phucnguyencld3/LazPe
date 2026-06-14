@@ -43,10 +43,12 @@ namespace PolyBabyAPI.Controllers
                         ? (w.Product.Price * (1m - w.Product.ProductDiscountPercent / 100m)) 
                         : (decimal?)null,
                     image = w.Product.Variants
-                        .Where(v => v.ImageUrl != null && v.ImageUrl != "")
+                        .Where(v => !string.IsNullOrEmpty(v.ImageUrl))
                         .OrderBy(v => v.VariantID)
                         .Select(v => v.ImageUrl)
-                        .FirstOrDefault() ?? w.Product.Variants.FirstOrDefault().ImageUrl ?? "",
+                        .FirstOrDefault() 
+                        ?? w.Product.Images.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).FirstOrDefault() 
+                        ?? w.Product.Variants.FirstOrDefault().ImageUrl ?? "",
                     categoryId = w.Product.CategoryID,
                     categoryName = w.Product.Category.CategoryName,
                     inStock = w.Product.Status && w.Product.Variants.Sum(v => v.Stock) > 0,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface ProductImageGalleryProps {
   displayImage: string | undefined;
@@ -6,6 +6,7 @@ interface ProductImageGalleryProps {
   hasDiscount: boolean;
   displayPrice: number;
   displayDiscountPrice: number | undefined;
+  imageUrls?: string[];
 }
 
 export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
@@ -14,13 +15,23 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   hasDiscount,
   displayPrice,
   displayDiscountPrice,
+  imageUrls = [],
 }) => {
+  const [selectedImage, setSelectedImage] = useState<string | undefined>(displayImage);
+
+  // Sync selected image if the displayImage prop changes (e.g. from variant selection)
+  useEffect(() => {
+    setSelectedImage(displayImage);
+  }, [displayImage]);
+
+  const currentImage = selectedImage || displayImage || (imageUrls && imageUrls.length > 0 ? imageUrls[0] : undefined);
+
   return (
     <div className="space-y-4">
       <div className="relative aspect-square rounded-2xl bg-slate-100 overflow-hidden border border-slate-100">
-        {displayImage ? (
+        {currentImage ? (
           <img
-            src={displayImage}
+            src={currentImage}
             alt={productName}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
@@ -36,6 +47,25 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           </div>
         )}
       </div>
+
+      {/* Thumbnail Gallery */}
+      {imageUrls && imageUrls.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {imageUrls.map((url, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedImage(url)}
+              className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                currentImage === url
+                  ? "border-primary shadow-sm"
+                  : "border-transparent hover:border-primary/50"
+              }`}
+            >
+              <img src={url} className="w-full h-full object-cover" alt={`${productName} thumbnail ${idx + 1}`} />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

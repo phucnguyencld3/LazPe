@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260614100823_AddProductImages")]
+    partial class AddProductImages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -452,9 +455,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<decimal>("SubTotal")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("TierDiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -845,9 +845,6 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("SubTotal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TierDiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalPrice")
@@ -2325,10 +2322,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int?>("InvoiceID")
                         .HasColumnType("int");
 
-                    b.Property<string>("IssuedCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<int>("SourceType")
                         .HasColumnType("int");
 
@@ -2481,9 +2474,6 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("TotalQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UsageLimitPerUser")
                         .HasColumnType("int");
 
                     b.Property<int>("UsedQuantity")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import ImportResolutionModal from "@/components/admin/products/ImportResolutionModal";
@@ -18,6 +18,27 @@ export default function ImportPage() {
     const [showResolutionModal, setShowResolutionModal] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Load draft from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem("lazpe_import_draft");
+        if (saved) {
+            try {
+                setPreviewData(JSON.parse(saved));
+            } catch (e) {
+                console.error("Lỗi khi đọc bản nháp import:", e);
+            }
+        }
+    }, []);
+
+    // Save draft to localStorage whenever previewData changes
+    useEffect(() => {
+        if (previewData) {
+            localStorage.setItem("lazpe_import_draft", JSON.stringify(previewData));
+        } else {
+            localStorage.removeItem("lazpe_import_draft");
+        }
+    }, [previewData]);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -102,24 +123,28 @@ export default function ImportPage() {
         }
     };
 
-    const getStatusStyle = (isValid: boolean, hasDuplicate: boolean) => {
+    const getStatusStyle = (isValid: boolean, hasDuplicate: boolean, hasWarning: boolean) => {
         if (hasDuplicate) return "bg-amber-100 text-amber-800";
         if (!isValid) return "bg-rose-600 text-white";
+        if (hasWarning) return "bg-yellow-100 text-yellow-800";
         return "bg-green-100 text-green-800";
     };
 
-    const getStatusLabel = (isValid: boolean, hasDuplicate: boolean) => {
+    const getStatusLabel = (isValid: boolean, hasDuplicate: boolean, hasWarning: boolean) => {
         if (hasDuplicate) return "Trùng lặp";
         if (!isValid) return "Lỗi";
+        if (hasWarning) return "Cảnh báo";
         return "Hợp lệ";
     };
 
     const proceedToCommit = async () => {
         if (!previewData) return;
-        if (previewData.errors?.length > 0 || previewData.duplicates?.length > 0) {
+        
+        const realErrors = previewData.errors?.filter((e: any) => !e.isWarning) || [];
+        if (realErrors.length > 0 || previewData.duplicates?.length > 0) {
             setShowResolutionModal(true);
         } else {
-            // Commit immediately
+            // Commit immediately if there are only warnings or no issues
             commitData(previewData);
         }
     };
@@ -143,6 +168,7 @@ export default function ImportPage() {
 
             if (res.ok) {
                 toast.success("Import thành công!");
+                localStorage.removeItem("lazpe_import_draft");
                 router.push("/admin/products");
             } else {
                 const text = await res.text();
@@ -167,6 +193,13 @@ export default function ImportPage() {
                     </button>
                     <h1 className="font-headline-md text-headline-md text-primary font-bold">Import Sản Phẩm</h1>
                 </div>
+                <button
+                    onClick={downloadTemplate}
+                    className="flex items-center gap-2 border border-primary text-primary px-5 py-2.5 rounded-full font-bold hover:bg-primary/5 transition-all text-sm shadow-sm"
+                >
+                    <span className="material-symbols-outlined text-base">download</span>
+                    Tải File Excel Mẫu
+                </button>
             </header>
 
             {!previewData && (
@@ -236,6 +269,7 @@ export default function ImportPage() {
                                         <>
                                             <th className="p-4">Mã SP</th>
                                             <th className="p-4">Tên SP</th>
+                                            <th className="p-4">Thông số KT</th>
                                             <th className="p-4">Danh mục</th>
                                             <th className="p-4">Nhà cung cấp</th>
                                             <th className="p-4">Giá cơ bản</th>
@@ -257,6 +291,7 @@ export default function ImportPage() {
                                 {(activeTab === "products" ? previewData.products : previewData.variants).map((item: any, idx: number) => {
                                     const codeToCheck = activeTab === "products" ? item.productCode : item.sku;
                                     const hasDuplicate = previewData.duplicates.some((d: any) => d.sheet === (activeTab === "products" ? "Products" : "Variants") && d.itemCode === codeToCheck);
+                                    const hasWarning = previewData.errors?.some((e: any) => e.sheet === (activeTab === "products" ? "Products" : "Variants") && e.row === item.excelRow && e.isWarning);
                                     
                                     return (
                                         <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
@@ -265,6 +300,7 @@ export default function ImportPage() {
                                                 <>
                                                     <td className="p-4 font-bold">{item.productCode}</td>
                                                     <td className="p-4">{item.productName}</td>
+                                                    <td className="p-4 text-xs text-slate-500 max-w-[200px] truncate" title={item.specifications}>{item.specifications}</td>
                                                     <td className="p-4">{item.categoryName}</td>
                                                     <td className="p-4">{item.supplierName}</td>
                                                     <td className="p-4">{item.basePrice}</td>
@@ -280,8 +316,8 @@ export default function ImportPage() {
                                                 </>
                                             )}
                                             <td className="p-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(item.isValid, hasDuplicate)}`}>
-                                                    {getStatusLabel(item.isValid, hasDuplicate)}
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(item.isValid, hasDuplicate, hasWarning)}`}>
+                                                    {getStatusLabel(item.isValid, hasDuplicate, hasWarning)}
                                                 </span>
                                             </td>
                                         </tr>
@@ -302,12 +338,12 @@ export default function ImportPage() {
                         <button
                             onClick={proceedToCommit}
                             className={`px-8 py-2 rounded-full font-bold text-white shadow-md transition-transform hover:scale-105 ${
-                                previewData.errors?.length > 0 || previewData.duplicates?.length > 0
+                                (previewData.errors?.filter((e: any) => !e.isWarning).length > 0 || previewData.duplicates?.length > 0)
                                     ? "bg-amber-500 hover:bg-amber-600"
                                     : "bg-primary hover:bg-primary/90"
                             }`}
                         >
-                            {(previewData.errors?.length > 0 || previewData.duplicates?.length > 0) ? "⚠ Cần xử lý Lỗi/Trùng lặp" : "Tiến hành Import"}
+                            {(previewData.errors?.filter((e: any) => !e.isWarning).length > 0 || previewData.duplicates?.length > 0) ? "⚠ Cần xử lý Lỗi/Trùng lặp" : "Tiến hành Import"}
                         </button>
                     </div>
                 </div>
@@ -318,6 +354,7 @@ export default function ImportPage() {
                     previewData={previewData} 
                     onClose={() => setShowResolutionModal(false)}
                     onCommit={commitData}
+                    onUpdatePreviewData={(updatedData) => setPreviewData(updatedData)}
                 />
             )}
         </main>
