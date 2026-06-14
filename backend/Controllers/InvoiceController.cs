@@ -811,6 +811,144 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Xác nhận nhiều đơn hàng cùng lúc (chuyển trạng thái từ Pending sang Confirmed)
+        /// </summary>
+        [HttpPost("bulk-confirm")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> BulkConfirm([FromBody] BulkOrderRequest request)
+        {
+            if (request.InvoiceIDs == null || request.InvoiceIDs.Count == 0)
+                return BadRequest(new { message = "Không có đơn hàng nào được chọn." });
+
+            if (request.InvoiceIDs.Count > 10)
+                return BadRequest(new { message = "Chỉ được phép thao tác tối đa 10 đơn hàng cùng lúc." });
+
+            var successCount = 0;
+            var errors = new List<string>();
+
+            foreach (var id in request.InvoiceIDs)
+            {
+                try
+                {
+                    var result = await _invoiceService.ConfirmAsync(id);
+                    if (result)
+                    {
+                        successCount++;
+                        try
+                        {
+                            var invoice = await _invoiceService.GetByIdAsync(id);
+                            if (invoice != null)
+                            {
+                                var notifDto = new CreateNotificationDto
+                                {
+                                    Title = "Đơn hàng đã được xác nhận",
+                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã được xác nhận.",
+                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                                    Type = NotificationType.Order,
+                                    Priority = NotificationPriority.Medium,
+                                    ActionType = ActionType.CustomUrl,
+                                    ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                                    TargetType = TargetType.SpecificUsers,
+                                    TargetValue = invoice.UserID,
+                                    PublishedAt = DateTime.UtcNow
+                                };
+                                await _notificationService.CreateNotificationAsync(notifDto, "System");
+                            }
+                        }
+                        catch (Exception nEx)
+                        {
+                            _logger.LogError(nEx, "Error sending order confirmation notification to user for InvoiceId {InvoiceId}", id);
+                        }
+                    }
+                    else
+                    {
+                        errors.Add($"Đơn hàng #{id} không thể xác nhận (sai trạng thái).");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error confirming invoice {InvoiceId}", id);
+                    errors.Add($"Đơn hàng #{id} bị lỗi hệ thống.");
+                }
+            }
+
+            return Ok(new
+            {
+                message = $"Đã xác nhận thành công {successCount}/{request.InvoiceIDs.Count} đơn hàng.",
+                errors = errors.Count > 0 ? errors : null
+            });
+        }
+
+        /// <summary>
+        /// Cập nhật nhiều đơn hàng thành đã giao cùng lúc (Admin only)
+        /// </summary>
+        [HttpPost("bulk-mark-shipped")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> BulkMarkShipped([FromBody] BulkOrderRequest request)
+        {
+            if (request.InvoiceIDs == null || request.InvoiceIDs.Count == 0)
+                return BadRequest(new { message = "Không có đơn hàng nào được chọn." });
+
+            if (request.InvoiceIDs.Count > 10)
+                return BadRequest(new { message = "Chỉ được phép thao tác tối đa 10 đơn hàng cùng lúc." });
+
+            var successCount = 0;
+            var errors = new List<string>();
+
+            foreach (var id in request.InvoiceIDs)
+            {
+                try
+                {
+                    var result = await _invoiceService.MarkShippedAsync(id);
+                    if (result)
+                    {
+                        successCount++;
+                        try
+                        {
+                            var invoice = await _invoiceService.GetByIdAsync(id);
+                            if (invoice != null)
+                            {
+                                var notifDto = new CreateNotificationDto
+                                {
+                                    Title = "Đơn hàng đang được vận chuyển",
+                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã bắt đầu được vận chuyển.",
+                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                                    Type = NotificationType.Order,
+                                    Priority = NotificationPriority.Medium,
+                                    ActionType = ActionType.CustomUrl,
+                                    ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
+                                    TargetType = TargetType.SpecificUsers,
+                                    TargetValue = invoice.UserID,
+                                    PublishedAt = DateTime.UtcNow
+                                };
+                                await _notificationService.CreateNotificationAsync(notifDto, "System");
+                            }
+                        }
+                        catch (Exception nEx)
+                        {
+                            _logger.LogError(nEx, "Error sending order shipping notification to user for InvoiceId {InvoiceId}", id);
+                        }
+                    }
+                    else
+                    {
+                        errors.Add($"Đơn hàng #{id} không thể cập nhật (sai trạng thái).");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error marking invoice as shipped {InvoiceId}", id);
+                    errors.Add($"Đơn hàng #{id} bị lỗi hệ thống.");
+                }
+            }
+
+            return Ok(new
+            {
+                message = $"Đã cập nhật trạng thái giao hàng thành công {successCount}/{request.InvoiceIDs.Count} đơn hàng.",
+                errors = errors.Count > 0 ? errors : null
+            });
+        }
+
         // ======================== CANCEL ENDPOINTS ============================
 
         /// <summary>

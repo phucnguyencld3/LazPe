@@ -75,8 +75,8 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
           Đang giao {counts ? `(${counts.shipping})` : ""}
         </button>
         <button
-          onClick={() => setStatusFilter(4)}
-          className={getTabClass(statusFilter === 4)}
+          onClick={() => setStatusFilter(3)}
+          className={getTabClass(statusFilter === 3)}
         >
           Hoàn thành {counts ? `(${counts.completed})` : ""}
         </button>
