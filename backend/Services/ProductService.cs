@@ -97,6 +97,9 @@ namespace PolyBabyAPI.Services
                             .Where(v => v.ImageUrl != null && v.ImageUrl != "")
                             .OrderBy(v => v.VariantID)
                             .Select(v => v.ImageUrl)
+                            .FirstOrDefault() ?? p.Images
+                            .OrderBy(i => i.DisplayOrder)
+                            .Select(i => i.ImageUrl)
                             .FirstOrDefault(),
                         TotalStock = p.Variants.Sum(v => v.Stock),
                         MinPrice = p.Variants.Where(v => v.Status).Any() 
@@ -265,6 +268,7 @@ namespace PolyBabyAPI.Services
                                 .ThenInclude(pov => pov.ProductOption)
                     .Include(p => p.ProductOptions)
                         .ThenInclude(po => po.ProductOptionValues)
+                    .Include(p => p.Images)
                     .FirstOrDefaultAsync(p => p.ProductID == id);
 
                 if (product == null) return null;
@@ -350,7 +354,8 @@ namespace PolyBabyAPI.Services
                             Price = pov.Price,
                             DisplayOrder = pov.DisplayOrder
                         }).ToList()
-                    }).ToList()
+                    }).ToList(),
+                    ImageUrls = product.Images?.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).ToList() ?? new List<string>()
                 };
             }
             catch (Exception ex)
@@ -542,6 +547,26 @@ namespace PolyBabyAPI.Services
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
 
+                // 8.1 Thêm ảnh sản phẩm
+                if (dto.Images != null && dto.Images.Any())
+                {
+                    int index = 1;
+                    foreach (var imgUrl in dto.Images)
+                    {
+                        if (!string.IsNullOrWhiteSpace(imgUrl))
+                        {
+                            _context.ProductImages.Add(new ProductImage
+                            {
+                                ProductID = product.ProductID,
+                                ImageUrl = imgUrl,
+                                DisplayOrder = index++
+                            });
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+
                 // Map để lưu trữ ID của Option Value phục vụ cho ánh xạ Variant
                 // Key cấp 1: Tên Option (vd: "Màu sắc")
                 // Key cấp 2: Giá trị (vd: "Đỏ")
@@ -707,6 +732,43 @@ namespace PolyBabyAPI.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Cập nhật ProductImages nếu được truyền lên
+                if (dto.Images != null)
+                {
+                    // Xóa ảnh cũ
+                    var oldImages = await _context.ProductImages.Where(i => i.ProductID == product.ProductID).ToListAsync();
+                    _context.ProductImages.RemoveRange(oldImages);
+                    
+                    // Thêm ảnh mới
+                    if (dto.Images.Any())
+                    {
+                        int index = 1;
+                        foreach (var imgUrl in dto.Images)
+                        {
+                            if (!string.IsNullOrWhiteSpace(imgUrl))
+                            {
+                                _context.ProductImages.Add(new ProductImage
+                                {
+                                    ProductID = product.ProductID,
+                                    ImageUrl = imgUrl,
+                                    DisplayOrder = index++
+                                });
+                            }
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                // Xóa ảnh biến thể nếu được yêu cầu (ưu tiên ảnh sản phẩm)
+                if (dto.ClearVariantImages && product.Variants != null)
+                {
+                    foreach (var variant in product.Variants)
+                    {
+                        variant.ImageUrl = null;
+                    }
+                    await _context.SaveChangesAsync();
+                }
 
                 // Return updated product
                 var result = await GetProductByIdAsync(product.ProductID);

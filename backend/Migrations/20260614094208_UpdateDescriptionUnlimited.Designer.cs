@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260614094208_UpdateDescriptionUnlimited")]
+    partial class UpdateDescriptionUnlimited
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1664,31 +1667,6 @@ namespace PolyBabyAPI.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
-                {
-                    b.Property<int>("ProductImageID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductImageID"));
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductID")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProductImageID");
-
-                    b.HasIndex("ProductID");
-
-                    b.ToTable("ProductImages");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.ProductOption", b =>
                 {
                     b.Property<int>("ProductOptionID")
@@ -2473,9 +2451,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int>("TotalQuantity")
                         .HasColumnType("int");
 
-                    b.Property<int>("UsageLimitPerUser")
-                        .HasColumnType("int");
-
                     b.Property<int>("UsedQuantity")
                         .HasColumnType("int");
 
@@ -2948,17 +2923,6 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Supplier");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.Product", "Product")
-                        .WithMany("Images")
-                        .HasForeignKey("ProductID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.ProductOption", b =>
                 {
                     b.HasOne("PolyBabyAPI.Models.Product", "Product")
@@ -3367,8 +3331,6 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.Product", b =>
                 {
-                    b.Navigation("Images");
-
                     b.Navigation("ProductOptions");
 
                     b.Navigation("Variants");

@@ -240,7 +240,7 @@ export default function ProductDetailPage() {
       }
     }
 
-    return product?.image;
+    return product?.image || (product?.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : undefined);
   }, [activeVariant, product, selectedOptions]);
 
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
@@ -278,8 +278,11 @@ export default function ProductDetailPage() {
 
     try {
       const cleaned = product.specifications.trim();
-      if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+      if ((cleaned.startsWith("{") && cleaned.endsWith("}")) || (cleaned.startsWith("[") && cleaned.endsWith("]"))) {
         const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => [item.key || "", item.value || ""] as [string, any]);
+        }
         if (parsed && typeof parsed === "object") {
           return Object.entries(parsed);
         }
@@ -354,6 +357,56 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleBuyNow = async () => {
+    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!hasToken) {
+      toast.error("Vui lòng đăng nhập để tiếp tục!");
+      router.push("/login");
+      return;
+    }
+
+    const variantId = activeVariant?.variantID;
+    if (!variantId) {
+      // Use the first variant if no specific options
+      const firstVariantId = product?.variants?.[0]?.variantID;
+      if (!firstVariantId) {
+        toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
+        return;
+      }
+      
+      try {
+        const res = await addToCart({
+          variantID: firstVariantId,
+          quantity: quantity,
+        });
+        if (res.success) {
+          router.push("/cart");
+        } else {
+          toast.error(res.message || "Lỗi khi thêm vào giỏ hàng");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi kết nối mạng");
+      }
+      return;
+    }
+
+    try {
+      const res = await addToCart({
+        variantID: variantId,
+        quantity: quantity,
+      });
+      if (res.success) {
+        router.push("/cart");
+      } else {
+        toast.error(res.message || "Lỗi khi thêm vào giỏ hàng");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối mạng");
+    }
+  };
+
   const handleOptionSelect = (optionName: string, value: string) => {
     setSelectedOptions((prev) => ({
       ...prev,
@@ -409,6 +462,7 @@ export default function ProductDetailPage() {
               hasDiscount={hasDiscount}
               displayPrice={displayPrice}
               displayDiscountPrice={displayDiscountPrice}
+              imageUrls={product?.imageUrls}
             />
 
             <ProductDetailInfo
@@ -426,6 +480,7 @@ export default function ProductDetailPage() {
               handleDecreaseQuantity={handleDecreaseQuantity}
               handleIncreaseQuantity={handleIncreaseQuantity}
               handleAddToCart={handleAddToCart}
+              handleBuyNow={handleBuyNow}
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
               activeVariant={activeVariant}

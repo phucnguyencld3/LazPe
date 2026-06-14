@@ -16,6 +16,7 @@ namespace PolyBabyAPI.DTOs
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string Specifications { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
         public int CategoryId { get; set; }
         public string SupplierName { get; set; } = string.Empty;
@@ -26,6 +27,7 @@ namespace PolyBabyAPI.DTOs
         public string Option1Values { get; set; } = string.Empty;
         public string Option2Name { get; set; } = string.Empty;
         public string Option2Values { get; set; } = string.Empty;
+        public string ImageUrls { get; set; } = string.Empty;
         
         public bool IsValid { get; set; } = true;
     }
@@ -50,6 +52,7 @@ namespace PolyBabyAPI.DTOs
         public string Row { get; set; } = string.Empty;
         public string Field { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public bool IsWarning { get; set; } = false;
     }
 
     public class ImportDuplicateDto

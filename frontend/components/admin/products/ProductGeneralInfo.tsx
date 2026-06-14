@@ -16,6 +16,10 @@ interface ProductGeneralInfoProps {
   onCategoryChange: (catId: number | null, pathIds: number[]) => void;
   specifications: { key: string; value: string }[];
   onSpecificationsChange: (val: { key: string; value: string }[]) => void;
+  productImages?: string[];
+  isUploadingImage?: boolean;
+  onUploadProductImage?: (file: File) => void;
+  onRemoveProductImage?: (index: number) => void;
 }
 
 export function ProductGeneralInfo({
@@ -32,7 +36,11 @@ export function ProductGeneralInfo({
   selectedCategoryId,
   onCategoryChange,
   specifications,
-  onSpecificationsChange
+  onSpecificationsChange,
+  productImages = [],
+  isUploadingImage = false,
+  onUploadProductImage,
+  onRemoveProductImage
 }: ProductGeneralInfoProps) {
 
   // Helper to trace category path from leaf to root
@@ -183,6 +191,63 @@ export function ProductGeneralInfo({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Product Images Uploader */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+              Ảnh sản phẩm chung
+            </label>
+            <p className="text-xs text-slate-500 mb-3">Tải lên các ảnh mô tả chung cho sản phẩm (ưu tiên khi không có ảnh biến thể).</p>
+            
+            <div className="flex flex-wrap gap-4">
+              {productImages.map((imgUrl, index) => (
+                <div key={index} className="relative w-28 h-28 rounded-xl border border-slate-200 overflow-hidden group">
+                  <img src={imgUrl} alt={`Product Image ${index + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => onRemoveProductImage?.(index)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 hover:text-rose-600"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                  {index === 0 && (
+                    <div className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[10px] py-0.5 text-center font-semibold">
+                      Ảnh bìa
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Upload Button */}
+              {productImages.length < 10 && (
+                <label className="w-28 h-28 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer relative">
+                  {isUploadingImage ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-2xl mb-1">add_photo_alternate</span>
+                      <span className="text-xs font-semibold">Thêm ảnh</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={isUploadingImage}
+                    onChange={(e) => {
+                      if (e.target.files && onUploadProductImage) {
+                        // Pass first file for now, or adapt to multiple
+                        Array.from(e.target.files).forEach(file => onUploadProductImage(file));
+                        // Reset input to allow uploading same file again if needed
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
+              )}
+            </div>
           </div>
 
           {/* Description */}

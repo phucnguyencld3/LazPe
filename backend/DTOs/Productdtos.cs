@@ -89,6 +89,7 @@ namespace PolyBabyAPI.DTOs
     {
         public List<VariantDto> Variants { get; set; } = new();
         public List<ProductOptionDto> ProductOptions { get; set; } = new();
+        public List<string> ImageUrls { get; set; } = new();
     }
 
     /// <summary>
@@ -142,7 +143,6 @@ namespace PolyBabyAPI.DTOs
         [StringLength(200, ErrorMessage = "Tên không được vượt quá 200 ký tự")]
         public string ProductName { get; set; } = string.Empty;
 
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
 
         public string? Specifications { get; set; }
@@ -177,7 +177,6 @@ namespace PolyBabyAPI.DTOs
         [StringLength(200, ErrorMessage = "Tên không được vượt quá 200 ký tự")]
         public string ProductName { get; set; } = string.Empty;
 
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
 
         public string? Specifications { get; set; }
@@ -196,6 +195,9 @@ namespace PolyBabyAPI.DTOs
 
         public int? SupplierID { get; set; }
         public bool Status { get; set; } = true;
+
+        public List<string>? Images { get; set; } = new();
+        public bool ClearVariantImages { get; set; } = false;
     }
 
     // =============================================

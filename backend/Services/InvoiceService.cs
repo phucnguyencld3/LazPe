@@ -35,7 +35,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.ShippingVoucher)
                 .Include(i => i.PaymentTransactions)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Category)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Supplier)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
@@ -60,7 +60,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.PaymentTransactions)
                 .Include(i => i.Voucher)
                 .Include(i => i.ShippingVoucher)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .OrderByDescending(i => i.CreatedAt)
                 .ToListAsync();
@@ -76,7 +76,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.Voucher)
                 .Include(i => i.ShippingVoucher)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .Include(i => i.PaymentTransactions)
                 .FirstOrDefaultAsync(i => i.InvoiceID == id && !i.IsDeleted);
