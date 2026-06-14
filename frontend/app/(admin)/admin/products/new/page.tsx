@@ -21,6 +21,8 @@ interface OptionValueState {
   value: string;
   price: number;
   displayOrder: number;
+  imageUrl?: string | null;
+  isUploadingImage?: boolean;
 }
 
 interface OptionState {
@@ -48,6 +50,7 @@ interface VariantState {
   isPriceCustom?: boolean;
   isSkuCustom?: boolean;
   isDiscountCustom?: boolean;
+  isImageCustom?: boolean;
 }
 
 export default function CreateProductPage() {
@@ -264,6 +267,17 @@ export default function CreateProductPage() {
         const valSuffix = c.optionValues.map(ov => ov.value.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, "")).join("-");
         const defaultSku = `${code || "SKU"}-${valSuffix}`;
 
+        // Find if any constituent option value has an image
+        let matchedImage: string | null = null;
+        for (const ov of c.optionValues) {
+          const opt = options.find(o => o.name.trim().toLowerCase() === ov.optionName.toLowerCase());
+          const val = opt?.values.find(v => v.value.trim().toLowerCase() === ov.value.toLowerCase());
+          if (val?.imageUrl) {
+            matchedImage = val.imageUrl;
+            break;
+          }
+        }
+
         if (existing) {
           // Remove the matched entry from the map so it cannot be reused (prevent duplicate keys)
           existingMap.delete(key);
@@ -271,7 +285,8 @@ export default function CreateProductPage() {
             ...existing,
             unitPrice: existing.isPriceCustom ? existing.unitPrice : defaultUnitPrice,
             sku: existing.isSkuCustom ? existing.sku : defaultSku,
-            variantDiscountPercent: existing.isDiscountCustom ? existing.variantDiscountPercent : (Number(discountPercent) || 0)
+            variantDiscountPercent: existing.isDiscountCustom ? existing.variantDiscountPercent : (Number(discountPercent) || 0),
+            imageUrl: existing.isImageCustom ? existing.imageUrl : (matchedImage || null)
           };
         }
 
@@ -283,13 +298,14 @@ export default function CreateProductPage() {
           variantDiscountPercent: Number(discountPercent) || 0,
           stock: 0,
           sku: defaultSku,
-          imageUrl: null,
+          imageUrl: matchedImage || null,
           description: "",
           status: true,
           optionValues: c.optionValues,
           isPriceCustom: false,
           isSkuCustom: false,
-          isDiscountCustom: false
+          isDiscountCustom: false,
+          isImageCustom: false
         };
       });
     });
@@ -303,6 +319,9 @@ export default function CreateProductPage() {
         if (field === "unitPrice") updated.isPriceCustom = true;
         if (field === "sku") updated.isSkuCustom = true;
         if (field === "variantDiscountPercent") updated.isDiscountCustom = true;
+        if (field === "imageUrl") {
+          updated.isImageCustom = value !== null;
+        }
         return updated;
       }
       return v;
@@ -344,13 +363,72 @@ export default function CreateProductPage() {
       }
 
       const data = await res.json();
-      setVariants(prev => prev.map(v => v.id === variantId ? { ...v, imageUrl: data.url, isUploadingImage: false } : v));
+      setVariants(prev => prev.map(v => v.id === variantId ? { ...v, imageUrl: data.url, isUploadingImage: false, isImageCustom: true } : v));
       toast.success("Tải ảnh biến thể thành công!");
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Lỗi khi upload ảnh.");
       setVariants(prev => prev.map(v => v.id === variantId ? { ...v, isUploadingImage: false } : v));
     }
+  };
+
+  const handleUploadOptionValueImage = async (optId: string, valId: string, file: File) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) {
+        toast.error("Vui lòng đăng nhập lại.");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.warning("Dung lượng ảnh vượt quá 5MB.");
+        return;
+      }
+
+      setOptions(prev => prev.map(o => o.id === optId ? {
+        ...o,
+        values: o.values.map(v => v.id === valId ? { ...v, isUploadingImage: true } : v)
+      } : o));
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "polystation/option_values");
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+      const res = await fetch(`${API_BASE_URL}/Upload/image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Tải ảnh thất bại.");
+      }
+
+      const data = await res.json();
+      setOptions(prev => prev.map(o => o.id === optId ? {
+        ...o,
+        values: o.values.map(v => v.id === valId ? { ...v, imageUrl: data.url, isUploadingImage: false } : v)
+      } : o));
+      toast.success("Tải ảnh thuộc tính thành công!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi upload ảnh.");
+      setOptions(prev => prev.map(o => o.id === optId ? {
+        ...o,
+        values: o.values.map(v => v.id === valId ? { ...v, isUploadingImage: false } : v)
+      } : o));
+    }
+  };
+
+  const handleRemoveOptionValueImage = (optId: string, valId: string) => {
+    setOptions(prev => prev.map(o => o.id === optId ? {
+      ...o,
+      values: o.values.map(v => v.id === valId ? { ...v, imageUrl: null } : v)
+    } : o));
   };
 
   // Category change handler from child CategorySelector
@@ -672,6 +750,43 @@ export default function CreateProductPage() {
                               const isValDup = isValueDuplicate(opt.id, val.value);
                               return (
                                 <div key={val.id} className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-100 shadow-sm relative pr-7">
+                                  {/* Micro Image Uploader Thumbnail */}
+                                  <div className="relative w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-inner group/valimg">
+                                    {val.isUploadingImage ? (
+                                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-primary border-t-transparent"></div>
+                                    ) : val.imageUrl ? (
+                                      <>
+                                        <img src={val.imageUrl} className="w-full h-full object-cover" alt="ValThumb" />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveOptionValueImage(opt.id, val.id)}
+                                          className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[9px] hover:bg-rose-600 shadow z-10 animate-in fade-in zoom-in duration-200"
+                                          title="Xóa ảnh"
+                                        >
+                                          <span className="material-symbols-outlined text-[8px] font-bold">close</span>
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <span className="material-symbols-outlined text-slate-300 text-base">image</span>
+                                    )}
+
+                                    {!val.imageUrl && !val.isUploadingImage && (
+                                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover/valimg:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white">
+                                        <span className="material-symbols-outlined text-[12px]">add_a_photo</span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                              handleUploadOptionValueImage(opt.id, val.id, e.target.files[0]);
+                                            }
+                                          }}
+                                        />
+                                      </label>
+                                    )}
+                                  </div>
+
                                   <div className="flex-1 min-w-0">
                                     <input
                                       type="text"

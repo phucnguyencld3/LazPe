@@ -94,6 +94,24 @@ function SearchableSelect({ value, onChange, options, placeholder }: SearchableS
     );
 }
 
+function normalizeForSku(val: string): string {
+    if (!val) return "";
+    const normalized = val.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const clean = normalized.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    return clean.slice(0, 3);
+}
+
+function generateDefaultSku(productCode: string, opt1Val: string, opt2Val: string): string {
+    const suffix1 = normalizeForSku(opt1Val);
+    const suffix2 = normalizeForSku(opt2Val);
+    const suffixList = [];
+    if (suffix1) suffixList.push(suffix1);
+    if (suffix2) suffixList.push(suffix2);
+    const suffix = suffixList.join("-");
+    const base = productCode || "SP";
+    return suffix ? `${base}-${suffix}` : base;
+}
+
 export default function ImportResolutionModal({ previewData, onClose, onCommit, onUpdatePreviewData }: ImportResolutionModalProps) {
     const [products, setProducts] = useState<any[]>(previewData.products || []);
     const [variants, setVariants] = useState<any[]>(previewData.variants || []);
@@ -258,25 +276,19 @@ export default function ImportResolutionModal({ previewData, onClose, onCommit, 
             }
 
             if (!v.sku || v.sku.trim() === "") {
+                v.sku = generateDefaultSku(v.productCode, v.option1Value, v.option2Value);
+            }
+
+            if (seenSkus.has(v.sku)) {
                 isValid = false;
                 newErrors.push({
                     sheet: "Variants",
                     row: v.excelRow,
                     field: "SKU",
-                    message: "SKU không được để trống"
+                    message: "SKU trùng lặp trong file Excel"
                 });
             } else {
-                if (seenSkus.has(v.sku)) {
-                    isValid = false;
-                    newErrors.push({
-                        sheet: "Variants",
-                        row: v.excelRow,
-                        field: "SKU",
-                        message: "SKU trùng lặp trong file Excel"
-                    });
-                } else {
-                    seenSkus.add(v.sku);
-                }
+                seenSkus.add(v.sku);
             }
 
             v.isValid = isValid;

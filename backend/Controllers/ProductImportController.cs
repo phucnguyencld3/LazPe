@@ -116,13 +116,20 @@ namespace PolyBabyAPI.Controllers
                 foreach (var row in productRows)
                 {
                     string code = row.Cell(1).GetString().Trim();
-                    if (string.IsNullOrEmpty(code)) continue;
+                    string productName = row.Cell(2).GetString().Trim();
+                    if (string.IsNullOrEmpty(code) && string.IsNullOrEmpty(productName)) continue;
+
+                    if (string.IsNullOrEmpty(code))
+                    {
+                        // Auto-generate temporary code for product to group with variants inside this Excel
+                        code = "TEMP-P-" + row.RowNumber();
+                    }
 
                     var pDto = new ProductImportDto
                     {
                         ExcelRow = row.RowNumber().ToString(),
                         ProductCode = code,
-                        ProductName = row.Cell(2).GetString().Trim(),
+                        ProductName = productName,
                         Description = row.Cell(3).GetString().Trim(),
                         Specifications = row.Cell(4).GetString().Trim(),
                         CategoryName = row.Cell(5).GetString().Trim(),
@@ -192,27 +199,357 @@ namespace PolyBabyAPI.Controllers
                     response.Products.Add(pDto);
                 }
 
-                // Parse Variants
+                // Parse Variants from Excel sheet
                 var variantRows = variantsSheet.RowsUsed().Skip(1);
-                var inFileSkus = new HashSet<string>();
+                var explicitVariants = new List<VariantImportDto>();
 
                 foreach (var row in variantRows)
                 {
                     string pCode = row.Cell(1).GetString().Trim();
                     string sku = row.Cell(2).GetString().Trim();
-                    if (string.IsNullOrEmpty(pCode) && string.IsNullOrEmpty(sku)) continue;
+                    string opt1Val = row.Cell(3).GetString().Trim();
+                    string opt2Val = row.Cell(4).GetString().Trim();
+
+                    if (string.IsNullOrEmpty(pCode) && string.IsNullOrEmpty(sku) && string.IsNullOrEmpty(opt1Val) && string.IsNullOrEmpty(opt2Val)) continue;
+
+                    // If pCode is empty but there's at least one product in products list, fallback to the first product's code
+                    if (string.IsNullOrEmpty(pCode))
+                    {
+                        pCode = inFileDataProducts.FirstOrDefault() ?? "";
+                    }
+
+                    if (string.IsNullOrEmpty(sku))
+                    {
+                        sku = GenerateDefaultSku(pCode, opt1Val, opt2Val);
+                    }
 
                     var vDto = new VariantImportDto
                     {
                         ExcelRow = row.RowNumber().ToString(),
                         ProductCode = pCode,
                         SKU = sku,
-                        Option1Value = row.Cell(3).GetString().Trim(),
-                        Option2Value = row.Cell(4).GetString().Trim(),
+                        Option1Value = opt1Val,
+                        Option2Value = opt2Val,
                         Price = decimal.TryParse(row.Cell(5).GetString(), out var vp) ? vp : 0,
                         Stock = int.TryParse(row.Cell(6).GetString(), out var st) ? st : 0,
                         ImageUrl = row.Cell(7).GetString().Trim()
                     };
+
+                    explicitVariants.Add(vDto);
+                }
+
+                var finalVariants = new List<VariantImportDto>();
+
+                // Build a map of explicit variants for quick lookup: ProductCode -> List of variants
+                var explicitMap = explicitVariants
+                    .GroupBy(v => v.ProductCode.ToLower())
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                foreach (var pDto in response.Products)
+                {
+                    if (!pDto.IsValid) continue;
+
+                    // Parse option values
+                    var opt1Values = string.IsNullOrEmpty(pDto.Option1Values) 
+                        ? new List<string>() 
+                        : pDto.Option1Values.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToList();
+
+                    var opt2Values = string.IsNullOrEmpty(pDto.Option2Values) 
+                        ? new List<string>() 
+                        : pDto.Option2Values.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToList();
+
+                    explicitMap.TryGetValue(pDto.ProductCode.ToLower(), out var productExplicits);
+                    productExplicits ??= new List<VariantImportDto>();
+
+                    if (opt1Values.Any())
+                    {
+                        // Separate explicit variants into:
+                        // 1. Full combos: both Option1 AND Option2 are filled
+                        // 2. Representative rows: only Option1 OR only Option2 is filled (used for propagation source)
+                        var fullCombos = productExplicits.Where(v =>
+                            !string.IsNullOrEmpty(v.Option1Value) && !string.IsNullOrEmpty(v.Option2Value)).ToList();
+                        var representativeRows = productExplicits.Where(v =>
+                            (string.IsNullOrEmpty(v.Option1Value) != string.IsNullOrEmpty(v.Option2Value))).ToList();
+
+                        // Generate Cartesian product combinations
+                        var generatedCombos = new List<(string opt1, string opt2)>();
+                        if (opt2Values.Any())
+                        {
+                            foreach (var o1 in opt1Values)
+                            {
+                                foreach (var o2 in opt2Values)
+                                {
+                                    generatedCombos.Add((o1, o2));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            foreach (var o1 in opt1Values)
+                            {
+                                generatedCombos.Add((o1, ""));
+                            }
+                        }
+
+                        foreach (var combo in generatedCombos)
+                        {
+                            // Search if there is an explicit full combo variant matching
+                            var matched = fullCombos.FirstOrDefault(v => 
+                                v.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) && 
+                                v.Option2Value.Equals(combo.opt2, StringComparison.OrdinalIgnoreCase));
+
+                            if (matched != null)
+                            {
+                                // Use explicit full combo data, but fill in missing fields from representatives
+                                if (string.IsNullOrEmpty(matched.ImageUrl))
+                                {
+                                    var repByOpt1 = representativeRows.FirstOrDefault(r =>
+                                        !string.IsNullOrEmpty(r.Option1Value) &&
+                                        r.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) &&
+                                        !string.IsNullOrEmpty(r.ImageUrl));
+                                    if (repByOpt1 != null) matched.ImageUrl = repByOpt1.ImageUrl;
+                                }
+                                if (matched.Price <= 0)
+                                {
+                                    var repByOpt2 = representativeRows.FirstOrDefault(r =>
+                                        !string.IsNullOrEmpty(r.Option2Value) &&
+                                        r.Option2Value.Equals(combo.opt2, StringComparison.OrdinalIgnoreCase) &&
+                                        r.Price > 0);
+                                    if (repByOpt2 != null) matched.Price = repByOpt2.Price;
+                                    else
+                                    {
+                                        var repByOpt1 = representativeRows.FirstOrDefault(r =>
+                                            !string.IsNullOrEmpty(r.Option1Value) &&
+                                            r.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) &&
+                                            r.Price > 0);
+                                        if (repByOpt1 != null) matched.Price = repByOpt1.Price;
+                                    }
+                                }
+                                if (matched.Stock <= 0)
+                                {
+                                    var repByOpt1 = representativeRows.FirstOrDefault(r =>
+                                        !string.IsNullOrEmpty(r.Option1Value) &&
+                                        r.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) &&
+                                        r.Stock > 0);
+                                    if (repByOpt1 != null) matched.Stock = repByOpt1.Stock;
+                                    else
+                                    {
+                                        var repByOpt2 = representativeRows.FirstOrDefault(r =>
+                                            !string.IsNullOrEmpty(r.Option2Value) &&
+                                            r.Option2Value.Equals(combo.opt2, StringComparison.OrdinalIgnoreCase) &&
+                                            r.Stock > 0);
+                                        if (repByOpt2 != null) matched.Stock = repByOpt2.Stock;
+                                    }
+                                }
+                                finalVariants.Add(matched);
+                            }
+                            else
+                            {
+                                // Auto-generate the missing combination, pre-fill from representatives
+                                var autoSku = GenerateDefaultSku(pDto.ProductCode, combo.opt1, combo.opt2);
+
+                                // Find representative data for this combo
+                                string imageUrl = "";
+                                decimal price = 0;
+                                int stock = 0;
+
+                                // Image: from Option1 representative (e.g. color row)
+                                var imgRep = representativeRows.FirstOrDefault(r =>
+                                    !string.IsNullOrEmpty(r.Option1Value) &&
+                                    r.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) &&
+                                    !string.IsNullOrEmpty(r.ImageUrl));
+                                if (imgRep != null) imageUrl = imgRep.ImageUrl;
+                                else
+                                {
+                                    imgRep = representativeRows.FirstOrDefault(r =>
+                                        !string.IsNullOrEmpty(r.Option2Value) &&
+                                        r.Option2Value.Equals(combo.opt2, StringComparison.OrdinalIgnoreCase) &&
+                                        !string.IsNullOrEmpty(r.ImageUrl));
+                                    if (imgRep != null) imageUrl = imgRep.ImageUrl;
+                                }
+
+                                // Price: from Option2 representative (e.g. size row), fallback to Option1
+                                var priceRep = representativeRows.FirstOrDefault(r =>
+                                    !string.IsNullOrEmpty(r.Option2Value) &&
+                                    r.Option2Value.Equals(combo.opt2, StringComparison.OrdinalIgnoreCase) &&
+                                    r.Price > 0);
+                                if (priceRep != null) price = priceRep.Price;
+                                else
+                                {
+                                    priceRep = representativeRows.FirstOrDefault(r =>
+                                        !string.IsNullOrEmpty(r.Option1Value) &&
+                                        r.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) &&
+                                        r.Price > 0);
+                                    if (priceRep != null) price = priceRep.Price;
+                                }
+
+                                // Stock: from Option1 representative (e.g. color row), fallback to Option2
+                                var stockRep = representativeRows.FirstOrDefault(r =>
+                                    !string.IsNullOrEmpty(r.Option1Value) &&
+                                    r.Option1Value.Equals(combo.opt1, StringComparison.OrdinalIgnoreCase) &&
+                                    r.Stock > 0);
+                                if (stockRep != null) stock = stockRep.Stock;
+                                else
+                                {
+                                    stockRep = representativeRows.FirstOrDefault(r =>
+                                        !string.IsNullOrEmpty(r.Option2Value) &&
+                                        r.Option2Value.Equals(combo.opt2, StringComparison.OrdinalIgnoreCase) &&
+                                        r.Stock > 0);
+                                    if (stockRep != null) stock = stockRep.Stock;
+                                }
+
+                                var autoVariant = new VariantImportDto
+                                {
+                                    ExcelRow = "Tự động sinh",
+                                    ProductCode = pDto.ProductCode,
+                                    SKU = autoSku,
+                                    Option1Value = combo.opt1,
+                                    Option2Value = combo.opt2,
+                                    Price = price,
+                                    Stock = stock,
+                                    ImageUrl = imageUrl
+                                };
+                                finalVariants.Add(autoVariant);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // No options defined for this product, if there are explicit variants, add them
+                        if (productExplicits.Any())
+                        {
+                            foreach (var exp in productExplicits)
+                            {
+                                finalVariants.Add(exp);
+                            }
+                        }
+                        else
+                        {
+                            // Auto-generate a default variant representing the product itself
+                            var autoSku = GenerateDefaultSku(pDto.ProductCode, "", "");
+                            var autoVariant = new VariantImportDto
+                            {
+                                ExcelRow = "Tự động sinh",
+                                ProductCode = pDto.ProductCode,
+                                SKU = autoSku,
+                                Option1Value = "",
+                                Option2Value = "",
+                                Price = pDto.BasePrice,
+                                Stock = 0,
+                                ImageUrl = ""
+                            };
+                            finalVariants.Add(autoVariant);
+                        }
+                    }
+                }
+
+                // Propagation pass: fill remaining gaps from siblings already in finalVariants
+                // 1. Image: from same Option1 (color)
+                foreach (var vDto in finalVariants)
+                {
+                    if (string.IsNullOrEmpty(vDto.ImageUrl))
+                    {
+                        var sibling = finalVariants.FirstOrDefault(v => 
+                            v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) && 
+                            !string.IsNullOrEmpty(v.ImageUrl) && 
+                            !string.IsNullOrEmpty(v.Option1Value) &&
+                            v.Option1Value.Equals(vDto.Option1Value, StringComparison.OrdinalIgnoreCase));
+
+                        if (sibling == null)
+                        {
+                            sibling = finalVariants.FirstOrDefault(v => 
+                                v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) && 
+                                !string.IsNullOrEmpty(v.ImageUrl) && 
+                                !string.IsNullOrEmpty(v.Option2Value) &&
+                                v.Option2Value.Equals(vDto.Option2Value, StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (sibling == null)
+                        {
+                            // 3rd Fallback: any sibling of the same product (useful for "1 single image" for the entire product)
+                            sibling = finalVariants.FirstOrDefault(v => 
+                                v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) && 
+                                !string.IsNullOrEmpty(v.ImageUrl));
+                        }
+
+                        if (sibling != null)
+                        {
+                            vDto.ImageUrl = sibling.ImageUrl;
+                        }
+                    }
+                }
+
+                // 2. Price: from same Option2 (size), fallback to same Option1
+                foreach (var vDto in finalVariants)
+                {
+                    if (vDto.Price <= 0)
+                    {
+                        var sibling = finalVariants.FirstOrDefault(v => 
+                            v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) && 
+                            v.Price > 0 && 
+                            !string.IsNullOrEmpty(v.Option2Value) &&
+                            v.Option2Value.Equals(vDto.Option2Value, StringComparison.OrdinalIgnoreCase));
+
+                        if (sibling == null)
+                        {
+                            sibling = finalVariants.FirstOrDefault(v => 
+                                v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) && 
+                                v.Price > 0 && 
+                                !string.IsNullOrEmpty(v.Option1Value) &&
+                                v.Option1Value.Equals(vDto.Option1Value, StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (sibling != null)
+                        {
+                            vDto.Price = sibling.Price;
+                        }
+                        else
+                        {
+                            var prod = response.Products.FirstOrDefault(p => p.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase));
+                            if (prod != null)
+                            {
+                                vDto.Price = prod.BasePrice;
+                            }
+                        }
+                    }
+                }
+
+                // 3. Stock: from same Option1 (color), fallback to same Option2
+                foreach (var vDto in finalVariants)
+                {
+                    if (vDto.Stock <= 0)
+                    {
+                        var sibling = finalVariants.FirstOrDefault(v =>
+                            v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) &&
+                            v.Stock > 0 &&
+                            !string.IsNullOrEmpty(v.Option1Value) &&
+                            v.Option1Value.Equals(vDto.Option1Value, StringComparison.OrdinalIgnoreCase));
+
+                        if (sibling == null)
+                        {
+                            sibling = finalVariants.FirstOrDefault(v =>
+                                v.ProductCode.Equals(vDto.ProductCode, StringComparison.OrdinalIgnoreCase) &&
+                                v.Stock > 0 &&
+                                !string.IsNullOrEmpty(v.Option2Value) &&
+                                v.Option2Value.Equals(vDto.Option2Value, StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (sibling != null)
+                        {
+                            vDto.Stock = sibling.Stock;
+                        }
+                    }
+                }
+
+                // 4. Tiến hành Validate và thêm vào Response
+
+                var inFileSkus = new HashSet<string>();
+                foreach (var vDto in finalVariants)
+                {
+                    if (string.IsNullOrEmpty(vDto.SKU))
+                    {
+                        vDto.SKU = GenerateDefaultSku(vDto.ProductCode, vDto.Option1Value, vDto.Option2Value);
+                    }
 
                     if (!inFileDataProducts.Contains(vDto.ProductCode))
                     {
@@ -223,17 +560,11 @@ namespace PolyBabyAPI.Controllers
                     if (inFileSkus.Contains(vDto.SKU))
                     {
                         vDto.IsValid = false;
-                        response.Errors.Add(new ImportErrorDto { Sheet = "Variants", Row = vDto.ExcelRow, Field = "SKU", Message = "SKU trùng lặp trong file Excel" });
+                        response.Errors.Add(new ImportErrorDto { Sheet = "Variants", Row = vDto.ExcelRow, Field = "SKU", Message = $"Mã SKU '{vDto.SKU}' bị trùng lặp" });
                     }
                     else if (!string.IsNullOrEmpty(vDto.SKU))
                     {
                         inFileSkus.Add(vDto.SKU);
-                    }
-
-                    if (string.IsNullOrEmpty(vDto.SKU))
-                    {
-                        vDto.IsValid = false;
-                        response.Errors.Add(new ImportErrorDto { Sheet = "Variants", Row = vDto.ExcelRow, Field = "SKU", Message = "SKU không được để trống" });
                     }
 
                     var existingVar = await _context.Variants.FirstOrDefaultAsync(v => v.SKU == vDto.SKU);
@@ -318,6 +649,16 @@ namespace PolyBabyAPI.Controllers
                         else if (prodAction == "CreateNew") finalCode = pDto.ProductCode + "-" + Guid.NewGuid().ToString()[..4];
                     }
 
+                    if (!update && (finalCode.StartsWith("TEMP-") || finalCode.Length < 5 || !finalCode.StartsWith("SP-")))
+                    {
+                        string generatedCode;
+                        do
+                        {
+                            generatedCode = "SP-" + Guid.NewGuid().ToString()[..6].ToUpper();
+                        } while (await _context.Products.AnyAsync(p => p.Code == generatedCode));
+                        finalCode = generatedCode;
+                    }
+
                     if (skip)
                     {
                         var extId = await _context.Products
@@ -394,7 +735,94 @@ namespace PolyBabyAPI.Controllers
                     }
                 }
 
-                // ── Variants ──────────────────────────────────────────────
+                // Tự động sao chép ImageUrl cho các biến thể trống ảnh từ biến thể cùng nhóm phân loại (Option1 hoặc Option2)
+                foreach (var vDto in request.Variants)
+                {
+                    if (string.IsNullOrEmpty(vDto.ImageUrl))
+                    {
+                        var sibling = request.Variants.FirstOrDefault(v => 
+                            v.ProductCode == vDto.ProductCode && 
+                            !string.IsNullOrEmpty(v.ImageUrl) && 
+                            v.Option1Value == vDto.Option1Value);
+
+                        if (sibling == null)
+                        {
+                            sibling = request.Variants.FirstOrDefault(v => 
+                                v.ProductCode == vDto.ProductCode && 
+                                !string.IsNullOrEmpty(v.ImageUrl) && 
+                                v.Option2Value == vDto.Option2Value);
+                        }
+
+                        if (sibling == null)
+                        {
+                            // 3rd Fallback: any sibling of the same product
+                            sibling = request.Variants.FirstOrDefault(v => 
+                                v.ProductCode == vDto.ProductCode && 
+                                !string.IsNullOrEmpty(v.ImageUrl));
+                        }
+
+                        if (sibling != null)
+                        {
+                            vDto.ImageUrl = sibling.ImageUrl;
+                        }
+                    }
+                }
+
+                // Tự động sao chép Price cho các biến thể có giá bằng 0 hoặc trống từ biến thể cùng nhóm phân loại (Ưu tiên Option2 trước như Size)
+                foreach (var vDto in request.Variants)
+                {
+                    if (vDto.Price <= 0)
+                    {
+                        var sibling = request.Variants.FirstOrDefault(v =>
+                            v.ProductCode == vDto.ProductCode &&
+                            v.Price > 0 &&
+                            v.Option2Value == vDto.Option2Value);
+
+                        if (sibling == null)
+                        {
+                            sibling = request.Variants.FirstOrDefault(v =>
+                                v.ProductCode == vDto.ProductCode &&
+                                v.Price > 0 &&
+                                v.Option1Value == vDto.Option1Value);
+                        }
+
+                        if (sibling != null)
+                        {
+                            vDto.Price = sibling.Price;
+                        }
+                    }
+                }
+
+                // Tự động sao chép Stock cho các biến thể có Stock bằng 0 hoặc trống từ biến thể cùng nhóm phân loại (Ưu tiên Option1 Màu sắc trước)
+                foreach (var vDto in request.Variants)
+                {
+                    if (vDto.Stock <= 0)
+                    {
+                        // Ưu tiên cùng màu (Option1)
+                        var sibling = request.Variants.FirstOrDefault(v =>
+                            v.ProductCode == vDto.ProductCode &&
+                            v.Stock > 0 &&
+                            !string.IsNullOrEmpty(v.Option1Value) &&
+                            v.Option1Value == vDto.Option1Value);
+
+                        if (sibling == null)
+                        {
+                            // Fallback: cùng size (Option2)
+                            sibling = request.Variants.FirstOrDefault(v =>
+                                v.ProductCode == vDto.ProductCode &&
+                                v.Stock > 0 &&
+                                !string.IsNullOrEmpty(v.Option2Value) &&
+                                v.Option2Value == vDto.Option2Value);
+                        }
+
+                        if (sibling != null)
+                        {
+                            vDto.Stock = sibling.Stock;
+                        }
+                    }
+                }
+ 
+                 // ── Variants ──────────────────────────────────────────────
                 foreach (var vDto in request.Variants)
                 {
                     if (!vDto.IsValid) continue;
@@ -417,6 +845,11 @@ namespace PolyBabyAPI.Controllers
                     }
 
                     if (skip) continue;
+
+                    if (!update && (string.IsNullOrEmpty(finalSku) || finalSku.StartsWith("TEMP-") || finalSku.Length < 5 || !finalSku.StartsWith("SP-")))
+                    {
+                        finalSku = GenerateDefaultSku(prod.Code, vDto.Option1Value, vDto.Option2Value);
+                    }
 
                     string variantName = $"{prod.ProductName} - {vDto.Option1Value} {vDto.Option2Value}".Trim(' ', '-').Trim();
 
@@ -452,7 +885,8 @@ namespace PolyBabyAPI.Controllers
                         await _context.SaveChangesAsync();
 
                         // Associate Option Values
-                        var options = prod.ProductOptions.OrderBy(o => o.DisplayOrder).ToList();
+                        var opt1 = prod.ProductOptions.FirstOrDefault(o => o.DisplayOrder == 1);
+                        var opt2 = prod.ProductOptions.FirstOrDefault(o => o.DisplayOrder == 2);
 
                         async Task LinkOptionValue(ProductOption opt, string valueStr)
                         {
@@ -477,8 +911,8 @@ namespace PolyBabyAPI.Controllers
                             });
                         }
 
-                        if (options.Count > 0) await LinkOptionValue(options[0], vDto.Option1Value);
-                        if (options.Count > 1) await LinkOptionValue(options[1], vDto.Option2Value);
+                        if (opt1 != null) await LinkOptionValue(opt1, vDto.Option1Value);
+                        if (opt2 != null) await LinkOptionValue(opt2, vDto.Option2Value);
                     }
                 }
 
@@ -527,6 +961,37 @@ namespace PolyBabyAPI.Controllers
             }
 
             return System.Text.Json.JsonSerializer.Serialize(specsDict);
+        }
+
+        private string GenerateDefaultSku(string productCode, string opt1Val, string opt2Val)
+        {
+            var suffix1 = NormalizeForSku(opt1Val);
+            var suffix2 = NormalizeForSku(opt2Val);
+            var suffixList = new List<string>();
+            if (!string.IsNullOrEmpty(suffix1)) suffixList.Add(suffix1);
+            if (!string.IsNullOrEmpty(suffix2)) suffixList.Add(suffix2);
+            var suffix = string.Join("-", suffixList);
+            return $"{productCode}-{suffix}".TrimEnd('-');
+        }
+
+        private string NormalizeForSku(string val)
+        {
+            if (string.IsNullOrEmpty(val)) return "";
+            var normalized = val.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder();
+            foreach (var c in normalized)
+            {
+                var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    if (char.IsLetterOrDigit(c))
+                    {
+                        sb.Append(char.ToUpperInvariant(c));
+                    }
+                }
+            }
+            var res = sb.ToString();
+            return res.Length > 3 ? res[..3] : res;
         }
     }
 }
