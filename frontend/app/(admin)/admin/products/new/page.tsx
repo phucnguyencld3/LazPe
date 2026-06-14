@@ -15,6 +15,7 @@ import {
 import { ProductGeneralInfo } from "@/components/admin/products/ProductGeneralInfo";
 import { ProductPricingInventory } from "@/components/admin/products/ProductPricingInventory";
 import { ProductFormActions } from "@/components/admin/products/ProductFormActions";
+import { ImageConflictModal } from "@/components/admin/products/ImageConflictModal";
 
 interface OptionValueState {
   id: string;
@@ -81,6 +82,11 @@ export default function CreateProductPage() {
   const [categories, setCategories] = useState<CategorySelectOption[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierSelectOption[]>([]);
 
+  // Image Management
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+
   // Category Selection Path State
   const [selectedPath, setSelectedPath] = useState<number[]>([]);
 
@@ -119,7 +125,7 @@ export default function CreateProductPage() {
     // Tự động sinh mã SKU ngẫu nhiên cho sản phẩm
     const generatedSku = "SP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     setCode(generatedSku);
-    
+
     loadInitialData();
   }, []);
 
@@ -431,176 +437,221 @@ export default function CreateProductPage() {
     } : o));
   };
 
-  // Category change handler from child CategorySelector
-  const handleCategoryChange = (catId: number | null, pathIds: number[]) => {
-    setSelectedCategoryId(catId);
-    setSelectedPath(pathIds);
-  };
+const handleUploadProductImage = async (file: File) => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
 
-  // Dynamically calculate stock sum when variants exist
-  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    setIsUploadingProductImage(true);
 
-  // Dynamic duplicate warning helpers
-  const isOptionNameDuplicate = (name: string) => {
-    if (!name.trim()) return false;
-    return options.filter(o => o.name.trim().toLowerCase() === name.trim().toLowerCase()).length > 1;
-  };
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const isValueDuplicate = (optId: string, value: string) => {
-    if (!value.trim()) return false;
-    const opt = options.find(o => o.id === optId);
-    if (!opt) return false;
-    return opt.values.filter(v => v.value.trim().toLowerCase() === value.trim().toLowerCase()).length > 1;
-  };
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5169/api";
+    const res = await fetch(`${API_BASE_URL}/Upload/image`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
 
-  const isSkuDuplicate = (sku: string) => {
-    if (!sku.trim()) return false;
-    return variants.filter(v => v.sku.trim().toLowerCase() === sku.trim().toLowerCase()).length > 1;
-  };
+    if (!res.ok) throw new Error("Upload thất bại");
 
-  // Check if there are any duplicate values
-  const hasDuplicates = (() => {
-    const optNames = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
-    if (optNames.length !== new Set(optNames).size) return true;
-
-    for (const opt of options) {
-      const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
-      if (valList.length !== new Set(valList).size) return true;
+    const data = await res.json();
+    if (data.url) {
+      setProductImages(prev => [...prev, data.url]);
     }
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Lỗi khi upload ảnh sản phẩm.");
+  } finally {
+    setIsUploadingProductImage(false);
+  }
+};
 
-    const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
-    if (skus.length !== new Set(skus).size) return true;
+const handleRemoveProductImage = (index: number) => {
+  setProductImages(prev => prev.filter((_, i) => i !== index));
+};
 
-    const specKeys = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
-    if (specKeys.length !== new Set(specKeys).size) return true;
+// Category change handler from child CategorySelector
+const handleCategoryChange = (catId: number | null, pathIds: number[]) => {
+  setSelectedCategoryId(catId);
+  setSelectedPath(pathIds);
+};
 
-    return false;
-  })();
+// Dynamically calculate stock sum when variants exist
+const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
 
-  // Dynamic Pricing Preview
-  const baseVal = Number(price) || 0;
-  const discVal = Number(discountPercent) || 0;
-  const finalPrice = Math.max(0, baseVal - baseVal * (discVal / 100));
+// Dynamic duplicate warning helpers
+const isOptionNameDuplicate = (name: string) => {
+  if (!name.trim()) return false;
+  return options.filter(o => o.name.trim().toLowerCase() === name.trim().toLowerCase()).length > 1;
+};
 
-  // Submit Handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const isValueDuplicate = (optId: string, value: string) => {
+  if (!value.trim()) return false;
+  const opt = options.find(o => o.id === optId);
+  if (!opt) return false;
+  return opt.values.filter(v => v.value.trim().toLowerCase() === value.trim().toLowerCase()).length > 1;
+};
 
-    if (!productName.trim()) {
-      toast.warning("Vui lòng nhập tên sản phẩm.");
-      return;
-    }
+const isSkuDuplicate = (sku: string) => {
+  if (!sku.trim()) return false;
+  return variants.filter(v => v.sku.trim().toLowerCase() === sku.trim().toLowerCase()).length > 1;
+};
 
-    if (!supplierId) {
-      toast.warning("Vui lòng chọn thương hiệu / nhãn hàng.");
-      return;
-    }
+// Check if there are any duplicate values
+const hasDuplicates = (() => {
+  const optNames = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
+  if (optNames.length !== new Set(optNames).size) return true;
 
-    if (!selectedCategoryId) {
-      toast.warning("Vui lòng chọn danh mục phân loại sản phẩm.");
-      return;
-    }
-
-    // Option validations
-    const optionNamesList = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
-    if (optionNamesList.length !== new Set(optionNamesList).size) {
-      toast.warning("Tên các thuộc tính (Options) không được trùng nhau.");
-      return;
-    }
-
-    for (const opt of options) {
-      const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
-      if (valList.length !== new Set(valList).size) {
-        toast.warning(`Thuộc tính '${opt.name}' chứa các giá trị trùng nhau.`);
-        return;
-      }
-    }
-
-    // Variant validation
-    const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
-    if (skus.length !== new Set(skus).size) {
-      toast.warning("Mã SKU của các biến thể bị trùng lặp.");
-      return;
-    }
-
-    // Specifications validation
-    const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
-    if (specKeysList.length !== new Set(specKeysList).size) {
-      toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token) return;
-
-      setSaving(true);
-
-      const specsObj: Record<string, string> = {};
-      specifications.forEach(item => {
-        if (item.key.trim() && item.value.trim()) {
-          specsObj[item.key.trim()] = item.value.trim();
-        }
-      });
-      const specsJson = Object.keys(specsObj).length > 0 ? JSON.stringify(specsObj) : undefined;
-
-      const payload: CreateFullProductPayload = {
-        productName: productName.trim(),
-        code: code.trim() || undefined,
-        categoryID: selectedCategoryId as number,
-        supplierID: typeof supplierId === "number" ? supplierId : null,
-        description: description.trim() || undefined,
-        specifications: specsJson,
-        price: price === "" ? 0 : Number(price),
-        productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
-        stock: options.length > 0 ? totalStock : (stock === "" ? 0 : Number(stock)),
-        status: true,
-        options: options
-          .filter(o => o.name.trim() && o.values.some(v => v.value.trim()))
-          .map(o => ({
-            name: o.name.trim(),
-            displayOrder: o.displayOrder,
-            values: o.values
-              .filter(v => v.value.trim())
-              .map(v => ({
-                value: v.value.trim(),
-                price: v.price,
-                displayOrder: v.displayOrder
-              }))
-          })),
-        variants: variants.map(v => ({
-          variantName: v.variantName,
-          unitPrice: v.unitPrice,
-          variantDiscountPercent: v.variantDiscountPercent,
-          stock: v.stock,
-          sku: v.sku.trim(),
-          imageUrl: v.imageUrl,
-          description: v.description,
-          status: v.status,
-          optionValues: v.optionValues
-        }))
-      };
-
-      await createFullProduct(token, payload);
-      toast.success("Tạo sản phẩm hoàn chỉnh thành công!");
-      router.push("/admin/products");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Lỗi khi tạo sản phẩm.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[500px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  for (const opt of options) {
+    const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
+    if (valList.length !== new Set(valList).size) return true;
   }
 
+  const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
+  if (skus.length !== new Set(skus).size) return true;
+
+  const specKeys = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+  if (specKeys.length !== new Set(specKeys).size) return true;
+
+  return false;
+})();
+
+// Dynamic Pricing Preview
+const baseVal = Number(price) || 0;
+const discVal = Number(discountPercent) || 0;
+const finalPrice = Math.max(0, baseVal - baseVal * (discVal / 100));
+
+// --- Submit Handler ---
+const handleSubmit = async (e?: React.FormEvent, skipConflictCheck = false) => {
+  if (e) e.preventDefault();
+
+  if (!productName.trim()) {
+    toast.warning("Vui lòng nhập tên sản phẩm.");
+    return;
+  }
+
+  if (!supplierId) {
+    toast.warning("Vui lòng chọn thương hiệu / nhãn hàng.");
+    return;
+  }
+
+  if (!selectedCategoryId) {
+    toast.warning("Vui lòng chọn danh mục phân loại sản phẩm.");
+    return;
+  }
+
+  // Option validations
+  const optionNamesList = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
+  if (optionNamesList.length !== new Set(optionNamesList).size) {
+    toast.warning("Tên các thuộc tính (Options) không được trùng nhau.");
+    return;
+  }
+
+  for (const opt of options) {
+    const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
+    if (valList.length !== new Set(valList).size) {
+      toast.warning(`Thuộc tính '${opt.name}' chứa các giá trị trùng nhau.`);
+      return;
+    }
+  }
+
+  // Variant validation
+  const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
+  if (skus.length !== new Set(skus).size) {
+    toast.warning("Mã SKU của các biến thể bị trùng lặp.");
+    return;
+  }
+
+  // Specifications validation
+  const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+  if (specKeysList.length !== new Set(specKeysList).size) {
+    toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
+    return;
+  }
+
+  // Image Conflict Detection
+  const hasProductImages = productImages.length > 0;
+  const hasVariantImages = variants.some(v => !!v.imageUrl);
+  if (!skipConflictCheck && hasProductImages && hasVariantImages) {
+    setShowConflictModal(true);
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+
+    setSaving(true);
+
+    const specsObj: Record<string, string> = {};
+    specifications.forEach(item => {
+      if (item.key.trim() && item.value.trim()) {
+        specsObj[item.key.trim()] = item.value.trim();
+      }
+    });
+    const specsJson = Object.keys(specsObj).length > 0 ? JSON.stringify(specsObj) : undefined;
+
+    const payload: CreateFullProductPayload = {
+      productName: productName.trim(),
+      code: code.trim() || undefined,
+      categoryID: selectedCategoryId as number,
+      supplierID: typeof supplierId === "number" ? supplierId : null,
+      description: description.trim() || undefined,
+      specifications: specsJson,
+      price: price === "" ? 0 : Number(price),
+      productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
+      stock: options.length > 0 ? totalStock : (stock === "" ? 0 : Number(stock)),
+      status: true,
+      options: options
+        .filter(o => o.name.trim() && o.values.some(v => v.value.trim()))
+        .map(o => ({
+          name: o.name.trim(),
+          displayOrder: o.displayOrder,
+          values: o.values
+            .filter(v => v.value.trim())
+            .map(v => ({
+              value: v.value.trim(),
+              price: v.price,
+              displayOrder: v.displayOrder
+            }))
+        })),
+      variants: variants.map(v => ({
+        variantName: v.variantName,
+        unitPrice: v.unitPrice,
+        variantDiscountPercent: v.variantDiscountPercent,
+        stock: v.stock,
+        sku: v.sku.trim(),
+        imageUrl: v.imageUrl,
+        description: v.description,
+        status: v.status,
+        optionValues: v.optionValues
+      })),
+      images: productImages
+    };
+
+    await createFullProduct(token, payload);
+    toast.success("Tạo sản phẩm hoàn chỉnh thành công!");
+    router.push("/admin/products");
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Lỗi khi tạo sản phẩm.");
+  } finally {
+    setSaving(false);
+  }
+};
+
+if (loading) {
   return (
+    <div className="flex justify-center items-center h-[500px]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>
+  );
+}
+
+return (
+    <>
     <div className="w-full pb-32 animate-in fade-in duration-300">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1.5 text-slate-400 mb-6 font-bold text-xs">
@@ -649,6 +700,10 @@ export default function CreateProductPage() {
               onCategoryChange={handleCategoryChange}
               specifications={specifications}
               onSpecificationsChange={setSpecifications}
+              productImages={productImages}
+              isUploadingImage={isUploadingProductImage}
+              onUploadProductImage={handleUploadProductImage}
+              onRemoveProductImage={handleRemoveProductImage}
             />
           </div>
 
@@ -907,7 +962,7 @@ export default function CreateProductPage() {
                                 ) : (
                                   <span className="material-symbols-outlined text-slate-300 text-base">image</span>
                                 )}
-                                
+
                                 {!v.imageUrl && !v.isUploadingImage && (
                                   <label className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white">
                                     <span className="material-symbols-outlined text-[12px]">add_a_photo</span>
@@ -1030,5 +1085,23 @@ export default function CreateProductPage() {
         />
       </form>
     </div>
-  );
+
+    <ImageConflictModal
+        isOpen={showConflictModal}
+        onClose={() => setShowConflictModal(false)}
+        onKeepProductImages={() => {
+          setShowConflictModal(false);
+          // Xóa ảnh biến thể
+          setVariants(prev => prev.map(v => ({ ...v, imageUrl: null })));
+          setTimeout(() => handleSubmit(undefined, true), 100);
+        }}
+        onKeepVariantImages={() => {
+          setShowConflictModal(false);
+          // Xóa ảnh sản phẩm
+          setProductImages([]);
+          setTimeout(() => handleSubmit(undefined, true), 100);
+        }}
+      />
+    </>
+    );
 }

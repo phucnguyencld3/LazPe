@@ -89,6 +89,7 @@ namespace PolyBabyAPI.DTOs
     {
         public List<VariantDto> Variants { get; set; } = new();
         public List<ProductOptionDto> ProductOptions { get; set; } = new();
+        public List<string> ImageUrls { get; set; } = new();
     }
 
     /// <summary>
@@ -196,6 +197,9 @@ namespace PolyBabyAPI.DTOs
 
         public int? SupplierID { get; set; }
         public bool Status { get; set; } = true;
+
+        public List<string>? Images { get; set; } = new();
+        public bool ClearVariantImages { get; set; } = false;
     }
 
     // =============================================

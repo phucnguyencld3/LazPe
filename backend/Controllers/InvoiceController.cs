@@ -1100,7 +1100,7 @@ namespace PolyBabyAPI.Controllers
                     VariantName = d.Variant?.VariantName,
                     CategoryName = d.Variant?.Product?.Category?.CategoryName,
                     SupplierName = d.Variant?.Product?.Supplier?.SupplierName,
-                    ImageUrl = d.Variant?.ImageUrl ?? d.Bundle?.ImageUrl
+                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? d.Bundle?.ImageUrl)
                 }).ToList(),
                 PaymentTransactions = invoice.PaymentTransactions?
                     .OrderByDescending(pt => pt.CreatedAt)
@@ -1271,7 +1271,7 @@ namespace PolyBabyAPI.Controllers
                     d.TotalPrice,
                     ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
                     VariantName = d.Variant?.VariantName,
-                    ImageUrl = d.Variant?.ImageUrl ?? d.Bundle?.ImageUrl
+                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? d.Bundle?.ImageUrl)
                 }).ToList()
             };
         }

@@ -97,12 +97,13 @@ namespace PolyBabyAPI.Controllers
                     {
                         var product = await _context.Products
                             .Include(p => p.Variants)
+                            .Include(p => p.Images)
                             .FirstOrDefaultAsync(p => p.ProductID == item.ReferenceId);
                         if (product != null)
                         {
                             itemDto.ItemName = product.ProductName;
                             itemDto.OriginalPrice = product.Price;
-                            itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl;
+                            itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl ?? product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
                             itemDto.ProductId = product.ProductID;
                         }
                     }
@@ -241,11 +242,12 @@ namespace PolyBabyAPI.Controllers
 
                 if (item.ItemType == FlashSaleItemType.Product)
                 {
-                    var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductID == item.ReferenceId);
+                    var product = await _context.Products.Include(p => p.Variants).Include(p => p.Images).FirstOrDefaultAsync(p => p.ProductID == item.ReferenceId);
                     if (product != null)
                     {
                         itemDto.ItemName = product.ProductName;
                         itemDto.OriginalPrice = product.Price;
+                        itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl ?? product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
                         itemDto.ProductId = product.ProductID;
                     }
                 }

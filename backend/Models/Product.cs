@@ -79,5 +79,6 @@ namespace PolyBabyAPI.Models
         // ✅ Thêm navigation property thiếu
         public virtual ICollection<Variant>? Variants { get; set; } = new List<Variant>();
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
+        public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     }
 }

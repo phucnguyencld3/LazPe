@@ -24,6 +24,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
                         .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Images)
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
                         .ThenInclude(v => v.VariantOptionValues) // ✅ THÊM: Include VariantOptionValues
@@ -336,6 +337,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
                         .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Images)
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)

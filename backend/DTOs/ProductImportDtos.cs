@@ -27,6 +27,7 @@ namespace PolyBabyAPI.DTOs
         public string Option1Values { get; set; } = string.Empty;
         public string Option2Name { get; set; } = string.Empty;
         public string Option2Values { get; set; } = string.Empty;
+        public string ImageUrls { get; set; } = string.Empty;
         
         public bool IsValid { get; set; } = true;
     }
@@ -51,6 +52,7 @@ namespace PolyBabyAPI.DTOs
         public string Row { get; set; } = string.Empty;
         public string Field { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public bool IsWarning { get; set; } = false;
     }
 
     public class ImportDuplicateDto

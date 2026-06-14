@@ -47,6 +47,7 @@ namespace PolyBabyAPI.Controllers
             productsSheet.Cell(1, 10).Value = "Option1Values";
             productsSheet.Cell(1, 11).Value = "Option2Name";
             productsSheet.Cell(1, 12).Value = "Option2Values";
+            productsSheet.Cell(1, 13).Value = "ImageUrls";
 
             productsSheet.Cell(2, 1).Value = "SP-AO-001";
             productsSheet.Cell(2, 2).Value = "Áo body bé trai";
@@ -60,6 +61,7 @@ namespace PolyBabyAPI.Controllers
             productsSheet.Cell(2, 10).Value = "Xanh, Đỏ";
             productsSheet.Cell(2, 11).Value = "Kích cỡ";
             productsSheet.Cell(2, 12).Value = "S, M, L";
+            productsSheet.Cell(2, 13).Value = "https://example.com/img1.jpg, https://example.com/img2.jpg";
 
             var variantsSheet = workbook.Worksheets.Add("Variants");
             variantsSheet.Cell(1, 1).Value = "ProductCode";
@@ -139,7 +141,8 @@ namespace PolyBabyAPI.Controllers
                         Option1Name = row.Cell(9).GetString().Trim(),
                         Option1Values = row.Cell(10).GetString().Trim(),
                         Option2Name = row.Cell(11).GetString().Trim(),
-                        Option2Values = row.Cell(12).GetString().Trim()
+                        Option2Values = row.Cell(12).GetString().Trim(),
+                        ImageUrls = row.Cell(13).GetString().Trim()
                     };
 
                     if (string.IsNullOrEmpty(pDto.ProductName))
@@ -576,6 +579,30 @@ namespace PolyBabyAPI.Controllers
                     response.Variants.Add(vDto);
                 }
 
+                // 5. Check for Image Conflicts (Product ImageUrls vs Variant ImageUrl)
+                foreach (var pDto in response.Products)
+                {
+                    if (string.IsNullOrEmpty(pDto.ImageUrls)) continue;
+
+                    var hasVariantImages = response.Variants.Any(v => 
+                        v.ProductCode.Equals(pDto.ProductCode, StringComparison.OrdinalIgnoreCase) && 
+                        !string.IsNullOrEmpty(v.ImageUrl));
+
+                    if (hasVariantImages)
+                    {
+                        // Priority is given to Variant Images per business rule
+                        pDto.ImageUrls = string.Empty;
+                        response.Errors.Add(new ImportErrorDto 
+                        { 
+                            Sheet = "Products", 
+                            Row = pDto.ExcelRow, 
+                            Field = "ImageUrls", 
+                            Message = "Đã loại bỏ ảnh sản phẩm chung để ưu tiên ảnh biến thể",
+                            IsWarning = true
+                        });
+                    }
+                }
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -732,6 +759,27 @@ namespace PolyBabyAPI.Controllers
                             });
                             await _context.SaveChangesAsync();
                         }
+                    }
+
+                    // Create Product Images (Gallery)
+                    if (!string.IsNullOrWhiteSpace(pDto.ImageUrls))
+                    {
+                        var urls = pDto.ImageUrls.Split(new[] { ',', '|' }, StringSplitOptions.RemoveEmptyEntries);
+                        int displayOrder = 1;
+                        foreach (var url in urls)
+                        {
+                            var cleanUrl = url.Trim();
+                            if (!string.IsNullOrEmpty(cleanUrl))
+                            {
+                                _context.ProductImages.Add(new ProductImage
+                                {
+                                    ProductID = prod.ProductID,
+                                    ImageUrl = cleanUrl,
+                                    DisplayOrder = displayOrder++
+                                });
+                            }
+                        }
+                        await _context.SaveChangesAsync();
                     }
                 }
 

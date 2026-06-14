@@ -46,7 +46,7 @@ namespace PolyBabyAPI.Controllers
                         DiscountPrice = p.ProductDiscountPercent > 0 ? (decimal?)(p.Price * (1 - p.ProductDiscountPercent / 100)) : null,
                         Rating = 0,
                         ReviewsCount = 0,
-                        ImageUrl = p.Variants.FirstOrDefault() != null ? p.Variants.FirstOrDefault().ImageUrl : null,
+                        ImageUrl = p.Variants.FirstOrDefault(v => v.ImageUrl != null && v.ImageUrl != "") != null ? p.Variants.FirstOrDefault(v => v.ImageUrl != null && v.ImageUrl != "").ImageUrl : (p.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault() != null ? p.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault().ImageUrl : null),
                         BrandName = p.Supplier != null ? p.Supplier.SupplierName : null,
                         CategoryName = p.Category != null ? p.Category.CategoryName : null
                     })

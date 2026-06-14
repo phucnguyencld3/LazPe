@@ -25,6 +25,7 @@ namespace PolyBabyAPI.Data
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Variant> Variants { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; }
 
         public DbSet<ProductOption> ProductOptions { get; set; }
         public DbSet<ProductOptionValue> ProductOptionValues { get; set; }
@@ -136,6 +137,12 @@ namespace PolyBabyAPI.Data
                 .HasOne(v => v.Product)
                 .WithMany(p => p.Variants)
                 .HasForeignKey(v => v.ProductID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProductImage>()
+                .HasOne(pi => pi.Product)
+                .WithMany(p => p.Images)
+                .HasForeignKey(pi => pi.ProductID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<ProductOption>()

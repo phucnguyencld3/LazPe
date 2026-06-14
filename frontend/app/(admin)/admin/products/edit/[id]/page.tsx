@@ -15,6 +15,7 @@ import {
 // Presentational Components
 import { ProductGeneralInfo } from "@/components/admin/products/ProductGeneralInfo";
 import { ProductPricingInventory } from "@/components/admin/products/ProductPricingInventory";
+import { ImageConflictModal } from "@/components/admin/products/ImageConflictModal";
 
 export default function EditProductPage() {
   const { id } = useParams();
@@ -39,6 +40,12 @@ export default function EditProductPage() {
   // Lists from API
   const [categories, setCategories] = useState<CategorySelectOption[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierSelectOption[]>([]);
+
+  // Image state
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [hasVariantImages, setHasVariantImages] = useState(false);
 
   // Category Selection Path State
   const [selectedPath, setSelectedPath] = useState<number[]>([]);
@@ -86,6 +93,11 @@ export default function EditProductPage() {
       setStock(productData.stock);
       setSelectedCategoryId(productData.categoryID);
       setStatus(productData.status);
+      setProductImages(productData.imageUrls || []);
+
+      const variantsArray = productData.variants || [];
+      const vWithImages = variantsArray.some(function(v: any) { return !!v.imageUrl; });
+      setHasVariantImages(vWithImages || false);
 
       // Parse specifications JSON
       let parsedSpecsList: { key: string; value: string }[] = [];
@@ -145,6 +157,41 @@ export default function EditProductPage() {
     setSelectedPath(pathIds);
   };
 
+  const handleUploadProductImage = async (file: File) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      setIsUploadingProductImage(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5169/api";
+      const res = await fetch(`${API_BASE_URL}/Upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload thất bại");
+
+      const data = await res.json();
+      if (data.url) {
+        setProductImages(prev => [...prev, data.url]);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi upload ảnh sản phẩm.");
+    } finally {
+      setIsUploadingProductImage(false);
+    }
+  };
+
+  const handleRemoveProductImage = (index: number) => {
+    setProductImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Calculate final discounted price preview
   const baseVal = Number(price) || 0;
   const discVal = Number(discountPercent) || 0;
@@ -157,8 +204,8 @@ export default function EditProductPage() {
   })();
 
   // Submit Handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, skipConflictCheck = false, clearVariantImages = false) => {
+    if (e) e.preventDefault();
 
     if (!productName.trim()) {
       toast.warning("Vui lòng nhập tên sản phẩm.");
@@ -179,6 +226,13 @@ export default function EditProductPage() {
     const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
     if (specKeysList.length !== new Set(specKeysList).size) {
       toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
+      return;
+    }
+
+    // Conflict Check
+    const hasProductImages = productImages.length > 0;
+    if (!skipConflictCheck && hasProductImages && hasVariantImages) {
+      setShowConflictModal(true);
       return;
     }
 
@@ -206,7 +260,9 @@ export default function EditProductPage() {
         price: price === "" ? 0 : Number(price),
         productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
         stock: stock === "" ? 0 : Number(stock),
-        status: status
+        status: status,
+        images: productImages,
+        clearVariantImages: clearVariantImages
       };
 
       await updateProduct(token, Number(id), payload);
@@ -230,8 +286,9 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="w-full pb-32 animate-in fade-in duration-300">
-      {/* Breadcrumbs */}
+    <>
+      <div className="w-full pb-32 animate-in fade-in duration-300">
+        {/* Breadcrumbs */}
       <nav className="flex items-center gap-1.5 text-slate-400 mb-6 font-bold text-xs">
         <span
           className="hover:text-primary transition-colors cursor-pointer"
@@ -285,6 +342,10 @@ export default function EditProductPage() {
               onCategoryChange={handleCategoryChange}
               specifications={specifications}
               onSpecificationsChange={setSpecifications}
+              productImages={productImages}
+              isUploadingImage={isUploadingProductImage}
+              onUploadProductImage={handleUploadProductImage}
+              onRemoveProductImage={handleRemoveProductImage}
             />
           </div>
 
@@ -361,5 +422,21 @@ export default function EditProductPage() {
         </footer>
       </form>
     </div>
+
+    <ImageConflictModal
+      isOpen={showConflictModal}
+      onClose={() => setShowConflictModal(false)}
+      onKeepProductImages={() => {
+        setShowConflictModal(false);
+        setHasVariantImages(false);
+        setTimeout(() => handleSubmit(undefined, true, true), 100);
+      }}
+      onKeepVariantImages={() => {
+        setShowConflictModal(false);
+        setProductImages([]);
+        setTimeout(() => handleSubmit(undefined, true, false), 100);
+      }}
+    />
+    </>
   );
 }

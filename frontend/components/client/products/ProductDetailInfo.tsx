@@ -18,6 +18,7 @@ interface ProductDetailInfoProps {
   handleDecreaseQuantity: () => void;
   handleIncreaseQuantity: () => void;
   handleAddToCart: () => void;
+  handleBuyNow: () => void;
   isWishlisted: boolean;
   setIsWishlisted: (wishlisted: boolean) => void;
   activeVariant?: Variant | null;
@@ -41,6 +42,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   handleDecreaseQuantity,
   handleIncreaseQuantity,
   handleAddToCart,
+  handleBuyNow,
   isWishlisted,
   setIsWishlisted,
   activeVariant = null,
@@ -313,15 +315,26 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             </button>
           </div>
 
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!displayInStock || maxAllowedQuantity <= 0}
-            className="w-full h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
-          >
-            <ShoppingCart size={18} />
-            Thêm vào giỏ hàng
-          </button>
+          <div className="flex w-full gap-2">
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!displayInStock || maxAllowedQuantity <= 0}
+              className="w-1/2 h-12 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+            >
+              <ShoppingCart size={18} />
+              Thêm giỏ hàng
+            </button>
+
+            {/* Buy Now Button */}
+            <button
+              onClick={handleBuyNow}
+              disabled={!displayInStock || maxAllowedQuantity <= 0}
+              className="w-1/2 h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+            >
+              Mua ngay
+            </button>
+          </div>
 
           {/* Wishlist Toggle Button */}
           <button

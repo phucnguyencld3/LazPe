@@ -196,6 +196,7 @@ export interface AdminProductDetailInfo {
   } | null;
   variants: AdminVariantInfo[];
   productOptions: AdminProductOption[];
+  imageUrls?: string[];
 }
 
 export const fetchAdminProductDetail = async (token: string, id: string): Promise<AdminProductDetailInfo> => {
@@ -517,6 +518,7 @@ export interface CreateFullProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status?: boolean;
+  images?: string[];
   options: {
     name: string;
     displayOrder: number;
@@ -597,6 +599,8 @@ export interface UpdateProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status: boolean;
+  images?: string[];
+  clearVariantImages?: boolean;
 }
 
 export const updateProduct = async (token: string, id: number, payload: UpdateProductPayload): Promise<any> => {
