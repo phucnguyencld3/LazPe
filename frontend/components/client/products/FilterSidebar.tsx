@@ -74,6 +74,9 @@ export default function FilterSidebar({
               }`}
             >
               <span>{cat.name}</span>
+              <span className={`text-xs ${selectedCategory === cat.id ? "text-white/80" : "text-slate-400"}`}>
+                ({cat.productCount ?? 0})
+              </span>
             </button>
           ))}
         </div>

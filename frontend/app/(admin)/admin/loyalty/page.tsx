@@ -1275,7 +1275,7 @@ export default function AdminLoyaltyPage() {
               fetchTiers();
               setShowRevocationModal(true);
             }}
-            className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-102 active:scale-95 transition-all font-bold cursor-pointer"
+            className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">remove_circle</span> Thu hồi Đặc quyền / Điểm
           </button>
@@ -1283,55 +1283,55 @@ export default function AdminLoyaltyPage() {
       </header>
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-outline-variant/30 mb-md overflow-x-auto gap-2" style={{ scrollbarWidth: "none" }}>
+      <div className="flex border-b border-slate-200 mb-6 overflow-x-auto gap-2" style={{ scrollbarWidth: "none" }}>
         <button
           onClick={() => setActiveTab("dashboard")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "dashboard"
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "dashboard"
             ? "border-primary text-primary"
-            : "border-transparent text-on-surface-variant/70 hover:text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">dashboard</span>
+          <span className="material-symbols-outlined text-[18px]">dashboard</span>
           Tổng quan
         </button>
         <button
           onClick={() => setActiveTab("policies")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "policies"
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "policies"
             ? "border-primary text-primary"
-            : "border-transparent text-on-surface-variant/70 hover:text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">settings_suggest</span>
+          <span className="material-symbols-outlined text-[18px]">settings_suggest</span>
           Cơ chế Tích/Đổi
         </button>
         <button
           onClick={() => setActiveTab("tiers")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "tiers"
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "tiers"
             ? "border-primary text-primary"
-            : "border-transparent text-on-surface-variant/70 hover:text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">military_tech</span>
+          <span className="material-symbols-outlined text-[18px]">military_tech</span>
           Hạng & Đặc quyền
         </button>
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "history"
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "history"
             ? "border-primary text-primary"
-            : "border-transparent text-on-surface-variant/70 hover:text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">history</span>
+          <span className="material-symbols-outlined text-[18px]">history</span>
           Lịch sử & Logs
         </button>
         <button
           onClick={() => setActiveTab("settings")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "settings"
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "settings"
             ? "border-primary text-primary"
-            : "border-transparent text-on-surface-variant/70 hover:text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">settings</span>
+          <span className="material-symbols-outlined text-[18px]">settings</span>
           Cấu hình
         </button>
       </div>
@@ -1345,144 +1345,145 @@ export default function AdminLoyaltyPage() {
             </div>
           ) : stats ? (
             <>
-              {/* Bento Grid Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {/* Issued */}
-                <div className="glass-card p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow bg-surface-container-lowest border border-outline-variant/20 flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-label-md text-label-md text-on-surface-variant font-bold">Tổng điểm phát hành</p>
-                      <h3 className="font-display-lg text-display-lg text-primary mt-xs">{stats.totalPointsIssued.toLocaleString()}đ</h3>
+                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">military_tech</span>
                     </div>
-                    <div className="p-sm bg-primary-container/20 rounded-lg shrink-0">
-                      <span className="material-symbols-outlined text-primary text-[28px]">military_tech</span>
-                    </div>
+                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng điểm phát hành</span>
                   </div>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsIssued.toLocaleString()}đ</span>
                 </div>
 
                 {/* Spent */}
-                <div className="glass-card p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow bg-surface-container-lowest border border-outline-variant/20 flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-label-md text-label-md text-on-surface-variant font-bold">Điểm đã sử dụng</p>
-                      <h3 className="font-display-lg text-display-lg text-secondary mt-xs">{stats.totalPointsSpent.toLocaleString()}đ</h3>
+                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
                     </div>
-                    <div className="p-sm bg-secondary-container/20 rounded-lg shrink-0">
-                      <span className="material-symbols-outlined text-secondary text-[28px]">shopping_cart</span>
-                    </div>
+                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm đã sử dụng</span>
                   </div>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsSpent.toLocaleString()}đ</span>
                 </div>
 
                 {/* Remaining */}
-                <div className="glass-card p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow bg-surface-container-lowest border border-outline-variant/20 flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-label-md text-label-md text-on-surface-variant font-bold">Điểm tồn trong ví</p>
-                      <h3 className="font-display-lg text-display-lg text-tertiary mt-xs">{stats.totalPointsRemaining.toLocaleString()}đ</h3>
+                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
                     </div>
-                    <div className="p-sm bg-tertiary-container/20 rounded-lg shrink-0">
-                      <span className="material-symbols-outlined text-tertiary text-[28px]">account_balance_wallet</span>
-                    </div>
+                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm tồn trong ví</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Stats bento row 2 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-                <div className="glass-card p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow bg-surface-container-lowest border border-outline-variant/20 flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-label-md text-label-md text-on-surface-variant font-bold">Tỷ lệ thăng hạng</p>
-                      <h3 className="font-display-lg text-display-lg text-primary mt-xs">{stats.upgradeRate}%</h3>
-                    </div>
-                    <div className="p-sm bg-primary-container/20 rounded-lg shrink-0">
-                      <span className="material-symbols-outlined text-primary text-[28px]">trending_up</span>
-                    </div>
-                  </div>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsRemaining.toLocaleString()}đ</span>
                 </div>
 
-                <div className="glass-card p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow bg-surface-container-lowest border border-outline-variant/20 flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-label-md text-label-md text-on-surface-variant font-bold">Tỷ lệ sử dụng voucher</p>
-                      <h3 className="font-display-lg text-display-lg text-secondary mt-xs">{stats.voucherUsageRate}%</h3>
+                {/* Upgrade Rate */}
+                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">trending_up</span>
                     </div>
-                    <div className="p-sm bg-secondary-container/20 rounded-lg shrink-0">
-                      <span className="material-symbols-outlined text-secondary text-[28px]">local_activity</span>
-                    </div>
+                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tỷ lệ thăng hạng</span>
                   </div>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.upgradeRate}%</span>
                 </div>
 
-                <div className="glass-card p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow bg-surface-container-lowest border border-outline-variant/20 flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-label-md text-label-md text-on-surface-variant font-bold">Doanh thu Loyalty</p>
-                      <h3 className="font-display-lg text-display-lg text-tertiary mt-xs">{formatCurrency(stats.revenueFromLoyalty)}</h3>
+                {/* Voucher Usage Rate */}
+                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">local_activity</span>
                     </div>
-                    <div className="p-sm bg-tertiary-container/20 rounded-lg shrink-0">
-                      <span className="material-symbols-outlined text-tertiary text-[28px]">monetization_on</span>
-                    </div>
+                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tỷ lệ sử dụng voucher</span>
                   </div>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.voucherUsageRate}%</span>
+                </div>
+
+                {/* Revenue */}
+                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">monetization_on</span>
+                    </div>
+                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu Loyalty</span>
+                  </div>
+                  <span className="text-2xl font-extrabold text-slate-800">{formatCurrency(stats.revenueFromLoyalty)}</span>
                 </div>
               </div>
 
               {/* Members distributions & Leaderboard */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-                <div className="glass-card p-lg rounded-xl border border-outline-variant/20 shadow-sm bg-surface-container-lowest flex flex-col">
-                  <div className="border-b border-outline-variant/20 pb-4 mb-4">
-                    <h3 className="font-headline-md text-on-surface font-bold">Phân bố thành viên</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Member Distribution */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-fit">
+                  <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="text-base font-bold text-slate-800">Phân bố thành viên</h3>
+                    <span className="material-symbols-outlined text-slate-400 text-[20px]">pie_chart</span>
                   </div>
-                  <div className="space-y-4 flex-1 flex flex-col justify-center">
+                  <div className="p-6 space-y-5">
                     {stats.membersPerTier.map((item) => (
-                      <div key={item.tierID} className="flex items-center justify-between">
-                        <div className="flex items-center gap-sm">
-                          <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.colorHex }} />
-                          <span className="font-label-md text-label-md text-on-surface-variant font-bold">{item.tierName}</span>
+                      <div key={item.tierID} className="flex items-center justify-between group cursor-default">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 group-hover:scale-110 transition-transform">
+                            <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.colorHex }} />
+                          </div>
+                          <span className="text-sm font-bold text-slate-600">{item.tierName}</span>
                         </div>
-                        <span className="font-body-md text-body-md text-on-surface font-bold">{(item.count ?? 0).toLocaleString()} khách</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-base font-extrabold text-slate-800">{(item.count ?? 0).toLocaleString()}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold uppercase">khách</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="lg:col-span-2 glass-card rounded-xl border border-outline-variant/20 shadow-sm overflow-hidden bg-surface-container-lowest">
-                  <div className="p-md border-b border-outline-variant/20 bg-primary-container/5">
-                    <h3 className="font-headline-md text-on-surface font-bold">Bảng xếp hạng tích điểm cao nhất</h3>
+                {/* Leaderboard */}
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-fit">
+                  <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 className="text-base font-bold text-slate-800">Bảng xếp hạng tích điểm cao nhất</h3>
+                    <span className="material-symbols-outlined text-slate-400 text-[20px]">emoji_events</span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead className="bg-primary-container/10 border-b border-outline-variant/30 text-left">
+                    <table className="w-full border-collapse text-left">
+                      <thead className="bg-white border-b border-slate-100">
                         <tr>
-                          <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Hạng</th>
-                          <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Khách hàng</th>
-                          <th className="px-lg py-md font-label-md text-label-md text-primary font-bold text-right">Điểm khả dụng</th>
-                          <th className="px-lg py-md font-label-md text-label-md text-primary font-bold text-right">Tổng tích lũy</th>
+                          <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-[100px]">Hạng</th>
+                          <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Khách hàng</th>
+                          <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Điểm khả dụng</th>
+                          <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Tổng tích lũy</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-outline-variant/20">
+                      <tbody className="divide-y divide-slate-50">
                         {stats.topCustomers.map((c) => (
-                          <tr key={c.userID} className="hover:bg-primary-container/10 transition-colors group">
-                            <td className="px-lg py-md">
+                          <tr key={c.userID} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4">
                               <span
-                                className="px-3 py-1 rounded-full text-[10px] font-bold text-white shadow-sm"
+                                className="px-3 py-1 rounded-full text-[10px] font-bold text-white shadow-sm inline-block text-center min-w-[60px]"
                                 style={{ backgroundColor: stats.membersPerTier.find(m => m.tierName === c.tierName)?.colorHex || "#64748b" }}
                               >
                                 {c.tierName}
                               </span>
                             </td>
-                            <td className="px-lg py-md">
-                              <div className="flex items-center gap-sm">
-                                <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-on-surface-variant text-xs shrink-0 overflow-hidden border border-outline-variant/20">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-xs shrink-0 overflow-hidden border border-slate-200">
                                   {c.avatar ? <img src={c.avatar} className="w-full h-full object-cover" /> : c.fullName.charAt(0)}
                                 </div>
                                 <div>
-                                  <p className="font-label-md text-label-md text-on-surface font-bold">{c.fullName}</p>
-                                  <p className="text-[10px] text-on-surface-variant/60 font-semibold">{c.email}</p>
+                                  <p className="font-bold text-sm text-slate-800">{c.fullName}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold">{c.email}</p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-lg py-md text-right font-body-md text-body-md text-primary font-bold">{c.availablePoints.toLocaleString()}</td>
-                            <td className="px-lg py-md text-right font-body-md text-body-md text-on-surface font-bold">{c.totalPoints.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right">
+                              <span className="font-bold text-sm text-slate-800">{c.availablePoints.toLocaleString()}</span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <span className="font-bold text-sm text-slate-400">{c.totalPoints.toLocaleString()}</span>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1501,66 +1502,66 @@ export default function AdminLoyaltyPage() {
 
       {/* -------------------- TAB 2: POLICIES (Config Forms & Tables) -------------------- */}
       {activeTab === "policies" && (
-        <section className="space-y-md">
+        <section className="space-y-6">
           {loadingPolicies ? (
-            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
+            <div className="h-64 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Accumulation Policies */}
-              <div className="glass-card rounded-xl border border-outline-variant/20 shadow-sm overflow-hidden bg-surface-container-lowest flex flex-col">
-                <div className="p-md border-b border-outline-variant/20 flex items-center justify-between bg-primary-container/5">
+              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
-                    <h3 className="font-headline-md text-on-surface font-bold">Cơ chế tích điểm</h3>
-                    <p className="text-on-surface-variant/60 text-xs font-semibold mt-xs">Cấu hình giá trị chuyển đổi từ VNĐ mua hàng sang điểm</p>
+                    <h3 className="text-lg text-slate-800 font-bold">Cơ chế tích điểm</h3>
+                    <p className="text-slate-500 text-xs font-semibold mt-1">Cấu hình giá trị chuyển đổi từ VNĐ mua hàng sang điểm</p>
                   </div>
                   <button
                     onClick={() => {
                       setEditingEarnPolicy(null);
                       setShowEarnModal(true);
                     }}
-                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
+                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm quy tắc
                   </button>
                 </div>
 
-                <div className="p-md space-y-md">
+                <div className="p-6 space-y-4">
                   {earnPolicies.map((p) => (
-                    <div key={p.policyID} className="p-md border border-outline-variant/30 rounded-xl flex items-center justify-between hover:border-primary/50 transition-all relative bg-surface-container-low/30">
+                    <div key={p.policyID} className="p-5 border border-slate-100 rounded-2xl flex items-center justify-between hover:border-slate-300 transition-all relative bg-white shadow-sm">
                       {p.isCampaign && (
-                        <span className="absolute top-0 right-16 bg-error text-on-error text-[8px] font-bold px-2 py-0.5 rounded-b-md uppercase">Campaign</span>
+                        <span className="absolute top-0 right-16 bg-rose-100 text-rose-700 text-[9px] font-bold px-3 py-1 rounded-b-lg uppercase tracking-wider">Campaign</span>
                       )}
                       <div>
-                        <h4 className="font-label-md text-label-md text-on-surface font-bold">{p.name}</h4>
-                        <p className="text-xs text-on-surface-variant/70 mt-1">
-                          Quy đổi: <strong className="text-primary">{p.vndAmount.toLocaleString()}₫</strong> = <strong className="text-primary">{p.pointsEarned} điểm</strong>
+                        <h4 className="text-sm text-slate-800 font-bold">{p.name}</h4>
+                        <p className="text-xs text-slate-600 mt-1.5 font-medium">
+                          Quy đổi: <strong className="text-emerald-600">{p.vndAmount.toLocaleString()}₫</strong> = <strong className="text-emerald-600">{p.pointsEarned} điểm</strong>
                           {p.isCampaign && ` (Hệ số: x${p.multiplier})`}
                         </p>
                         {(p.startDate || p.endDate) && (
-                          <p className="text-[10px] text-on-surface-variant/50 mt-1 font-semibold">
+                          <p className="text-[10px] text-slate-400 mt-1 font-semibold">
                             Áp dụng: {p.startDate ? new Date(p.startDate).toLocaleDateString("vi-VN") : "Ngay bây giờ"} - {p.endDate ? new Date(p.endDate).toLocaleDateString("vi-VN") : "Hạn dài"}
                           </p>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={() => p.isCampaign && handleToggleEarn(p.policyID)}
                           disabled={!p.isCampaign}
-                          className={`w-9 h-5 rounded-full transition-colors flex items-center p-0.5 ${!p.isCampaign ? "bg-secondary opacity-70 cursor-not-allowed" : "cursor-pointer"} ${(!p.isCampaign || p.isActive) ? "bg-secondary" : "bg-outline-variant/50"}`}
+                          className={`w-11 h-6 rounded-full transition-colors flex items-center p-1 ${!p.isCampaign ? "bg-secondary opacity-50 cursor-not-allowed" : "cursor-pointer"} ${(!p.isCampaign || p.isActive) ? "bg-secondary" : "bg-slate-200"}`}
                           title={!p.isCampaign ? "Không thể tắt chính sách mặc định" : ""}
                         >
-                          <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow ${(!p.isCampaign || p.isActive) ? "translate-x-4" : ""}`} />
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${(!p.isCampaign || p.isActive) ? "translate-x-5" : ""}`} />
                         </button>
                         <button
                           onClick={() => {
                             setEditingEarnPolicy(p);
                             setShowEarnModal(true);
                           }}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/20 cursor-pointer"
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
@@ -1570,7 +1571,7 @@ export default function AdminLoyaltyPage() {
                               "Bạn có chắc chắn muốn xóa chính sách này?",
                               () => handleDeleteEarn(p.policyID)
                             )}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 cursor-pointer"
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
@@ -1582,59 +1583,59 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Redemption Policies */}
-              <div className="glass-card rounded-xl border border-outline-variant/20 shadow-sm overflow-hidden bg-surface-container-lowest flex flex-col">
-                <div className="p-md border-b border-outline-variant/20 flex items-center justify-between bg-primary-container/5">
+              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
-                    <h3 className="font-headline-md text-on-surface font-bold">Cơ chế đổi điểm</h3>
-                    <p className="text-on-surface-variant/60 text-xs font-semibold mt-xs">Quy định đổi điểm thành tiền giảm giá (hệ thống hoặc theo hạng)</p>
+                    <h3 className="text-lg text-slate-800 font-bold">Cơ chế đổi điểm</h3>
+                    <p className="text-slate-500 text-xs font-semibold mt-1">Quy định đổi điểm thành tiền giảm giá</p>
                   </div>
                   <button
                     onClick={() => {
                       setEditingRedeemPolicy(null);
                       setShowRedeemModal(true);
                     }}
-                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
+                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm quy tắc
                   </button>
                 </div>
 
-                <div className="p-md space-y-md">
+                <div className="p-6 space-y-4">
                   {redeemPolicies.map((p) => {
                     const isDefaultRedeem = p.tierID === null || p.tierID === 0 || p.name.includes("mặc định") || p.name.toLowerCase().includes("default");
                     return (
-                      <div key={p.policyID} className="p-md border border-outline-variant/30 rounded-xl flex items-center justify-between hover:border-primary/50 transition-all relative bg-surface-container-low/30">
+                      <div key={p.policyID} className="p-5 border border-slate-100 rounded-2xl flex items-center justify-between hover:border-slate-300 transition-all relative bg-white shadow-sm">
                         {p.tierID && (
-                          <span className="absolute top-0 right-16 bg-secondary text-on-secondary text-[8px] font-bold px-2 py-0.5 rounded-b-md uppercase">Hạng: {p.tier?.tierName}</span>
+                          <span className="absolute top-0 right-16 bg-blue-100 text-blue-700 text-[9px] font-bold px-3 py-1 rounded-b-lg uppercase tracking-wider">Hạng: {p.tier?.tierName}</span>
                         )}
                         <div>
-                          <h4 className="font-label-md text-label-md text-on-surface font-bold">{p.name}</h4>
-                          <p className="text-xs text-on-surface-variant/70 mt-1">
-                            Quy đổi: <strong className="text-primary">{p.pointsToRedeem.toLocaleString()} điểm</strong> = <strong className="text-primary">-{p.discountVnd.toLocaleString()}₫</strong>
+                          <h4 className="text-sm text-slate-800 font-bold">{p.name}</h4>
+                          <p className="text-xs text-slate-600 mt-1.5 font-medium">
+                            Quy đổi: <strong className="text-amber-600">{p.pointsToRedeem.toLocaleString()} điểm</strong> = <strong className="text-amber-600">-{p.discountVnd.toLocaleString()}₫</strong>
                           </p>
                           {(p.startDate || p.endDate) && (
-                            <p className="text-[10px] text-on-surface-variant/50 mt-1 font-semibold">
+                            <p className="text-[10px] text-slate-400 mt-1 font-semibold">
                               Hiệu lực: {p.startDate ? new Date(p.startDate).toLocaleDateString("vi-VN") : "Ngay bây giờ"} - {p.endDate ? new Date(p.endDate).toLocaleDateString("vi-VN") : "Hạn dài"}
                             </p>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => !isDefaultRedeem && handleToggleRedeem(p.policyID)}
                             disabled={isDefaultRedeem}
-                            className={`w-9 h-5 rounded-full transition-colors flex items-center p-0.5 ${isDefaultRedeem ? "bg-secondary opacity-70 cursor-not-allowed" : "cursor-pointer"} ${(isDefaultRedeem || p.isActive) ? "bg-secondary" : "bg-outline-variant/50"}`}
+                            className={`w-11 h-6 rounded-full transition-colors flex items-center p-1 ${isDefaultRedeem ? "bg-secondary opacity-50 cursor-not-allowed" : "cursor-pointer"} ${(isDefaultRedeem || p.isActive) ? "bg-secondary" : "bg-slate-200"}`}
                             title={isDefaultRedeem ? "Không thể tắt chính sách mặc định" : ""}
                           >
-                            <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow ${(isDefaultRedeem || p.isActive) ? "translate-x-4" : ""}`} />
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${(isDefaultRedeem || p.isActive) ? "translate-x-5" : ""}`} />
                           </button>
                           <button
                             onClick={() => {
                               setEditingRedeemPolicy(p);
                               setShowRedeemModal(true);
                             }}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/20 cursor-pointer"
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
@@ -1644,7 +1645,7 @@ export default function AdminLoyaltyPage() {
                                 "Bạn có chắc chắn muốn xóa chính sách này?",
                                 () => handleDeleteRedeem(p.policyID)
                               )}
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 cursor-pointer"
+                              className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
@@ -1662,42 +1663,42 @@ export default function AdminLoyaltyPage() {
 
       {/* -------------------- TAB 3: TIERS & PRIVILEGES (Card Layout) -------------------- */}
       {activeTab === "tiers" && (
-        <section className="space-y-md">
+        <section className="space-y-6">
           {loadingTiers ? (
-            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
+            <div className="h-64 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Tiers list */}
-              <div className="lg:col-span-1 space-y-md">
+              <div className="lg:col-span-1 space-y-6">
                 <div className="flex items-center justify-between px-2">
-                  <h3 className="font-label-md text-on-surface font-bold text-lg">Hạng thành viên</h3>
+                  <h3 className="text-lg text-slate-800 font-bold">Hạng thành viên</h3>
                   <button
                     onClick={() => {
                       setEditingTier(null);
                       setShowTierModal(true);
                     }}
-                    className="bg-primary text-on-primary px-md py-sm rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer text-sm"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-base">add_circle</span>
+                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm mới
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-sm">
+                <div className="flex flex-col gap-3">
                   {tiers.map((t) => (
                     <div
                       key={t.tierID}
                       onClick={() => setSelectedTierForPrivileges(t.tierID)}
-                      className={`px-sm py-sm rounded-[5px] border cursor-pointer transition-all flex items-center gap-sm relative overflow-hidden group shadow-sm hover:shadow-md ${selectedTierForPrivileges === t.tierID ? "border-primary ring-2 ring-primary/20 bg-surface-container-lowest" : "border-outline-variant/20 bg-surface-container-low/30 hover:border-outline-variant/60"}`}
+                      className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 relative overflow-hidden group shadow-sm hover:shadow-md ${selectedTierForPrivileges === t.tierID ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 bg-white hover:border-primary/30"}`}
                     >
-                      <div className="absolute left-0 top-0 bottom-0 w-2" style={{ backgroundColor: t.colorHex }} />
-                      <div className="pl-2 flex items-center gap-sm w-full min-w-0">
+                      <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: t.colorHex }} />
+                      <div className="pl-3 flex items-center gap-3 w-full min-w-0">
                         <span className="material-symbols-outlined text-[22px] shrink-0" style={{ color: t.colorHex }}>{cleanIconName(t.badgeIcon)}</span>
                         <div className="min-w-0">
-                          <h4 className="font-label-md text-label-md text-on-surface font-bold text-base truncate">{t.tierName}</h4>
-                          <p className="text-sm text-on-surface-variant/60 font-semibold">
+                          <h4 className="text-base text-slate-800 font-bold truncate">{t.tierName}</h4>
+                          <p className="text-sm text-slate-500 font-semibold">
                             {t.minPoints.toLocaleString()}đ
                           </p>
                         </div>
@@ -1708,33 +1709,33 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Detail Tier Panel */}
-              <div className="lg:col-span-2 glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col animate-in fade-in duration-300">
+              <div className="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in duration-300">
                 {(() => {
                   const activeTier = tiers.find(t => t.tierID === selectedTierForPrivileges);
                   return (
                     <>
-                      <div className="p-md border-b border-outline-variant/20 bg-primary-container/5 flex items-center justify-between">
+                      <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div>
-                          <h3 className="font-headline-md text-on-surface font-bold text-lg">Chi tiết Hạng thành viên</h3>
-                          <p className="text-on-surface-variant/60 text-base font-semibold mt-xs">
+                          <h3 className="text-lg text-slate-800 font-bold">Chi tiết Hạng thành viên</h3>
+                          <p className="text-slate-500 text-sm font-semibold mt-1">
                             Đang chọn: <span className="text-primary font-bold">{activeTier?.tierName || "Chưa chọn"}</span>
                           </p>
                         </div>
                         {activeTier && (
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-3 shrink-0">
                             <button
                               onClick={() => handleToggleTier(activeTier.tierID)}
-                              className={`w-11 h-6 rounded-full transition-colors flex items-center p-0.5 cursor-pointer ${activeTier.isActive ? "bg-secondary" : "bg-outline-variant/50"}`}
+                              className={`w-11 h-6 rounded-full transition-colors flex items-center p-1 cursor-pointer ${activeTier.isActive ? "bg-secondary" : "bg-slate-200"}`}
                               title={activeTier.isActive ? "Đang hoạt động" : "Tạm khóa"}
                             >
-                              <div className={`w-5 h-5 bg-white rounded-full transition-transform shadow ${activeTier.isActive ? "translate-x-5" : ""}`} />
+                              <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${activeTier.isActive ? "translate-x-5" : ""}`} />
                             </button>
                             <button
                               onClick={() => {
                                 setEditingTier(activeTier);
                                 setShowTierModal(true);
                               }}
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/20 cursor-pointer border border-outline-variant/20 shadow-sm bg-surface-container-low"
+                              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 bg-white border border-slate-200 shadow-sm cursor-pointer transition-colors"
                               title="Chỉnh sửa thông tin hạng"
                             >
                               <span className="material-symbols-outlined text-[20px]">edit</span>
@@ -1746,21 +1747,21 @@ export default function AdminLoyaltyPage() {
                       {selectedTierForPrivileges ? (
                         <>
                           {/* Sub-tabs Navigation */}
-                          <div className="flex border-b border-outline-variant/20 bg-surface-container-low/20 p-1 gap-1">
+                          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 m-6 rounded-xl shadow-sm">
                             <button
                               onClick={() => setSubTab("privileges")}
-                              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${subTab === "privileges"
+                              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${subTab === "privileges"
                                 ? "bg-primary text-on-primary shadow-sm"
-                                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+                                : "text-slate-500 hover:bg-slate-100/50 hover:text-primary"
                                 }`}
                             >
                               Đặc quyền
                             </button>
                             <button
                               onClick={() => setSubTab("redeem")}
-                              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${subTab === "redeem"
+                              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${subTab === "redeem"
                                 ? "bg-primary text-on-primary shadow-sm"
-                                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+                                : "text-slate-500 hover:bg-slate-100/50 hover:text-primary"
                                 }`}
                             >
                               Đổi điểm riêng
@@ -1768,62 +1769,62 @@ export default function AdminLoyaltyPage() {
                           </div>
 
                           {/* Sub-tab Content Area */}
-                          <div className="p-md overflow-y-auto max-h-[320px]">
+                          <div className="px-6 pb-6 overflow-y-auto max-h-[400px]">
                             {/* Sub-tab 1: Privileges */}
                             {subTab === "privileges" && (
-                              <div className="space-y-md">
-                                <div className="flex justify-between items-center mb-sm">
-                                  <h4 className="font-label-md text-on-surface-variant font-bold uppercase tracking-wider text-xs">Đặc quyền của hạng</h4>
+                              <div className="space-y-6">
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Đặc quyền của hạng</h4>
                                   <button
                                     onClick={() => {
                                       setEditingPrivilege(null);
                                       setShowPrivilegeModal(true);
                                     }}
-                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer"
+                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm"
                                   >
                                     + Thêm đặc quyền
                                   </button>
                                 </div>
 
-                                <div className="space-y-sm">
+                                <div className="space-y-3">
                                   {privileges.length === 0 ? (
-                                    <div className="text-center py-10 text-on-surface-variant/50 font-bold text-base">
+                                    <div className="text-center py-10 text-slate-400 font-bold text-sm">
                                       Chưa có đặc quyền nào được thiết lập.
                                     </div>
                                   ) : (
                                     privileges.map((p) => (
-                                      <div key={p.privilegeID} className="p-sm border border-outline-variant/30 rounded-lg flex items-center justify-between bg-surface-container-low/30 hover:border-primary/30 transition-all">
+                                      <div key={p.privilegeID} className="p-4 border border-slate-100 rounded-2xl flex items-center justify-between bg-white shadow-sm hover:border-slate-300 transition-all">
                                         <div>
-                                          <h5 className="font-label-md text-label-md text-on-surface font-bold text-base">{p.name}</h5>
-                                          <div className="flex gap-1.5 mt-1 items-center">
-                                            <span className="px-1.5 py-0.5 rounded-full text-sm font-bold bg-primary-container/20 text-on-primary-container uppercase">{p.privilegeType}</span>
+                                          <h5 className="text-sm text-slate-800 font-bold">{p.name}</h5>
+                                          <div className="flex gap-1.5 mt-1.5 items-center">
+                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 uppercase">{p.privilegeType}</span>
                                           </div>
                                           {p.value && (
-                                            <ul className="text-xs text-on-surface-variant/60 font-semibold mt-1.5 space-y-0.5 pl-4 list-disc">
+                                            <ul className="text-xs text-slate-500 font-semibold mt-2 space-y-0.5 pl-4 list-disc">
                                               {formatPrivilegeDetailLines(p.privilegeType, p.value).map((line, idx) => (
                                                 <li key={idx}>{line}</li>
                                               ))}
                                             </ul>
                                           )}
                                         </div>
-                                        <div className="flex items-center gap-1 shrink-0">
+                                        <div className="flex items-center gap-2 shrink-0">
                                           <button
                                             onClick={() => {
                                               setEditingPrivilege(p);
                                               setShowPrivilegeModal(true);
                                             }}
-                                            className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/20 cursor-pointer"
+                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                                           >
-                                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                                            <span className="material-symbols-outlined text-[16px]">edit</span>
                                           </button>
                                           <button
                                             onClick={() => openConfirmDialog(
                                               "Bạn có chắc chắn muốn xóa đặc quyền này?",
                                               () => handleDeletePrivilege(p.privilegeID)
                                             )}
-                                            className="w-6 h-6 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 cursor-pointer"
+                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                                           >
-                                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                                            <span className="material-symbols-outlined text-[16px]">delete</span>
                                           </button>
                                         </div>
                                       </div>
@@ -1835,60 +1836,60 @@ export default function AdminLoyaltyPage() {
 
                             {/* Sub-tab 2: Redeem Policies (Đổi điểm riêng) */}
                             {subTab === "redeem" && (
-                              <div className="space-y-md">
-                                <div className="flex justify-between items-center mb-sm">
-                                  <h4 className="font-label-md text-on-surface-variant font-bold uppercase tracking-wider text-xs">Cơ chế đổi điểm riêng</h4>
+                              <div className="space-y-6">
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Cơ chế đổi điểm riêng</h4>
                                   <button
                                     onClick={() => {
                                       setEditingRedeemPolicy(null);
                                       setShowRedeemModal(true);
                                     }}
-                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-full font-bold text-xs transition-all cursor-pointer"
+                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm"
                                   >
                                     + Thêm quy tắc riêng
                                   </button>
                                 </div>
 
-                                <div className="space-y-sm">
+                                <div className="space-y-3">
                                   {redeemPolicies.filter(p => p.tierID === selectedTierForPrivileges).length === 0 ? (
-                                    <div className="text-center py-10 text-on-surface-variant/50 font-bold text-base">
+                                    <div className="text-center py-10 text-slate-400 font-bold text-sm">
                                       Chưa có cơ chế đổi điểm riêng. Sẽ áp dụng cơ chế đổi điểm mặc định.
                                     </div>
                                   ) : (
                                     redeemPolicies
                                       .filter(p => p.tierID === selectedTierForPrivileges)
                                       .map((p) => (
-                                        <div key={p.policyID} className="p-sm border border-outline-variant/30 rounded-lg flex items-center justify-between bg-surface-container-low/30 hover:border-primary/30 transition-all">
+                                        <div key={p.policyID} className="p-4 border border-slate-100 rounded-2xl flex items-center justify-between bg-white shadow-sm hover:border-slate-300 transition-all">
                                           <div>
-                                            <h5 className="font-label-md text-label-md text-on-surface font-bold text-base">{p.name}</h5>
-                                            <p className="text-base text-on-surface-variant/70 mt-1 font-semibold">
-                                              Quy đổi: <strong className="text-primary">{p.pointsToRedeem.toLocaleString()} điểm</strong> = <strong className="text-primary">-{p.discountVnd.toLocaleString()}₫</strong>
+                                            <h5 className="text-sm text-slate-800 font-bold">{p.name}</h5>
+                                            <p className="text-xs text-slate-600 mt-1.5 font-medium">
+                                              Quy đổi: <strong className="text-amber-600">{p.pointsToRedeem.toLocaleString()} điểm</strong> = <strong className="text-amber-600">-{p.discountVnd.toLocaleString()}₫</strong>
                                             </p>
                                           </div>
-                                          <div className="flex items-center gap-1 shrink-0">
+                                          <div className="flex items-center gap-2 shrink-0">
                                             <button
                                               onClick={() => handleToggleRedeem(p.policyID)}
-                                              className={`w-8 h-4 rounded-full transition-colors flex items-center p-0.5 cursor-pointer ${p.isActive ? "bg-secondary" : "bg-outline-variant/50"}`}
+                                              className={`w-9 h-5 rounded-full transition-colors flex items-center p-1 cursor-pointer ${p.isActive ? "bg-secondary" : "bg-slate-200"}`}
                                             >
-                                              <div className={`w-3 h-3 bg-white rounded-full transition-transform shadow ${p.isActive ? "translate-x-3.5" : ""}`} />
+                                              <div className={`w-3 h-3 bg-white rounded-full transition-transform shadow-sm ${p.isActive ? "translate-x-4" : ""}`} />
                                             </button>
                                             <button
                                               onClick={() => {
                                                 setEditingRedeemPolicy(p);
                                                 setShowRedeemModal(true);
                                               }}
-                                              className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/20 cursor-pointer"
+                                              className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                                             >
-                                              <span className="material-symbols-outlined text-[14px]">edit</span>
+                                              <span className="material-symbols-outlined text-[16px]">edit</span>
                                             </button>
                                             <button
                                               onClick={() => openConfirmDialog(
                                                 "Bạn có chắc chắn muốn xóa chính sách này?",
                                                 () => handleDeleteRedeem(p.policyID)
                                               )}
-                                              className="w-6 h-6 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 cursor-pointer"
+                                              className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                                             >
-                                              <span className="material-symbols-outlined text-[14px]">delete</span>
+                                              <span className="material-symbols-outlined text-[16px]">delete</span>
                                             </button>
                                           </div>
                                         </div>
@@ -1897,12 +1898,10 @@ export default function AdminLoyaltyPage() {
                                 </div>
                               </div>
                             )}
-
-
                           </div>
                         </>
                       ) : (
-                        <div className="text-center py-20 text-on-surface-variant/60 font-bold text-sm flex-1 flex items-center justify-center">
+                        <div className="text-center py-20 text-slate-400 font-bold text-sm flex-1 flex items-center justify-center">
                           Vui lòng chọn một hạng thành viên ở bên trái để quản lý chi tiết.
                         </div>
                       )}
@@ -1919,30 +1918,30 @@ export default function AdminLoyaltyPage() {
       {activeTab === "history" && (
         <section className="space-y-md">
           {/* Sub-tabs Navigation inside History tab */}
-          <div className="flex border-b border-outline-variant/20 bg-surface-container-low/20 p-1 gap-1 max-w-2xl">
+          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 rounded-xl mb-6 shadow-sm">
             <button
               onClick={() => setHistorySubTab("points")}
-              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${historySubTab === "points"
-                ? "bg-primary text-on-primary shadow-sm"
-                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${historySubTab === "points"
+                ? "bg-white text-slate-800 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:bg-slate-100/50"
                 }`}
             >
               Tích & Đổi điểm
             </button>
             <button
               onClick={() => setHistorySubTab("birthday")}
-              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${historySubTab === "birthday"
-                ? "bg-primary text-on-primary shadow-sm"
-                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${historySubTab === "birthday"
+                ? "bg-white text-slate-800 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:bg-slate-100/50"
                 }`}
             >
               Quà sinh nhật
             </button>
             <button
               onClick={() => setHistorySubTab("audit")}
-              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm md:text-base transition-all cursor-pointer ${historySubTab === "audit"
-                ? "bg-primary text-on-primary shadow-sm"
-                : "text-on-surface-variant/70 hover:bg-surface-container-low hover:text-on-surface"
+              className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${historySubTab === "audit"
+                ? "bg-white text-slate-800 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:bg-slate-100/50"
                 }`}
             >
               Thay đổi hệ thống
@@ -1951,28 +1950,28 @@ export default function AdminLoyaltyPage() {
 
           {/* Sub-tab 1: Points Transaction Log */}
           {historySubTab === "points" && (
-            <div className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
-              <div className="p-md border-b border-outline-variant/20 bg-primary-container/5">
-                <h3 className="font-headline-md text-on-surface font-bold">Lịch sử tích/đổi điểm của khách hàng</h3>
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-slate-800">Lịch sử tích/đổi điểm của khách hàng</h3>
               </div>
 
               {/* Filters */}
-              <div className="p-md border-b border-outline-variant/20 flex flex-wrap items-center gap-md bg-surface-container-low/30">
-                <div className="relative min-w-[200px] flex-1">
-                  <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+              <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
+                <div className="relative min-w-[260px] flex-1">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                   <input
                     type="text"
-                    placeholder="Tìm khách hàng..."
+                    placeholder="Tìm theo tên hoặc email khách hàng..."
                     value={filterSearch}
                     onChange={(e) => setFilterSearch(e.target.value)}
-                    className="w-full pl-xl pr-md py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
 
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="bg-surface-container-low border-none rounded-lg px-lg py-md font-label-md text-on-surface focus:ring-2 focus:ring-primary/30 cursor-pointer"
+                  className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
                 >
                   <option value="ALL">Tất cả giao dịch</option>
                   <option value="EARN">Tích điểm (EARN)</option>
@@ -1986,7 +1985,7 @@ export default function AdminLoyaltyPage() {
                 <select
                   value={filterTier}
                   onChange={(e) => setFilterTier(e.target.value)}
-                  className="bg-surface-container-low border-none rounded-lg px-lg py-md font-label-md text-on-surface focus:ring-2 focus:ring-primary/30 cursor-pointer"
+                  className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
                 >
                   <option value="">Hạng hiện tại</option>
                   {tiers.map(t => (
@@ -1996,17 +1995,17 @@ export default function AdminLoyaltyPage() {
               </div>
 
               <div className="overflow-x-auto flex-1">
-                <table className="w-full border-collapse">
-                  <thead className="bg-primary-container/10 border-b border-outline-variant/30 text-left">
+                <table className="w-full border-collapse text-left">
+                  <thead className="bg-slate-50/50 border-b border-slate-100">
                     <tr>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Khách hàng</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Hạng</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold text-right">Biến động</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold text-center">Loại</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Mô tả & Thời gian</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Khách hàng</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Hạng</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Biến động</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Loại</th>
+                      <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Mô tả & Thời gian</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant/20">
+                  <tbody className="divide-y divide-slate-50">
                     {loadingHistory ? (
                       <tr>
                         <td colSpan={5} className="text-center py-20">
@@ -2015,7 +2014,7 @@ export default function AdminLoyaltyPage() {
                       </tr>
                     ) : history.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-20 text-on-surface-variant/60 font-bold text-sm">
+                        <td colSpan={5} className="text-center py-20 text-slate-400 font-bold text-sm">
                           Không tìm thấy lịch sử nào.
                         </td>
                       </tr>
@@ -2024,34 +2023,34 @@ export default function AdminLoyaltyPage() {
                         const isExpanded = expandedHistoryId === h.historyID;
                         return (
                           <React.Fragment key={h.historyID}>
-                            <tr className="hover:bg-primary-container/10 transition-colors group">
-                              <td className="px-lg py-md">
-                                <p className="font-label-md text-label-md text-on-surface font-bold">{h.fullName}</p>
-                                <p className="text-[10px] text-on-surface-variant/60 font-semibold">{h.email}</p>
+                            <tr className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-6 py-4">
+                                <p className="font-bold text-sm text-slate-800">{h.fullName}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{h.email}</p>
                               </td>
-                              <td className="px-lg py-md font-body-md text-body-md text-on-surface-variant font-bold">
-                                {h.tierName}
+                              <td className="px-6 py-4">
+                                <span className="font-bold text-sm text-slate-600">{h.tierName}</span>
                               </td>
-                              <td className={`px-lg py-md text-right font-bold text-sm ${h.amount > 0 ? "text-emerald-600" : h.amount < 0 ? "text-error" : "text-on-surface-variant/50"}`}>
+                              <td className={`px-6 py-4 text-right font-bold text-sm ${h.amount > 0 ? "text-emerald-600" : h.amount < 0 ? "text-error" : "text-slate-400"}`}>
                                 {h.amount > 0 ? `+${h.amount.toLocaleString()}` : h.amount.toLocaleString()}
                               </td>
-                              <td className="px-lg py-md text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${h.transactionType === "EARN" ? "bg-secondary-container/20 text-on-secondary-container" :
-                                  h.transactionType === "SPEND" ? "bg-tertiary-container/30 text-on-tertiary-container" :
-                                    h.transactionType === "REVOKE" ? "bg-error-container text-on-error-container" :
-                                      "bg-surface-container-high text-on-surface-variant"
+                              <td className="px-6 py-4 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${h.transactionType === "EARN" ? "bg-emerald-100 text-emerald-700" :
+                                  h.transactionType === "SPEND" ? "bg-amber-100 text-amber-700" :
+                                    h.transactionType === "REVOKE" ? "bg-error/10 text-error" :
+                                      "bg-slate-100 text-slate-600"
                                   }`}>
                                   {h.transactionType}
                                 </span>
                               </td>
-                              <td className="px-lg py-md max-w-[220px]">
-                                <p className="font-label-md text-label-md text-on-surface font-bold truncate">{h.description}</p>
+                              <td className="px-8 py-4 max-w-[220px]">
+                                <p className="font-bold text-sm text-slate-800 truncate">{h.description}</p>
                                 <div className="mt-1 flex items-center justify-between gap-2">
-                                  <p className="text-[10px] text-on-surface-variant/60 font-semibold">{new Date(h.createdAt).toLocaleString("vi-VN")}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold">{new Date(h.createdAt).toLocaleString("vi-VN")}</p>
                                   <button
                                     type="button"
                                     onClick={() => setExpandedHistoryId(isExpanded ? null : h.historyID)}
-                                    className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                                    className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                                   >
                                     {isExpanded ? "Thu gọn" : "Xem chi tiết"}
                                     <span className="material-symbols-outlined text-[14px]">
@@ -2062,10 +2061,10 @@ export default function AdminLoyaltyPage() {
                               </td>
                             </tr>
                             {isExpanded && (
-                              <tr className="bg-surface-container-lowest">
-                                <td colSpan={5} className="px-lg pb-md">
-                                  <div className="p-md rounded-lg border border-outline-variant/20 bg-surface-container-low/30">
-                                    <div className="flex flex-wrap gap-4 text-xs text-on-surface-variant/70 font-semibold">
+                              <tr className="bg-slate-50/30">
+                                <td colSpan={5} className="px-8 pb-4">
+                                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm mt-2">
+                                    <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-semibold">
                                       <span>Thời gian: {new Date(h.createdAt).toLocaleString("vi-VN")}</span>
                                       {h.invoiceID && <span>Hóa đơn: #{h.invoiceID}</span>}
                                       <span>Loại: {h.transactionType}</span>
@@ -2106,14 +2105,14 @@ export default function AdminLoyaltyPage() {
                   <button
                     onClick={handleTriggerBirthdayJob}
                     disabled={triggeringBirthdayJob}
-                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs font-bold cursor-pointer disabled:opacity-50"
+                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">calendar_today</span>
                     {triggeringBirthdayJob ? "Đang chạy Job..." : "Chạy Job sinh nhật hôm nay"}
                   </button>
                   <button
                     onClick={() => setShowManualBirthdayModal(true)}
-                    className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">card_giftcard</span>
                     Phát quà thủ công
@@ -2691,9 +2690,9 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: EARN POLICY FORM -------------------- */}
       {showEarnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
-              <h3 className="text-lg font-headline-md text-on-surface font-bold">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
+              <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingEarnPolicy ? "Cập nhật cơ chế tích điểm" : "Thêm cơ chế tích điểm mới"}
               </h3>
               <button
@@ -2701,65 +2700,65 @@ export default function AdminLoyaltyPage() {
                   setShowEarnModal(false);
                   setEditingEarnPolicy(null);
                 }}
-                className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
+                className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer text-slate-500 hover:text-slate-800"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
             <form onSubmit={handleSaveEarn} className="flex flex-col min-h-0 flex-1">
-              <div className="p-md space-y-md overflow-y-auto flex-1">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên chính sách</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Tên chính sách</label>
                   <input
                     type="text"
                     name="name"
                     required
                     defaultValue={editingEarnPolicy?.name || ""}
                     placeholder="Ví dụ: Tích điểm mặc định, Tích điểm lễ Tết..."
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số tiền mua hàng (VND)</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Số tiền mua hàng (VND)</label>
                     <input
                       type="number"
                       name="vndAmount"
                       required
                       min={1}
                       defaultValue={editingEarnPolicy?.vndAmount ?? 1000}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm nhận được</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Số điểm nhận được</label>
                     <input
                       type="number"
                       name="pointsEarned"
                       required
                       min={1}
                       defaultValue={editingEarnPolicy?.pointsEarned ?? 10}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại chính sách</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Loại chính sách</label>
                     <select
                       name="isCampaign"
                       defaultValue={editingEarnPolicy?.isCampaign ? "true" : "false"}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="false">Mặc định hệ thống</option>
                       <option value="true">Chiến dịch tạm thời</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hệ số nhân (Campaign)</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Hệ số nhân (Campaign)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -2767,38 +2766,38 @@ export default function AdminLoyaltyPage() {
                       required
                       min="0.1"
                       defaultValue={editingEarnPolicy?.multiplier ?? 1.0}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày bắt đầu</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Ngày bắt đầu</label>
                     <input
                       type="date"
                       name="startDate"
                       defaultValue={editingEarnPolicy?.startDate ? editingEarnPolicy.startDate.split("T")[0] : ""}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày kết thúc</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Ngày kết thúc</label>
                     <input
                       type="date"
                       name="endDate"
                       defaultValue={editingEarnPolicy?.endDate ? editingEarnPolicy.endDate.split("T")[0] : ""}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái kích hoạt</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Trạng thái kích hoạt</label>
                   <select
                     name="isActive"
                     defaultValue={editingEarnPolicy?.isActive === false ? "false" : "true"}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Đang kích hoạt</option>
                     <option value="false">Tạm khóa</option>
@@ -2807,20 +2806,20 @@ export default function AdminLoyaltyPage() {
 
               </div>
 
-              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
+              <div className="p-6 flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEarnModal(false);
                     setEditingEarnPolicy(null);
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant/30 text-on-surface hover:bg-surface-container-low transition-colors font-bold text-xs cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu chính sách
                 </button>
@@ -2833,9 +2832,9 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: REDEEM POLICY FORM -------------------- */}
       {showRedeemModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
-              <h3 className="text-lg font-headline-md text-on-surface font-bold">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
+              <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingRedeemPolicy ? "Cập nhật quy tắc đổi điểm" : "Thêm quy tắc đổi điểm mới"}
               </h3>
               <button
@@ -2843,40 +2842,40 @@ export default function AdminLoyaltyPage() {
                   setShowRedeemModal(false);
                   setEditingRedeemPolicy(null);
                 }}
-                className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
+                className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer text-slate-500 hover:text-slate-800"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
             <form onSubmit={handleSaveRedeem} className="flex flex-col min-h-0 flex-1">
-              <div className="p-md space-y-md overflow-y-auto flex-1">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quy tắc</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Tên quy tắc</label>
                   <input
                     type="text"
                     name="name"
                     required
                     defaultValue={editingRedeemPolicy?.name || ""}
                     placeholder="Ví dụ: Đổi điểm mặc định, Tỷ lệ ưu đãi hạng Vàng..."
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm đổi</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Số điểm đổi</label>
                     <input
                       type="number"
                       name="pointsToRedeem"
                       required
                       min={1}
                       defaultValue={editingRedeemPolicy?.pointsToRedeem ?? 1}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền giảm được (VND)</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Tiền giảm được (VND)</label>
                     <input
                       type="number"
                       step="0.1"
@@ -2884,18 +2883,18 @@ export default function AdminLoyaltyPage() {
                       required
                       min={0.1}
                       defaultValue={editingRedeemPolicy?.discountVnd ?? 1}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Áp dụng cho hạng</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Áp dụng cho hạng</label>
                   <select
                     name="tierID"
                     defaultValue={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
                     disabled={selectedTierForPrivileges !== null}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                   >
                     <option value="">Áp dụng chung toàn hệ thống</option>
                     {tiers.map(t => (
@@ -2913,31 +2912,31 @@ export default function AdminLoyaltyPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày bắt đầu</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Ngày bắt đầu</label>
                     <input
                       type="date"
                       name="startDate"
                       defaultValue={editingRedeemPolicy?.startDate ? editingRedeemPolicy.startDate.split("T")[0] : ""}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngày kết thúc</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Ngày kết thúc</label>
                     <input
                       type="date"
                       name="endDate"
                       defaultValue={editingRedeemPolicy?.endDate ? editingRedeemPolicy.endDate.split("T")[0] : ""}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái hoạt động</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Trạng thái hoạt động</label>
                   <select
                     name="isActive"
                     defaultValue={editingRedeemPolicy?.isActive === false ? "false" : "true"}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Đang hoạt động</option>
                     <option value="false">Tạm khóa</option>
@@ -2946,20 +2945,20 @@ export default function AdminLoyaltyPage() {
 
               </div>
 
-              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
+              <div className="p-6 flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setShowRedeemModal(false);
                     setEditingRedeemPolicy(null);
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant/30 text-on-surface hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu quy tắc
                 </button>
@@ -2972,9 +2971,9 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: TIER CONFIG FORM -------------------- */}
       {showTierModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[480px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
-              <h3 className="text-lg font-headline-md text-on-surface font-bold">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[480px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
+              <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingTier ? "Chỉnh sửa hạng thành viên" : "Tạo hạng thành viên mới"}
               </h3>
               <button
@@ -2982,76 +2981,76 @@ export default function AdminLoyaltyPage() {
                   setShowTierModal(false);
                   setEditingTier(null);
                 }}
-                className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
+                className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer text-slate-500 hover:text-slate-800"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
             <form onSubmit={handleSaveTier} className="flex flex-col min-h-0 flex-1">
-              <div className="p-md space-y-md overflow-y-auto flex-1">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên hạng</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Tên hạng</label>
                   <input
                     type="text"
                     name="tierName"
                     required
                     defaultValue={editingTier?.tierName || ""}
                     placeholder="Ví dụ: Bạc, Vàng, Kim Cương..."
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ngưỡng điểm tối thiểu (Min Points)</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Ngưỡng điểm tối thiểu (Min Points)</label>
                   <input
                     type="number"
                     name="minPoints"
                     required
                     min={0}
                     defaultValue={editingTier?.minPoints ?? 0}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Màu sắc hiển thị</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Màu sắc hiển thị</label>
                     <div className="flex gap-2 items-center">
                       <input
                         type="color"
                         name="colorHex"
                         defaultValue={editingTier?.colorHex || "#64748b"}
-                        className="w-10 h-10 border border-outline-variant/30 rounded-lg bg-transparent cursor-pointer p-0 shrink-0"
+                        className="w-12 h-12 border border-slate-200 rounded-xl bg-slate-50 cursor-pointer p-1 shrink-0"
                       />
                       <input
                         type="text"
                         placeholder="#64748b"
                         name="colorHexText"
                         defaultValue={editingTier?.colorHex || "#64748b"}
-                        className="w-full px-3 py-md bg-surface-container-low border-none rounded-lg font-mono text-center text-xs font-bold text-on-surface focus:ring-2 focus:ring-primary/30"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10"
                       />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Biểu tượng Huy hiệu</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Biểu tượng Huy hiệu</label>
                     <input
                       type="text"
                       name="badgeIcon"
                       required
                       defaultValue={editingTier ? cleanIconName(editingTier.badgeIcon) : "workspace_premium"}
                       placeholder="award_star, star, v.v."
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cho phép hoạt động</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Cho phép hoạt động</label>
                   <select
                     name="isActive"
                     defaultValue={editingTier?.isActive === false ? "false" : "true"}
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Cho phép thăng hạng</option>
                     <option value="false">Tạm ẩn/Khóa hạng</option>
@@ -3060,20 +3059,20 @@ export default function AdminLoyaltyPage() {
 
               </div>
 
-              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
+              <div className="p-6 flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setShowTierModal(false);
                     setEditingTier(null);
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant/30 text-on-surface hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu hạng thành viên
                 </button>
@@ -3084,9 +3083,9 @@ export default function AdminLoyaltyPage() {
       )}      {/* -------------------- MODAL: PRIVILEGE FORM -------------------- */}
       {showPrivilegeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[650px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
-              <h3 className="text-lg font-headline-md text-on-surface font-bold">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[650px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
+              <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingPrivilege ? "Chỉnh sửa đặc quyền" : "Thêm đặc quyền mới"}
               </h3>
               <button
@@ -3094,33 +3093,33 @@ export default function AdminLoyaltyPage() {
                   setShowPrivilegeModal(false);
                   setEditingPrivilege(null);
                 }}
-                className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
+                className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer text-slate-500 hover:text-slate-800"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
             <form onSubmit={handleSavePrivilege} className="flex flex-col min-h-0 flex-1">
-              <div className="p-md space-y-md overflow-y-auto flex-1">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên đặc quyền</label>
+                  <label className="text-sm font-bold text-slate-700 block mb-2">Tên đặc quyền</label>
                   <input
                     type="text"
                     name="name"
                     required
                     defaultValue={editingPrivilege?.name || ""}
                     placeholder="Ví dụ: Voucher hàng tháng Gold, Tặng xu sinh nhật..."
-                    className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại đặc quyền</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Loại đặc quyền</label>
                     <select
                       value={privilegeType}
                       onChange={(e) => setPrivilegeType(e.target.value)}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="VOUCHER">Voucher hàng tháng</option>
                       <option value="FREESHIP">Miễn phí vận chuyển</option>
@@ -3131,11 +3130,11 @@ export default function AdminLoyaltyPage() {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái đặc quyền</label>
+                    <label className="text-sm font-bold text-slate-700 block mb-2">Trạng thái đặc quyền</label>
                     <select
                       name="isActive"
                       defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
-                      className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="true">Đang kích hoạt</option>
                       <option value="false">Tạm ẩn</option>
@@ -3148,7 +3147,7 @@ export default function AdminLoyaltyPage() {
                   <div className="space-y-4 border-t border-outline-variant/20 pt-4 animate-in fade-in duration-200">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="col-span-2 space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Chế độ Voucher</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-2 block">Chế độ Voucher</label>
                         <div className="flex gap-6 mt-1">
                           <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
                             <input
@@ -3185,12 +3184,12 @@ export default function AdminLoyaltyPage() {
                     <div className="grid grid-cols-2 gap-4">
                       {voucherMode === "EXISTING" ? (
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Chọn Voucher</label>
                           <select
                             value={voucherCode}
                             onChange={(e) => setVoucherCode(e.target.value)}
                             required
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="">-- Chọn Voucher --</option>
                             {vouchers.map(v => (
@@ -3200,44 +3199,44 @@ export default function AdminLoyaltyPage() {
                         </div>
                       ) : (
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tiền tố Mã Voucher</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Tiền tố Mã Voucher</label>
                           <input
                             type="text"
                             required
                             placeholder="Ví dụ: VCGOLD"
                             value={voucherCode}
                             onChange={(e) => setVoucherCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
-                          <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
+                          <span className="text-xs text-slate-500 font-medium block mt-0.5">
                             Hệ thống sẽ thêm đuôi tháng năm. Ví dụ: VCGOLD_M0626
                           </span>
                         </div>
                       )}
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng phát / tháng</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-2">Số lượng phát / tháng</label>
                         <input
                           type="number"
                           required
                           min={1}
                           value={quantity}
                           onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Thời hạn sử dụng (ngày)</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-2">Thời hạn sử dụng (ngày)</label>
                         <input
                           type="number"
                           required
                           min={1}
                           value={validityDays}
                           onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
-                        <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
+                        <span className="text-xs text-slate-500 font-medium block mt-0.5">
                           Số ngày voucher có hiệu lực kể từ lúc phát
                         </span>
                       </div>
@@ -3246,11 +3245,11 @@ export default function AdminLoyaltyPage() {
                     {voucherMode === "CUSTOM" && (
                       <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Loại giảm giá</label>
                           <select
                             value={discountType}
                             onChange={(e) => setDiscountType(e.target.value)}
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="PERCENT">Phần trăm (%)</option>
                             <option value="FIXED">Số tiền cố định (đ)</option>
@@ -3258,38 +3257,38 @@ export default function AdminLoyaltyPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Giá trị giảm</label>
                           <input
                             type="number"
                             required
                             min={1}
                             value={discountValue}
                             onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Giảm tối đa (đ)</label>
                           <input
                             type="number"
                             required={discountType === "PERCENT"}
                             disabled={discountType !== "PERCENT"}
                             value={maxDiscount}
                             onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (đ)</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Đơn tối thiểu (đ)</label>
                           <input
                             type="number"
                             required
                             min={0}
                             value={minOrderValue}
                             onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>
@@ -3301,36 +3300,36 @@ export default function AdminLoyaltyPage() {
                 {privilegeType === "FREESHIP" && (
                   <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượt / tháng</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Số lượt / tháng</label>
                       <input
                         type="number"
                         required
                         min={1}
                         value={quantity}
                         onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hỗ trợ tối đa (VNĐ)</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Hỗ trợ tối đa (VNĐ)</label>
                       <input
                         type="number"
                         required
                         min={1}
                         value={maxSupport}
                         onChange={(e) => setMaxSupport(parseInt(e.target.value || "0"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Đơn tối thiểu (VNĐ)</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Đơn tối thiểu (VNĐ)</label>
                       <input
                         type="number"
                         required
                         min={0}
                         value={minOrderValue}
                         onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -3340,36 +3339,36 @@ export default function AdminLoyaltyPage() {
                 {privilegeType === "DISCOUNT" && (
                   <div className="grid grid-cols-3 gap-4 border-t border-outline-variant/20 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại giảm giá</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Loại giảm giá</label>
                       <select
                         value={discountType}
                         onChange={(e) => setDiscountType(e.target.value)}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                       >
                         <option value="PERCENT">Phần trăm (%)</option>
                         <option value="FIXED">Số tiền cố định (đ)</option>
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giá trị giảm</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Giá trị giảm</label>
                       <input
                         type="number"
                         required
                         min={1}
                         value={discountValue}
                         onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giảm tối đa (đ)</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Giảm tối đa (đ)</label>
                       <input
                         type="number"
                         required={discountType === "PERCENT"}
                         disabled={discountType !== "PERCENT"}
                         value={maxDiscount}
                         onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -3379,7 +3378,7 @@ export default function AdminLoyaltyPage() {
                 {privilegeType === "CASHBACK" && (
                   <div className="grid grid-cols-2 gap-4 border-t border-outline-variant/20 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tỷ lệ hoàn xu (%)</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Tỷ lệ hoàn xu (%)</label>
                       <input
                         type="number"
                         required
@@ -3387,18 +3386,18 @@ export default function AdminLoyaltyPage() {
                         max={100}
                         value={cashbackRate}
                         onChange={(e) => setCashbackRate(parseInt(e.target.value || "0"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Hoàn xu tối đa (xu/tháng)</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Hoàn xu tối đa (xu/tháng)</label>
                       <input
                         type="number"
                         required
                         min={1}
                         value={maxCashback}
                         onChange={(e) => setMaxCashback(parseInt(e.target.value || "0"))}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -3415,11 +3414,11 @@ export default function AdminLoyaltyPage() {
                 {privilegeType === "BIRTHDAY_GIFT" && (
                   <div className="space-y-4 border-t border-outline-variant/20 pt-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại quà tặng</label>
+                      <label className="text-sm font-bold text-slate-700 block mb-2">Loại quà tặng</label>
                       <select
                         value={birthdayGiftType}
                         onChange={(e) => setBirthdayGiftType(e.target.value)}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                       >
                         <option value="VOUCHER">Voucher giảm giá</option>
                         <option value="POINTS">Điểm thưởng Loyalty</option>
@@ -3431,12 +3430,12 @@ export default function AdminLoyaltyPage() {
                     {birthdayGiftType === "VOUCHER" && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chọn Voucher sinh nhật</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Chọn Voucher sinh nhật</label>
                           <select
                             value={birthdayVoucherCode}
                             onChange={(e) => setBirthdayVoucherCode(e.target.value)}
                             required
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="">-- Chọn Voucher --</option>
                             {vouchers.map(v => (
@@ -3445,14 +3444,14 @@ export default function AdminLoyaltyPage() {
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng voucher</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Số lượng voucher</label>
                           <input
                             type="number"
                             required
                             min={1}
                             value={birthdayQuantity}
                             onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>
@@ -3460,28 +3459,28 @@ export default function AdminLoyaltyPage() {
 
                     {birthdayGiftType === "POINTS" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số điểm tặng</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-2">Số điểm tặng</label>
                         <input
                           type="number"
                           required
                           min={1}
                           value={birthdayPoints}
                           onChange={(e) => setBirthdayPoints(parseInt(e.target.value || "1"))}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
                     )}
 
                     {birthdayGiftType === "COINS" && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số xu tặng</label>
+                        <label className="text-sm font-bold text-slate-700 block mb-2">Số xu tặng</label>
                         <input
                           type="number"
                           required
                           min={1}
                           value={birthdayCoins}
                           onChange={(e) => setBirthdayCoins(parseInt(e.target.value || "1"))}
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
                     )}
@@ -3489,24 +3488,24 @@ export default function AdminLoyaltyPage() {
                     {birthdayGiftType === "PHYSICAL" && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tên quà tặng vật lý</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Tên quà tặng vật lý</label>
                           <input
                             type="text"
                             required
                             value={birthdayGiftName}
                             onChange={(e) => setBirthdayGiftName(e.target.value)}
                             placeholder="Ví dụ: Bình nước giữ nhiệt"
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Mô tả chi tiết</label>
+                          <label className="text-sm font-bold text-slate-700 block mb-2">Mô tả chi tiết</label>
                           <input
                             type="text"
                             value={birthdayGiftDesc}
                             onChange={(e) => setBirthdayGiftDesc(e.target.value)}
                             placeholder="Mô tả quà tặng sinh nhật..."
-                            className="w-full px-lg py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>
@@ -3516,20 +3515,20 @@ export default function AdminLoyaltyPage() {
 
               </div>
 
-              <div className="p-md flex justify-end gap-3 border-t border-outline-variant/20 bg-surface-container-lowest shrink-0">
+              <div className="p-6 flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setShowPrivilegeModal(false);
                     setEditingPrivilege(null);
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant/30 text-on-surface hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:bg-primary/95 shadow-md shadow-primary/10 transition-all font-bold text-xs cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu đặc quyền
                 </button>
@@ -3542,13 +3541,13 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: MANUAL BIRTHDAY GIFT ISSUANCE -------------------- */}
       {showManualBirthdayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
                   <span className="material-symbols-outlined text-primary">card_giftcard</span>
                 </div>
-                <h3 className="text-lg font-headline-md text-on-surface font-bold">Phát quà sinh nhật thủ công</h3>
+                <h3 className="text-xl text-slate-800 font-extrabold">Phát quà sinh nhật thủ công</h3>
               </div>
               <button
                 onClick={() => {
@@ -3556,21 +3555,21 @@ export default function AdminLoyaltyPage() {
                   setManualBirthdayUserID("");
                   setManualBirthdayUserSearchTerm("");
                 }}
-                className="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center transition-colors cursor-pointer text-on-surface-variant"
+                className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer text-slate-500 hover:text-slate-800"
                 disabled={submittingManualBirthday}
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleManualBirthdayIssue} className="p-md space-y-md">
+            <form onSubmit={handleManualBirthdayIssue} className="p-6 space-y-6">
               <div className="p-sm bg-primary/5 rounded-lg text-xs font-semibold text-primary/80 border border-primary/20">
                 Lưu ý: Hệ thống sẽ dựa trên đặc quyền quà tặng sinh nhật (BIRTHDAY_GIFT) đã được cấu hình cho hạng thành viên hiện tại của thành viên được chọn để phát quà tương ứng. Mỗi thành viên chỉ nhận quà tối đa 1 lần/năm.
               </div>
 
               {/* User search */}
               <div className="space-y-1.5 relative">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tìm kiếm thành viên</label>
+                <label className="text-sm font-bold text-slate-700 block mb-2">Tìm kiếm thành viên</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">person</span>
                   <input
@@ -3588,7 +3587,7 @@ export default function AdminLoyaltyPage() {
                         setUserSuggestions([]);
                       }
                     }}
-                    className="w-full pl-10 pr-4 py-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800"
                   />
                 </div>
 
@@ -3606,7 +3605,7 @@ export default function AdminLoyaltyPage() {
                         className="p-3 hover:bg-surface-container-low cursor-pointer flex flex-col gap-0.5 border-b border-outline-variant last:border-0"
                       >
                         <p className="font-label-md text-on-surface text-xs font-bold">{u.fullName}</p>
-                        <p className="text-[10px] text-on-surface-variant/70 font-semibold">{u.email} {u.phoneNumber && `- ${u.phoneNumber}`}</p>
+                        <p className="text-xs text-slate-500 font-medium font-semibold">{u.email} {u.phoneNumber && `- ${u.phoneNumber}`}</p>
                       </div>
                     ))}
                   </div>
@@ -3627,7 +3626,7 @@ export default function AdminLoyaltyPage() {
                     setManualBirthdayUserID("");
                     setManualBirthdayUserSearchTerm("");
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                   disabled={submittingManualBirthday}
                 >
                   Hủy bỏ
@@ -3635,7 +3634,7 @@ export default function AdminLoyaltyPage() {
                 <button
                   type="submit"
                   disabled={submittingManualBirthday || !manualBirthdayUserID}
-                  className="px-lg py-md rounded-full bg-primary text-on-primary hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 disabled:scale-100"
                 >
                   {submittingManualBirthday ? "Đang xử lý..." : "Cấp phát quà"}
                 </button>

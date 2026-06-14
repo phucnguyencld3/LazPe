@@ -25,6 +25,26 @@ export default function AdminLayout({
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarPinned, setIsSidebarPinned] = useState(true);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+
+  useEffect(() => {
+    const savedPin = localStorage.getItem("sidebarPinned");
+    if (savedPin !== null) {
+      setIsSidebarPinned(savedPin === "true");
+    }
+  }, []);
+
+  const handleTogglePin = () => {
+    const newVal = !isSidebarPinned;
+    setIsSidebarPinned(newVal);
+    localStorage.setItem("sidebarPinned", String(newVal));
+  };
+
+  const isSidebarExpanded = isSidebarPinned || isSidebarHovered;
+  const sidebarWidth = isSidebarExpanded ? "w-72" : "w-[84px]";
+  const marginLeft = isSidebarExpanded ? "lg:ml-72" : "lg:ml-[84px]";
 
   // Synchronize token and isAuth with auth state
   useEffect(() => {
@@ -236,21 +256,58 @@ export default function AdminLayout({
 
   return (
     <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative admin-scaled-layout">
-      {/* Top Navigation Shell */}
-      <header className="sticky top-0 z-40 flex items-center justify-between w-full h-20 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10">
-        <div className="flex items-center gap-sm ml-72">
-          {/* Logo shifted to avoid being completely covered by sidebar, if needed. Or just leave it as is if it matches mockup. We'll leave it as in mockup */}
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+      {/* Mobile Top Navigation */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="material-symbols-outlined p-2 hover:bg-slate-100 rounded-full cursor-pointer text-slate-700"
+          >
+            menu
+          </button>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             Laz<span className="text-rose-500">Pe</span>
           </h1>
+        </div>
+        <Link href="/admin/profile" className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+            {user?.avatar ? (
+              <img alt="Avatar" className="w-full h-full object-cover" src={user.avatar} />
+            ) : (
+              <span className="material-symbols-outlined text-slate-500 text-sm">person</span>
+            )}
+          </div>
+        </Link>
+      </div>
+
+      {/* Top Navigation Shell (Desktop) */}
+      <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between w-full h-16 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10 transition-all duration-300">
+        <div className={`flex items-center gap-4 flex-1 max-w-2xl pr-8 transition-all duration-300 ${marginLeft}`}>
+          <button 
+            onClick={handleTogglePin} 
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 text-slate-600 transition-colors flex-shrink-0"
+            title={isSidebarPinned ? "Thu gọn Sidebar" : "Mở rộng Sidebar"}
+          >
+            <span className="material-symbols-outlined text-[24px]">
+              {isSidebarPinned ? "menu_open" : "menu"}
+            </span>
+          </button>
+          
+          <div className="relative w-full group">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] group-focus-within:text-primary transition-colors">search</span>
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm nhanh mã đơn hàng, sản phẩm, email khách hàng..." 
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm outline-none text-slate-700 font-medium" 
+            />
+          </div>
         </div>
         <div className="flex items-center gap-md">
           <div className="relative">
             <button
               onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
               className={`material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300 relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
-              title="Thông báo"
-            >
+              title="Thông báo">
               notifications
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
@@ -351,194 +408,264 @@ export default function AdminLayout({
       </header>
 
       <div className="flex flex-1">
+        {/* Mobile Backdrop */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
         {/* Sidebar Shell */}
-        <aside className="fixed left-0 top-0 h-full w-72 py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 transition-all overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+        <aside 
+          onMouseEnter={() => !isSidebarPinned && setIsSidebarHovered(true)}
+          onMouseLeave={() => !isSidebarPinned && setIsSidebarHovered(false)}
+          className={`fixed left-0 top-0 h-full py-md gap-sm bg-surface-container-low flex flex-col z-50 shadow-xl shadow-primary/5 border-r border-slate-200 transition-all duration-300 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${sidebarWidth}`} 
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           <div className="px-md mb-lg">
-            <div className="flex items-center gap-sm mb-xs">
-              <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
-              </h2>
+            <div className={`flex items-center ${isSidebarExpanded ? 'justify-between' : 'justify-center'} mb-xs`}>
+              <div className="flex items-center gap-sm">
+                <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
+                {isSidebarExpanded && (
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight whitespace-nowrap animate-in fade-in zoom-in-95 duration-300">
+                    Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
+                  </h2>
+                )}
+              </div>
             </div>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">Hệ thống quản lý LazPe</p>
+            {isSidebarExpanded && <p className="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap animate-in fade-in duration-300">Hệ thống quản lý LazPe</p>}
           </div>
           
-          <nav className="flex-1 space-y-md">
-            {/* Tổng quan */}
+          <nav className="flex-1 space-y-md pb-4">
+            {/* TRUNG TÂM ĐIỀU HÀNH */}
             <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tổng quan</span>
+              {isSidebarExpanded ? (
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Trung tâm điều hành</span>
+            ) : (
+              <div className="flex justify-center mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+              </div>
+            )}
               <Link
                 href="/admin"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Bảng điều khiển" : undefined}
               >
-                <span className="material-symbols-outlined">dashboard</span>
-                <span className="font-label-md">Tổng quan</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">dashboard</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Bảng điều khiển</span>}
+              </Link>
+              <Link
+                href="/admin/statistics"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Thống kê doanh thu" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">bar_chart</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thống kê doanh thu</span>}
               </Link>
             </div>
 
-            {/* Sản phẩm */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Sản phẩm</span>
+            {/* QUẢN LÝ KINH DOANH */}
+            <div className="space-y-1 pt-2">
+              {isSidebarExpanded ? (
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Quản lý kinh doanh</span>
+            ) : (
+              <div className="flex justify-center mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+              </div>
+            )}
+              <Link
+                href="/admin/orders"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Xử lý Đơn hàng" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">shopping_cart</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Xử lý Đơn hàng</span>}
+              </Link>
+              <Link
+                href="/admin/reviews"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Kiểm duyệt Đánh giá" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">gavel</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Kiểm duyệt Đánh giá</span>}
+              </Link>
+            </div>
+
+            {/* QUẢN LÝ SẢN PHẨM */}
+            <div className="space-y-1 pt-2">
+              {isSidebarExpanded ? (
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Danh mục sản phẩm</span>
+            ) : (
+              <div className="flex justify-center mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+              </div>
+            )}
               <Link
                 href="/admin/products"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Kho Sản phẩm" : undefined}
               >
-                <span className="material-symbols-outlined">inventory_2</span>
-                <span className="font-label-md">Sản phẩm</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">inventory_2</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Kho Sản phẩm</span>}
               </Link>
               <Link
                 href="/admin/combo"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Gói Combo" : undefined}
               >
-                <span className="material-symbols-outlined">inventory</span>
-                <span className="font-label-md">Combo</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">inventory</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Gói Combo</span>}
               </Link>
               <Link
                 href="/admin/categories"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Phân loại Danh mục" : undefined}
               >
-                <span className="material-symbols-outlined">category</span>
-                <span className="font-label-md">Danh mục</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">category</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Phân loại Danh mục</span>}
               </Link>
               <Link
                 href="/admin/brands"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Thương hiệu" : undefined}
               >
-                <span className="material-symbols-outlined">verified</span>
-                <span className="font-label-md">Thương hiệu</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">verified</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thương hiệu</span>}
               </Link>
             </div>
 
-            {/* Tài khoản */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Tài khoản</span>
-              <Link
-                href="/admin/users"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">group</span>
-                <span className="font-label-md">Người dùng</span>
-              </Link>
-              <Link
-                href="/admin/permissions"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-                <span className="font-label-md">Phân quyền</span>
-              </Link>
-              <Link
-                href="/admin/profile"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">account_circle</span>
-                <span className="font-label-md">Hồ sơ cá nhân</span>
-              </Link>
-            </div>
-
-            {/* Đơn hàng */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đơn hàng</span>
-              <Link
-                href="/admin/orders"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">shopping_cart</span>
-                <span className="font-label-md">Đơn hàng</span>
-              </Link>
-            </div>
-
-            {/* Tin nhắn hỗ trợ */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Hỗ trợ</span>
-              <Link
-                href="/admin/chats"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">chat</span>
-                <span className="font-label-md">Tin nhắn</span>
-              </Link>
-            </div>
-
-            {/* Thống kê */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thống kê</span>
-              <Link
-                href="/admin/statistics"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
-              >
-                <span className="material-symbols-outlined">bar_chart</span>
-                <span className="font-label-md">Thống kê</span>
-              </Link>
-            </div>
-
-            {/* Loyalty & Vouchers */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Khuyến mãi & Loyalty</span>
+            {/* MARKETING & ƯU ĐÃI */}
+            <div className="space-y-1 pt-2">
+              {isSidebarExpanded ? (
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Marketing & Ưu đãi</span>
+            ) : (
+              <div className="flex justify-center mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+              </div>
+            )}
               <Link
                 href="/admin/vouchers"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Mã giảm giá (Voucher)" : undefined}
               >
-                <span className="material-symbols-outlined">confirmation_number</span>
-                <span className="font-label-md">Quản lý Voucher</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">confirmation_number</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Mã giảm giá (Voucher)</span>}
               </Link>
               <Link
                 href="/admin/flash-sales"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Chiến dịch Flash Sale" : undefined}
               >
-                <span className="material-symbols-outlined">bolt</span>
-                <span className="font-label-md">Quản lý Flash Sale</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">bolt</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chiến dịch Flash Sale</span>}
               </Link>
               <Link
                 href="/admin/loyalty"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Chương trình Loyalty" : undefined}
               >
-                <span className="material-symbols-outlined">loyalty</span>
-                <span className="font-label-md">Quản lý Loyalty</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">loyalty</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chương trình Loyalty</span>}
               </Link>
             </div>
 
-            {/* Đánh giá */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Đánh giá sản phẩm</span>
+            {/* NHÂN SỰ & NGƯỜI DÙNG */}
+            <div className="space-y-1 pt-2">
+              {isSidebarExpanded ? (
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Nhân sự & Người dùng</span>
+            ) : (
+              <div className="flex justify-center mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+              </div>
+            )}
               <Link
-                href="/admin/reviews"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                href="/admin/users"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Tài khoản Hệ thống" : undefined}
               >
-                <span className="material-symbols-outlined">gavel</span>
-                <span className="font-label-md">Kiểm duyệt đánh giá</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">group</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tài khoản Hệ thống</span>}
+              </Link>
+              <Link
+                href="/admin/permissions"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Phân quyền Truy cập" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">person</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Phân quyền Truy cập</span>}
+              </Link>
+              <Link
+                href="/admin/profile"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Hồ sơ của tôi" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">account_circle</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Hồ sơ của tôi</span>}
               </Link>
             </div>
 
-            {/* Thông báo */}
-            <div className="space-y-1">
-              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block">Thông báo</span>
+            {/* TƯƠNG TÁC HỆ THỐNG */}
+            <div className="space-y-1 pt-2">
+              {isSidebarExpanded ? (
+              <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Tương tác hệ thống</span>
+            ) : (
+              <div className="flex justify-center mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
+              </div>
+            )}
+              <Link
+                href="/admin/chats"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Tin nhắn Hỗ trợ" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">chat</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tin nhắn Hỗ trợ</span>}
+              </Link>
               <Link
                 href="/admin/notifications"
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold" : "text-on-surface-variant hover:bg-secondary-container/50"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Thông báo nội bộ" : undefined}
               >
-                <span className="material-symbols-outlined">notifications</span>
-                <span className="font-label-md">Quản lý thông báo</span>
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">notifications</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thông báo nội bộ</span>}
               </Link>
             </div>
           </nav>
           
-          <div className="mt-auto px-4 pb-md pt-md space-y-2">
-            <button className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md transition-transform cursor-pointer">
-              <span className="material-symbols-outlined text-sm">help</span>
-              Trung tâm hỗ trợ
+          <div className={`mt-auto pb-md pt-md space-y-2 ${isSidebarExpanded ? "px-4" : "px-0 flex flex-col items-center"}`}>
+            <button 
+              className={`flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md rounded-xl hover:bg-secondary/90 shadow-sm transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-full"}`}
+              title={!isSidebarExpanded ? "Trung tâm hỗ trợ" : undefined}
+            >
+              <span className="material-symbols-outlined text-[20px] flex-shrink-0">help</span>
+              {isSidebarExpanded && <span className="whitespace-nowrap animate-in fade-in duration-300">Trung tâm hỗ trợ</span>}
             </button>
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-label-md py-3 rounded-full hover:scale-105 active:scale-95 shadow-md shadow-rose-500/10 transition-all cursor-pointer"
+              className={`flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-xl transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-full mt-2"}`}
+              title={!isSidebarExpanded ? "Đăng xuất" : undefined}
             >
-              <span className="material-symbols-outlined text-sm">logout</span>
-              Đăng xuất
+              <span className="material-symbols-outlined text-[20px] flex-shrink-0">logout</span>
+              {isSidebarExpanded && <span className="whitespace-nowrap animate-in fade-in duration-300">Đăng xuất</span>}
             </button>
           </div>
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 ml-72 flex flex-col ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-margin-desktop min-h-0"}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>

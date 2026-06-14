@@ -65,40 +65,44 @@ export const OrderTable: React.FC<OrderTableProps> = ({
   };
 
   return (
-    <div className="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/20 overflow-hidden">
+    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-surface-container-high/50 border-b border-outline-variant">
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Mã đơn hàng</th>
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Khách hàng</th>
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Ngày đặt</th>
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">Tổng tiền</th>
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Thanh toán</th>
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Trạng thái</th>
-              <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-center">Hành động</th>
+            <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+              <th className="px-6 py-4 text-center w-[80px]">STT</th>
+              <th className="px-6 py-4">Mã đơn hàng</th>
+              <th className="px-6 py-4">Khách hàng</th>
+              <th className="px-6 py-4">Ngày đặt</th>
+              <th className="px-6 py-4 text-right">Tổng tiền</th>
+              <th className="px-6 py-4">Thanh toán</th>
+              <th className="px-6 py-4">Trạng thái</th>
+              <th className="px-6 py-4 text-center">Hành động</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-outline-variant/10">
+          <tbody className="divide-y divide-slate-50">
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-20">
+                <td colSpan={8} className="text-center py-20">
                   <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-on-surface-variant mt-4 font-medium">Đang tải dữ liệu...</p>
+                  <p className="text-slate-400 mt-4 font-semibold text-xs">Đang tải dữ liệu...</p>
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-20">
-                  <span className="material-symbols-outlined text-outline-variant text-5xl mb-2">search_off</span>
-                  <p className="text-on-surface-variant font-medium">Không tìm thấy đơn hàng nào.</p>
+                <td colSpan={8} className="text-center py-20">
+                  <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">search_off</span>
+                  <p className="text-slate-400 font-semibold text-xs">Không tìm thấy đơn hàng nào.</p>
                 </td>
               </tr>
             ) : (
-              orders.map((order) => {
+              orders.map((order, index) => {
                 const customerName = order.userFullName || order.userName || "Ẩn danh";
                 return (
-                  <tr key={order.invoiceID} className="hover:bg-surface-container/30 transition-colors">
+                  <tr key={order.invoiceID} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                    <td className="px-6 py-5 text-center text-xs font-semibold text-slate-400">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-6 py-5">
                       <span className="font-bold text-primary">#{order.invoiceID.toString().padStart(6, "0")}</span>
                     </td>

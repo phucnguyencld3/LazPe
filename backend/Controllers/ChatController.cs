@@ -429,6 +429,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var sessions = await _context.ChatSessions
+                    .Where(s => s.Messages.Any() || !string.IsNullOrEmpty(s.LastMessageText))
                     .OrderByDescending(s => s.UpdatedAt)
                     .Select(s => new
                     {

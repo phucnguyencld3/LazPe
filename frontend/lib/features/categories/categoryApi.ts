@@ -9,6 +9,7 @@ export interface CategoryInfo {
   status: boolean;
   createdAt: string;
   createdBy?: string | null;
+  productCount?: number;
 }
 
 export interface CreateCategoryPayload {

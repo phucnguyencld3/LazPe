@@ -6,7 +6,7 @@ import { toast } from "@/lib/toast";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { 
   getFlashSalesAdmin, getFlashSaleDetailAdmin, createFlashSale, updateFlashSale, deleteFlashSale, 
-  FlashSaleResponseDto, CreateFlashSaleItemDto, FlashSaleItemType, FlashSaleStatus, CreateFlashSaleDto 
+  FlashSaleResponseDto, CreateFlashSaleItemDto, FlashSaleItemType, FlashSaleStatus, CreateFlashSaleDto, UpdateFlashSaleDto 
 } from "@/lib/features/flash-sales/flashSaleApi";
 import { fetchAdminProducts, fetchAdminProductDetail, AdminProductInfo, AdminVariantInfo } from "@/lib/features/products/productApi";
 import { getBundles, BundleResponse } from "@/lib/features/combo/comboApi";
@@ -25,6 +25,7 @@ export default function AdminFlashSalesPage() {
   const [loadingList, setLoadingList] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "upcoming" | "ended">("all");
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   // Deletion State
   const [saleToDelete, setSaleToDelete] = useState<FlashSaleResponseDto | null>(null);
@@ -241,6 +242,38 @@ export default function AdminFlashSalesPage() {
       toast.error(err.message || "Lỗi khi xóa chiến dịch Flash Sale.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleStatus = async (sale: FlashSaleResponseDto) => {
+    if (togglingId !== null || !token) return;
+    try {
+      setTogglingId(sale.id);
+      
+      const dto: UpdateFlashSaleDto = {
+        name: sale.name,
+        startTime: sale.startTime,
+        endTime: sale.endTime,
+        isActive: !sale.isActive,
+        flashSaleItems: sale.flashSaleItems.map(item => ({
+          itemType: item.itemType,
+          referenceId: item.referenceId,
+          discountPrice: item.discountPrice,
+          totalQuantity: item.totalQuantity,
+          maxQuantityPerUser: item.maxQuantityPerUser
+        }))
+      };
+
+      await updateFlashSale(sale.id, dto, token);
+      toast.success("Cập nhật trạng thái chiến dịch thành công!");
+      setSales(prev =>
+        prev.map(s => (s.id === sale.id ? { ...s, isActive: !s.isActive } : s))
+      );
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Không thể cập nhật trạng thái chiến dịch.");
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -492,72 +525,64 @@ export default function AdminFlashSalesPage() {
           </div>
 
           {/* Stats Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {/* Total */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-              <div className="flex justify-between items-start">
-                <div className="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined">calendar_today</span>
+            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">calendar_today</span>
                 </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng chiến dịch</span>
               </div>
-              <div>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tổng chiến dịch</p>
-                <h3 className="text-3xl font-bold text-slate-800 mt-1">{loadingList ? "..." : sales.length}</h3>
-              </div>
+              <span className="text-2xl font-extrabold text-slate-800">{loadingList ? "..." : sales.length}</span>
             </div>
 
             {/* Active */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-              <div className="flex justify-between items-start">
-                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 animate-pulse">
-                  <span className="material-symbols-outlined">bolt</span>
+            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                  <span className="material-symbols-outlined text-[20px] animate-pulse">bolt</span>
                 </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang diễn ra</span>
               </div>
-              <div>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Đang diễn ra</p>
-                <h3 className="text-3xl font-bold text-slate-800 mt-1">
-                  {loadingList ? "..." : sales.filter(s => s.status === FlashSaleStatus.Active && s.isActive).length}
-                </h3>
-              </div>
+              <span className="text-2xl font-extrabold text-slate-800">
+                {loadingList ? "..." : sales.filter(s => s.status === FlashSaleStatus.Active && s.isActive).length}
+              </span>
             </div>
 
             {/* Upcoming */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-              <div className="flex justify-between items-start">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-505">
-                  <span className="material-symbols-outlined">schedule</span>
+            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">schedule</span>
                 </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sắp diễn ra</span>
               </div>
-              <div>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Sắp diễn ra</p>
-                <h3 className="text-3xl font-bold text-slate-800 mt-1">
-                  {loadingList ? "..." : sales.filter(s => s.status === FlashSaleStatus.Upcoming && s.isActive).length}
-                </h3>
-              </div>
+              <span className="text-2xl font-extrabold text-slate-800">
+                {loadingList ? "..." : sales.filter(s => s.status === FlashSaleStatus.Upcoming && s.isActive).length}
+              </span>
             </div>
 
             {/* Total Sold */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-              <div className="flex justify-between items-start">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <span className="material-symbols-outlined">shopping_cart</span>
+            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
                 </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm đã bán</span>
               </div>
-              <div>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tổng sản phẩm đã bán</p>
-                <h3 className="text-3xl font-bold text-slate-800 mt-1">
-                  {loadingList ? "..." : sales.reduce((sum, s) => sum + s.flashSaleItems.reduce((iSum, item) => iSum + item.soldQuantity, 0), 0)}
-                </h3>
-              </div>
+              <span className="text-2xl font-extrabold text-slate-800">
+                {loadingList ? "..." : sales.reduce((sum, s) => sum + s.flashSaleItems.reduce((iSum, item) => iSum + item.soldQuantity, 0), 0)}
+              </span>
             </div>
           </div>
 
           {/* Main List Section */}
           <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
             {/* Search, filters block */}
-            <div className="p-6 border-b border-slate-50 flex flex-col xl:flex-row gap-4 items-center justify-between bg-slate-50/10">
-              {/* Search input */}
-              <div className="w-full xl:w-80 relative">
+            <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
+              {/* Search box */}
+              <div className="flex-1 min-w-[260px] relative">
                 <span className="material-symbols-outlined text-slate-400 text-lg absolute left-4.5 top-1/2 -translate-y-1/2">
                   search
                 </span>
@@ -566,45 +591,32 @@ export default function AdminFlashSalesPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm kiếm chiến dịch theo tên..."
-                  className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-sm font-semibold text-slate-700"
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-655"
-                  >
-                    <span className="material-symbols-outlined text-base">close</span>
-                  </button>
-                )}
               </div>
 
-              {/* Filtering panels */}
-              <div className="w-full xl:w-auto flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Trạng thái:</span>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700"
-                  >
-                    <option value="all">Tất cả</option>
-                    <option value="active">Đang diễn ra</option>
-                    <option value="upcoming">Sắp diễn ra</option>
-                    <option value="ended">Đã kết thúc</option>
-                  </select>
-                </div>
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[165px] cursor-pointer"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Đang diễn ra</option>
+                <option value="upcoming">Sắp diễn ra</option>
+                <option value="ended">Đã kết thúc</option>
+              </select>
 
-                {(searchTerm || statusFilter !== "all") && (
-                  <button
-                    onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
-                    className="px-3 py-2 text-slate-500 hover:text-primary rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 font-bold text-xs cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">restart_alt</span>
-                    Đặt lại
-                  </button>
-                )}
-              </div>
+              {/* Reset Filters button */}
+              {(searchTerm || statusFilter !== "all") && (
+                <button
+                  onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
+                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">clear</span>
+                  Xóa bộ lọc
+                </button>
+              )}
             </div>
 
             {/* Table */}
@@ -624,7 +636,8 @@ export default function AdminFlashSalesPage() {
               ) : (
                 <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                      <th className="px-6 py-4 text-center w-[80px]">STT</th>
                       <th className="px-6 py-4">Tên chiến dịch</th>
                       <th className="px-6 py-4">Thời gian bắt đầu</th>
                       <th className="px-6 py-4">Thời gian kết thúc</th>
@@ -635,8 +648,12 @@ export default function AdminFlashSalesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredSales.map((sale) => (
-                      <tr key={sale.id} className="hover:bg-slate-50/50 transition-colors">
+                    {filteredSales.map((sale, index) => (
+                      <tr key={sale.id} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                        {/* STT */}
+                        <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
+                          {index + 1}
+                        </td>
                         {/* Name */}
                         <td className="px-6 py-4">
                           <span className="font-bold text-slate-800 text-sm hover:text-primary transition-colors block max-w-xs truncate" title={sale.name}>
@@ -668,7 +685,23 @@ export default function AdminFlashSalesPage() {
 
                         {/* Status */}
                         <td className="px-6 py-4 text-center">
-                          {getStatusBadge(sale.startTime, sale.endTime, sale.isActive)}
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="min-w-[90px] text-right">
+                              {getStatusBadge(sale.startTime, sale.endTime, sale.isActive)}
+                            </div>
+                            <label className={`relative inline-flex items-center cursor-pointer select-none ${
+                              new Date() > new Date(sale.endTime) ? "opacity-50 cursor-not-allowed" : ""
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={sale.isActive}
+                                disabled={togglingId === sale.id || new Date() > new Date(sale.endTime)}
+                                onChange={() => handleToggleStatus(sale)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                          </div>
                         </td>
 
                         {/* Actions */}

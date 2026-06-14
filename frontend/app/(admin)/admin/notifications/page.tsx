@@ -375,17 +375,17 @@ export default function AdminNotificationsPage() {
                   { label: "Tổng chiến dịch", value: stats.totalNotifications, icon: "campaign", color: "text-blue-500 bg-blue-50 border-blue-100" },
                   { label: "Đã phát hành", value: stats.totalSent, icon: "done_all", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
                   { label: "Tổng người nhận", value: stats.totalRecipients, icon: "groups", color: "text-purple-500 bg-purple-50 border-purple-100" },
-                  { label: "Tỷ lệ đọc trung bình", value: `${stats.overallReadRate}%`, icon: "mark_chat_read", color: "text-pink-500 bg-pink-50 border-pink-100" },
+                  { label: "Tỷ lệ đọc TB", value: `${stats.overallReadRate}%`, icon: "mark_chat_read", color: "text-pink-500 bg-pink-50 border-pink-100" },
                   { label: "Tỷ lệ tương tác", value: `${stats.engagementRate}%`, icon: "ads_click", color: "text-amber-500 bg-amber-50 border-amber-100" }
                 ].map((kpi, idx) => (
-                  <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{kpi.label}</p>
-                      <h3 className="text-xl font-extrabold text-slate-800 mt-1">{kpi.value}</h3>
+                  <div key={idx} className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${kpi.color}`}>
+                        <span className="material-symbols-outlined text-[20px]">{kpi.icon}</span>
+                      </div>
+                      <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{kpi.label}</span>
                     </div>
-                    <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${kpi.color}`}>
-                      <span className="material-symbols-outlined text-xl">{kpi.icon}</span>
-                    </div>
+                    <span className="text-2xl font-extrabold text-slate-800">{kpi.value}</span>
                   </div>
                 ))}
               </div>
@@ -419,31 +419,33 @@ export default function AdminNotificationsPage() {
                   <span className="material-symbols-outlined text-rose-500">stars</span> Top 5 chiến dịch hiệu quả nhất
                 </h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        <th className="pb-3 pl-4">Mã</th>
-                        <th className="pb-3">Tiêu đề chiến dịch</th>
-                        <th className="pb-3">Loại thông báo</th>
-                        <th className="pb-3">Tổng người nhận</th>
-                        <th className="pb-3">Đã đọc</th>
-                        <th className="pb-3 pr-4">Tỷ lệ đọc</th>
+                      <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                        <th className="px-6 py-4 text-center w-[80px]">STT</th>
+                        <th className="px-6 py-4">Mã</th>
+                        <th className="px-6 py-4">Tiêu đề chiến dịch</th>
+                        <th className="px-6 py-4">Loại thông báo</th>
+                        <th className="px-6 py-4">Tổng người nhận</th>
+                        <th className="px-6 py-4">Đã đọc</th>
+                        <th className="px-6 py-4 pr-6 text-right">Tỷ lệ đọc</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
                       {stats.topCampaigns?.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-6 text-slate-400">Chưa có chiến dịch nào được ghi nhận hiệu suất.</td>
+                          <td colSpan={7} className="text-center py-6 text-slate-400">Chưa có chiến dịch nào được ghi nhận hiệu suất.</td>
                         </tr>
                       ) : (
-                        stats.topCampaigns?.map((camp: any) => (
-                          <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-3 pl-4 font-mono font-bold text-slate-400">{camp.code}</td>
-                            <td className="py-3 font-bold text-slate-800">{camp.title}</td>
-                            <td className="py-3 capitalize">{camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}</td>
-                            <td className="py-3">{camp.recipientsCount}</td>
-                            <td className="py-3">{camp.readCount}</td>
-                            <td className="py-3 pr-4 text-rose-500 font-bold">{camp.readRate}%</td>
+                        stats.topCampaigns?.map((camp: any, index: number) => (
+                          <tr key={camp.id} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                            <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">{index + 1}</td>
+                            <td className="px-6 py-4 font-mono font-bold text-slate-400">{camp.code}</td>
+                            <td className="px-6 py-4 font-bold text-slate-800">{camp.title}</td>
+                            <td className="px-6 py-4 capitalize">{camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}</td>
+                            <td className="px-6 py-4">{camp.recipientsCount}</td>
+                            <td className="px-6 py-4">{camp.readCount}</td>
+                            <td className="px-6 py-4 pr-6 text-rose-500 font-bold text-right">{camp.readRate}%</td>
                           </tr>
                         ))
                       )}
@@ -456,60 +458,71 @@ export default function AdminNotificationsPage() {
 
           {/* TAB 2: CAMPAIGNS LIST */}
           {activeTab === "CAMPAIGNS" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center gap-4 justify-between bg-slate-50/50">
-                <div className="relative w-full sm:w-80">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Search size={14} />
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+              <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
+                <div className="flex-1 min-w-[260px] relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    search
                   </span>
                   <input
                     type="text"
                     placeholder="Tìm kiếm chiến dịch bằng tiêu đề, mã..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"
                   />
                 </div>
-                <span className="text-xs text-slate-400 font-bold">Hiển thị {filteredCampaigns.length} chiến dịch</span>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">clear</span>
+                    Xóa bộ lọc
+                  </button>
+                )}
+                <span className="text-xs text-slate-400 font-bold ml-auto">Hiển thị {filteredCampaigns.length} chiến dịch</span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/20">
-                      <th className="py-3.5 pl-6">Mã</th>
-                      <th>Chiến dịch</th>
-                      <th>Loại / Mức độ</th>
-                      <th>Đối tượng nhận</th>
-                      <th>Trạng thái</th>
-                      <th>Lịch gửi</th>
-                      <th>Tương tác</th>
-                      <th className="pr-6 text-right">Thao tác</th>
+                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                      <th className="px-6 py-4 text-center w-[80px]">STT</th>
+                      <th className="px-6 py-4">Mã</th>
+                      <th className="px-6 py-4">Chiến dịch</th>
+                      <th className="px-6 py-4">Loại / Mức độ</th>
+                      <th className="px-6 py-4">Đối tượng nhận</th>
+                      <th className="px-6 py-4">Trạng thái</th>
+                      <th className="px-6 py-4">Lịch gửi</th>
+                      <th className="px-6 py-4">Tương tác</th>
+                      <th className="px-6 py-4 pr-6 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
                     {filteredCampaigns.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center py-16 text-slate-400">
+                        <td colSpan={9} className="text-center py-16 text-slate-400">
                           <span className="material-symbols-outlined text-4xl text-slate-300 mb-1">campaign</span>
                           <p className="font-medium text-xs mt-1">Không tìm thấy chiến dịch nào</p>
                         </td>
                       </tr>
                     ) : (
-                      filteredCampaigns.map((camp) => (
-                        <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 pl-6 font-mono font-bold text-slate-400">{camp.code}</td>
-                          <td className="py-4 max-w-[20rem]">
+                      filteredCampaigns.map((camp, index) => (
+                        <tr key={camp.id} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                          <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">{index + 1}</td>
+                          <td className="px-6 py-4 font-mono font-bold text-slate-400">{camp.code}</td>
+                          <td className="px-6 py-4 max-w-[20rem]">
                             <p className="font-bold text-slate-800 truncate" title={camp.title}>{camp.title}</p>
                             <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5" title={camp.shortDescription}>{camp.shortDescription}</p>
                           </td>
-                          <td className="py-4 space-y-1">
+                          <td className="px-6 py-4 space-y-1">
                             <p className="capitalize font-bold text-slate-600 text-[11px]">
                               {camp.type === "RewardPoints" ? "Điểm thưởng" : camp.type === "Membership" ? "Thành viên" : camp.type}
                             </p>
                             {getPriorityBadge(camp.priority)}
                           </td>
-                          <td className="py-4">
+                          <td className="px-6 py-4">
                             <span className="px-2 py-1 bg-slate-50 border border-slate-100 text-slate-600 rounded text-[10px] font-bold">
                               {camp.targetTypeName}
                             </span>
@@ -519,9 +532,9 @@ export default function AdminNotificationsPage() {
                               </p>
                             )}
                           </td>
-                          <td className="py-4">{getStatusBadge(camp.status)}</td>
-                          <td className="py-4 text-[11px] text-slate-500 font-bold">{formatDateTime(camp.publishedAt)}</td>
-                          <td className="py-4 text-[11px]">
+                          <td className="px-6 py-4">{getStatusBadge(camp.status)}</td>
+                          <td className="px-6 py-4 text-[11px] text-slate-500 font-bold">{formatDateTime(camp.publishedAt)}</td>
+                          <td className="px-6 py-4 text-[11px]">
                             {camp.status === "Sent" ? (
                               <div className="space-y-0.5">
                                 <p className="font-bold text-slate-800">{camp.readCount} / {camp.recipientsCount} đọc</p>
@@ -531,12 +544,12 @@ export default function AdminNotificationsPage() {
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-4 pr-6 text-right">
+                          <td className="px-6 py-4 pr-6 text-right">
                             <div className="flex justify-end gap-1.5">
                               {camp.status === "Scheduled" && (
                                 <button
                                   onClick={() => handleCancelSchedule(camp.id)}
-                                  className="p-1.5 hover:bg-orange-50 text-orange-500 rounded-lg transition-colors"
+                                  className="p-1.5 hover:bg-orange-50 text-orange-500 rounded-lg transition-colors cursor-pointer"
                                   title="Hủy lịch gửi"
                                 >
                                   <span className="material-symbols-outlined text-[16px] font-bold">cancel_schedule_send</span>
@@ -546,14 +559,14 @@ export default function AdminNotificationsPage() {
                                 <>
                                   <button
                                     onClick={() => handleSendNow(camp.id)}
-                                    className="p-1.5 hover:bg-emerald-50 text-emerald-500 rounded-lg transition-colors"
+                                    className="p-1.5 hover:bg-emerald-50 text-emerald-500 rounded-lg transition-colors cursor-pointer"
                                     title="Gửi ngay bây giờ"
                                   >
                                     <Play size={14} />
                                   </button>
                                   <Link
                                     href={`/admin/notifications/edit/${camp.id}`}
-                                    className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors flex items-center justify-center"
+                                    className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors flex items-center justify-center cursor-pointer"
                                     title="Chỉnh sửa"
                                   >
                                     <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
@@ -562,7 +575,7 @@ export default function AdminNotificationsPage() {
                               )}
                               <button
                                 onClick={() => handleDeleteCampaign(camp.id)}
-                                className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-lg transition-colors"
+                                className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                                 title="Xóa"
                               >
                                 <Trash2 size={14} />
@@ -584,56 +597,58 @@ export default function AdminNotificationsPage() {
               <div className="flex justify-end">
                 <button
                   onClick={() => handleOpenTemplateModal()}
-                  className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 shadow-sm"
+                  className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 shadow-sm cursor-pointer"
                 >
                   <Plus size={14} /> Tạo mẫu thông báo mới
                 </button>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/20">
-                        <th className="py-3.5 pl-6">ID</th>
-                        <th>Tên Mẫu</th>
-                        <th>Mã Mẫu Code</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày tạo</th>
-                        <th className="pr-6 text-right">Thao tác</th>
+                      <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                        <th className="px-6 py-4 text-center w-[80px]">STT</th>
+                        <th className="px-6 py-4">ID</th>
+                        <th className="px-6 py-4">Tên Mẫu</th>
+                        <th className="px-6 py-4">Mã Mẫu Code</th>
+                        <th className="px-6 py-4">Trạng thái</th>
+                        <th className="px-6 py-4">Ngày tạo</th>
+                        <th className="px-6 py-4 pr-6 text-right">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
                       {templates.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-12 text-slate-400">Chưa có mẫu thông báo nào.</td>
+                          <td colSpan={7} className="text-center py-12 text-slate-400">Chưa có mẫu thông báo nào.</td>
                         </tr>
                       ) : (
-                        templates.map((tpl) => (
-                          <tr key={tpl.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-4 pl-6 font-mono font-bold text-slate-400">{tpl.id}</td>
-                            <td className="py-4 font-bold text-slate-800">{tpl.templateName}</td>
-                            <td className="py-4 font-mono font-bold text-slate-400">{tpl.templateCode}</td>
-                            <td className="py-4">
+                        templates.map((tpl, index) => (
+                          <tr key={tpl.id} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                            <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">{index + 1}</td>
+                            <td className="px-6 py-4 font-mono font-bold text-slate-400">{tpl.id}</td>
+                            <td className="px-6 py-4 font-bold text-slate-800">{tpl.templateName}</td>
+                            <td className="px-6 py-4 font-mono font-bold text-slate-400">{tpl.templateCode}</td>
+                            <td className="px-6 py-4">
                               {tpl.isActive ? (
-                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[10px] font-bold">Kích hoạt</span>
+                                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[10px] font-bold">Kích hoạt</span>
                               ) : (
-                                <span className="px-2 py-0.5 bg-slate-50 text-slate-400 border border-slate-100 rounded text-[10px] font-bold">Tắt</span>
+                                <span className="px-2.5 py-1 bg-slate-50 text-slate-400 border border-slate-100 rounded-full text-[10px] font-bold">Tắt</span>
                               )}
                             </td>
-                            <td className="py-4 text-[11px] text-slate-400">{formatDateTime(tpl.createdAt)}</td>
-                            <td className="py-4 pr-6 text-right">
+                            <td className="px-6 py-4 text-[11px] text-slate-400">{formatDateTime(tpl.createdAt)}</td>
+                            <td className="px-6 py-4 pr-6 text-right">
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => handleOpenTemplateModal(tpl)}
-                                  className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors"
+                                  className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors cursor-pointer"
                                   title="Sửa mẫu"
                                 >
                                   <span className="material-symbols-outlined text-[16px] font-bold">edit</span>
                                 </button>
                                 <button
                                   onClick={() => handleDeleteTemplate(tpl.id)}
-                                  className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                                  className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors cursor-pointer"
                                   title="Xóa mẫu"
                                 >
                                   <Trash2 size={14} />

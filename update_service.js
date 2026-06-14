@@ -1,4 +1,8 @@
-using Microsoft.AspNetCore.SignalR;
+const fs = require('fs');
+const path = require('path');
+
+const filePath = path.join(__dirname, 'backend/Services/ChatCleanupService.cs');
+const code = `using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Hubs;
@@ -155,3 +159,7 @@ namespace PolyBabyAPI.Services
         }
     }
 }
+`;
+
+fs.writeFileSync(filePath, code, 'utf8');
+console.log('Successfully updated ChatCleanupService.cs');

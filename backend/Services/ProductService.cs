@@ -902,7 +902,8 @@ namespace PolyBabyAPI.Services
                     CategoryName = c.CategoryName,
                     ParentID = c.ParentID,
                     Level = c.Level,
-                    Status = c.Status
+                    Status = c.Status,
+                    ProductCount = c.Products.Count(p => p.Status)
                 })
                 .ToListAsync();
         }

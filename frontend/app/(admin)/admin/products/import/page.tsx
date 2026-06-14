@@ -256,6 +256,7 @@ export default function ImportPage() {
                     </div>
 
                     <div className="p-6 overflow-x-auto">
+                        <div className="overflow-x-auto w-full">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b-2 border-slate-100 bg-slate-50 text-slate-500 text-sm">
@@ -319,6 +320,7 @@ export default function ImportPage() {
                                 })}
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                     <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-4">
