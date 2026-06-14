@@ -103,12 +103,14 @@ export default function AdminProfilePage() {
 
   return (
     <div className="space-y-6 pb-12 font-sans text-sm">
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Hồ Sơ Cá Nhân</h1>
-        <p className="text-sm text-slate-500 font-semibold mt-1.5">
-          Quản lý thông tin cá nhân, cập nhật ảnh đại diện và thay đổi mật khẩu tài khoản quản trị viên.
-        </p>
-      </div>
+      <header className="mb-lg flex items-center justify-between">
+        <div>
+          <h1 className="font-headline-md text-headline-md text-primary font-bold">Hồ Sơ Cá Nhân</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant/70">
+            Quản lý thông tin cá nhân, cập nhật ảnh đại diện và thay đổi mật khẩu tài khoản quản trị viên.
+          </p>
+        </div>
+      </header>
 
       {/* Bento Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -103,13 +103,11 @@ export default function TwoFactorCard({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
+    <div className="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
       <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
-            <ShieldCheck size={20} className="text-emerald-500" /> Xác Thực 2 Bước (2FA)
-          </h3>
-          <p className="text-sm text-slate-400 font-semibold mt-1">Bảo vệ tài khoản tối đa bằng hai lớp xác thực bảo mật.</p>
+          <h3 className="font-headline-sm text-headline-sm text-primary font-bold">Xác Thực 2 Bước (2FA)</h3>
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Bảo vệ tài khoản tối đa bằng hai lớp xác thực bảo mật.</p>
         </div>
 
         <div className="space-y-4">
@@ -133,7 +131,7 @@ export default function TwoFactorCard({
               <div className="flex flex-wrap gap-2">
                 {twoFactorProviders.map(prov => (
                   <span key={prov} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 flex items-center gap-1.5 font-bold">
-                    {prov === "Authenticator" ? <Smartphone size={14} className="text-rose-500" /> : <Mail size={14} className="text-rose-500" />}
+                    {prov === "Authenticator" ? <Smartphone size={14} className="text-primary" /> : <Mail size={14} className="text-primary" />}
                     {prov === "Authenticator" ? "Authenticator App" : "Email OTP"}
                   </span>
                 ))}
@@ -155,7 +153,7 @@ export default function TwoFactorCard({
               </button>
             ) : (
               <div className="space-y-2.5">
-                <button
+                  <button
                   type="button"
                   onClick={handleSetupAuthenticator}
                   disabled={loadingTwoFactor}
@@ -168,7 +166,7 @@ export default function TwoFactorCard({
                   type="button"
                   onClick={handleSetupEmail2Fa}
                   disabled={loadingTwoFactor}
-                  className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-rose-500/10 cursor-pointer"
+                  className="w-full py-3 bg-primary hover:opacity-90 text-on-primary rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
                 >
                   {loadingTwoFactor ? <Loader className="animate-spin" size={16} /> : <Mail size={16} />}
                   Cài đặt qua Email OTP
@@ -179,12 +177,12 @@ export default function TwoFactorCard({
         </div>
       {mounted && showDisableConfirm && createPortal(
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-[420px] max-w-full p-8 border border-slate-100 shadow-2xl space-y-7 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[2rem] w-[420px] max-w-full p-8 border border-slate-100 shadow-2xl space-y-7 animate-in fade-in zoom-in-95 duration-200">
             <div className="text-center space-y-3">
-              <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 rounded-full bg-error/10 text-error flex items-center justify-center mx-auto">
                 <span className="material-symbols-outlined text-3xl">shield_lock</span>
               </div>
-              <h3 className="text-lg font-extrabold text-slate-800">Tắt xác thực 2 bước</h3>
+              <h3 className="font-headline-sm text-headline-sm text-slate-800 font-bold">Tắt xác thực 2 bước</h3>
               <p className="text-sm text-slate-500 font-semibold leading-relaxed">
                 Bạn có chắc chắn muốn tắt tính năng xác thực 2 bước không? Tài khoản của bạn sẽ kém an toàn hơn.
               </p>
@@ -201,7 +199,7 @@ export default function TwoFactorCard({
               <button
                 type="button"
                 onClick={confirmDisable2Fa}
-                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer"
+                className="flex-1 py-3.5 bg-error hover:bg-error/90 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer"
               >
                 Xác nhận tắt
               </button>

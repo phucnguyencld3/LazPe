@@ -453,8 +453,8 @@ export default function AdminFlashSalesPage() {
   const getStatusBadge = (startTimeStr: string, endTimeStr: string, isActive: boolean) => {
     if (!isActive) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-550 border border-rose-100 animate-fade-in">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-450"></span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-550 animate-fade-in">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
           Tạm khóa
         </span>
       );
@@ -465,21 +465,21 @@ export default function AdminFlashSalesPage() {
 
     if (now < start) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 animate-fade-in">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 animate-fade-in">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
           Sắp diễn ra
         </span>
       );
     } else if (now > end) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100 animate-fade-in">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 animate-fade-in">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           Hết hạn
         </span>
       );
     } else {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100 animate-pulse">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 animate-pulse">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
           Đang diễn ra
         </span>
@@ -641,7 +641,6 @@ export default function AdminFlashSalesPage() {
                       <th className="px-6 py-4">Tên chiến dịch</th>
                       <th className="px-6 py-4">Thời gian bắt đầu</th>
                       <th className="px-6 py-4">Thời gian kết thúc</th>
-                      <th className="px-6 py-4 text-center">Mặt hàng sale</th>
                       <th className="px-6 py-4 text-center">Đã bán</th>
                       <th className="px-6 py-4 text-center">Trạng thái</th>
                       <th className="px-6 py-4 text-right">Thao tác</th>
@@ -656,9 +655,9 @@ export default function AdminFlashSalesPage() {
                         </td>
                         {/* Name */}
                         <td className="px-6 py-4">
-                          <span className="font-bold text-slate-800 text-sm hover:text-primary transition-colors block max-w-xs truncate" title={sale.name}>
+                          <div className="font-bold text-slate-800 text-sm hover:text-primary transition-colors whitespace-normal min-w-[200px] line-clamp-2" title={sale.name}>
                             {sale.name}
-                          </span>
+                          </div>
                         </td>
 
                         {/* Start Time */}
@@ -671,14 +670,9 @@ export default function AdminFlashSalesPage() {
                           {new Date(sale.endTime).toLocaleString("vi-VN")}
                         </td>
 
-                        {/* Flash sale items count */}
-                        <td className="px-6 py-4 text-center text-xs font-bold text-slate-700">
-                          {sale.flashSaleItems.length} mặt hàng
-                        </td>
-
                         {/* Sold items count */}
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-2.5 py-1 bg-orange-50 border border-orange-100 rounded-full text-[10px] font-bold text-orange-600">
+                          <span className="text-xs font-bold text-orange-600">
                             {sale.flashSaleItems.reduce((sum, item) => sum + item.soldQuantity, 0)} sản phẩm
                           </span>
                         </td>

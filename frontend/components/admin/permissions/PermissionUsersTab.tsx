@@ -28,8 +28,8 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* User Search & Filter */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+      {/* User Table */}
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mt-6">
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
           <div className="flex-1 relative min-w-[300px]">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
@@ -51,10 +51,7 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
             </button>
           )}
         </div>
-      </div>
 
-      {/* User Table */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mt-6">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
@@ -87,7 +84,7 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
                     onClick={() => router.push(`/admin/users/${u.id}/permissions`)}
                     className="hover:bg-slate-100/70 transition-all duration-200 group cursor-pointer"
                   >
-                    <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
+                    <td className="px-6 py-4 text-center text-sm font-semibold text-slate-400">
                       {(page - 1) * 10 + index + 1}
                     </td>
                     <td className="px-6 py-4">
@@ -116,12 +113,12 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
                             return (
                               <span
                                 key={idx}
-                                className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                                className={`text-sm font-bold ${
                                   isAdminRole
-                                    ? "bg-primary/10 text-primary border border-primary/20"
+                                    ? "text-primary"
                                     : isStaffRole
-                                    ? "bg-blue-50 text-blue-600 border border-blue-100"
-                                    : "bg-slate-100 text-slate-500 border border-slate-200"
+                                    ? "text-blue-600"
+                                    : "text-slate-500"
                                 }`}
                               >
                                 {role}
@@ -129,7 +126,7 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
                             );
                           })
                         ) : (
-                          <span className="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-[10px] font-bold">
+                          <span className="text-sm font-bold text-slate-400">
                             User
                           </span>
                         )}
@@ -137,11 +134,11 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
                     </td>
                     <td className="px-6 py-4 text-center">
                       {u.isLocked ? (
-                        <span className="bg-rose-50 text-error px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border border-rose-100">
+                        <span className="text-sm font-bold text-error inline-flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 bg-error rounded-full"></span> Bị khóa
                         </span>
                       ) : (
-                        <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border border-emerald-100">
+                        <span className="text-sm font-bold text-emerald-600 inline-flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Hoạt động
                         </span>
                       )}

@@ -42,7 +42,7 @@ export default function AdminBrandsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   // Deletion Modal states
   const [brandToDelete, setBrandToDelete] = useState<{ id: number; name: string } | null>(null);

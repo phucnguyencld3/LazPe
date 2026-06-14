@@ -11,15 +11,11 @@ export default function PermissionsCard({ user }: PermissionsCardProps) {
   const permissions = user?.permissions || [];
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 flex flex-col justify-between">
+    <div className="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 flex flex-col justify-between animate-in fade-in duration-300">
       <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
-            <Shield size={20} className="text-indigo-500" /> Quyền Hạn Tài Khoản (Permissions)
-          </h3>
-          <p className="text-sm text-slate-450 font-semibold mt-1">
-            Danh sách chi tiết các quyền chức năng hiện có của tài khoản trong hệ thống quản trị.
-          </p>
+          <h3 className="font-headline-sm text-headline-sm text-primary font-bold">Chức Vụ & Quyền Hạn</h3>
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Vai trò hiện tại của bạn trong hệ thống quản trị.</p>
         </div>
 
         <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 flex-1 min-h-[150px] overflow-y-auto" style={{ maxHeight: "250px" }}>

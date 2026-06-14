@@ -404,7 +404,7 @@ export default function AdminCategoriesPage() {
 
                       {/* Statistics */}
                       <td className="px-6 py-4 text-center">
-                        <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-extrabold text-[11px]">
+                        <span className="text-primary font-extrabold text-sm">
                           {cat.productCount ?? 0} sản phẩm
                         </span>
                       </td>

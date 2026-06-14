@@ -85,17 +85,18 @@ export const OrderTable: React.FC<OrderTableProps> = ({
   const getMockupStatusBadgeClass = (statusCode: number) => {
     switch (statusCode) {
       case 0: // Pending (Chờ xác nhận)
-        return "bg-tertiary-container text-on-tertiary-container";
-      case 1: // Confirmed (Đang xử lý)
-        return "bg-secondary-container text-on-secondary-container";
+        return "text-amber-600";
+      case 1: // Confirmed (Đã xác nhận)
+        return "text-blue-600";
       case 2: // Shipping (Đang giao)
-        return "bg-primary-container text-on-primary-container";
-      case 3: // Received (Đã nhận)
-      case 4: // Completed (Hoàn thành)
-        return "bg-surface-container-highest text-on-surface-variant";
+        return "text-purple-600";
+      case 3: // Completed (Hoàn tất)
+        return "text-emerald-600";
+      case 4: // Cancel waiting
+        return "text-rose-600";
       case 5: // Cancelled (Đã hủy)
       default:
-        return "bg-error-container text-on-error-container text-error";
+        return "text-slate-500";
     }
   };
 
@@ -229,7 +230,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                     </td>
                     <td className="px-6 py-5">
                       <span
-                        className={`px-3 py-1 rounded-full text-label-sm font-bold inline-block ${getMockupStatusBadgeClass(
+                        className={`text-sm font-bold ${getMockupStatusBadgeClass(
                           order.statusCode
                         )}`}
                       >

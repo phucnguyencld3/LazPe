@@ -531,7 +531,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                     {/* Discount */}
                     <td className="px-6 py-4 text-center">
                       {bundle.discountPercent > 0 ? (
-                        <span className="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-extrabold rounded-full border border-rose-100 inline-flex items-center gap-0.5">
+                        <span className="text-rose-500 text-sm font-extrabold">
                           -{bundle.discountPercent}%
                         </span>
                       ) : (
