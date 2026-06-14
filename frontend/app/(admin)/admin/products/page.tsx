@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   AdminProductInfo,
@@ -18,6 +18,7 @@ import { formatCurrency } from "@/lib/utils/formatters";
 
 export default function AdminProductsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   // Data states
@@ -25,8 +26,11 @@ export default function AdminProductsPage() {
   const [stats, setStats] = useState<ProductStats | null>(null);
   const [categories, setCategories] = useState<CategorySelectOption[]>([]);
   
-  // Filter/Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
+  // Filter/Pagination states — khởi tạo từ URL nếu có ?page=X
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = searchParams.get("page");
+    return p ? Math.max(1, parseInt(p)) : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
@@ -375,21 +379,20 @@ export default function AdminProductsPage() {
                 <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sản phẩm</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá bán</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Tồn kho</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Hành động</th>
+                <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-20">
+                  <td colSpan={5} className="text-center py-20">
                     <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
                     <p className="text-slate-400 mt-4 font-semibold text-sm">Đang tải dữ liệu sản phẩm...</p>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-20">
+                  <td colSpan={5} className="text-center py-20">
                     <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">inventory</span>
                     <p className="text-slate-400 font-bold text-sm">Không tìm thấy sản phẩm nào.</p>
                   </td>
@@ -464,52 +467,54 @@ export default function AdminProductsPage() {
                         </div>
                       </td>
 
-                      <td className="px-6 py-5 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className={`text-[10px] font-bold uppercase min-w-[55px] text-right ${product.status ? "text-secondary" : "text-slate-400"}`}>
-                            {product.status ? "Đang bán" : "Đã ẩn"}
-                          </span>
-                          <label className="relative inline-flex items-center cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={product.status}
-                              onChange={() => handleToggleStatus(product.productID)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                          </label>
-                        </div>
-                      </td>
-
+                      {/* Xóa cột Trạng thái riêng, gộp vào Thao tác */}
                       <td className="px-8 py-5 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Toggle trạng thái */}
+                          <div className="flex flex-col items-center gap-1 px-1">
+                            <label className="relative inline-flex items-center cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={product.status}
+                                onChange={() => handleToggleStatus(product.productID)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                            <span className={`text-[9px] font-bold uppercase ${product.status ? "text-secondary" : "text-slate-400"}`}>
+                              {product.status ? "Đang bán" : "Đã ẩn"}
+                            </span>
+                          </div>
+
+                          <div className="w-px h-8 bg-slate-100 mx-1"></div>
+
                           <button
                             onClick={() => {
                               toast.info(`Xem chi tiết sản phẩm: ${product.productName}`);
-                              router.push(`/admin/products/${product.productID}`);
+                              router.push(`/admin/products/${product.productID}?page=${currentPage}`);
                             }}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
                             title="Xem chi tiết"
                           >
-                            <span className="material-symbols-outlined text-[20px]">visibility</span>
+                            <span className="material-symbols-outlined text-[18px]">visibility</span>
                           </button>
                           <button
                             onClick={() => {
                               toast.info(`Chỉnh sửa sản phẩm: ${product.productName}`);
-                              router.push(`/admin/products/edit/${product.productID}`);
+                              router.push(`/admin/products/edit/${product.productID}?page=${currentPage}`);
                             }}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
                             title="Chỉnh sửa"
                           >
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                           <button
-                             onClick={() => handleDeleteClick(product.productID, product.productName)}
-                             className="w-10 h-10 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                             title="Xóa"
-                           >
-                             <span className="material-symbols-outlined text-[20px]">delete</span>
-                           </button>
+                          <button
+                            onClick={() => handleDeleteClick(product.productID, product.productName)}
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
+                            title="Xóa"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>

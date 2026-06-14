@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   AdminProductDetailInfo,
@@ -14,6 +14,8 @@ import { formatCurrency } from "@/lib/utils/formatters";
 export default function AdminProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get("page") || "1";
 
   const [product, setProduct] = useState<AdminProductDetailInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,7 +184,7 @@ export default function AdminProductDetailPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <button
-            onClick={() => router.push("/admin/products")}
+            onClick={() => router.push(`/admin/products?page=${fromPage}`)}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-2 font-bold"
           >
             <span className="material-symbols-outlined">arrow_back</span>
@@ -201,7 +203,7 @@ export default function AdminProductDetailPage() {
           <button
             onClick={() => {
               toast.info("Điều hướng đến trang chỉnh sửa sản phẩm");
-              router.push(`/admin/products/edit/${product.productID}`);
+              router.push(`/admin/products/edit/${product.productID}?page=${fromPage}`);
             }}
             className="px-8 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
           >

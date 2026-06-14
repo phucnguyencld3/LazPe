@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   CategorySelectOption,
@@ -19,6 +19,8 @@ import { ProductPricingInventory } from "@/components/admin/products/ProductPric
 export default function EditProductPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get("page") || "1";
 
   // Loaders
   const [loading, setLoading] = useState(true);
@@ -329,7 +331,7 @@ export default function EditProductPage() {
           <div className="flex gap-4 max-w-5xl w-full mx-auto justify-end px-4">
             <button
               type="button"
-              onClick={() => router.push(`/admin/products/${id}`)}
+              onClick={() => router.push(`/admin/products/${id}?page=${fromPage}`)}
               className="px-6 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer active:scale-95"
               disabled={saving}
             >
