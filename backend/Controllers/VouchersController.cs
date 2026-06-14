@@ -588,6 +588,7 @@ namespace PolyBabyAPI.Controllers
                 {
                     UserID = userId,
                     VoucherID = request.VoucherID,
+                    IssuedCode = $"{voucher.Code}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
                     SourceType = UserVoucherSource.DirectAssigned,
                     Status = UserVoucherStatus.Unused,
                     CollectedAt = now
@@ -633,6 +634,7 @@ namespace PolyBabyAPI.Controllers
                     UserEmail = uv.User != null ? uv.User.Email : string.Empty,
                     UserPhone = uv.User != null ? uv.User.PhoneNumber : string.Empty,
                     Status = uv.Status.ToString(),
+                    uv.IssuedCode,
                     uv.CollectedAt,
                     uv.UsedAt
                 })
@@ -778,6 +780,7 @@ namespace PolyBabyAPI.Controllers
             {
                 UserID = userId,
                 VoucherID = voucher.VoucherID,
+                IssuedCode = $"{voucher.Code}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
                 SourceType = UserVoucherSource.DirectAssigned,
                 Status = UserVoucherStatus.Unused,
                 CollectedAt = now

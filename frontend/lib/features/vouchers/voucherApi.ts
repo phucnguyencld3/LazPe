@@ -101,6 +101,7 @@ export interface DirectAssignmentInfo {
   userFullName: string;
   userEmail: string;
   userPhone: string;
+  issuedCode: string | null;
   status: string; // e.g. "Unused", "Used", "Expired"
   collectedAt: string;
   usedAt: string | null;

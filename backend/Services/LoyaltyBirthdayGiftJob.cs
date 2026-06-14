@@ -83,6 +83,14 @@ namespace PolyBabyAPI.Services
             int coins = 0;
             string? giftName = null;
             string? giftDesc = null;
+            
+            // Cấu hình riêng cho CUSTOM VOUCHER
+            string voucherMode = "EXISTING";
+            string discountTypeStr = "PERCENT";
+            decimal discountValue = 0;
+            decimal maxDiscount = 0;
+            decimal minOrderValue = 0;
+            int validityDays = 30;
 
             try
             {
@@ -92,8 +100,22 @@ namespace PolyBabyAPI.Services
                 
                 if (giftType.ToUpper() == "VOUCHER")
                 {
-                    voucherCode = root.GetProperty("voucherCode").GetString();
-                    quantity = root.GetProperty("quantity").GetInt32();
+                    voucherMode = root.TryGetProperty("mode", out var mProp) ? mProp.GetString() ?? "EXISTING" : "EXISTING";
+                    quantity = root.TryGetProperty("quantity", out var qProp) ? qProp.GetInt32() : 1;
+
+                    if (voucherMode == "CUSTOM")
+                    {
+                        voucherCode = root.TryGetProperty("voucherCode", out var vcProp) ? vcProp.GetString() : "BDAY";
+                        discountTypeStr = root.TryGetProperty("discountType", out var dtProp) ? dtProp.GetString() ?? "PERCENT" : "PERCENT";
+                        discountValue = root.TryGetProperty("discountValue", out var dvProp) ? dvProp.GetDecimal() : 0;
+                        maxDiscount = root.TryGetProperty("maxDiscount", out var mdProp) ? mdProp.GetDecimal() : 0;
+                        minOrderValue = root.TryGetProperty("minOrderValue", out var moProp) ? moProp.GetDecimal() : 0;
+                        validityDays = root.TryGetProperty("validityDays", out var vdProp) ? vdProp.GetInt32() : 30;
+                    }
+                    else
+                    {
+                        voucherCode = root.TryGetProperty("voucherCode", out var vcProp) ? vcProp.GetString() : null;
+                    }
                 }
                 else if (giftType.ToUpper() == "POINTS")
                 {
@@ -129,11 +151,50 @@ namespace PolyBabyAPI.Services
             if (giftType.ToUpper() == "VOUCHER")
             {
                 if (string.IsNullOrWhiteSpace(voucherCode) || quantity <= 0) return false;
-                var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode && v.Status);
-                if (voucher == null)
+
+                int targetVoucherID = 0;
+                string baseCode = voucherCode;
+
+                if (voucherMode == "CUSTOM")
                 {
-                    _logger.LogWarning("Không tìm thấy voucher sinh nhật mẫu '{Code}' hoạt động", voucherCode);
-                    return false;
+                    // Tạo một Voucher Mẫu riêng biệt cho người này với thời hạn cụ thể
+                    string uniqueCode = $"{voucherCode}_{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}";
+                    var newVoucher = new Voucher
+                    {
+                        Code = uniqueCode,
+                        Name = "Quà Tặng Sinh Nhật Tự Tạo",
+                        DiscountType = discountTypeStr == "PERCENT" ? 1 : 2,
+                        DiscountValue = discountValue,
+                        MaxDiscount = maxDiscount,
+                        MinOrderValue = minOrderValue,
+                        StartDate = DateTime.Now,
+                        EndDate = DateTime.Now.AddDays(validityDays),
+                        TotalQuantity = quantity,
+                        UsedQuantity = 0,
+                        Status = true,
+                        VisibilityType = (VoucherVisibilityType)3, // Hidden
+                        ExclusiveType = (ExclusiveDistributionType)2, // DirectAssign
+                        VoucherType = (VoucherType)1, // Product Discount
+                        IsFreeShipping = false,
+                        MaxShippingDiscount = null,
+                        UsageLimitPerUser = 1
+                    };
+                    _context.Vouchers.Add(newVoucher);
+                    await _context.SaveChangesAsync();
+                    
+                    targetVoucherID = newVoucher.VoucherID;
+                    baseCode = uniqueCode;
+                }
+                else
+                {
+                    var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == voucherCode && v.Status);
+                    if (voucher == null)
+                    {
+                        _logger.LogWarning("Không tìm thấy voucher sinh nhật mẫu '{Code}' hoạt động", voucherCode);
+                        return false;
+                    }
+                    targetVoucherID = voucher.VoucherID;
+                    baseCode = voucher.Code;
                 }
 
                 // Cấp voucher vào ví
@@ -142,7 +203,8 @@ namespace PolyBabyAPI.Services
                     var userVoucher = new UserVoucher
                     {
                         UserID = userId,
-                        VoucherID = voucher.VoucherID,
+                        VoucherID = targetVoucherID,
+                        IssuedCode = voucherMode == "CUSTOM" ? baseCode : $"{baseCode}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
                         Status = UserVoucherStatus.Unused,
                         SourceType = UserVoucherSource.DirectAssigned,
                         CollectedAt = DateTime.Now,
@@ -152,7 +214,7 @@ namespace PolyBabyAPI.Services
                     _context.UserVouchers.Add(userVoucher);
                 }
 
-                giftValueLog = voucherCode;
+                giftValueLog = baseCode;
 
                 // Ghi lịch sử loyalty
                 _context.LoyaltyPointHistories.Add(new LoyaltyPointHistory
@@ -231,6 +293,34 @@ namespace PolyBabyAPI.Services
             };
 
             _context.LoyaltyBirthdayGiftLogs.Add(giftLog);
+
+            // Thêm thông báo chúc mừng sinh nhật
+            var masterNotification = new Notification
+            {
+                Code = "BDAY_" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
+                Title = "🎂 Chúc Mừng Sinh Nhật!",
+                ShortDescription = "Món quà sinh nhật đặc biệt dành cho bạn.",
+                Content = $"LazPe kính chúc bạn một ngày sinh nhật thật ấm áp và hạnh phúc! Món quà sinh nhật đặc biệt ({giftType} - {giftValueLog}) đã được gửi đến bạn.",
+                Type = NotificationType.Membership,
+                Priority = NotificationPriority.High,
+                Status = NotificationStatus.Sent,
+                PublishedAt = DateTime.Now,
+                CreatedBy = "System",
+                TargetType = TargetType.SpecificUsers,
+                TargetValue = userId
+            };
+            _context.Notifications.Add(masterNotification);
+            await _context.SaveChangesAsync();
+
+            var notification = new UserNotification
+            {
+                UserId = userId,
+                NotificationId = masterNotification.Id,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.UserNotifications.Add(notification);
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Phát thành công quà sinh nhật '{Type}' ({Val}) cho user {UserId}", giftType, giftValueLog, userId);

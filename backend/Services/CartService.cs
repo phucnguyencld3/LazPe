@@ -353,18 +353,49 @@ namespace PolyBabyAPI.Services
             decimal subTotal = cart.CartDetails.Sum(cd => cd.Quantity * cd.UnitPrice);
             decimal discount = 0;
             decimal shippingDiscount = 0;
+            decimal tierDiscount = 0;
+
+            // Tính toán Tier Discount
+            var loyaltyProfile = await _context.LoyaltyProfiles
+                .FirstOrDefaultAsync(lp => lp.UserID == cart.UserID);
+
+            if (loyaltyProfile != null)
+            {
+                var discountPrivilege = await _context.LoyaltyTierPrivileges
+                    .Where(p => p.TierID == loyaltyProfile.CurrentTierID && p.PrivilegeType == "DISCOUNT" && p.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (discountPrivilege != null && decimal.TryParse(discountPrivilege.Value, out decimal discountPercent))
+                {
+                    tierDiscount = subTotal * (discountPercent / 100);
+                    // Mức trần thao túng tối đa 10%
+                    decimal maxAllowedDiscount = subTotal * 0.10m;
+                    if (tierDiscount > maxAllowedDiscount)
+                    {
+                        tierDiscount = maxAllowedDiscount;
+                    }
+                }
+            }
+
+            decimal netTotalBeforeVoucher = subTotal - tierDiscount;
+            if (netTotalBeforeVoucher < 0) netTotalBeforeVoucher = 0;
 
             if (cart.Voucher != null)
             {
-                // Re-validate to make sure it's still valid
+                // Validate voucher: Vẫn check min order dựa trên subTotal (hoặc netTotal)
                 var validCheck = await _voucherService.ValidateVoucherAsync(cart.Voucher.Code, subTotal, cart.UserID);
                 if (validCheck.IsValid)
                 {
                     discount = _voucherService.CalculateDiscount(cart.Voucher, subTotal);
+                    // Discount không được vượt quá netTotalBeforeVoucher
+                    if (discount > netTotalBeforeVoucher)
+                    {
+                        discount = netTotalBeforeVoucher;
+                    }
                 }
                 else
                 {
-                    // Nếu không còn valid (vd tổng tiền giảm xuống dưới mức tối thiểu), thì remove voucher
+                    // Nếu không còn valid, thì remove voucher
                     cart.Voucher = null;
                 }
             }
@@ -376,7 +407,7 @@ namespace PolyBabyAPI.Services
                 if (validCheck.IsValid)
                 {
                     // Tính phí ship tạm thời dựa trên tổng tiền sau giảm giá sản phẩm
-                    decimal netTotal = subTotal - discount;
+                    decimal netTotal = subTotal - tierDiscount - discount;
                     if (netTotal < 0) netTotal = 0;
 
                     decimal originalShippingFee = 25000;
@@ -390,9 +421,10 @@ namespace PolyBabyAPI.Services
             }
 
             cart.SubTotal = subTotal;
+            cart.TierDiscountAmount = tierDiscount;
             cart.DiscountAmount = discount;
             cart.ShippingDiscountAmount = shippingDiscount;
-            cart.TotalAmount = subTotal - discount;
+            cart.TotalAmount = subTotal - tierDiscount - discount;
             if (cart.TotalAmount < 0) cart.TotalAmount = 0;
 
             await _context.SaveChangesAsync();

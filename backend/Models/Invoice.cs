@@ -72,6 +72,10 @@ namespace PolyBabyAPI.Models
         public decimal DiscountAmount { get; set; } = 0;
 
         [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Chiết khấu hạng thẻ")]
+        public decimal TierDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tiền giảm ship")]
         public decimal ShippingDiscountAmount { get; set; } = 0;
 

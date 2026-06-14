@@ -226,6 +226,7 @@ export default function AdminLoyaltyPage() {
 
   // States for Privilege Modal dynamic inputs
   const [privilegeType, setPrivilegeType] = useState("VOUCHER");
+  const [privilegeName, setPrivilegeName] = useState("Voucher hàng tháng");
   const [voucherCode, setVoucherCode] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [maxSupport, setMaxSupport] = useState(30000);
@@ -928,7 +929,7 @@ export default function AdminLoyaltyPage() {
       toast.error(voucherMode === "EXISTING" ? "Vui lòng chọn Voucher." : "Vui lòng nhập tiền tố mã Voucher.");
       return;
     }
-    if (privilegeType === "BIRTHDAY_GIFT" && birthdayGiftType === "VOUCHER" && !birthdayVoucherCode) {
+    if (privilegeType === "BIRTHDAY_GIFT" && birthdayGiftType === "VOUCHER" && voucherMode === "EXISTING" && !birthdayVoucherCode) {
       toast.error("Vui lòng chọn Voucher quà sinh nhật.");
       return;
     }
@@ -969,8 +970,16 @@ export default function AdminLoyaltyPage() {
     } else if (privilegeType === "BIRTHDAY_GIFT") {
       configObj.giftType = birthdayGiftType;
       if (birthdayGiftType === "VOUCHER") {
-        configObj.voucherCode = birthdayVoucherCode;
+        configObj.mode = voucherMode;
+        configObj.voucherCode = voucherMode === "CUSTOM" ? "BDAY" : birthdayVoucherCode;
         configObj.quantity = parseInt(birthdayQuantity.toString());
+        configObj.validityDays = parseInt(validityDays.toString());
+        if (voucherMode === "CUSTOM") {
+          configObj.discountType = discountType;
+          configObj.discountValue = parseFloat(discountValue.toString());
+          configObj.maxDiscount = discountType === "PERCENT" ? parseFloat(maxDiscount.toString()) : 0;
+          configObj.minOrderValue = parseFloat(minOrderValue.toString());
+        }
       } else if (birthdayGiftType === "POINTS") {
         configObj.points = parseInt(birthdayPoints.toString());
       } else if (birthdayGiftType === "COINS") {
@@ -1778,6 +1787,8 @@ export default function AdminLoyaltyPage() {
                                   <button
                                     onClick={() => {
                                       setEditingPrivilege(null);
+                                      setPrivilegeName("Voucher hàng tháng");
+                                      setPrivilegeType("VOUCHER");
                                       setShowPrivilegeModal(true);
                                     }}
                                     className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm"
@@ -1811,6 +1822,8 @@ export default function AdminLoyaltyPage() {
                                           <button
                                             onClick={() => {
                                               setEditingPrivilege(p);
+                                              setPrivilegeName(p.name);
+                                              setPrivilegeType(p.privilegeType);
                                               setShowPrivilegeModal(true);
                                             }}
                                             className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
@@ -2716,7 +2729,7 @@ export default function AdminLoyaltyPage() {
                     required
                     defaultValue={editingEarnPolicy?.name || ""}
                     placeholder="Ví dụ: Tích điểm mặc định, Tích điểm lễ Tết..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -2729,7 +2742,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={1}
                       defaultValue={editingEarnPolicy?.vndAmount ?? 1000}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2740,7 +2753,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={1}
                       defaultValue={editingEarnPolicy?.pointsEarned ?? 10}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2751,7 +2764,7 @@ export default function AdminLoyaltyPage() {
                     <select
                       name="isCampaign"
                       defaultValue={editingEarnPolicy?.isCampaign ? "true" : "false"}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="false">Mặc định hệ thống</option>
                       <option value="true">Chiến dịch tạm thời</option>
@@ -2766,7 +2779,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min="0.1"
                       defaultValue={editingEarnPolicy?.multiplier ?? 1.0}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2778,7 +2791,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="startDate"
                       defaultValue={editingEarnPolicy?.startDate ? editingEarnPolicy.startDate.split("T")[0] : ""}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2787,7 +2800,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="endDate"
                       defaultValue={editingEarnPolicy?.endDate ? editingEarnPolicy.endDate.split("T")[0] : ""}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2797,7 +2810,7 @@ export default function AdminLoyaltyPage() {
                   <select
                     name="isActive"
                     defaultValue={editingEarnPolicy?.isActive === false ? "false" : "true"}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Đang kích hoạt</option>
                     <option value="false">Tạm khóa</option>
@@ -2858,7 +2871,7 @@ export default function AdminLoyaltyPage() {
                     required
                     defaultValue={editingRedeemPolicy?.name || ""}
                     placeholder="Ví dụ: Đổi điểm mặc định, Tỷ lệ ưu đãi hạng Vàng..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -2871,7 +2884,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={1}
                       defaultValue={editingRedeemPolicy?.pointsToRedeem ?? 1}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2883,7 +2896,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={0.1}
                       defaultValue={editingRedeemPolicy?.discountVnd ?? 1}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2894,7 +2907,7 @@ export default function AdminLoyaltyPage() {
                     name="tierID"
                     defaultValue={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
                     disabled={selectedTierForPrivileges !== null}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                   >
                     <option value="">Áp dụng chung toàn hệ thống</option>
                     {tiers.map(t => (
@@ -2917,7 +2930,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="startDate"
                       defaultValue={editingRedeemPolicy?.startDate ? editingRedeemPolicy.startDate.split("T")[0] : ""}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2926,7 +2939,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="endDate"
                       defaultValue={editingRedeemPolicy?.endDate ? editingRedeemPolicy.endDate.split("T")[0] : ""}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2936,7 +2949,7 @@ export default function AdminLoyaltyPage() {
                   <select
                     name="isActive"
                     defaultValue={editingRedeemPolicy?.isActive === false ? "false" : "true"}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Đang hoạt động</option>
                     <option value="false">Tạm khóa</option>
@@ -2997,7 +3010,7 @@ export default function AdminLoyaltyPage() {
                     required
                     defaultValue={editingTier?.tierName || ""}
                     placeholder="Ví dụ: Bạc, Vàng, Kim Cương..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -3009,7 +3022,7 @@ export default function AdminLoyaltyPage() {
                     required
                     min={0}
                     defaultValue={editingTier?.minPoints ?? 0}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -3040,7 +3053,7 @@ export default function AdminLoyaltyPage() {
                       required
                       defaultValue={editingTier ? cleanIconName(editingTier.badgeIcon) : "workspace_premium"}
                       placeholder="award_star, star, v.v."
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -3050,7 +3063,7 @@ export default function AdminLoyaltyPage() {
                   <select
                     name="isActive"
                     defaultValue={editingTier?.isActive === false ? "false" : "true"}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Cho phép thăng hạng</option>
                     <option value="false">Tạm ẩn/Khóa hạng</option>
@@ -3107,9 +3120,10 @@ export default function AdminLoyaltyPage() {
                     type="text"
                     name="name"
                     required
-                    defaultValue={editingPrivilege?.name || ""}
+                    value={privilegeName}
+                    onChange={(e) => setPrivilegeName(e.target.value)}
                     placeholder="Ví dụ: Voucher hàng tháng Gold, Tặng xu sinh nhật..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -3118,8 +3132,20 @@ export default function AdminLoyaltyPage() {
                     <label className="text-sm font-bold text-slate-700 block mb-2">Loại đặc quyền</label>
                     <select
                       value={privilegeType}
-                      onChange={(e) => setPrivilegeType(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPrivilegeType(val);
+                        const defaultNames: Record<string, string> = {
+                          "VOUCHER": "Voucher hàng tháng",
+                          "FREESHIP": "Miễn phí vận chuyển",
+                          "DISCOUNT": "Giảm giá đơn hàng",
+                          "CASHBACK": "Hoàn xu / tích lũy",
+                          "SUPPORT": "Ưu tiên hỗ trợ",
+                          "BIRTHDAY_GIFT": "Quà tặng sinh nhật"
+                        };
+                        setPrivilegeName(defaultNames[val] || "");
+                      }}
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="VOUCHER">Voucher hàng tháng</option>
                       <option value="FREESHIP">Miễn phí vận chuyển</option>
@@ -3134,7 +3160,7 @@ export default function AdminLoyaltyPage() {
                     <select
                       name="isActive"
                       defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="true">Đang kích hoạt</option>
                       <option value="false">Tạm ẩn</option>
@@ -3189,7 +3215,7 @@ export default function AdminLoyaltyPage() {
                             value={voucherCode}
                             onChange={(e) => setVoucherCode(e.target.value)}
                             required
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="">-- Chọn Voucher --</option>
                             {vouchers.map(v => (
@@ -3206,7 +3232,7 @@ export default function AdminLoyaltyPage() {
                             placeholder="Ví dụ: VCGOLD"
                             value={voucherCode}
                             onChange={(e) => setVoucherCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                           <span className="text-xs text-slate-500 font-medium block mt-0.5">
                             Hệ thống sẽ thêm đuôi tháng năm. Ví dụ: VCGOLD_M0626
@@ -3222,7 +3248,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={quantity}
                           onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
 
@@ -3234,7 +3260,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={validityDays}
                           onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                         <span className="text-xs text-slate-500 font-medium block mt-0.5">
                           Số ngày voucher có hiệu lực kể từ lúc phát
@@ -3249,7 +3275,7 @@ export default function AdminLoyaltyPage() {
                           <select
                             value={discountType}
                             onChange={(e) => setDiscountType(e.target.value)}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="PERCENT">Phần trăm (%)</option>
                             <option value="FIXED">Số tiền cố định (đ)</option>
@@ -3264,7 +3290,7 @@ export default function AdminLoyaltyPage() {
                             min={1}
                             value={discountValue}
                             onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
 
@@ -3276,7 +3302,7 @@ export default function AdminLoyaltyPage() {
                             disabled={discountType !== "PERCENT"}
                             value={maxDiscount}
                             onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
 
@@ -3288,7 +3314,7 @@ export default function AdminLoyaltyPage() {
                             min={0}
                             value={minOrderValue}
                             onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>
@@ -3307,7 +3333,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={quantity}
                         onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3318,7 +3344,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={maxSupport}
                         onChange={(e) => setMaxSupport(parseInt(e.target.value || "0"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3329,7 +3355,7 @@ export default function AdminLoyaltyPage() {
                         min={0}
                         value={minOrderValue}
                         onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -3343,7 +3369,7 @@ export default function AdminLoyaltyPage() {
                       <select
                         value={discountType}
                         onChange={(e) => setDiscountType(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                       >
                         <option value="PERCENT">Phần trăm (%)</option>
                         <option value="FIXED">Số tiền cố định (đ)</option>
@@ -3357,7 +3383,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={discountValue}
                         onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3368,7 +3394,7 @@ export default function AdminLoyaltyPage() {
                         disabled={discountType !== "PERCENT"}
                         value={maxDiscount}
                         onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -3386,7 +3412,7 @@ export default function AdminLoyaltyPage() {
                         max={100}
                         value={cashbackRate}
                         onChange={(e) => setCashbackRate(parseInt(e.target.value || "0"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3397,7 +3423,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={maxCashback}
                         onChange={(e) => setMaxCashback(parseInt(e.target.value || "0"))}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -3418,7 +3444,7 @@ export default function AdminLoyaltyPage() {
                       <select
                         value={birthdayGiftType}
                         onChange={(e) => setBirthdayGiftType(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                       >
                         <option value="VOUCHER">Voucher giảm giá</option>
                         <option value="POINTS">Điểm thưởng Loyalty</option>
@@ -3428,32 +3454,150 @@ export default function AdminLoyaltyPage() {
                     </div>
 
                     {birthdayGiftType === "VOUCHER" && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-sm font-bold text-slate-700 block mb-2">Chọn Voucher sinh nhật</label>
-                          <select
-                            value={birthdayVoucherCode}
-                            onChange={(e) => setBirthdayVoucherCode(e.target.value)}
-                            required
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
-                          >
-                            <option value="">-- Chọn Voucher --</option>
-                            {vouchers.map(v => (
-                              <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
-                            ))}
-                          </select>
+                      <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="col-span-2 space-y-1.5">
+                            <label className="text-sm font-bold text-slate-700 block mb-2 block">Chế độ Voucher</label>
+                            <div className="flex gap-6 mt-1">
+                              <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                                <input
+                                  type="radio"
+                                  name="birthdayVoucherMode"
+                                  value="EXISTING"
+                                  checked={voucherMode === "EXISTING"}
+                                  onChange={() => {
+                                    setVoucherMode("EXISTING");
+                                    setBirthdayVoucherCode("");
+                                  }}
+                                  className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                                />
+                                Sử dụng Voucher có sẵn
+                              </label>
+                              <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer font-medium">
+                                <input
+                                  type="radio"
+                                  name="birthdayVoucherMode"
+                                  value="CUSTOM"
+                                  checked={voucherMode === "CUSTOM"}
+                                  onChange={() => {
+                                    setVoucherMode("CUSTOM");
+                                    setBirthdayVoucherCode("BDAY");
+                                  }}
+                                  className="w-4 h-4 text-primary bg-surface-container-low border-outline focus:ring-primary cursor-pointer"
+                                />
+                                Tạo Voucher riêng mới
+                              </label>
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-sm font-bold text-slate-700 block mb-2">Số lượng voucher</label>
-                          <input
-                            type="number"
-                            required
-                            min={1}
-                            value={birthdayQuantity}
-                            onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
-                          />
+
+                        <div className="grid grid-cols-2 gap-4">
+                          {voucherMode === "EXISTING" ? (
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-bold text-slate-700 block mb-2">Chọn Voucher sinh nhật</label>
+                              <select
+                                value={birthdayVoucherCode}
+                                onChange={(e) => setBirthdayVoucherCode(e.target.value)}
+                                required
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                              >
+                                <option value="">-- Chọn Voucher --</option>
+                                {vouchers.map(v => (
+                                  <option key={v.voucherID} value={v.code}>{v.code} - {v.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-bold text-slate-700 block mb-2">Tiền tố Mã Voucher</label>
+                              <div className="w-full px-5 py-3.5 bg-slate-100 border border-slate-200 rounded-[2rem] text-sm font-semibold text-slate-600 flex items-center select-none">
+                                BDAY
+                              </div>
+                              <span className="text-xs text-slate-500 font-medium block mt-0.5">
+                                Hệ thống tự sinh mã bắt đầu bằng BDAY.
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-slate-700 block mb-2">Số lượng / người</label>
+                            <input
+                              type="number"
+                              required
+                              min={1}
+                              value={birthdayQuantity}
+                              onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
+                              className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-slate-700 block mb-2">Thời hạn sử dụng (ngày)</label>
+                            <input
+                              type="number"
+                              required
+                              min={1}
+                              value={validityDays}
+                              onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
+                              className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            />
+                            <span className="text-xs text-slate-500 font-medium block mt-0.5">
+                              {voucherMode === "CUSTOM" ? "Hạn sử dụng tính từ lúc nhận quà." : "Áp dụng nếu voucher chọn chưa có ngày hết hạn cố định."}
+                            </span>
+                          </div>
                         </div>
+
+                        {voucherMode === "CUSTOM" && (
+                          <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-bold text-slate-700 block mb-2">Loại giảm giá</label>
+                              <select
+                                value={discountType}
+                                onChange={(e) => setDiscountType(e.target.value)}
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                              >
+                                <option value="PERCENT">Phần trăm (%)</option>
+                                <option value="FIXED">Số tiền cố định (đ)</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-bold text-slate-700 block mb-2">Giá trị giảm</label>
+                              <input
+                                type="number"
+                                required
+                                min={1}
+                                value={discountValue}
+                                onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-bold text-slate-700 block mb-2">Giảm tối đa (đ)</label>
+                              <input
+                                type="number"
+                                required={discountType === "PERCENT"}
+                                disabled={discountType !== "PERCENT"}
+                                value={maxDiscount}
+                                onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-bold text-slate-700 block mb-2">Đơn tối thiểu (đ)</label>
+                              <input
+                                type="number"
+                                required
+                                min={0}
+                                value={minOrderValue}
+                                onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -3466,7 +3610,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={birthdayPoints}
                           onChange={(e) => setBirthdayPoints(parseInt(e.target.value || "1"))}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
                     )}
@@ -3480,7 +3624,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={birthdayCoins}
                           onChange={(e) => setBirthdayCoins(parseInt(e.target.value || "1"))}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
                     )}
@@ -3495,7 +3639,7 @@ export default function AdminLoyaltyPage() {
                             value={birthdayGiftName}
                             onChange={(e) => setBirthdayGiftName(e.target.value)}
                             placeholder="Ví dụ: Bình nước giữ nhiệt"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -3505,7 +3649,7 @@ export default function AdminLoyaltyPage() {
                             value={birthdayGiftDesc}
                             onChange={(e) => setBirthdayGiftDesc(e.target.value)}
                             placeholder="Mô tả quà tặng sinh nhật..."
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>

@@ -538,6 +538,14 @@ export default function AdminVouchersPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            onClick={() => router.push(`/admin/vouchers/${voucher.voucherID}/issued`)}
+                            className="p-1.5 hover:bg-indigo-50 rounded-full text-indigo-500 hover:text-indigo-700 transition-colors cursor-pointer"
+                            title="Quản lý mã phát hành"
+                          >
+                            <span className="material-symbols-outlined text-lg">confirmation_number</span>
+                          </button>
+
+                          <button
                             onClick={() => handleOpenDetailModal(voucher)}
                             className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                             title="Xem chi tiết & lịch sử sử dụng"

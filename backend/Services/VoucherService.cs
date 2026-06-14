@@ -69,11 +69,41 @@ namespace PolyBabyAPI.Services
 
         public async Task<(bool IsValid, string Message)> ValidateVoucherAsync(string code, decimal orderValue, string userId)
         {
-            var voucher = await GetVoucherByCodeAsync(code);
+            Voucher? voucher = null;
+            bool isUniqueCode = false;
+
+            // 1. Kiểm tra IssuedCode bảo mật
+            var userVoucher = await _context.UserVouchers
+                .Include(uv => uv.Voucher)
+                .FirstOrDefaultAsync(uv => uv.IssuedCode == code);
+
+            if (userVoucher != null)
+            {
+                if (userVoucher.UserID != userId)
+                {
+                    return (false, "Mã giảm giá này không thuộc về bạn.");
+                }
+                if (userVoucher.Status == UserVoucherStatus.Used)
+                {
+                    return (false, "Bạn đã sử dụng mã giảm giá này rồi.");
+                }
+                voucher = userVoucher.Voucher;
+                isUniqueCode = true;
+            }
+            else
+            {
+                voucher = await GetVoucherByCodeAsync(code);
+            }
 
             if (voucher == null)
             {
                 return (false, "Mã giảm giá không tồn tại.");
+            }
+
+            // Ngăn chặn dùng mã gốc của Voucher Độc quyền
+            if (!isUniqueCode && voucher.VisibilityType == VoucherVisibilityType.Exclusive)
+            {
+                return (false, "Mã giảm giá này là mã độc quyền. Vui lòng sử dụng mã cá nhân của bạn.");
             }
 
             if (!voucher.Status)
@@ -94,7 +124,7 @@ namespace PolyBabyAPI.Services
 
             if (voucher.UsedQuantity >= voucher.TotalQuantity)
             {
-                return (false, "Mã giảm giá đã hết lượt sử dụng.");
+                return (false, "Mã giảm giá đã hết lượt sử dụng chung.");
             }
 
             if (orderValue < voucher.MinOrderValue)
@@ -102,15 +132,17 @@ namespace PolyBabyAPI.Services
                 return (false, $"Đơn hàng tối thiểu để áp dụng mã này là {voucher.MinOrderValue:N0}đ.");
             }
 
-            // Kiểm tra giới hạn số lần sử dụng của mỗi user
-            var usedCount = await _context.VoucherUsages
-                .CountAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
-            
-            if (usedCount >= voucher.UsageLimitPerUser)
+            // Kiểm tra giới hạn số lần sử dụng của mỗi user (đối với mã Public)
+            if (!isUniqueCode)
             {
-                return (false, "Bạn đã hết lượt sử dụng mã giảm giá này.");
+                var usedCount = await _context.VoucherUsages
+                    .CountAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
+                
+                if (usedCount >= voucher.UsageLimitPerUser)
+                {
+                    return (false, "Bạn đã hết lượt sử dụng mã giảm giá chung này.");
+                }
             }
-
 
             return (true, "Mã giảm giá hợp lệ.");
         }
