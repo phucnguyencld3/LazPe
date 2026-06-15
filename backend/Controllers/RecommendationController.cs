@@ -23,12 +23,22 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpGet("for-you")]
-        public async Task<IActionResult> GetRecommendations([FromQuery] int limit = 10)
+        public async Task<IActionResult> GetRecommendations([FromQuery] int limit = 10, [FromQuery] string? recentIds = null)
         {
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var productIds = await _recommendationService.GetRecommendationsAsync(userId ?? "", limit);
+                
+                var recentProductIds = new List<int>();
+                if (!string.IsNullOrEmpty(recentIds))
+                {
+                    recentProductIds = recentIds.Split(',')
+                        .Select(id => int.TryParse(id.Trim(), out var parsedId) ? parsedId : 0)
+                        .Where(id => id > 0)
+                        .ToList();
+                }
+
+                var productIds = await _recommendationService.GetRecommendationsAsync(userId ?? "", limit, recentProductIds);
 
                 if (!productIds.Any())
                 {

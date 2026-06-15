@@ -112,67 +112,161 @@ namespace PolyBabyAPI.Services
             }
         }
 
-        public async Task<List<int>> GetRecommendationsAsync(string userId, int topN)
+        public async Task<List<int>> GetRecommendationsAsync(string userId, int topN, List<int>? recentProductIds = null)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                // Nếu chưa đăng nhập, trả về các sản phẩm có tương tác cao nhất
-                return await GetTopSellingOrViewedAsync(topN);
-            }
+            var finalRecommendations = new List<int>();
+            recentProductIds ??= new List<int>();
 
             try
             {
-                if (!File.Exists(ModelPath))
+                // 1. Thu thập Clickstream (Short-term Intent)
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    _logger.LogWarning("Model file not found. Falling back to top selling.");
-                    return await GetTopSellingOrViewedAsync(topN);
+                    var recentInteractions = await _mongoDbService.UserInteractions
+                        .Find(x => x.UserId == userId)
+                        .SortByDescending(x => x.CreatedAt)
+                        .Limit(10)
+                        .ToListAsync();
+                    
+                    var interactionProductIds = recentInteractions.Select(x => x.ProductId).ToList();
+                    recentProductIds.AddRange(interactionProductIds);
                 }
 
-                DataViewSchema modelSchema;
-                ITransformer model = _mlContext.Model.Load(ModelPath, out modelSchema);
-                var predictionEngine = _mlContext.Model.CreatePredictionEngine<ProductRating, ProductPrediction>(model);
+                recentProductIds = recentProductIds.Distinct().Take(10).ToList();
 
-                // Lấy tất cả ProductId hiện có
-                var allProductIds = _dbContext.Products.Select(p => p.ProductID).ToList();
-
-                // Lấy các sản phẩm user đã tương tác (không gợi ý lại đồ đã mua/view để tránh nhàm chán)
-                // (Thực tế tuỳ bussiness, ở đây có thể gợi ý cả đồ đã xem chưa mua, nhưng tạm lọc đồ đã mua)
-                var interactedIds = await _mongoDbService.UserInteractions
-                    .Find(x => x.UserId == userId && x.InteractionType == InteractionType.Purchase)
-                    .Project(x => x.ProductId)
-                    .ToListAsync();
-
-                var candidateIds = allProductIds.Except(interactedIds).ToList();
-
-                var predictions = new List<Tuple<int, float>>();
-
-                foreach (var pId in candidateIds)
+                // 2. Layer 1 & 2: Content-Based và Category-Based Real-time Candidates
+                var realTimeCandidates = new List<int>();
+                
+                if (recentProductIds.Any())
                 {
-                    var input = new ProductRating { UserId = userId, ProductId = (uint)pId };
-                    var prediction = predictionEngine.Predict(input);
-                    predictions.Add(new Tuple<int, float>(pId, prediction.Score));
+                    // Lấy thông tin các sản phẩm vừa xem
+                    var recentProducts = _dbContext.Products
+                        .Where(p => recentProductIds.Contains(p.ProductID))
+                        .Select(p => new { p.ProductID, p.CategoryID, p.SupplierID, p.Description, p.Specifications })
+                        .ToList();
+
+                    if (recentProducts.Any())
+                    {
+                        var recentCategoryIds = recentProducts.Select(p => p.CategoryID).Distinct().ToList();
+
+                        // Tìm các sản phẩm cùng danh mục
+                        var categoryProducts = _dbContext.Products
+                            .Where(p => recentCategoryIds.Contains(p.CategoryID) && !recentProductIds.Contains(p.ProductID))
+                            .Select(p => new { p.ProductID, p.Description, p.Specifications })
+                            .ToList();
+
+                        // Tính điểm tương đồng nội dung (Content-based)
+                        // Dựa trên số lượng từ khoá chung trong Description và Specifications
+                        var recentTexts = recentProducts.Select(p => (p.Description + " " + p.Specifications).ToLower()).ToList();
+                        
+                        var contentScores = categoryProducts.Select(p =>
+                        {
+                            string pText = (p.Description + " " + p.Specifications).ToLower();
+                            int score = 0;
+                            
+                            // Thuật toán đếm từ vựng chung
+                            foreach (var rt in recentTexts)
+                            {
+                                var words = rt.Split(new[] { ' ', ',', '.', ':', '"', '{', '}', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                                              .Where(w => w.Length > 3)
+                                              .Distinct()
+                                              .Take(50); // Lấy top 50 từ khoá đặc trưng nhất
+
+                                foreach (var w in words)
+                                {
+                                    if (pText.Contains(w)) score++;
+                                }
+                            }
+                            return new { p.ProductID, Score = score };
+                        })
+                        .OrderByDescending(x => x.Score)
+                        .Take(topN)
+                        .Select(x => x.ProductID)
+                        .ToList();
+
+                        realTimeCandidates.AddRange(contentScores);
+                    }
                 }
 
-                // Sắp xếp điểm giảm dần và lấy top N
-                var topProductIds = predictions
-                    .OrderByDescending(p => p.Item2)
-                    .Take(topN)
-                    .Select(p => p.Item1)
-                    .ToList();
+                // 3. Layer 3: ML.NET Candidates (Collaborative Filtering)
+                var mlCandidates = new List<int>();
 
-                // Nếu AI dự đoán trả về ít hơn topN (do thiếu dữ liệu ứng cử viên), bù thêm
-                if (topProductIds.Count < topN)
+                if (!string.IsNullOrEmpty(userId) && File.Exists(ModelPath))
                 {
-                    var fallback = await GetTopSellingOrViewedAsync(topN - topProductIds.Count);
-                    topProductIds.AddRange(fallback.Except(topProductIds));
+                    try
+                    {
+                        DataViewSchema modelSchema;
+                        ITransformer model = _mlContext.Model.Load(ModelPath, out modelSchema);
+                        var predictionEngine = _mlContext.Model.CreatePredictionEngine<ProductRating, ProductPrediction>(model);
+
+                        var allProductIds = _dbContext.Products.Select(p => p.ProductID).ToList();
+                        var interactedIds = await _mongoDbService.UserInteractions
+                            .Find(x => x.UserId == userId && x.InteractionType == InteractionType.Purchase)
+                            .Project(x => x.ProductId)
+                            .ToListAsync();
+
+                        var candidateIds = allProductIds.Except(interactedIds).ToList();
+                        var predictions = new List<Tuple<int, float>>();
+
+                        foreach (var pId in candidateIds)
+                        {
+                            var input = new ProductRating { UserId = userId, ProductId = (uint)pId };
+                            var prediction = predictionEngine.Predict(input);
+                            predictions.Add(new Tuple<int, float>(pId, prediction.Score));
+                        }
+
+                        mlCandidates = predictions
+                            .OrderByDescending(p => p.Item2)
+                            .Take(topN)
+                            .Select(p => p.Item1)
+                            .ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error getting ML.NET recommendations");
+                    }
                 }
 
-                return topProductIds;
+                // 4. Merge & Boost (Trộn kết quả)
+                // Lấy xen kẽ ưu tiên Real-time trước để có trải nghiệm phản ứng nhanh
+                int realTimeIndex = 0;
+                int mlIndex = 0;
+
+                while (finalRecommendations.Count < topN && (realTimeIndex < realTimeCandidates.Count || mlIndex < mlCandidates.Count))
+                {
+                    if (realTimeIndex < realTimeCandidates.Count)
+                    {
+                        var id = realTimeCandidates[realTimeIndex++];
+                        if (!finalRecommendations.Contains(id)) finalRecommendations.Add(id);
+                    }
+
+                    if (finalRecommendations.Count >= topN) break;
+
+                    if (mlIndex < mlCandidates.Count)
+                    {
+                        var id = mlCandidates[mlIndex++];
+                        if (!finalRecommendations.Contains(id)) finalRecommendations.Add(id);
+                    }
+                }
+
+                // Fallback nếu vẫn thiếu
+                if (finalRecommendations.Count < topN)
+                {
+                    var fallback = await GetTopSellingOrViewedAsync(topN);
+                    foreach (var id in fallback)
+                    {
+                        if (finalRecommendations.Count >= topN) break;
+                        if (!finalRecommendations.Contains(id)) finalRecommendations.Add(id);
+                    }
+                }
+
+                return finalRecommendations;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting AI recommendations");
-                return await GetTopSellingOrViewedAsync(topN);
+                _logger.LogError(ex, "Error executing Hybrid Recommendation");
+                var fallback = await GetTopSellingOrViewedAsync(topN);
+                return fallback.Take(topN).ToList();
             }
         }
 
