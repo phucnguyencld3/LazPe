@@ -384,6 +384,26 @@ export const toggleVariantStatus = async (
   return res.json();
 };
 
+export const bulkUpdateVariants = async (
+  token: string,
+  updates: { variantId: number; unitPrice: number; stock: number }[]
+): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/bulk-update`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(updates)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to bulk update variants");
+  }
+  return res.json();
+};
+
 export const deleteProductVariant = async (token: string, variantId: number): Promise<any> => {
   const res = await fetch(`${API_BASE_URL}/Variant/${variantId}`, {
     method: "DELETE",

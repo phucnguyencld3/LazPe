@@ -12,7 +12,8 @@ import {
   toggleVariantStatus,
   deleteProductVariant,
   uploadVariantImage,
-  deleteVariantImage
+  deleteVariantImage,
+  bulkUpdateVariants
 } from "@/lib/features/products/productApi";
 import { formatCurrency } from "@/lib/utils/formatters";
 
@@ -66,6 +67,10 @@ export default function ProductVariantsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
+  
+  // Bulk Edit states
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEdits, setBulkEdits] = useState<Record<number, { unitPrice: number, stock: number }>>({});
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,6 +191,70 @@ export default function ProductVariantsPage() {
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Lỗi khi cập nhật biến thể.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Bulk Edit Handlers
+  const handleStartBulkEdit = () => {
+    const initialEdits: Record<number, { unitPrice: number, stock: number }> = {};
+    displayedVariants.forEach(v => {
+      initialEdits[v.variantID] = {
+        unitPrice: v.unitPrice,
+        stock: v.stock
+      };
+    });
+    setBulkEdits(initialEdits);
+    setIsBulkEditing(true);
+  };
+
+  const handleCancelBulkEdit = () => {
+    setIsBulkEditing(false);
+    setBulkEdits({});
+  };
+
+  const handleBulkEditChange = (variantID: number, field: "unitPrice" | "stock", value: number) => {
+    setBulkEdits(prev => ({
+      ...prev,
+      [variantID]: {
+        ...prev[variantID],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveBulkEdit = async () => {
+    if (actionLoading) return;
+    
+    const updates = Object.keys(bulkEdits).map(id => {
+      const variantID = Number(id);
+      return {
+        variantId: variantID,
+        unitPrice: bulkEdits[variantID].unitPrice,
+        stock: bulkEdits[variantID].stock
+      };
+    });
+    
+    if (updates.length === 0) {
+      setIsBulkEditing(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      setActionLoading(true);
+      await bulkUpdateVariants(token, updates);
+      
+      toast.success("Cập nhật hàng loạt biến thể thành công!");
+      setIsBulkEditing(false);
+      setBulkEdits({});
+      loadVariants();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi cập nhật hàng loạt.");
     } finally {
       setActionLoading(false);
     }
@@ -340,13 +409,48 @@ export default function ProductVariantsPage() {
             )}
           </div>
         </div>
-        <button
-          onClick={() => router.push(`/admin/products/${id}/variants/quick`)}
-          className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold text-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-sm">bolt</span>
-          Thêm biến thể nhanh
-        </button>
+        <div className="flex items-center gap-3">
+          {!isBulkEditing ? (
+            <>
+              <button
+                onClick={handleStartBulkEdit}
+                className="bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-full font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer border border-transparent"
+              >
+                <span className="material-symbols-outlined text-sm">edit_square</span>
+                Sửa hàng loạt
+              </button>
+              <button
+                onClick={() => router.push(`/admin/products/${id}/variants/quick`)}
+                className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold text-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">bolt</span>
+                Thêm biến thể nhanh
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelBulkEdit}
+                disabled={actionLoading}
+                className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-full font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSaveBulkEdit}
+                disabled={actionLoading}
+                className="bg-emerald-500 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:bg-emerald-600 shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              >
+                {actionLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                ) : (
+                  <span className="material-symbols-outlined text-sm">save</span>
+                )}
+                Lưu tất cả
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Search & Filter Area */}
@@ -444,29 +548,50 @@ export default function ProductVariantsPage() {
 
                         {/* Pricing */}
                         <td className="px-6 py-4.5">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-primary text-sm">{formatCurrency(finalPrice)}</span>
-                            {isDiscounted && (
-                              <span className="text-[10px] text-slate-400 line-through">
-                                {formatCurrency(variant.unitPrice)}
-                              </span>
-                            )}
-                          </div>
+                          {isBulkEditing ? (
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={bulkEdits[variant.variantID]?.unitPrice ?? variant.unitPrice}
+                              onChange={(e) => handleBulkEditChange(variant.variantID, "unitPrice", Number(e.target.value))}
+                              className="w-28 px-3 py-1.5 border border-primary/40 rounded-lg text-sm font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 bg-primary/5 transition-all"
+                            />
+                          ) : (
+                            <div className="flex flex-col">
+                              <span className="font-bold text-primary text-sm">{formatCurrency(finalPrice)}</span>
+                              {isDiscounted && (
+                                <span className="text-[10px] text-slate-400 line-through">
+                                  {formatCurrency(variant.unitPrice)}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
 
                         {/* Stock status */}
                         <td className="px-6 py-4.5">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              variant.stock > 10
-                                ? "bg-emerald-50 text-emerald-700"
-                                : variant.stock > 0
-                                ? "bg-amber-50 text-amber-700"
-                                : "bg-rose-50 text-rose-700"
-                            }`}
-                          >
-                            {variant.stock} chiếc
-                          </span>
+                          {isBulkEditing ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={bulkEdits[variant.variantID]?.stock ?? variant.stock}
+                              onChange={(e) => handleBulkEditChange(variant.variantID, "stock", Number(e.target.value))}
+                              className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            />
+                          ) : (
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                variant.stock > 10
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : variant.stock > 0
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-rose-50 text-rose-700"
+                              }`}
+                            >
+                              {variant.stock} chiếc
+                            </span>
+                          )}
                         </td>
 
                         {/* Status Switcher */}

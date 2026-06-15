@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -244,6 +244,34 @@ namespace PolyBabyAPI.Services
                 .Where(pov => optionValueIds.Contains(pov.ProductOptionValueID))
                 .SumAsync(v => v.Price);
             return productBasePrice + totalPrice;
+        }
+
+        public async Task<bool> BulkUpdateVariantsAsync(List<BulkUpdateVariantDto> updates)
+        {
+            if (updates == null || !updates.Any()) return true;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var update in updates)
+                {
+                    // Ef Core 8 ExecuteUpdateAsync for performance
+                    await _context.Variants
+                        .Where(v => v.VariantID == update.VariantId)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(v => v.UnitPrice, update.UnitPrice)
+                            .SetProperty(v => v.Stock, update.Stock));
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error bulk updating variants");
+                return false;
+            }
         }
     }
 }
