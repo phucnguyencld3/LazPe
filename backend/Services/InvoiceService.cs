@@ -440,6 +440,12 @@ namespace PolyBabyAPI.Services
 
                 return invoice;
             }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogWarning(ex, "Lỗi đồng bộ tồn kho khi tạo hóa đơn từ giỏ hàng {CartId}", cartId);
+                throw new InvalidOperationException("Sản phẩm trong giỏ hàng vừa bị một khách hàng khác mua hết hoặc thay đổi số lượng. Vui lòng làm mới trang và thử lại!");
+            }
             catch (Exception ex)
             {
                 await tx.RollbackAsync();

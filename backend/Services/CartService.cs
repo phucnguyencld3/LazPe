@@ -21,13 +21,14 @@ namespace PolyBabyAPI.Services
         public async Task<Cart> GetCartByUserIdAsync(string userId)
         {
             var cart = await _context.Carts
+                .AsSplitQuery()
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
                         .ThenInclude(v => v.Product)
                             .ThenInclude(p => p.Images)
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
-                        .ThenInclude(v => v.VariantOptionValues) // ✅ THÊM: Include VariantOptionValues
+                        .ThenInclude(v => v.VariantOptionValues)
                             .ThenInclude(vov => vov.ProductOptionValue)
                                 .ThenInclude(pov => pov.ProductOption)
                 .Include(c => c.CartDetails)
@@ -49,7 +50,6 @@ namespace PolyBabyAPI.Services
                 await _context.SaveChangesAsync();
             }
 
-            // Recalculate anytime we get cart to ensure consistency
             await CalculateCartTotalAsync(cart.CartID);
 
             return cart;
@@ -68,56 +68,55 @@ namespace PolyBabyAPI.Services
 
         public async Task AddToCartAsync(string userId, int? variantId, int? bundleId, int quantity)
         {
-            if (quantity <= 0)
+            if (quantity <= 0) throw new ArgumentException("Số lượng phải lớn hơn 0");
+
+            var cartId = await _context.Carts
+                .Where(c => c.UserID == userId && c.Status == true)
+                .Select(c => c.CartID)
+                .FirstOrDefaultAsync();
+
+            if (cartId == 0)
             {
-                throw new ArgumentException("Số lượng phải lớn hơn 0");
+                var newCart = new Cart
+                {
+                    UserID = userId,
+                    CreatedDate = DateTime.Now,
+                    Status = true,
+                    TotalAmount = 0
+                };
+                _context.Carts.Add(newCart);
+                await _context.SaveChangesAsync();
+                cartId = newCart.CartID;
             }
 
-            var cart = await GetCartByUserIdAsync(userId);
-            
-            CartDetail existingDetail = null;
-
-            if (variantId.HasValue)
-            {
-                existingDetail = cart.CartDetails.FirstOrDefault(cd => cd.VariantID == variantId.Value);
-            }
-            else if (bundleId.HasValue)
-            {
-                existingDetail = cart.CartDetails.FirstOrDefault(cd => cd.BundleID == bundleId.Value);
-            }
+            var existingDetail = await _context.CartDetails
+                .FirstOrDefaultAsync(cd => cd.CartID == cartId && 
+                    ((variantId.HasValue && cd.VariantID == variantId.Value) || (bundleId.HasValue && cd.BundleID == bundleId.Value)));
 
             if (existingDetail != null)
             {
                 if (existingDetail.VariantID.HasValue)
                 {
                     var currentQuantityInCart = existingDetail.Quantity;
-                    var variant = await _context.Variants
-                        .AsNoTracking()
-                        .Include(v => v.Product)
-                        .FirstOrDefaultAsync(v => v.VariantID == existingDetail.VariantID.Value);
+                    var stock = await _context.Variants
+                        .Where(v => v.VariantID == existingDetail.VariantID.Value)
+                        .Select(v => v.Stock)
+                        .FirstOrDefaultAsync();
 
-                    if (variant != null)
+                    var targetQuantity = currentQuantityInCart + quantity;
+                    if (targetQuantity > stock)
                     {
-                        var targetQuantity = currentQuantityInCart + quantity;
-                        if (targetQuantity > variant.Stock)
-                        {
-                            var maxCanAdd = Math.Max(variant.Stock - currentQuantityInCart, 0);
-                            if (maxCanAdd == 0)
-                            {
-                                throw new ArgumentException($"Bạn đã có {currentQuantityInCart} trong giỏ. Sản phẩm đã đạt giới hạn tồn kho ({variant.Stock}).");
-                            }
-
-                            throw new ArgumentException($"Bạn đã có {currentQuantityInCart} trong giỏ. Tồn kho tối đa là {variant.Stock}, bạn chỉ có thể thêm tối đa {maxCanAdd} sản phẩm nữa.");
-                        }
-
-                        existingDetail.Quantity = targetQuantity;
-                        existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
+                        var maxCanAdd = Math.Max(stock - currentQuantityInCart, 0);
+                        if (maxCanAdd == 0) throw new ArgumentException($"Bạn đã có {currentQuantityInCart} trong giỏ. Sản phẩm đã đạt giới hạn tồn kho ({stock}).");
+                        throw new ArgumentException($"Bạn đã có {currentQuantityInCart} trong giỏ. Tồn kho tối đa là {stock}, bạn chỉ có thể thêm tối đa {maxCanAdd} sản phẩm nữa.");
                     }
+
+                    existingDetail.Quantity = targetQuantity;
+                    existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
                 }
                 else if (existingDetail.BundleID.HasValue)
                 {
-                    var targetQuantity = existingDetail.Quantity + quantity;
-                    existingDetail.Quantity = targetQuantity;
+                    existingDetail.Quantity += quantity;
                     existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID);
                 }
 
@@ -127,117 +126,100 @@ namespace PolyBabyAPI.Services
             {
                 var newDetail = new CartDetail
                 {
-                    CartID = cart.CartID,
+                    CartID = cartId,
                     VariantID = variantId,
                     BundleID = bundleId,
                     Quantity = quantity
                 };
 
-                // Lấy giá
                 if (variantId.HasValue)
                 {
-                    var variant = await _context.Variants
-                        .AsNoTracking()
-                        .Include(v => v.Product)
-                        .FirstOrDefaultAsync(v => v.VariantID == variantId.Value);
+                    var stock = await _context.Variants
+                        .Where(v => v.VariantID == variantId.Value)
+                        .Select(v => v.Stock)
+                        .FirstOrDefaultAsync();
 
-                    if (variant == null)
-                    {
-                        throw new ArgumentException("Biến thể không tồn tại");
-                    }
-
-                    if (quantity > variant.Stock)
-                    {
-                        throw new ArgumentException($"Số lượng yêu cầu vượt tồn kho. Hiện chỉ còn {variant.Stock} sản phẩm.");
-                    }
+                    if (quantity > stock) throw new ArgumentException($"Số lượng yêu cầu vượt tồn kho. Hiện chỉ còn {stock} sản phẩm.");
                 }
                 else if (bundleId.HasValue)
                 {
-                    var bundle = await _context.Bundles.FindAsync(bundleId.Value);
-
-                    if (bundle == null)
-                    {
-                        throw new ArgumentException("Combo không tồn tại");
-                    }
+                    bool exists = await _context.Bundles.AnyAsync(b => b.BundleID == bundleId.Value);
+                    if (!exists) throw new ArgumentException("Combo không tồn tại");
                 }
 
                 newDetail.UnitPrice = await GetEffectivePriceAsync(variantId, bundleId);
-                
                 newDetail.TotalPrice = newDetail.UnitPrice * newDetail.Quantity;
                 _context.CartDetails.Add(newDetail);
             }
 
             await _context.SaveChangesAsync();
-            await CalculateCartTotalAsync(cart.CartID);
+            await CalculateCartTotalAsync(cartId);
 
-            // Log AI
             if (variantId.HasValue)
             {
-                var variant = await _context.Variants.FindAsync(variantId.Value);
-                if (variant != null)
+                var productId = await _context.Variants.Where(v => v.VariantID == variantId.Value).Select(v => v.ProductID).FirstOrDefaultAsync();
+                if (productId > 0)
                 {
-                    await _recommendationService.LogInteractionAsync(userId, variant.ProductID, PolyBabyAPI.Models.Mongo.InteractionType.Cart);
+                    await _recommendationService.LogInteractionAsync(userId, productId, PolyBabyAPI.Models.Mongo.InteractionType.Cart);
                 }
             }
         }
 
         public async Task RemoveFromCartAsync(int cartDetailId)
         {
-            var detail = await _context.CartDetails.FindAsync(cartDetailId);
-            if (detail != null)
+            var cartId = await _context.CartDetails
+                .Where(cd => cd.CartDetailID == cartDetailId)
+                .Select(cd => cd.CartID)
+                .FirstOrDefaultAsync();
+
+            if (cartId > 0)
             {
-                _context.CartDetails.Remove(detail);
-                await _context.SaveChangesAsync();
-                await CalculateCartTotalAsync(detail.CartID);
+                await _context.CartDetails.Where(cd => cd.CartDetailID == cartDetailId).ExecuteDeleteAsync();
+                await CalculateCartTotalAsync(cartId);
             }
         }
 
         public async Task UpdateQuantityAsync(int cartDetailId, int quantity)
         {
-            var detail = await _context.CartDetails
-                .Include(cd => cd.Variant)
-                    .ThenInclude(v => v.Product)
-                .Include(cd => cd.Bundle)
-                .FirstOrDefaultAsync(cd => cd.CartDetailID == cartDetailId);
+            var detail = await _context.CartDetails.FirstOrDefaultAsync(cd => cd.CartDetailID == cartDetailId);
             if (detail != null)
             {
                 if (quantity <= 0)
                 {
-                    _context.CartDetails.Remove(detail);
+                    await _context.CartDetails.Where(cd => cd.CartDetailID == cartDetailId).ExecuteDeleteAsync();
                 }
                 else
                 {
-                    var currentQuantityInCart = detail.Quantity;
-                    if (detail.Variant != null && quantity > detail.Variant.Stock)
+                    if (detail.VariantID.HasValue)
                     {
-                        throw new ArgumentException($"Bạn đang có {currentQuantityInCart} trong giỏ. Tồn kho tối đa cho sản phẩm này là {detail.Variant.Stock}.");
+                        var stock = await _context.Variants.Where(v => v.VariantID == detail.VariantID.Value).Select(v => v.Stock).FirstOrDefaultAsync();
+                        if (quantity > stock)
+                        {
+                            throw new ArgumentException($"Tồn kho tối đa cho sản phẩm này là {stock}.");
+                        }
                     }
 
                     detail.Quantity = quantity;
-
                     detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID);
-
                     detail.TotalPrice = detail.UnitPrice * quantity;
+                    await _context.SaveChangesAsync();
                 }
-                await _context.SaveChangesAsync();
                 await CalculateCartTotalAsync(detail.CartID);
             }
         }
 
         public async Task ClearCartAsync(int cartId)
         {
-            var details = _context.CartDetails.Where(cd => cd.CartID == cartId);
-            _context.CartDetails.RemoveRange(details);
+            await _context.CartDetails.Where(cd => cd.CartID == cartId).ExecuteDeleteAsync();
             
             var cart = await _context.Carts.FindAsync(cartId);
             if (cart != null)
             {
-                cart.Voucher = null; // Clear voucher too
-                cart.ShippingVoucher = null;
+                cart.VoucherID = null;
+                cart.ShippingVoucherID = null;
+                await _context.SaveChangesAsync();
+                await CalculateCartTotalAsync(cartId);
             }
-
-            await _context.SaveChangesAsync();
-            await CalculateCartTotalAsync(cartId);
         }
 
         public async Task<(bool Success, string Message)> ApplyVoucherAsync(int cartId, string voucherCode)
@@ -335,11 +317,6 @@ namespace PolyBabyAPI.Services
         {
             var cart = await _context.Carts
                 .Include(c => c.CartDetails)
-                    .ThenInclude(cd => cd.Variant)
-                        .ThenInclude(v => v.Product)
-                            .ThenInclude(p => p.Images)
-                .Include(c => c.CartDetails)
-                    .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
                 .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
