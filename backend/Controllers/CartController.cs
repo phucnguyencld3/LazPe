@@ -364,6 +364,7 @@ namespace PolyBabyAPI.Controllers
                 Quantity = detail.Quantity,
                 UnitPrice = detail.UnitPrice,
                 TotalPrice = detail.TotalPrice,
+                IsGift = detail.IsGift,
                 Product = detail.Variant?.Product != null ? new ProductCartDto
                 {
                     ProductID = detail.Variant.Product.ProductID,

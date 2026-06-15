@@ -12,10 +12,25 @@ export enum FlashSaleStatus {
   Ended = 2
 }
 
+export enum CampaignType {
+  FlashSale = 0,
+  BuyXGetY = 1,
+  ComboDiscount = 2
+}
+
+export enum DiscountType {
+  FixedPrice = 0,
+  Percentage = 1,
+  FreeGift = 2
+}
+
 export interface CreateFlashSaleItemDto {
   itemType: FlashSaleItemType;
   referenceId: number;
   discountPrice: number;
+  discountType: DiscountType;
+  requiredQuantity: number;
+  giftVariantId?: number;
   totalQuantity: number;
   maxQuantityPerUser: number;
 }
@@ -24,6 +39,9 @@ export interface CreateFlashSaleDto {
   name: string;
   startTime: string;
   endTime: string;
+  type: CampaignType;
+  bannerUrl?: string;
+  description?: string;
   isActive: boolean;
   flashSaleItems: CreateFlashSaleItemDto[];
 }
@@ -32,6 +50,9 @@ export interface UpdateFlashSaleDto {
   name: string;
   startTime: string;
   endTime: string;
+  type: CampaignType;
+  bannerUrl?: string;
+  description?: string;
   isActive: boolean;
   flashSaleItems: CreateFlashSaleItemDto[];
 }
@@ -46,6 +67,11 @@ export interface FlashSaleItemResponseDto {
   imageUrl?: string;
   originalPrice: number;
   discountPrice: number;
+  discountType: DiscountType;
+  requiredQuantity: number;
+  giftVariantId?: number;
+  giftName?: string;
+  giftImageUrl?: string;
   totalQuantity: number;
   soldQuantity: number;
   maxQuantityPerUser: number;
@@ -57,6 +83,9 @@ export interface FlashSaleResponseDto {
   name: string;
   startTime: string;
   endTime: string;
+  type: CampaignType;
+  bannerUrl?: string;
+  description?: string;
   status: FlashSaleStatus;
   isActive: boolean;
   createdAt: string;

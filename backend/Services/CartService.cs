@@ -323,10 +323,79 @@ namespace PolyBabyAPI.Services
 
             if (cart == null) return;
 
+            // Xóa tất cả các quà tặng hiện tại trong giỏ (nếu có)
+            var existingGifts = cart.CartDetails.Where(cd => cd.IsGift).ToList();
+            if (existingGifts.Any())
+            {
+                _context.CartDetails.RemoveRange(existingGifts);
+                cart.CartDetails = cart.CartDetails.Where(cd => !cd.IsGift).ToList();
+            }
+
+            var variantIds = cart.CartDetails.Where(cd => cd.VariantID.HasValue).Select(cd => cd.VariantID.Value).ToList();
+            var variantProductMap = await _context.Variants
+                .Where(v => variantIds.Contains(v.VariantID))
+                .ToDictionaryAsync(v => v.VariantID, v => v.ProductID);
+
+            var now = DateTime.Now;
+            var activeGiftCampaigns = await _context.FlashSaleItems
+                .Include(fsi => fsi.FlashSale)
+                .Where(fsi => fsi.FlashSale.IsActive 
+                    && fsi.FlashSale.StartTime <= now 
+                    && fsi.FlashSale.EndTime >= now
+                    && fsi.DiscountType == DiscountType.FreeGift
+                    && fsi.RequiredQuantity > 0
+                    && fsi.GiftVariantId != null
+                    && fsi.SoldQuantity < fsi.TotalQuantity)
+                .ToListAsync();
+
+            var newGifts = new List<CartDetail>();
+
             foreach (var detail in cart.CartDetails)
             {
                 detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID);
                 detail.TotalPrice = detail.UnitPrice * detail.Quantity;
+
+                var matchingCampaigns = activeGiftCampaigns.Where(fsi => 
+                    (fsi.ItemType == FlashSaleItemType.Variant && detail.VariantID == fsi.ReferenceId) ||
+                    (fsi.ItemType == FlashSaleItemType.Bundle && detail.BundleID == fsi.ReferenceId) ||
+                    (fsi.ItemType == FlashSaleItemType.Product && detail.VariantID.HasValue && variantProductMap.ContainsKey(detail.VariantID.Value) && variantProductMap[detail.VariantID.Value] == fsi.ReferenceId)
+                ).ToList();
+
+                foreach (var matchingCampaign in matchingCampaigns)
+                {
+                    int giftMultiplier = detail.Quantity / matchingCampaign.RequiredQuantity;
+                    if (giftMultiplier > 0)
+                    {
+                        int maxGiftAllowed = matchingCampaign.TotalQuantity - matchingCampaign.SoldQuantity;
+                        int giftsToGive = Math.Min(giftMultiplier, maxGiftAllowed);
+
+                        if (giftsToGive > 0)
+                        {
+                            var existingGift = newGifts.FirstOrDefault(g => g.VariantID == matchingCampaign.GiftVariantId);
+                            if (existingGift != null)
+                            {
+                                existingGift.Quantity += giftsToGive;
+                            }
+                            else
+                            {
+                                newGifts.Add(new CartDetail
+                                {
+                                    CartID = cart.CartID,
+                                    VariantID = matchingCampaign.GiftVariantId,
+                                    Quantity = giftsToGive,
+                                    UnitPrice = 0,
+                                    TotalPrice = 0,
+                                    IsGift = true
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (newGifts.Any())
+            {
+                _context.CartDetails.AddRange(newGifts);
             }
 
             decimal subTotal = cart.CartDetails.Sum(cd => cd.Quantity * cd.UnitPrice);

@@ -71,6 +71,9 @@ namespace PolyBabyAPI.Controllers
                     Name = sale.Name,
                     StartTime = sale.StartTime,
                     EndTime = sale.EndTime,
+                    Type = sale.Type,
+                    BannerUrl = sale.BannerUrl,
+                    Description = sale.Description,
                     Status = sale.Status,
                     IsActive = sale.IsActive,
                     CreatedAt = sale.CreatedAt,
@@ -88,6 +91,9 @@ namespace PolyBabyAPI.Controllers
                         ItemType = item.ItemType,
                         ReferenceId = item.ReferenceId,
                         DiscountPrice = item.DiscountPrice,
+                        DiscountType = item.DiscountType,
+                        RequiredQuantity = item.RequiredQuantity,
+                        GiftVariantId = item.GiftVariantId,
                         TotalQuantity = item.TotalQuantity,
                         SoldQuantity = item.SoldQuantity,
                         MaxQuantityPerUser = item.MaxQuantityPerUser
@@ -130,6 +136,18 @@ namespace PolyBabyAPI.Controllers
                             itemDto.ItemName = bundle.Name;
                             itemDto.OriginalPrice = bundle.OriginalPrice ?? 0;
                             itemDto.ImageUrl = bundle.ImageUrl;
+                        }
+                    }
+
+                    if (item.GiftVariantId.HasValue)
+                    {
+                        var giftVariant = await _context.Variants
+                            .Include(v => v.Product)
+                            .FirstOrDefaultAsync(v => v.VariantID == item.GiftVariantId);
+                        if (giftVariant != null)
+                        {
+                            itemDto.GiftName = $"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})";
+                            itemDto.GiftImageUrl = giftVariant.ImageUrl;
                         }
                     }
 
@@ -179,6 +197,9 @@ namespace PolyBabyAPI.Controllers
                     Name = sale.Name,
                     StartTime = sale.StartTime,
                     EndTime = sale.EndTime,
+                    Type = sale.Type,
+                    BannerUrl = sale.BannerUrl,
+                    Description = sale.Description,
                     Status = sale.Status,
                     IsActive = sale.IsActive,
                     CreatedAt = sale.CreatedAt,
@@ -190,6 +211,9 @@ namespace PolyBabyAPI.Controllers
                         ItemType = item.ItemType,
                         ReferenceId = item.ReferenceId,
                         DiscountPrice = item.DiscountPrice,
+                        DiscountType = item.DiscountType,
+                        RequiredQuantity = item.RequiredQuantity,
+                        GiftVariantId = item.GiftVariantId,
                         TotalQuantity = item.TotalQuantity,
                         SoldQuantity = item.SoldQuantity,
                         MaxQuantityPerUser = item.MaxQuantityPerUser
@@ -219,6 +243,9 @@ namespace PolyBabyAPI.Controllers
                 Name = sale.Name,
                 StartTime = sale.StartTime,
                 EndTime = sale.EndTime,
+                Type = sale.Type,
+                BannerUrl = sale.BannerUrl,
+                Description = sale.Description,
                 Status = sale.Status,
                 IsActive = sale.IsActive,
                 CreatedAt = sale.CreatedAt,
@@ -235,6 +262,9 @@ namespace PolyBabyAPI.Controllers
                     ItemType = item.ItemType,
                     ReferenceId = item.ReferenceId,
                     DiscountPrice = item.DiscountPrice,
+                    DiscountType = item.DiscountType,
+                    RequiredQuantity = item.RequiredQuantity,
+                    GiftVariantId = item.GiftVariantId,
                     TotalQuantity = item.TotalQuantity,
                     SoldQuantity = item.SoldQuantity,
                     MaxQuantityPerUser = item.MaxQuantityPerUser
@@ -274,6 +304,18 @@ namespace PolyBabyAPI.Controllers
                     }
                 }
 
+                if (item.GiftVariantId.HasValue)
+                {
+                    var giftVariant = await _context.Variants
+                        .Include(v => v.Product)
+                        .FirstOrDefaultAsync(v => v.VariantID == item.GiftVariantId);
+                    if (giftVariant != null)
+                    {
+                        itemDto.GiftName = $"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})";
+                        itemDto.GiftImageUrl = giftVariant.ImageUrl;
+                    }
+                }
+
                 response.FlashSaleItems.Add(itemDto);
             }
 
@@ -305,6 +347,9 @@ namespace PolyBabyAPI.Controllers
                 Name = dto.Name,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
+                Type = dto.Type,
+                BannerUrl = dto.BannerUrl,
+                Description = dto.Description,
                 IsActive = dto.IsActive,
                 Status = dto.StartTime > DateTime.Now ? FlashSaleStatus.Upcoming : FlashSaleStatus.Active,
                 CreatedBy = GetCurrentUserId()
@@ -317,6 +362,9 @@ namespace PolyBabyAPI.Controllers
                     ItemType = itemDto.ItemType,
                     ReferenceId = itemDto.ReferenceId,
                     DiscountPrice = itemDto.DiscountPrice,
+                    DiscountType = itemDto.DiscountType,
+                    RequiredQuantity = itemDto.RequiredQuantity,
+                    GiftVariantId = itemDto.GiftVariantId,
                     TotalQuantity = itemDto.TotalQuantity,
                     SoldQuantity = 0,
                     MaxQuantityPerUser = itemDto.MaxQuantityPerUser
@@ -365,6 +413,9 @@ namespace PolyBabyAPI.Controllers
             sale.Name = dto.Name;
             sale.StartTime = dto.StartTime;
             sale.EndTime = dto.EndTime;
+            sale.Type = dto.Type;
+            sale.BannerUrl = dto.BannerUrl;
+            sale.Description = dto.Description;
             sale.IsActive = dto.IsActive;
 
             // Cập nhật lại trạng thái chiến dịch dựa trên thời gian mới
@@ -385,6 +436,9 @@ namespace PolyBabyAPI.Controllers
                     ItemType = itemDto.ItemType,
                     ReferenceId = itemDto.ReferenceId,
                     DiscountPrice = itemDto.DiscountPrice,
+                    DiscountType = itemDto.DiscountType,
+                    RequiredQuantity = itemDto.RequiredQuantity,
+                    GiftVariantId = itemDto.GiftVariantId,
                     TotalQuantity = itemDto.TotalQuantity,
                     SoldQuantity = 0,
                     MaxQuantityPerUser = itemDto.MaxQuantityPerUser

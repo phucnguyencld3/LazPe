@@ -140,12 +140,20 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
                 <span className="text-3xl font-black text-rose-600">
                   ₫{activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
                 </span>
-                <span className="text-sm text-slate-400 line-through font-semibold">
-                  ₫{activeFlashSaleItem.originalPrice.toLocaleString("vi-VN")}
-                </span>
-                <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
-                  Tiết kiệm {Math.round(((activeFlashSaleItem.originalPrice - activeFlashSaleItem.discountPrice) / activeFlashSaleItem.originalPrice) * 100)}%
-                </span>
+                {activeFlashSaleItem.discountType !== 2 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
+                  <span className="text-sm text-slate-400 line-through font-semibold">
+                    ₫{activeFlashSaleItem.originalPrice.toLocaleString("vi-VN")}
+                  </span>
+                )}
+                {activeFlashSaleItem.discountType === 2 ? (
+                  <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">redeem</span> Mua là có quà
+                  </span>
+                ) : activeFlashSaleItem.originalPrice > 0 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
+                  <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
+                    Tiết kiệm {Math.round(((activeFlashSaleItem.originalPrice - activeFlashSaleItem.discountPrice) / activeFlashSaleItem.originalPrice) * 100)}%
+                  </span>
+                )}
               </div>
 
               {/* Progress bar */}

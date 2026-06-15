@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260615220228_UpdatePromotionCampaignPhase2")]
+    partial class UpdatePromotionCampaignPhase2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -489,9 +492,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<int>("CartID")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsGift")
-                        .HasColumnType("bit");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");

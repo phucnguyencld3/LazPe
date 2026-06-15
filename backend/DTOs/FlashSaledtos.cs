@@ -17,6 +17,12 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Thời gian kết thúc là bắt buộc")]
         public DateTime EndTime { get; set; }
 
+        public CampaignType Type { get; set; } = CampaignType.FlashSale;
+
+        public string? BannerUrl { get; set; }
+
+        public string? Description { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public List<CreateFlashSaleItemDto> FlashSaleItems { get; set; } = new();
@@ -30,9 +36,15 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "ID đối tượng là bắt buộc")]
         public int ReferenceId { get; set; }
 
-        [Required(ErrorMessage = "Giá khuyến mãi là bắt buộc")]
-        [Range(0, double.MaxValue, ErrorMessage = "Giá khuyến mãi phải lớn hơn hoặc bằng 0")]
+        [Required(ErrorMessage = "Giá/Mức khuyến mãi là bắt buộc")]
+        [Range(0, double.MaxValue, ErrorMessage = "Mức khuyến mãi phải lớn hơn hoặc bằng 0")]
         public decimal DiscountPrice { get; set; }
+
+        public DiscountType DiscountType { get; set; } = DiscountType.FixedPrice;
+
+        public int RequiredQuantity { get; set; } = 1;
+
+        public int? GiftVariantId { get; set; }
 
         [Required(ErrorMessage = "Tổng số lượng sản phẩm Sale là bắt buộc")]
         [Range(1, int.MaxValue, ErrorMessage = "Tổng số lượng phải lớn hơn 0")]
@@ -54,6 +66,12 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Thời gian kết thúc là bắt buộc")]
         public DateTime EndTime { get; set; }
 
+        public CampaignType Type { get; set; } = CampaignType.FlashSale;
+
+        public string? BannerUrl { get; set; }
+
+        public string? Description { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public List<CreateFlashSaleItemDto> FlashSaleItems { get; set; } = new();
@@ -65,6 +83,9 @@ namespace PolyBabyAPI.DTOs
         public string Name { get; set; } = string.Empty;
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
+        public CampaignType Type { get; set; }
+        public string? BannerUrl { get; set; }
+        public string? Description { get; set; }
         public FlashSaleStatus Status { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -83,6 +104,11 @@ namespace PolyBabyAPI.DTOs
         public string? ImageUrl { get; set; }
         public decimal OriginalPrice { get; set; }
         public decimal DiscountPrice { get; set; }
+        public DiscountType DiscountType { get; set; }
+        public int RequiredQuantity { get; set; }
+        public int? GiftVariantId { get; set; }
+        public string? GiftName { get; set; }
+        public string? GiftImageUrl { get; set; }
         public int TotalQuantity { get; set; }
         public int SoldQuantity { get; set; }
         public int MaxQuantityPerUser { get; set; }

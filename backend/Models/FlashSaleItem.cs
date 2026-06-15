@@ -11,6 +11,13 @@ namespace PolyBabyAPI.Models
         Bundle = 3
     }
 
+    public enum DiscountType
+    {
+        FixedPrice = 0,
+        Percentage = 1,
+        FreeGift = 2
+    }
+
     public class FlashSaleItem
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -33,8 +40,17 @@ namespace PolyBabyAPI.Models
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "Giá khuyến mãi Flash Sale")]
+        [Display(Name = "Giá/Mức khuyến mãi")]
         public decimal DiscountPrice { get; set; }
+
+        [Display(Name = "Loại khuyến mãi")]
+        public DiscountType DiscountType { get; set; } = DiscountType.FixedPrice;
+
+        [Display(Name = "Số lượng yêu cầu (Mua X)")]
+        public int RequiredQuantity { get; set; } = 1;
+
+        [Display(Name = "Phân loại quà tặng (Nếu có)")]
+        public int? GiftVariantId { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]

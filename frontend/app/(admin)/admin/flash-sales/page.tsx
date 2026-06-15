@@ -6,7 +6,8 @@ import { toast } from "@/lib/toast";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { 
   getFlashSalesAdmin, getFlashSaleDetailAdmin, createFlashSale, updateFlashSale, deleteFlashSale, 
-  FlashSaleResponseDto, CreateFlashSaleItemDto, FlashSaleItemType, FlashSaleStatus, CreateFlashSaleDto, UpdateFlashSaleDto 
+  FlashSaleResponseDto, CreateFlashSaleItemDto, FlashSaleItemType, FlashSaleStatus, CreateFlashSaleDto, UpdateFlashSaleDto,
+  CampaignType, DiscountType
 } from "@/lib/features/flash-sales/flashSaleApi";
 import { fetchAdminProducts, fetchAdminProductDetail, AdminProductInfo, AdminVariantInfo } from "@/lib/features/products/productApi";
 import { getBundles, BundleResponse } from "@/lib/features/combo/comboApi";
@@ -38,10 +39,13 @@ export default function AdminFlashSalesPage() {
 
   // Form States
   const [formName, setFormName] = useState("");
+  const [formType, setFormType] = useState<CampaignType>(CampaignType.FlashSale);
   const [formStartTime, setFormStartTime] = useState("");
   const [formEndTime, setFormEndTime] = useState("");
+  const [formBannerUrl, setFormBannerUrl] = useState("");
+  const [formDescription, setFormDescription] = useState("");
   const [formIsActive, setFormIsActive] = useState(true);
-  const [formItems, setFormItems] = useState<any[]>([]); // { type, refId, name, originalPrice, discountPrice, totalQty, maxPerUser, sku, imageUrl }
+  const [formItems, setFormItems] = useState<any[]>([]); // { type, refId, name, originalPrice, discountPrice, discountType, requiredQty, giftVariantId, giftName, totalQty, maxPerUser, sku, imageUrl }
   const [savingForm, setSavingForm] = useState(false);
 
   // Modal Selector States
@@ -94,6 +98,9 @@ export default function AdminFlashSalesPage() {
       const sale = await getFlashSaleDetailAdmin(id, token);
       setActiveSaleId(id);
       setFormName(sale.name);
+      setFormType(sale.type !== undefined ? sale.type : CampaignType.FlashSale);
+      setFormBannerUrl(sale.bannerUrl || "");
+      setFormDescription(sale.description || "");
       
       // Convert dates to YYYY-MM-DDTHH:mm
       const start = new Date(sale.startTime);
@@ -105,17 +112,28 @@ export default function AdminFlashSalesPage() {
       
       setFormIsActive(sale.isActive);
 
-      const items = sale.flashSaleItems.map(item => ({
-        type: item.itemType,
-        refId: item.referenceId,
-        name: item.itemName,
-        originalPrice: item.originalPrice,
-        discountPrice: item.discountPrice,
-        totalQty: item.totalQuantity,
-        maxPerUser: item.maxQuantityPerUser,
-        sku: item.sku,
-        imageUrl: item.imageUrl
-      }));
+      const items = sale.flashSaleItems.map(item => {
+        let displayDiscount = item.discountPrice;
+        if (item.discountType === DiscountType.Percentage && item.originalPrice > 0) {
+            displayDiscount = Math.round((1 - item.discountPrice / item.originalPrice) * 100);
+        }
+        
+        return {
+          type: item.itemType,
+          refId: item.referenceId,
+          name: item.itemName,
+          originalPrice: item.originalPrice,
+          discountPrice: displayDiscount,
+          discountType: item.discountType !== undefined ? item.discountType : DiscountType.FixedPrice,
+          requiredQty: item.requiredQuantity || 0,
+          giftVariantId: item.giftVariantId,
+          giftName: item.giftName,
+          totalQty: item.totalQuantity,
+          maxPerUser: item.maxQuantityPerUser,
+          sku: item.sku,
+          imageUrl: item.imageUrl
+        };
+      });
       setFormItems(items);
       setView("edit");
     } catch (err) {
@@ -128,6 +146,9 @@ export default function AdminFlashSalesPage() {
 
   const handleResetForm = () => {
     setFormName("");
+    setFormType(CampaignType.FlashSale);
+    setFormBannerUrl("");
+    setFormDescription("");
     setFormStartTime("");
     setFormEndTime("");
     setFormIsActive(true);
@@ -181,12 +202,20 @@ export default function AdminFlashSalesPage() {
 
     // Validate prices and quantities
     for (const item of formItems) {
-      if (item.discountPrice >= item.originalPrice) {
+      if (item.discountType === DiscountType.FixedPrice && item.discountPrice >= item.originalPrice) {
         toast.error(`Giá sale của "${item.name}" phải nhỏ hơn giá gốc (${formatCurrency(item.originalPrice)}).`);
+        return;
+      }
+      if (item.discountType === DiscountType.Percentage && (item.discountPrice <= 0 || item.discountPrice >= 100)) {
+        toast.error(`Mức giảm phần trăm của "${item.name}" phải từ 1% đến 99%.`);
         return;
       }
       if (item.totalQty <= 0) {
         toast.error(`Số lượng sale của "${item.name}" phải lớn hơn 0.`);
+        return;
+      }
+      if (item.discountType === DiscountType.FreeGift && (!item.giftVariantId || item.requiredQty <= 0)) {
+        toast.error(`Mặt hàng "${item.name}" chọn loại tặng quà nhưng thiếu sản phẩm tặng hoặc số lượng yêu cầu.`);
         return;
       }
     }
@@ -195,14 +224,29 @@ export default function AdminFlashSalesPage() {
       name: formName,
       startTime: new Date(formStartTime).toISOString(),
       endTime: new Date(formEndTime).toISOString(),
+      type: formType,
+      bannerUrl: formBannerUrl,
+      description: formDescription,
       isActive: formIsActive,
-      flashSaleItems: formItems.map(item => ({
-        itemType: item.type,
-        referenceId: item.refId,
-        discountPrice: Number(item.discountPrice),
-        totalQuantity: Number(item.totalQty),
-        maxQuantityPerUser: Number(item.maxPerUser)
-      }))
+      flashSaleItems: formItems.map(item => {
+        let finalDiscountPrice = Number(item.discountPrice);
+        if (item.discountType === DiscountType.Percentage) {
+            finalDiscountPrice = Math.round(item.originalPrice * (1 - finalDiscountPrice / 100));
+        } else if (item.discountType === DiscountType.FreeGift) {
+            finalDiscountPrice = item.originalPrice;
+        }
+
+        return {
+          itemType: item.type,
+          referenceId: item.refId,
+          discountPrice: finalDiscountPrice,
+          discountType: item.discountType,
+          requiredQuantity: Number(item.requiredQty),
+          giftVariantId: item.giftVariantId,
+          totalQuantity: Number(item.totalQty),
+          maxQuantityPerUser: Number(item.maxPerUser)
+        };
+      })
     };
 
     setSavingForm(true);
@@ -371,6 +415,9 @@ export default function AdminFlashSalesPage() {
       name: product.productName,
       originalPrice: product.price,
       discountPrice: Math.round(product.price * 0.8), // default 20% off
+      discountType: DiscountType.FixedPrice,
+      requiredQty: 0,
+      giftVariantId: undefined,
       totalQty: 10,
       maxPerUser: 1,
       sku: product.code,
@@ -398,6 +445,9 @@ export default function AdminFlashSalesPage() {
       name: `${productName} (${variant.variantName})`,
       originalPrice: variant.unitPrice,
       discountPrice: Math.round(variant.unitPrice * 0.8), // default 20% off
+      discountType: DiscountType.FixedPrice,
+      requiredQty: 0,
+      giftVariantId: undefined,
       totalQty: 10,
       maxPerUser: 1,
       sku: variant.sku,
@@ -428,6 +478,9 @@ export default function AdminFlashSalesPage() {
       name: bundle.name,
       originalPrice: bundle.originalPrice || bundle.price,
       discountPrice: Math.round((bundle.originalPrice || bundle.price) * 0.8), // default 20% off
+      discountType: DiscountType.FixedPrice,
+      requiredQty: 0,
+      giftVariantId: undefined,
       totalQty: 5,
       maxPerUser: 1,
       sku: bundle.code,
@@ -774,6 +827,19 @@ export default function AdminFlashSalesPage() {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Loại chiến dịch</label>
+                <select
+                  value={formType}
+                  onChange={(e) => setFormType(Number(e.target.value) as CampaignType)}
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
+                >
+                  <option value={CampaignType.FlashSale}>Flash Sale (Giảm giá chớp nhoáng)</option>
+                  <option value={CampaignType.BuyXGetY}>Mua X Tặng Y (Quà tặng)</option>
+                  <option value={CampaignType.ComboDiscount}>Giảm giá Combo (Mua nhiều giảm sâu)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Thời gian bắt đầu</label>
                 <input
                   type="datetime-local"
@@ -792,6 +858,28 @@ export default function AdminFlashSalesPage() {
                   value={formEndTime}
                   onChange={(e) => setFormEndTime(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Ảnh Banner (Tùy chọn)</label>
+                <input
+                  type="text"
+                  value={formBannerUrl}
+                  onChange={(e) => setFormBannerUrl(e.target.value)}
+                  placeholder="Nhập URL ảnh banner..."
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Mô tả (Tùy chọn)</label>
+                <textarea
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Mô tả chi tiết chiến dịch..."
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
                 />
               </div>
 
@@ -913,19 +1001,62 @@ export default function AdminFlashSalesPage() {
                             <span className="text-sm font-bold text-slate-500 line-through mt-0.5 block">{formatCurrency(item.originalPrice)}</span>
                           </div>
 
-                          {/* Sale Price Input */}
                           <div className="w-28 shrink-0">
-                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Giá Flash Sale</label>
-                            <input
-                              type="number"
-                              required
-                              min={0}
-                              value={item.discountPrice}
-                              onChange={(e) => updateItemInForm(index, "discountPrice", e.target.value)}
-                              placeholder="Giá Sale"
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                            />
+                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Loại Giảm</label>
+                            <select
+                              value={item.discountType}
+                              onChange={(e) => updateItemInForm(index, "discountType", Number(e.target.value))}
+                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
+                            >
+                              <option value={DiscountType.FixedPrice}>Giá giảm</option>
+                              <option value={DiscountType.Percentage}>Giảm %</option>
+                              <option value={DiscountType.FreeGift}>Tặng quà</option>
+                            </select>
                           </div>
+
+                          {item.discountType !== DiscountType.FreeGift ? (
+                            <div className="w-28 shrink-0">
+                              <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Mức giảm</label>
+                              <input
+                                type="number"
+                                required
+                                min={0}
+                                value={item.discountPrice}
+                                onChange={(e) => updateItemInForm(index, "discountPrice", e.target.value)}
+                                placeholder="Mức giảm"
+                                className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-24 shrink-0">
+                                <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">SL Yêu cầu</label>
+                                <input
+                                  type="number"
+                                  required
+                                  min={1}
+                                  value={item.requiredQty}
+                                  onChange={(e) => updateItemInForm(index, "requiredQty", e.target.value)}
+                                  placeholder="Mua X"
+                                  className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                                  title="Số lượng sản phẩm khách cần mua để nhận quà"
+                                />
+                              </div>
+                              <div className="w-24 shrink-0">
+                                <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">ID Quà Tặng</label>
+                                <input
+                                  type="number"
+                                  required
+                                  min={1}
+                                  value={item.giftVariantId || ""}
+                                  onChange={(e) => updateItemInForm(index, "giftVariantId", e.target.value ? Number(e.target.value) : undefined)}
+                                  placeholder="Tặng Y"
+                                  className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                                  title="Nhập Variant ID của sản phẩm quà tặng"
+                                />
+                              </div>
+                            </>
+                          )}
 
                           {/* Limit Stock Input */}
                           <div className="w-24 shrink-0">

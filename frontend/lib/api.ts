@@ -799,6 +799,7 @@ export interface CartDetailInfo {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  isGift?: boolean;
   product?: ProductCartInfo | null;
   variant?: VariantCartInfo | null;
   bundle?: BundleCartInfo | null;

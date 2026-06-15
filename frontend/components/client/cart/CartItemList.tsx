@@ -124,17 +124,25 @@ export const CartItemList: React.FC<CartItemListProps> = ({
             <div
               key={detail.cartDetailID}
               className={`bg-white p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-md items-center group transition-all border ${
-                isChecked 
-                  ? "border-rose-200 bg-rose-500/[0.02]" 
-                  : "border-slate-100 hover:border-slate-200"
+                detail.isGift
+                  ? "border-emerald-200 bg-emerald-50/[0.3]"
+                  : isChecked 
+                    ? "border-rose-200 bg-rose-500/[0.02]" 
+                    : "border-slate-100 hover:border-slate-200"
               }`}
             >
-              <input
-                type="checkbox"
-                checked={isChecked}
-                onChange={() => handleToggleCheck(detail.cartDetailID)}
-                className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 shrink-0 transition-all cursor-pointer"
-              />
+              {detail.isGift ? (
+                <div className="w-5 h-5 flex items-center justify-center text-emerald-500 shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">redeem</span>
+                </div>
+              ) : (
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => handleToggleCheck(detail.cartDetailID)}
+                  className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 shrink-0 transition-all cursor-pointer"
+                />
+              )}
               
               {/* Product Image */}
               <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0 relative">
@@ -167,7 +175,12 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   <p className="text-on-surface-variant text-xs font-semibold bg-slate-50 px-2 py-0.5 rounded inline-block">
                     {subtext}
                   </p>
-                  {flashSaleItem && (
+                  {detail.isGift && (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded shadow-sm">
+                      QUÀ TẶNG MIỄN PHÍ
+                    </span>
+                  )}
+                  {flashSaleItem && !detail.isGift && (
                     <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-white bg-gradient-to-r from-rose-600 to-orange-500 px-2 py-0.5 rounded shadow-sm">
                       <Bolt size={8} className="fill-white animate-pulse" /> FLASH SALE
                     </span>
@@ -175,7 +188,11 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 </div>
 
                 <p className="text-rose-500 font-extrabold text-base pt-1">
-                  ₫{price.toLocaleString("vi-VN")}
+                  {detail.isGift ? (
+                    <span>Miễn phí</span>
+                  ) : (
+                    `₫${price.toLocaleString("vi-VN")}`
+                  )}
                 </p>
 
                 {isQtyExceeded && flashSaleItem && (
@@ -191,31 +208,41 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
               {/* Quantity & Delete Actions */}
               <div className="flex items-center gap-md shrink-0 w-full sm:w-auto justify-between sm:justify-start pt-4 sm:pt-0 border-t sm:border-t-0 border-dashed border-slate-100 mt-3 sm:mt-0">
-                <div className="flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
-                  <button
-                    onClick={() => handleUpdateQuantity(detail, detail.quantity - 1)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="w-10 text-center font-bold text-slate-800 text-sm">
-                    {detail.quantity}
-                  </span>
-                  <button
-                    onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
-                    disabled={flashSaleItem && detail.quantity >= maxAllowedQuantity}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus size={12} />
-                  </button>
-                </div>
-                
-                <button
-                  onClick={() => handleRemoveItem(detail.cartDetailID)}
-                  className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-full transition-all active:scale-90"
-                >
-                  delete
-                </button>
+                {detail.isGift ? (
+                  <div className="flex items-center">
+                    <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 font-bold text-sm rounded-full border border-emerald-100">
+                      Số lượng: {detail.quantity}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
+                      <button
+                        onClick={() => handleUpdateQuantity(detail, detail.quantity - 1)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="w-10 text-center font-bold text-slate-800 text-sm">
+                        {detail.quantity}
+                      </span>
+                      <button
+                        onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
+                        disabled={flashSaleItem && detail.quantity >= maxAllowedQuantity}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={() => handleRemoveItem(detail.cartDetailID)}
+                      className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-full transition-all active:scale-90"
+                    >
+                      delete
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           );

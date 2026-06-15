@@ -51,6 +51,7 @@ namespace PolyBabyAPI.DTOs
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        public bool IsGift { get; set; }
 
         /// <summary>Thông tin sản phẩm cha (chỉ có khi là Variant)</summary>
         public ProductCartDto? Product { get; set; }

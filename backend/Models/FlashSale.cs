@@ -12,6 +12,13 @@ namespace PolyBabyAPI.Models
         Ended = 2
     }
 
+    public enum CampaignType
+    {
+        FlashSale = 0,
+        BuyXGetY = 1,
+        ComboDiscount = 2
+    }
+
     public class FlashSale
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -32,6 +39,16 @@ namespace PolyBabyAPI.Models
 
         [Display(Name = "Trạng thái")]
         public FlashSaleStatus Status { get; set; } = FlashSaleStatus.Upcoming;
+
+        [Display(Name = "Loại chiến dịch")]
+        public CampaignType Type { get; set; } = CampaignType.FlashSale;
+
+        [MaxLength(1000)]
+        [Display(Name = "Banner chiến dịch")]
+        public string? BannerUrl { get; set; }
+
+        [Display(Name = "Mô tả chi tiết")]
+        public string? Description { get; set; }
 
         [Display(Name = "Kích hoạt (Hiển thị)")]
         public bool IsActive { get; set; } = true;
