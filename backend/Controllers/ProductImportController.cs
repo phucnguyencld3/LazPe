@@ -6,6 +6,7 @@ using PolyBabyAPI.Data;
 using PolyBabyAPI.Filters;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.DTOs;
+using PolyBabyAPI.Interfaces;
 using System.Globalization;
 using System.Security.Claims;
 
@@ -18,11 +19,13 @@ namespace PolyBabyAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ProductImportController> _logger;
+        private readonly IProductService _productService;
 
-        public ProductImportController(ApplicationDbContext context, ILogger<ProductImportController> logger)
+        public ProductImportController(ApplicationDbContext context, ILogger<ProductImportController> logger, IProductService productService)
         {
             _context = context;
             _logger = logger;
+            _productService = productService;
         }
 
         // ─────────────────────────────────────────────
@@ -1077,6 +1080,7 @@ namespace PolyBabyAPI.Controllers
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+                _productService.ClearProductCache();
 
                 return Ok(new { message = "Import thành công!" });
             }

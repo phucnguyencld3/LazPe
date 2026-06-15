@@ -23,7 +23,7 @@ namespace PolyBabyAPI.Services
             _cache = cache;
         }
 
-        private void ClearProductCache()
+        public void ClearProductCache()
         {
             if (!_resetCacheToken.IsCancellationRequested)
             {
