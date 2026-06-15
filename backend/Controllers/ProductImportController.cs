@@ -149,7 +149,7 @@ namespace PolyBabyAPI.Controllers
                 productsSheet.Cell(productRow, 1).Value = p.Code;
                 productsSheet.Cell(productRow, 2).Value = p.ProductName;
                 productsSheet.Cell(productRow, 3).Value = p.Description;
-                productsSheet.Cell(productRow, 4).Value = p.Specifications;
+                productsSheet.Cell(productRow, 4).Value = ParseJsonToSpecifications(p.Specifications);
                 productsSheet.Cell(productRow, 5).Value = p.Category?.CategoryName ?? "";
                 productsSheet.Cell(productRow, 6).Value = p.Supplier?.SupplierName ?? "";
                 productsSheet.Cell(productRow, 7).Value = p.Price;
@@ -1120,6 +1120,25 @@ namespace PolyBabyAPI.Controllers
             }
 
             return System.Text.Json.JsonSerializer.Serialize(specsDict);
+        }
+
+        private string ParseJsonToSpecifications(string jsonSpecs)
+        {
+            if (string.IsNullOrWhiteSpace(jsonSpecs)) return "";
+
+            try
+            {
+                var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(jsonSpecs);
+                if (dict == null || dict.Count == 0) return jsonSpecs;
+
+                return string.Join(" | ", dict.Select(kv =>
+                    string.IsNullOrEmpty(kv.Value) ? kv.Key : $"{kv.Key}: {kv.Value}"));
+            }
+            catch
+            {
+                // If it's not valid JSON, return as-is (already plain text)
+                return jsonSpecs;
+            }
         }
 
         private string GenerateDefaultSku(string productCode, string opt1Val, string opt2Val)
