@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection.Metadata;
 
@@ -23,6 +23,8 @@ namespace PolyBabyAPI.Models
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tổng tiền")]
         public decimal TotalPrice { get; set; }
+
+        public bool IsGift { get; set; } = false;
 
 
         // Navigation

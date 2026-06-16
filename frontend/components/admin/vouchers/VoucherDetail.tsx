@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { Pagination } from "@/components/admin/shared/Pagination";
 import {
@@ -15,19 +16,18 @@ import {
   revokeDirectAssignment
 } from "@/lib/features/vouchers/voucherApi";
 
-interface VoucherDetailModalProps {
+interface VoucherDetailProps {
   voucher: VoucherAdminInfo;
   token: string;
-  onClose: () => void;
   onRefreshVoucher: () => void; // Triggered when assignment changes and we need to refresh quantities
 }
 
-export default function VoucherDetailModal({
+export default function VoucherDetail({
   voucher,
   token,
-  onClose,
   onRefreshVoucher
-}: VoucherDetailModalProps) {
+}: VoucherDetailProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"details" | "history" | "assign">("details");
 
   // Tab 2: History states
@@ -107,8 +107,7 @@ export default function VoucherDetailModal({
         setSearchingUsers(true);
         const results = await searchUsers(token, userSearchKeyword.trim());
         // Filter out already selected users
-        const selectedIds = selectedUsers.map(u => u.id);
-        setUserSearchResults(results.filter(r => !selectedIds.includes(r.id)));
+        setUserSearchResults(results);
       } catch (e) {
         console.error(e);
       } finally {
@@ -117,13 +116,11 @@ export default function VoucherDetailModal({
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [userSearchKeyword, selectedUsers]);
+  }, [userSearchKeyword]);
 
   // Add user to draft list
   const handleSelectUser = (user: SearchUserResult) => {
     setSelectedUsers(prev => [...prev, user]);
-    setUserSearchKeyword("");
-    setUserSearchResults([]);
   };
 
   // Remove user from draft list
@@ -183,7 +180,7 @@ export default function VoucherDetailModal({
   const getVisibilityBadge = (visType: number, exclType: number) => {
     if (visType === 1) {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
           <span className="material-symbols-outlined text-[12px]">public</span>
           Công khai
           {exclType === 2 && " (Phát tự động)"}
@@ -193,7 +190,7 @@ export default function VoucherDetailModal({
       let typeText = "Nhập mã";
       if (exclType === 2) typeText = "Chỉ định trực tiếp";
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
           <span className="material-symbols-outlined text-[12px]">lock</span>
           Độc quyền ({typeText})
         </span>
@@ -204,8 +201,8 @@ export default function VoucherDetailModal({
   const getValidityStatusBadge = (startDateStr: string, endDateStr: string, status: boolean) => {
     if (!status) {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-500 border border-rose-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-450"></span>
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-500 border border-rose-100">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
           Tạm ngưng
         </span>
       );
@@ -216,21 +213,21 @@ export default function VoucherDetailModal({
 
     if (now < start) {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
           Sắp diễn ra
         </span>
       );
     } else if (now > end) {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-50 text-slate-500 border border-slate-100">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           Hết hạn
         </span>
       );
     } else {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           Đang diễn ra
         </span>
@@ -280,8 +277,7 @@ export default function VoucherDetailModal({
   const isDirectAssignVoucher = voucher.exclusiveType === 2;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300 min-h-[500px]">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
@@ -294,15 +290,16 @@ export default function VoucherDetailModal({
                 <span>Voucher: {voucher.code}</span>
                 {getValidityStatusBadge(voucher.startDate, voucher.endDate, voucher.status)}
               </h3>
-              <p className="text-[11px] text-slate-450 mt-0.5">{voucher.name}</p>
+              <p className="text-sm text-slate-500 mt-0.5">{voucher.name}</p>
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1 rounded-full text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-all cursor-pointer"
-            title="Đóng"
+            type="button"
+            onClick={() => router.push("/admin/vouchers")}
+            className="pr-4 pl-3 py-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+            title="Quay lại"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-xl">arrow_back</span> Quay lại
           </button>
         </div>
 
@@ -310,11 +307,11 @@ export default function VoucherDetailModal({
         <div className="flex px-8 border-b border-slate-100 bg-white">
           <button
             onClick={() => setActiveTab("details")}
-            className={`px-5 py-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-5 py-3.5 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
               activeTab === "details" ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">info</span>
+            <span className="material-symbols-outlined text-lg">info</span>
             Thông tin chi tiết
           </button>
           
@@ -323,22 +320,22 @@ export default function VoucherDetailModal({
               setActiveTab("history");
               setHistoryPage(1);
             }}
-            className={`px-5 py-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-5 py-3.5 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
               activeTab === "history" ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">history_toggle_off</span>
+            <span className="material-symbols-outlined text-lg">history_toggle_off</span>
             Lịch sử sử dụng
           </button>
 
           {isDirectAssignVoucher && (
             <button
               onClick={() => setActiveTab("assign")}
-              className={`px-5 py-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`px-5 py-3.5 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
                 activeTab === "assign" ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">person_add</span>
+              <span className="material-symbols-outlined text-lg">person_add</span>
               Phân phối trực tiếp
             </button>
           )}
@@ -360,7 +357,7 @@ export default function VoucherDetailModal({
                     </span>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mức giảm giá</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mức giảm giá</p>
                     <p className="text-lg font-bold text-slate-800 mt-0.5">
                       {voucher.voucherType === 2 && voucher.isFreeShipping 
                         ? "Free Shipping" 
@@ -376,7 +373,7 @@ export default function VoucherDetailModal({
                     <span className="material-symbols-outlined text-base">shopping_bag</span>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đã sử dụng</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Đã sử dụng</p>
                     <p className="text-lg font-bold text-slate-800 mt-0.5">
                       {voucher.usedQuantity} / {voucher.totalQuantity} <span className="text-xs font-bold text-slate-400">({usedRatio}%)</span>
                     </p>
@@ -388,7 +385,7 @@ export default function VoucherDetailModal({
                     <span className="material-symbols-outlined text-base">sell</span>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Hình thức phân phối</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Hình thức phân phối</p>
                     <div className="mt-0.5">{getVisibilityBadge(voucher.visibilityType, voucher.exclusiveType)}</div>
                   </div>
                 </div>
@@ -396,37 +393,37 @@ export default function VoucherDetailModal({
 
               {/* Basic config info */}
               <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
                   Chi tiết cấu hình áp dụng
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Loại Voucher:</span>
+                    <span className="font-semibold text-slate-500">Loại Voucher:</span>
                     <span className="font-bold text-slate-800">
                       {voucher.voucherType === 2 ? "Giảm phí vận chuyển" : "Giảm giá sản phẩm"}
                     </span>
                   </div>
                   {voucher.voucherType === 2 && (
                     <div className="flex justify-between py-1 border-b border-slate-50">
-                      <span className="font-semibold text-slate-450">Miễn phí ship:</span>
+                      <span className="font-semibold text-slate-500">Miễn phí ship:</span>
                       <span className="font-bold text-slate-800">{voucher.isFreeShipping ? "Có" : "Không"}</span>
                     </div>
                   )}
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Mã code:</span>
+                    <span className="font-semibold text-slate-500">Mã code:</span>
                     <span className="font-bold text-slate-800">{voucher.code}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-455">Tên chương trình:</span>
+                    <span className="font-semibold text-slate-500">Tên chương trình:</span>
                     <span className="font-semibold text-slate-800">{voucher.name}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-455">Đơn tối thiểu:</span>
+                    <span className="font-semibold text-slate-500">Đơn tối thiểu:</span>
                     <span className="font-semibold text-slate-800">{formatCurrency(voucher.minOrderValue)}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-455">Giảm tối đa:</span>
+                    <span className="font-semibold text-slate-500">Giảm tối đa:</span>
                     <span className="font-semibold text-slate-800">
                       {voucher.voucherType === 2 
                         ? (voucher.maxShippingDiscount !== null && voucher.maxShippingDiscount > 0 ? formatCurrency(voucher.maxShippingDiscount) : "Không giới hạn")
@@ -436,24 +433,24 @@ export default function VoucherDetailModal({
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Tổng số lượng phát hành:</span>
+                    <span className="font-semibold text-slate-500">Tổng số lượng phát hành:</span>
                     <span className="font-semibold text-slate-800">{voucher.totalQuantity} voucher</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Số lượng còn lại:</span>
-                    <span className="font-bold text-slate-850">
+                    <span className="font-semibold text-slate-500">Số lượng còn lại:</span>
+                    <span className="font-bold text-slate-900">
                       {voucher.totalQuantity - voucher.usedQuantity} voucher
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Hiệu lực từ ngày:</span>
-                    <span className="font-semibold text-slate-850">
+                    <span className="font-semibold text-slate-500">Hiệu lực từ ngày:</span>
+                    <span className="font-semibold text-slate-900">
                       {new Date(voucher.startDate).toLocaleString("vi-VN")}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="font-semibold text-slate-450">Ngày kết thúc hiệu lực:</span>
-                    <span className="font-semibold text-slate-850">
+                    <span className="font-semibold text-slate-500">Ngày kết thúc hiệu lực:</span>
+                    <span className="font-semibold text-slate-900">
                       {new Date(voucher.endDate).toLocaleString("vi-VN")}
                     </span>
                   </div>
@@ -489,7 +486,7 @@ export default function VoucherDetailModal({
                       <span className="material-symbols-outlined text-base">receipt_long</span>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-455 font-bold uppercase tracking-wider">Tổng số lượt áp dụng</p>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng số lượt áp dụng</p>
                       <p className="text-xl font-bold text-slate-800 mt-0.5">{usages.length} lượt</p>
                     </div>
                   </div>
@@ -500,8 +497,8 @@ export default function VoucherDetailModal({
                       <span className="material-symbols-outlined text-base">savings</span>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-455 font-bold uppercase tracking-wider">Tổng giá trị đã giảm giá</p>
-                      <p className="text-xl font-bold text-emerald-650 mt-0.5">{formatCurrency(totalDiscountGiven)}</p>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng giá trị đã giảm giá</p>
+                      <p className="text-xl font-bold text-emerald-600 mt-0.5">{formatCurrency(totalDiscountGiven)}</p>
                     </div>
                   </div>
                 </div>
@@ -510,7 +507,7 @@ export default function VoucherDetailModal({
               {/* Usages list table */}
               <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                 <div className="p-5 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/20">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
                     Danh sách khách hàng sử dụng
                   </h4>
                   {/* Local Search input */}
@@ -526,7 +523,7 @@ export default function VoucherDetailModal({
                         setHistorySearch(e.target.value);
                         setHistoryPage(1);
                       }}
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-150 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-semibold text-slate-700"
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-semibold text-slate-700"
                     />
                   </div>
                 </div>
@@ -539,14 +536,14 @@ export default function VoucherDetailModal({
                   <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                     <span className="material-symbols-outlined text-4xl mb-2 text-slate-200">query_stats</span>
                     <p className="text-xs font-bold">Chưa có lịch sử sử dụng</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Không tìm thấy bản ghi sử dụng nào phù hợp</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Không tìm thấy bản ghi sử dụng nào phù hợp</p>
                   </div>
                 ) : (
                   <>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
-                          <tr className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+                          <tr className="bg-slate-50/50 border-b border-slate-50 text-xs font-bold text-slate-400 tracking-wider uppercase">
                             <th className="px-6 py-3">Khách hàng</th>
                             <th className="px-6 py-3">Mã đơn hàng</th>
                             <th className="px-6 py-3 text-right">Trị giá đơn</th>
@@ -554,13 +551,13 @@ export default function VoucherDetailModal({
                             <th className="px-6 py-3">Thời gian</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50 text-xs text-slate-750">
+                        <tbody className="divide-y divide-slate-50 text-xs text-slate-700">
                           {displayedHistory.map((usage, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
                               <td className="px-6 py-3">
                                 <div>
                                   <p className="font-bold text-slate-800">{usage.userFullName}</p>
-                                  <p className="text-[10px] text-slate-400 font-semibold">{usage.userEmail}</p>
+                                  <p className="text-xs text-slate-400 font-semibold">{usage.userEmail}</p>
                                 </div>
                               </td>
                               <td className="px-6 py-3">
@@ -572,7 +569,7 @@ export default function VoucherDetailModal({
                               <td className="px-6 py-3 text-right font-bold text-rose-500">
                                 -{formatCurrency(usage.discountAmount)}
                               </td>
-                              <td className="px-6 py-3 text-[10px] font-bold text-slate-400">
+                              <td className="px-6 py-3 text-xs font-bold text-slate-400">
                                 {new Date(usage.usedAt).toLocaleString("vi-VN")}
                               </td>
                             </tr>
@@ -607,20 +604,20 @@ export default function VoucherDetailModal({
                 
                 {/* Left block - Search and Issue vouchers */}
                 <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-100 flex flex-col gap-4">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
                     Cấp phát voucher mới
                   </h4>
 
                   <div className="space-y-1.5">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Hạn ngạch còn lại:</p>
-                    <p className="text-sm font-bold text-slate-850">
+                    <p className="text-xs font-bold text-slate-400 uppercase">Hạn ngạch còn lại:</p>
+                    <p className="text-sm font-bold text-slate-900">
                       {remainingQuota} voucher có thể phát phát hành thêm
                     </p>
                   </div>
 
                   {/* Search users input */}
                   <div className="relative">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5">
                       Tìm kiếm người dùng (Tên, SĐT, Email)
                     </label>
                     <div className="relative">
@@ -632,7 +629,7 @@ export default function VoucherDetailModal({
                         placeholder="Nhập tối thiểu 3 ký tự..."
                         value={userSearchKeyword}
                         onChange={e => setUserSearchKeyword(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
                       />
                       {searchingUsers && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -643,16 +640,16 @@ export default function VoucherDetailModal({
 
                     {/* Search results dropdown overlay */}
                     {userSearchResults.length > 0 && (
-                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto divide-y divide-slate-50 py-1 text-xs">
-                        {userSearchResults.map(u => (
+                      <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl shadow-slate-300/40 z-30 max-h-60 overflow-y-auto divide-y divide-slate-50 py-2 text-xs">
+                        {userSearchResults.filter(u => !selectedUsers.some(su => su.id === u.id)).map(u => (
                           <div
                             key={u.id}
                             onClick={() => handleSelectUser(u)}
                             className="p-3 hover:bg-slate-50 transition-colors cursor-pointer flex justify-between items-center"
                           >
                             <div>
-                              <p className="font-bold text-slate-850">{u.fullName || "N/A"}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">{u.email} {u.phoneNumber && `| ${u.phoneNumber}`}</p>
+                              <p className="font-bold text-slate-900">{u.fullName || "N/A"}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">{u.email} {u.phoneNumber && `| ${u.phoneNumber}`}</p>
                             </div>
                             <span className="material-symbols-outlined text-slate-400 text-sm">add_circle</span>
                           </div>
@@ -662,26 +659,26 @@ export default function VoucherDetailModal({
                   </div>
 
                   {/* Selected draft users */}
-                  <div className="flex-1 flex flex-col min-h-[140px] max-h-[220px] bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">
+                  <div className="flex flex-col flex-1 min-h-[280px] bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                    <p className="text-sm font-bold text-slate-500 uppercase mb-3">
                       Danh sách chọn cấp ({selectedUsers.length} người)
                     </p>
                     
                     {selectedUsers.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-center py-4">
-                        <span className="material-symbols-outlined text-2xl text-slate-350">person_search</span>
-                        <p className="text-[10px] mt-1">Chưa chọn người dùng nào</p>
+                        <span className="material-symbols-outlined text-2xl text-slate-400">person_search</span>
+                        <p className="text-xs mt-1">Chưa chọn người dùng nào</p>
                       </div>
                     ) : (
                       <div className="flex-1 overflow-y-auto space-y-1.5 pr-1" style={{ scrollbarWidth: "thin" }}>
                         {selectedUsers.map(u => (
                           <div 
                             key={u.id} 
-                            className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 text-[11px]"
+                            className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 text-sm"
                           >
                             <div className="min-w-0 pr-2">
                               <p className="font-bold text-slate-800 truncate">{u.fullName || "N/A"}</p>
-                              <p className="text-[9px] text-slate-400 truncate">{u.email}</p>
+                              <p className="text-xs text-slate-400 truncate">{u.email}</p>
                             </div>
                             <button
                               type="button"
@@ -701,13 +698,13 @@ export default function VoucherDetailModal({
                     type="button"
                     onClick={handleAssignVouchers}
                     disabled={selectedUsers.length === 0 || submittingAssign || remainingQuota <= 0}
-                    className="w-full py-2 bg-primary text-on-primary font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-primary/25 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                    className="w-full py-2 bg-primary text-on-primary font-bold text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-primary/25 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {submittingAssign ? (
                       <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
                     ) : (
                       <>
-                        <span className="material-symbols-outlined text-[16px]">send</span>
+                        <span className="material-symbols-outlined text-lg">send</span>
                         <span>
                           {remainingQuota <= 0 ? "Hết hạn ngạch phát" : `Phát voucher cho ${selectedUsers.length} user`}
                         </span>
@@ -719,13 +716,13 @@ export default function VoucherDetailModal({
                 {/* Right block - List assignments */}
                 <div className="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-100 flex flex-col gap-4">
                   <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-50 pb-2">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
                       Lịch sử phân phối trực tiếp
                     </h4>
                     {/* Search Input for Assignments */}
                     {assignments.length > 0 && (
                       <div className="w-full sm:w-48 relative">
-                        <span className="material-symbols-outlined text-slate-400 text-[16px] absolute left-2.5 top-1/2 -translate-y-1/2">
+                        <span className="material-symbols-outlined text-slate-400 text-lg absolute left-2.5 top-1/2 -translate-y-1/2">
                           search
                         </span>
                         <input
@@ -736,7 +733,7 @@ export default function VoucherDetailModal({
                             setAssignSearch(e.target.value);
                             setAssignmentsPage(1);
                           }}
-                          className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-150 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-[11px] font-semibold text-slate-700"
+                          className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-sm font-semibold text-slate-700"
                         />
                       </div>
                     )}
@@ -747,23 +744,23 @@ export default function VoucherDetailModal({
                       <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-primary"></div>
                     </div>
                   ) : assignments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-450 text-center">
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-center">
                       <span className="material-symbols-outlined text-4xl text-slate-200">contact_mail</span>
                       <p className="text-xs font-bold mt-2">Chưa phân phối cho ai</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Tìm kiếm user ở panel bên trái để phân phối</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Tìm kiếm user ở panel bên trái để phân phối</p>
                     </div>
                   ) : filteredAssignments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-450 text-center">
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-center">
                       <span className="material-symbols-outlined text-4xl text-slate-200">search_off</span>
                       <p className="text-xs font-bold mt-2">Không tìm thấy kết quả</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Không tìm thấy người nhận nào khớp với từ khóa</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Không tìm thấy người nhận nào khớp với từ khóa</p>
                     </div>
                   ) : (
                     <>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
                           <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-50 text-[9px] font-bold text-slate-400 tracking-wider uppercase sticky top-0 bg-white">
+                            <tr className="bg-slate-50/50 border-b border-slate-50 text-xs font-bold text-slate-400 tracking-wider uppercase sticky top-0 bg-white">
                               <th className="px-4 py-2">Khách hàng</th>
                               <th className="px-4 py-2 text-center">Trạng thái ví</th>
                               <th className="px-4 py-2">Ngày phát</th>
@@ -776,26 +773,26 @@ export default function VoucherDetailModal({
                                 <td className="px-4 py-2">
                                   <div>
                                     <p className="font-bold text-slate-800">{ass.userFullName || "N/A"}</p>
-                                    <p className="text-[9px] text-slate-400 font-semibold">{ass.userEmail}</p>
+                                    <p className="text-xs text-slate-400 font-semibold">{ass.userEmail}</p>
                                   </div>
                                 </td>
                                 <td className="px-4 py-2 text-center">
                                   {ass.status === "Unused" ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-100">Chưa dùng</span>
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100">Chưa dùng</span>
                                   ) : ass.status === "Used" ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Đã sử dụng</span>
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Đã sử dụng</span>
                                   ) : (
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-50 text-slate-500 border border-slate-100">Hết hạn</span>
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-50 text-slate-500 border border-slate-100">Hết hạn</span>
                                   )}
                                 </td>
-                                <td className="px-4 py-2 text-[10px] font-bold text-slate-400">
+                                <td className="px-4 py-2 text-xs font-bold text-slate-400">
                                   {new Date(ass.collectedAt).toLocaleDateString("vi-VN")}
                                 </td>
                                 <td className="px-4 py-2 text-right">
                                   {ass.status === "Unused" && (
                                     <button
                                       onClick={() => setRevokeItem(ass)}
-                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer border border-rose-100"
+                                      className="px-2 py-1 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer border border-rose-100"
                                       title="Thu hồi voucher khỏi ví"
                                     >
                                       Thu hồi
@@ -832,18 +829,6 @@ export default function VoucherDetailModal({
 
         </div>
 
-        {/* Modal Footer (Global close button) */}
-        <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-full transition-all cursor-pointer shadow-md"
-          >
-            Đóng
-          </button>
-        </div>
-
-      </div>
-
       {/* Revocation Confirmation Modal */}
       {revokeItem && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
@@ -853,7 +838,7 @@ export default function VoucherDetailModal({
                 <span className="material-symbols-outlined text-2xl">warning</span>
               </div>
               <h3 className="text-sm font-bold text-slate-900">Xác nhận thu hồi voucher?</h3>
-              <p className="text-[11px] text-slate-450 mt-2 px-1 leading-relaxed">
+              <p className="text-sm text-slate-500 mt-2 px-1 leading-relaxed">
                 Bạn có chắc chắn muốn thu hồi voucher này khỏi tài khoản của 
                 <span className="font-bold text-slate-800"> "{revokeItem.userFullName}"</span>?
                 Ví của khách hàng sẽ không còn voucher này. Hành động không thể hoàn tác.
@@ -863,14 +848,14 @@ export default function VoucherDetailModal({
                 <button
                   onClick={() => setRevokeItem(null)}
                   disabled={revoking}
-                  className="flex-1 py-2 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-[11px] cursor-pointer"
+                  className="flex-1 py-2 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-sm cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={handleConfirmRevoke}
                   disabled={revoking}
-                  className="flex-1 py-2 rounded-full bg-rose-500 text-white font-bold text-[11px] flex items-center justify-center shadow-md shadow-rose-500/20 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 py-2 rounded-full bg-rose-500 text-white font-bold text-sm flex items-center justify-center shadow-md shadow-rose-500/20 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer"
                 >
                   {revoking ? (
                     <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>

@@ -9,6 +9,7 @@ import { HeroSection } from "@/components/client/home/HeroSection";
 import { FlashSaleSection } from "@/components/client/home/FlashSaleSection";
 import { VoucherSection } from "@/components/client/home/VoucherSection";
 import { ProductSection } from "@/components/client/home/ProductSection";
+import { ProductRecommendations } from "@/components/client/products/ProductRecommendations";
 import { CTASection } from "@/components/client/home/CTASection";
 
 export default function HomePage() {
@@ -80,6 +81,10 @@ export default function HomePage() {
         products={products}
         loadingProducts={loadingProducts}
       />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ProductRecommendations limit={10} />
+      </div>
 
       <CTASection isLoggedIn={isLoggedIn} />
     </>

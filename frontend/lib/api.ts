@@ -128,6 +128,7 @@ export async function getProductDetail(id: number): Promise<Product | null> {
         maxEffectivePrice,
         variantCount,
         image: finalImage,
+        imageUrls: item.imageUrls,
         categoryId: item.categoryID ?? item.categoryId,
         categoryName: item.category?.categoryName,
         inStock: item.status !== false && finalStock > 0,
@@ -169,6 +170,7 @@ export async function getCategories(): Promise<Category[] | null> {
         image: item.image ?? "",
         parentId: item.parentID ?? item.parentId ?? null,
         level: item.level ?? 0,
+        productCount: item.productCount ?? 0,
       }));
     }
     return null;
@@ -244,6 +246,11 @@ export interface UserProfile {
   registerDate: string;
   emailConfirmed: boolean;
   status: boolean;
+  momFavoriteColors?: string | null;
+  childGender?: string | null;
+  childAgeMonths?: number | null;
+  childWeightKg?: number | null;
+  isOnboarded?: boolean;
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
@@ -277,6 +284,11 @@ export async function updateUserProfile(
     phoneNumber?: string;
     dateOfBirth?: string | null;
     avatar?: string;
+    momFavoriteColors?: string | null;
+    childGender?: string | null;
+    childAgeMonths?: number | null;
+    childWeightKg?: number | null;
+    isOnboarded?: boolean;
   }
 ): Promise<{ success: boolean; message?: string }> {
   try {
@@ -787,6 +799,7 @@ export interface CartDetailInfo {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  isGift?: boolean;
   product?: ProductCartInfo | null;
   variant?: VariantCartInfo | null;
   bundle?: BundleCartInfo | null;

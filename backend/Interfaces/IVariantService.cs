@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.DTOs;
+using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interfaces
@@ -15,5 +15,6 @@ namespace PolyBabyAPI.Interfaces
         Task<List<VariantCombinationDto>> GenerateVariantCombinationsAsync(int productId);
         Task<bool> VariantExistsAsync(int productId, List<int> optionValueIds);
         Task<decimal> CalculateVariantPriceAsync(int productId, List<int> optionValueIds, decimal basePrice = 0);
+        Task<bool> BulkUpdateVariantsAsync(List<BulkUpdateVariantDto> updates);
     }
 }

@@ -82,59 +82,70 @@ export default function AdminReviewsPage() {
       </header>
 
       {/* Stats Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {/* Total Reviews */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">rate_review</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+              <span className="material-symbols-outlined text-[20px]">rate_review</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đánh giá</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Tổng số đánh giá</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.totalReviews ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.totalReviews ?? "..."}</span>
         </div>
 
         {/* Visible Reviews */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-secondary-container/20 flex items-center justify-center text-secondary">
-              <span className="material-symbols-outlined">check_circle</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center text-secondary shrink-0">
+              <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đánh giá hiển thị</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Đánh giá hiển thị</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.visibleReviews ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.visibleReviews ?? "..."}</span>
         </div>
 
         {/* Hidden Reviews */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-error">
-              <span className="material-symbols-outlined">visibility_off</span>
+        <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+          (stats?.hiddenReviews ?? 0) > 0 
+            ? 'bg-rose-50/50 border-rose-100' 
+            : 'bg-white border-slate-100'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              (stats?.hiddenReviews ?? 0) > 0 
+                ? 'bg-rose-100 text-error' 
+                : 'bg-slate-100 text-slate-500'
+            }`}>
+              <span className="material-symbols-outlined text-[20px]">visibility_off</span>
             </div>
+            <span className={`text-xs font-bold uppercase tracking-wider ${(stats?.hiddenReviews ?? 0) > 0 ? 'text-rose-950/60' : 'text-slate-500'}`}>
+              Đánh giá bị ẩn
+            </span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Đánh giá bị ẩn</p>
-            <h3 className="text-3xl font-bold text-error mt-1">{stats?.hiddenReviews ?? "..."}</h3>
+          <div className="flex items-center gap-2">
+            {(stats?.hiddenReviews ?? 0) > 0 && (
+              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-full">
+                Lưu ý
+              </span>
+            )}
+            <span className={`text-2xl font-extrabold ${(stats?.hiddenReviews ?? 0) > 0 ? 'text-error' : 'text-slate-800'}`}>
+              {stats?.hiddenReviews ?? "..."}
+            </span>
           </div>
         </div>
 
         {/* Average Rating */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm trung bình</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Điểm trung bình</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">
-              {stats?.averageRating ? `${stats.averageRating} / 5` : "..."}
-            </h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">
+            {stats?.averageRating ? `${stats.averageRating} / 5` : "..."}
+          </span>
         </div>
       </div>
 

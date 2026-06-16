@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.Interfaces;
@@ -18,6 +18,7 @@ namespace PolyBabyAPI.Services
         public async Task<IEnumerable<Categories>> GetAllCategoriesAsync()
         {
             return await _context.Categories
+                .Include(c => c.Products)
                 .OrderBy(c => c.Level)
                 .ThenBy(c => c.SortOrder)
                 .ThenBy(c => c.CategoryName)
@@ -241,7 +242,10 @@ namespace PolyBabyAPI.Services
                 {
                     CategoryID = c.CategoryID,
                     CategoryName = c.CategoryName,
-                    Level = c.Level
+                    ParentID = c.ParentID,
+                    Level = c.Level,
+                    Status = c.Status,
+                    ProductCount = c.Products.Count(p => p.Status)
                 })
                 .ToListAsync();
         }

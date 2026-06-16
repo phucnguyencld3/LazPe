@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
+using PolyBabyAPI.Hubs;
 using PolyBabyAPI.Interface;
 using System;
 using System.Collections.Generic;
@@ -11,11 +13,13 @@ namespace PolyBabyAPI.Services
 {
     public class ChatCleanupService : BackgroundService
     {
-        private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
+        private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(1);
         private static readonly int ExpirationDays = 30;
+        private static readonly int InactiveMinutes = 15;
 
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<ChatCleanupService> _logger;
+        private int _minutesPassed = 0;
 
         public ChatCleanupService(
             IServiceScopeFactory scopeFactory,
@@ -29,13 +33,61 @@ namespace PolyBabyAPI.Services
         {
             _logger.LogInformation("ChatCleanupService background service starting.");
             
-            // Run a cleanup on startup
+            // Run cleanup on startup
+            await AutoCloseInactiveChatsAsync(stoppingToken);
             await CleanupExpiredChatsAsync(stoppingToken);
 
             using var timer = new PeriodicTimer(CheckInterval);
             while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken))
             {
-                await CleanupExpiredChatsAsync(stoppingToken);
+                await AutoCloseInactiveChatsAsync(stoppingToken);
+                
+                _minutesPassed++;
+                // Check expired chats every 24 hours (1440 minutes)
+                if (_minutesPassed >= 1440)
+                {
+                    await CleanupExpiredChatsAsync(stoppingToken);
+                    _minutesPassed = 0;
+                }
+            }
+        }
+
+        private async Task AutoCloseInactiveChatsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<ChatHub>>();
+
+                var cutoffTime = DateTime.Now.AddMinutes(-InactiveMinutes);
+
+                // Find sessions that haven't been updated in 15 mins and are not closed yet
+                var inactiveSessions = await context.ChatSessions
+                    .Where(cs => !cs.IsClosed && cs.UpdatedAt <= cutoffTime)
+                    .ToListAsync(cancellationToken);
+
+                if (inactiveSessions.Count == 0) return;
+
+                _logger.LogInformation("Found {Count} inactive chat sessions to auto-close.", inactiveSessions.Count);
+
+                foreach (var session in inactiveSessions)
+                {
+                    session.IsClosed = true;
+                    // Send signalR event to close for client and admin
+                    await hubContext.Clients.Group(session.Id).SendAsync("SessionClosed", session.Id);
+                }
+
+                await context.SaveChangesAsync(cancellationToken);
+                
+                // Update admins list
+                await hubContext.Clients.All.SendAsync("UpdateAdminSessions");
+                
+                _logger.LogInformation("Successfully auto-closed {Count} inactive chat sessions.", inactiveSessions.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while auto-closing inactive chats.");
             }
         }
 

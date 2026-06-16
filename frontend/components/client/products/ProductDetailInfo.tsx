@@ -18,6 +18,7 @@ interface ProductDetailInfoProps {
   handleDecreaseQuantity: () => void;
   handleIncreaseQuantity: () => void;
   handleAddToCart: () => void;
+  handleBuyNow: () => void;
   isWishlisted: boolean;
   setIsWishlisted: (wishlisted: boolean) => void;
   activeVariant?: Variant | null;
@@ -41,6 +42,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   handleDecreaseQuantity,
   handleIncreaseQuantity,
   handleAddToCart,
+  handleBuyNow,
   isWishlisted,
   setIsWishlisted,
   activeVariant = null,
@@ -138,12 +140,20 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
                 <span className="text-3xl font-black text-rose-600">
                   ₫{activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
                 </span>
-                <span className="text-sm text-slate-400 line-through font-semibold">
-                  ₫{activeFlashSaleItem.originalPrice.toLocaleString("vi-VN")}
-                </span>
-                <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
-                  Tiết kiệm {Math.round(((activeFlashSaleItem.originalPrice - activeFlashSaleItem.discountPrice) / activeFlashSaleItem.originalPrice) * 100)}%
-                </span>
+                {activeFlashSaleItem.discountType !== 2 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
+                  <span className="text-sm text-slate-400 line-through font-semibold">
+                    ₫{activeFlashSaleItem.originalPrice.toLocaleString("vi-VN")}
+                  </span>
+                )}
+                {activeFlashSaleItem.discountType === 2 ? (
+                  <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">redeem</span> Mua là có quà
+                  </span>
+                ) : activeFlashSaleItem.originalPrice > 0 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
+                  <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
+                    Tiết kiệm {Math.round(((activeFlashSaleItem.originalPrice - activeFlashSaleItem.discountPrice) / activeFlashSaleItem.originalPrice) * 100)}%
+                  </span>
+                )}
               </div>
 
               {/* Progress bar */}
@@ -313,15 +323,26 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             </button>
           </div>
 
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!displayInStock || maxAllowedQuantity <= 0}
-            className="w-full h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
-          >
-            <ShoppingCart size={18} />
-            Thêm vào giỏ hàng
-          </button>
+          <div className="flex w-full gap-2">
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!displayInStock || maxAllowedQuantity <= 0}
+              className="w-1/2 h-12 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+            >
+              <ShoppingCart size={18} />
+              Thêm giỏ hàng
+            </button>
+
+            {/* Buy Now Button */}
+            <button
+              onClick={handleBuyNow}
+              disabled={!displayInStock || maxAllowedQuantity <= 0}
+              className="w-1/2 h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+            >
+              Mua ngay
+            </button>
+          </div>
 
           {/* Wishlist Toggle Button */}
           <button

@@ -87,15 +87,15 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                 : [item.variant?.color, item.variant?.size].filter(Boolean).join(" - ");
 
               return (
-                <div key={item.cartDetailID} className="flex gap-3 items-center">
+                <div key={item.cartDetailID} className={`flex gap-3 items-center ${item.isGift ? "opacity-90" : ""}`}>
                   {/* Product Image */}
-                  <div className="relative w-16 h-16 bg-slate-50 rounded-xl p-1 border border-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <div className={`relative w-16 h-16 rounded-xl p-1 border flex-shrink-0 flex items-center justify-center overflow-hidden ${item.isGift ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"}`}>
                     <img
                       alt={name || "Sản phẩm"}
                       className="w-full h-full object-contain"
                       src={image || "/images/placeholder.jpg"}
                     />
-                    <span className="absolute -top-1.5 -left-1.5 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
+                    <span className={`absolute -top-1.5 -left-1.5 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white ${item.isGift ? "bg-emerald-500" : "bg-rose-500"}`}>
                       x{item.quantity}
                     </span>
                   </div>
@@ -106,15 +106,24 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                       {name}
                     </h4>
                     
-                    {/* Hiển thị phân loại thay vì biến thể */}
-                    {variantText && (
-                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                        Phân loại: {variantText}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {item.isGift && (
+                        <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">QUÀ TẶNG</span>
+                      )}
+                      {variantText && !item.isGift && (
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          Phân loại: {variantText}
+                        </p>
+                      )}
+                      {variantText && item.isGift && (
+                        <p className="text-[10px] text-emerald-600 font-semibold">
+                          {variantText}
+                        </p>
+                      )}
+                    </div>
                     
-                    <div className="text-rose-500 text-xs font-extrabold mt-1">
-                      {formatVND(item.unitPrice)}
+                    <div className={`text-xs font-extrabold mt-1 ${item.isGift ? "text-emerald-500" : "text-rose-500"}`}>
+                      {item.isGift ? "Miễn phí" : formatVND(item.unitPrice)}
                     </div>
                   </div>
                 </div>

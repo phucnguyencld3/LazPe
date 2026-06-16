@@ -21,7 +21,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300 mix-blend-multiply"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
@@ -130,8 +130,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
                   if (hasDiscount) {
                     const discountRangeText = minEff === maxEff
-                      ? `₫${minEff.toLocaleString("vi-VN")}`
-                      : `₫${minEff.toLocaleString("vi-VN")} - ₫${maxEff.toLocaleString("vi-VN")}`;
+                      ? `${minEff.toLocaleString("vi-VN")} ₫`
+                      : `${minEff.toLocaleString("vi-VN")} ₫ - ${maxEff.toLocaleString("vi-VN")} ₫`;
 
                     return (
                       <span className="text-[11px] sm:text-xs md:text-sm font-extrabold text-rose-600 whitespace-nowrap truncate" title={discountRangeText}>
@@ -140,8 +140,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                     );
                   } else {
                     const priceRangeText = minOrig === maxOrig
-                      ? `₫${minOrig.toLocaleString("vi-VN")}`
-                      : `₫${minOrig.toLocaleString("vi-VN")} - ₫${maxOrig.toLocaleString("vi-VN")}`;
+                      ? `${minOrig.toLocaleString("vi-VN")} ₫`
+                      : `${minOrig.toLocaleString("vi-VN")} ₫ - ${maxOrig.toLocaleString("vi-VN")} ₫`;
 
                     return (
                       <span className="text-[11px] sm:text-xs md:text-sm font-extrabold text-slate-900 whitespace-nowrap truncate" title={priceRangeText}>
@@ -155,17 +155,17 @@ export default function ProductCard({ product }: ProductCardProps) {
                     return (
                       <>
                         <span className="text-xs sm:text-sm md:text-base font-bold text-rose-600 whitespace-nowrap">
-                          ₫{product.discountPrice.toLocaleString("vi-VN")}
+                          {product.discountPrice.toLocaleString("vi-VN")} ₫
                         </span>
                         <span className="text-[10px] sm:text-xs text-slate-400 line-through whitespace-nowrap">
-                          ₫{product.price.toLocaleString("vi-VN")}
+                          {product.price.toLocaleString("vi-VN")} ₫
                         </span>
                       </>
                     );
                   } else {
                     return (
                       <span className="text-xs sm:text-sm md:text-base font-bold text-slate-900 whitespace-nowrap">
-                        ₫{product.price.toLocaleString("vi-VN")}
+                        {product.price.toLocaleString("vi-VN")} ₫
                       </span>
                     );
                   }

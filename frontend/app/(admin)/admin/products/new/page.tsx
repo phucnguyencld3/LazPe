@@ -15,12 +15,15 @@ import {
 import { ProductGeneralInfo } from "@/components/admin/products/ProductGeneralInfo";
 import { ProductPricingInventory } from "@/components/admin/products/ProductPricingInventory";
 import { ProductFormActions } from "@/components/admin/products/ProductFormActions";
+import { ImageConflictModal } from "@/components/admin/products/ImageConflictModal";
 
 interface OptionValueState {
   id: string;
   value: string;
   price: number;
   displayOrder: number;
+  imageUrl?: string | null;
+  isUploadingImage?: boolean;
 }
 
 interface OptionState {
@@ -48,6 +51,7 @@ interface VariantState {
   isPriceCustom?: boolean;
   isSkuCustom?: boolean;
   isDiscountCustom?: boolean;
+  isImageCustom?: boolean;
 }
 
 export default function CreateProductPage() {
@@ -77,6 +81,11 @@ export default function CreateProductPage() {
   // Lists from API
   const [categories, setCategories] = useState<CategorySelectOption[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierSelectOption[]>([]);
+
+  // Image Management
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
 
   // Category Selection Path State
   const [selectedPath, setSelectedPath] = useState<number[]>([]);
@@ -116,7 +125,7 @@ export default function CreateProductPage() {
     // Tự động sinh mã SKU ngẫu nhiên cho sản phẩm
     const generatedSku = "SP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     setCode(generatedSku);
-    
+
     loadInitialData();
   }, []);
 
@@ -264,6 +273,17 @@ export default function CreateProductPage() {
         const valSuffix = c.optionValues.map(ov => ov.value.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, "")).join("-");
         const defaultSku = `${code || "SKU"}-${valSuffix}`;
 
+        // Find if any constituent option value has an image
+        let matchedImage: string | null = null;
+        for (const ov of c.optionValues) {
+          const opt = options.find(o => o.name.trim().toLowerCase() === ov.optionName.toLowerCase());
+          const val = opt?.values.find(v => v.value.trim().toLowerCase() === ov.value.toLowerCase());
+          if (val?.imageUrl) {
+            matchedImage = val.imageUrl;
+            break;
+          }
+        }
+
         if (existing) {
           // Remove the matched entry from the map so it cannot be reused (prevent duplicate keys)
           existingMap.delete(key);
@@ -271,7 +291,8 @@ export default function CreateProductPage() {
             ...existing,
             unitPrice: existing.isPriceCustom ? existing.unitPrice : defaultUnitPrice,
             sku: existing.isSkuCustom ? existing.sku : defaultSku,
-            variantDiscountPercent: existing.isDiscountCustom ? existing.variantDiscountPercent : (Number(discountPercent) || 0)
+            variantDiscountPercent: existing.isDiscountCustom ? existing.variantDiscountPercent : (Number(discountPercent) || 0),
+            imageUrl: existing.isImageCustom ? existing.imageUrl : (matchedImage || null)
           };
         }
 
@@ -283,13 +304,14 @@ export default function CreateProductPage() {
           variantDiscountPercent: Number(discountPercent) || 0,
           stock: 0,
           sku: defaultSku,
-          imageUrl: null,
+          imageUrl: matchedImage || null,
           description: "",
           status: true,
           optionValues: c.optionValues,
           isPriceCustom: false,
           isSkuCustom: false,
-          isDiscountCustom: false
+          isDiscountCustom: false,
+          isImageCustom: false
         };
       });
     });
@@ -303,6 +325,9 @@ export default function CreateProductPage() {
         if (field === "unitPrice") updated.isPriceCustom = true;
         if (field === "sku") updated.isSkuCustom = true;
         if (field === "variantDiscountPercent") updated.isDiscountCustom = true;
+        if (field === "imageUrl") {
+          updated.isImageCustom = value !== null;
+        }
         return updated;
       }
       return v;
@@ -344,7 +369,7 @@ export default function CreateProductPage() {
       }
 
       const data = await res.json();
-      setVariants(prev => prev.map(v => v.id === variantId ? { ...v, imageUrl: data.url, isUploadingImage: false } : v));
+      setVariants(prev => prev.map(v => v.id === variantId ? { ...v, imageUrl: data.url, isUploadingImage: false, isImageCustom: true } : v));
       toast.success("Tải ảnh biến thể thành công!");
     } catch (err: any) {
       console.error(err);
@@ -353,176 +378,280 @@ export default function CreateProductPage() {
     }
   };
 
-  // Category change handler from child CategorySelector
-  const handleCategoryChange = (catId: number | null, pathIds: number[]) => {
-    setSelectedCategoryId(catId);
-    setSelectedPath(pathIds);
-  };
-
-  // Dynamically calculate stock sum when variants exist
-  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-
-  // Dynamic duplicate warning helpers
-  const isOptionNameDuplicate = (name: string) => {
-    if (!name.trim()) return false;
-    return options.filter(o => o.name.trim().toLowerCase() === name.trim().toLowerCase()).length > 1;
-  };
-
-  const isValueDuplicate = (optId: string, value: string) => {
-    if (!value.trim()) return false;
-    const opt = options.find(o => o.id === optId);
-    if (!opt) return false;
-    return opt.values.filter(v => v.value.trim().toLowerCase() === value.trim().toLowerCase()).length > 1;
-  };
-
-  const isSkuDuplicate = (sku: string) => {
-    if (!sku.trim()) return false;
-    return variants.filter(v => v.sku.trim().toLowerCase() === sku.trim().toLowerCase()).length > 1;
-  };
-
-  // Check if there are any duplicate values
-  const hasDuplicates = (() => {
-    const optNames = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
-    if (optNames.length !== new Set(optNames).size) return true;
-
-    for (const opt of options) {
-      const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
-      if (valList.length !== new Set(valList).size) return true;
-    }
-
-    const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
-    if (skus.length !== new Set(skus).size) return true;
-
-    const specKeys = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
-    if (specKeys.length !== new Set(specKeys).size) return true;
-
-    return false;
-  })();
-
-  // Dynamic Pricing Preview
-  const baseVal = Number(price) || 0;
-  const discVal = Number(discountPercent) || 0;
-  const finalPrice = Math.max(0, baseVal - baseVal * (discVal / 100));
-
-  // Submit Handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!productName.trim()) {
-      toast.warning("Vui lòng nhập tên sản phẩm.");
-      return;
-    }
-
-    if (!supplierId) {
-      toast.warning("Vui lòng chọn thương hiệu / nhãn hàng.");
-      return;
-    }
-
-    if (!selectedCategoryId) {
-      toast.warning("Vui lòng chọn danh mục phân loại sản phẩm.");
-      return;
-    }
-
-    // Option validations
-    const optionNamesList = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
-    if (optionNamesList.length !== new Set(optionNamesList).size) {
-      toast.warning("Tên các thuộc tính (Options) không được trùng nhau.");
-      return;
-    }
-
-    for (const opt of options) {
-      const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
-      if (valList.length !== new Set(valList).size) {
-        toast.warning(`Thuộc tính '${opt.name}' chứa các giá trị trùng nhau.`);
-        return;
-      }
-    }
-
-    // Variant validation
-    const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
-    if (skus.length !== new Set(skus).size) {
-      toast.warning("Mã SKU của các biến thể bị trùng lặp.");
-      return;
-    }
-
-    // Specifications validation
-    const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
-    if (specKeysList.length !== new Set(specKeysList).size) {
-      toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
-      return;
-    }
-
+  const handleUploadOptionValueImage = async (optId: string, valId: string, file: File) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        toast.error("Vui lòng đăng nhập lại.");
+        return;
+      }
 
-      setSaving(true);
+      if (file.size > 5 * 1024 * 1024) {
+        toast.warning("Dung lượng ảnh vượt quá 5MB.");
+        return;
+      }
 
-      const specsObj: Record<string, string> = {};
-      specifications.forEach(item => {
-        if (item.key.trim() && item.value.trim()) {
-          specsObj[item.key.trim()] = item.value.trim();
-        }
+      setOptions(prev => prev.map(o => o.id === optId ? {
+        ...o,
+        values: o.values.map(v => v.id === valId ? { ...v, isUploadingImage: true } : v)
+      } : o));
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "polystation/option_values");
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+      const res = await fetch(`${API_BASE_URL}/Upload/image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
       });
-      const specsJson = Object.keys(specsObj).length > 0 ? JSON.stringify(specsObj) : undefined;
 
-      const payload: CreateFullProductPayload = {
-        productName: productName.trim(),
-        code: code.trim() || undefined,
-        categoryID: selectedCategoryId as number,
-        supplierID: typeof supplierId === "number" ? supplierId : null,
-        description: description.trim() || undefined,
-        specifications: specsJson,
-        price: price === "" ? 0 : Number(price),
-        productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
-        stock: options.length > 0 ? totalStock : (stock === "" ? 0 : Number(stock)),
-        status: true,
-        options: options
-          .filter(o => o.name.trim() && o.values.some(v => v.value.trim()))
-          .map(o => ({
-            name: o.name.trim(),
-            displayOrder: o.displayOrder,
-            values: o.values
-              .filter(v => v.value.trim())
-              .map(v => ({
-                value: v.value.trim(),
-                price: v.price,
-                displayOrder: v.displayOrder
-              }))
-          })),
-        variants: variants.map(v => ({
-          variantName: v.variantName,
-          unitPrice: v.unitPrice,
-          variantDiscountPercent: v.variantDiscountPercent,
-          stock: v.stock,
-          sku: v.sku.trim(),
-          imageUrl: v.imageUrl,
-          description: v.description,
-          status: v.status,
-          optionValues: v.optionValues
-        }))
-      };
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Tải ảnh thất bại.");
+      }
 
-      await createFullProduct(token, payload);
-      toast.success("Tạo sản phẩm hoàn chỉnh thành công!");
-      router.push("/admin/products");
+      const data = await res.json();
+      setOptions(prev => prev.map(o => o.id === optId ? {
+        ...o,
+        values: o.values.map(v => v.id === valId ? { ...v, imageUrl: data.url, isUploadingImage: false } : v)
+      } : o));
+      toast.success("Tải ảnh thuộc tính thành công!");
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Lỗi khi tạo sản phẩm.");
-    } finally {
-      setSaving(false);
+      toast.error(err.message || "Lỗi khi upload ảnh.");
+      setOptions(prev => prev.map(o => o.id === optId ? {
+        ...o,
+        values: o.values.map(v => v.id === valId ? { ...v, isUploadingImage: false } : v)
+      } : o));
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[500px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  const handleRemoveOptionValueImage = (optId: string, valId: string) => {
+    setOptions(prev => prev.map(o => o.id === optId ? {
+      ...o,
+      values: o.values.map(v => v.id === valId ? { ...v, imageUrl: null } : v)
+    } : o));
+  };
+
+const handleUploadProductImage = async (file: File) => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+
+    setIsUploadingProductImage(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+    const res = await fetch(`${API_BASE_URL}/Upload/image`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error("Upload thất bại");
+
+    const data = await res.json();
+    if (data.url) {
+      setProductImages(prev => [...prev, data.url]);
+    }
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Lỗi khi upload ảnh sản phẩm.");
+  } finally {
+    setIsUploadingProductImage(false);
+  }
+};
+
+const handleRemoveProductImage = (index: number) => {
+  setProductImages(prev => prev.filter((_, i) => i !== index));
+};
+
+// Category change handler from child CategorySelector
+const handleCategoryChange = (catId: number | null, pathIds: number[]) => {
+  setSelectedCategoryId(catId);
+  setSelectedPath(pathIds);
+};
+
+// Dynamically calculate stock sum when variants exist
+const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+
+// Dynamic duplicate warning helpers
+const isOptionNameDuplicate = (name: string) => {
+  if (!name.trim()) return false;
+  return options.filter(o => o.name.trim().toLowerCase() === name.trim().toLowerCase()).length > 1;
+};
+
+const isValueDuplicate = (optId: string, value: string) => {
+  if (!value.trim()) return false;
+  const opt = options.find(o => o.id === optId);
+  if (!opt) return false;
+  return opt.values.filter(v => v.value.trim().toLowerCase() === value.trim().toLowerCase()).length > 1;
+};
+
+const isSkuDuplicate = (sku: string) => {
+  if (!sku.trim()) return false;
+  return variants.filter(v => v.sku.trim().toLowerCase() === sku.trim().toLowerCase()).length > 1;
+};
+
+// Check if there are any duplicate values
+const hasDuplicates = (() => {
+  const optNames = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
+  if (optNames.length !== new Set(optNames).size) return true;
+
+  for (const opt of options) {
+    const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
+    if (valList.length !== new Set(valList).size) return true;
   }
 
+  const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
+  if (skus.length !== new Set(skus).size) return true;
+
+  const specKeys = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+  if (specKeys.length !== new Set(specKeys).size) return true;
+
+  return false;
+})();
+
+// Dynamic Pricing Preview
+const baseVal = Number(price) || 0;
+const discVal = Number(discountPercent) || 0;
+const finalPrice = Math.max(0, baseVal - baseVal * (discVal / 100));
+
+// --- Submit Handler ---
+const handleSubmit = async (e?: React.FormEvent, skipConflictCheck = false) => {
+  if (e) e.preventDefault();
+
+  if (!productName.trim()) {
+    toast.warning("Vui lòng nhập tên sản phẩm.");
+    return;
+  }
+
+  if (!supplierId) {
+    toast.warning("Vui lòng chọn thương hiệu / nhãn hàng.");
+    return;
+  }
+
+  if (!selectedCategoryId) {
+    toast.warning("Vui lòng chọn danh mục phân loại sản phẩm.");
+    return;
+  }
+
+  // Option validations
+  const optionNamesList = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
+  if (optionNamesList.length !== new Set(optionNamesList).size) {
+    toast.warning("Tên các thuộc tính (Options) không được trùng nhau.");
+    return;
+  }
+
+  for (const opt of options) {
+    const valList = opt.values.map(v => v.value.trim().toLowerCase()).filter(Boolean);
+    if (valList.length !== new Set(valList).size) {
+      toast.warning(`Thuộc tính '${opt.name}' chứa các giá trị trùng nhau.`);
+      return;
+    }
+  }
+
+  // Variant validation
+  const skus = variants.map(v => v.sku.trim().toLowerCase()).filter(Boolean);
+  if (skus.length !== new Set(skus).size) {
+    toast.warning("Mã SKU của các biến thể bị trùng lặp.");
+    return;
+  }
+
+  // Specifications validation
+  const specKeysList = specifications.map(s => s.key.trim().toLowerCase()).filter(Boolean);
+  if (specKeysList.length !== new Set(specKeysList).size) {
+    toast.warning("Tên các thông số kỹ thuật không được trùng nhau.");
+    return;
+  }
+
+  // Image Conflict Detection
+  const hasProductImages = productImages.length > 0;
+  const hasVariantImages = variants.some(v => !!v.imageUrl);
+  if (!skipConflictCheck && hasProductImages && hasVariantImages) {
+    setShowConflictModal(true);
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) return;
+
+    setSaving(true);
+
+    const specsObj: Record<string, string> = {};
+    specifications.forEach(item => {
+      if (item.key.trim() && item.value.trim()) {
+        specsObj[item.key.trim()] = item.value.trim();
+      }
+    });
+    const specsJson = Object.keys(specsObj).length > 0 ? JSON.stringify(specsObj) : undefined;
+
+    const payload: CreateFullProductPayload = {
+      productName: productName.trim(),
+      code: code.trim() || undefined,
+      categoryID: selectedCategoryId as number,
+      supplierID: typeof supplierId === "number" ? supplierId : null,
+      description: description.trim() || "",
+      specifications: specsJson || "",
+      price: price === "" ? 0 : Number(price),
+      productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
+      stock: options.length > 0 ? totalStock : (stock === "" ? 0 : Number(stock)),
+      status: true,
+      options: options
+        .filter(o => o.name.trim() && o.values.some(v => v.value.trim()))
+        .map(o => ({
+          name: o.name.trim(),
+          displayOrder: o.displayOrder,
+          values: o.values
+            .filter(v => v.value.trim())
+            .map(v => ({
+              value: v.value.trim(),
+              price: v.price,
+              displayOrder: v.displayOrder
+            }))
+        })),
+      variants: variants.map(v => ({
+        variantName: v.variantName,
+        unitPrice: v.unitPrice,
+        variantDiscountPercent: v.variantDiscountPercent,
+        stock: v.stock,
+        sku: v.sku.trim(),
+        imageUrl: v.imageUrl,
+        description: v.description,
+        status: v.status,
+        optionValues: v.optionValues
+      })),
+      images: productImages
+    };
+
+    await createFullProduct(token, payload);
+    toast.success("Tạo sản phẩm hoàn chỉnh thành công!");
+    router.push("/admin/products");
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Lỗi khi tạo sản phẩm.");
+  } finally {
+    setSaving(false);
+  }
+};
+
+if (loading) {
   return (
+    <div className="flex justify-center items-center h-[500px]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>
+  );
+}
+
+return (
+    <>
     <div className="w-full pb-32 animate-in fade-in duration-300">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1.5 text-slate-400 mb-6 font-bold text-xs">
@@ -571,6 +700,10 @@ export default function CreateProductPage() {
               onCategoryChange={handleCategoryChange}
               specifications={specifications}
               onSpecificationsChange={setSpecifications}
+              productImages={productImages}
+              isUploadingImage={isUploadingProductImage}
+              onUploadProductImage={handleUploadProductImage}
+              onRemoveProductImage={handleRemoveProductImage}
             />
           </div>
 
@@ -672,6 +805,43 @@ export default function CreateProductPage() {
                               const isValDup = isValueDuplicate(opt.id, val.value);
                               return (
                                 <div key={val.id} className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-100 shadow-sm relative pr-7">
+                                  {/* Micro Image Uploader Thumbnail */}
+                                  <div className="relative w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-inner group/valimg">
+                                    {val.isUploadingImage ? (
+                                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-primary border-t-transparent"></div>
+                                    ) : val.imageUrl ? (
+                                      <>
+                                        <img src={val.imageUrl} className="w-full h-full object-cover" alt="ValThumb" />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveOptionValueImage(opt.id, val.id)}
+                                          className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[9px] hover:bg-rose-600 shadow z-10 animate-in fade-in zoom-in duration-200"
+                                          title="Xóa ảnh"
+                                        >
+                                          <span className="material-symbols-outlined text-[8px] font-bold">close</span>
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <span className="material-symbols-outlined text-slate-300 text-base">image</span>
+                                    )}
+
+                                    {!val.imageUrl && !val.isUploadingImage && (
+                                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover/valimg:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white">
+                                        <span className="material-symbols-outlined text-[12px]">add_a_photo</span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                              handleUploadOptionValueImage(opt.id, val.id, e.target.files[0]);
+                                            }
+                                          }}
+                                        />
+                                      </label>
+                                    )}
+                                  </div>
+
                                   <div className="flex-1 min-w-0">
                                     <input
                                       type="text"
@@ -792,7 +962,7 @@ export default function CreateProductPage() {
                                 ) : (
                                   <span className="material-symbols-outlined text-slate-300 text-base">image</span>
                                 )}
-                                
+
                                 {!v.imageUrl && !v.isUploadingImage && (
                                   <label className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white">
                                     <span className="material-symbols-outlined text-[12px]">add_a_photo</span>
@@ -915,5 +1085,23 @@ export default function CreateProductPage() {
         />
       </form>
     </div>
-  );
+
+    <ImageConflictModal
+        isOpen={showConflictModal}
+        onClose={() => setShowConflictModal(false)}
+        onKeepProductImages={() => {
+          setShowConflictModal(false);
+          // Xóa ảnh biến thể
+          setVariants(prev => prev.map(v => ({ ...v, imageUrl: null })));
+          setTimeout(() => handleSubmit(undefined, true), 100);
+        }}
+        onKeepVariantImages={() => {
+          setShowConflictModal(false);
+          // Xóa ảnh sản phẩm
+          setProductImages([]);
+          setTimeout(() => handleSubmit(undefined, true), 100);
+        }}
+      />
+    </>
+    );
 }

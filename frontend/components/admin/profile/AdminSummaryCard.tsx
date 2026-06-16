@@ -91,7 +91,7 @@ export default function AdminSummaryCard({
   const roles = user?.roles || [];
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm flex flex-col items-center text-center">
+    <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col items-center text-center animate-in fade-in duration-300">
       {/* Avatar Container with Upload Overlay */}
       <div className="relative group w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center">
         {profile?.avatar ? (
@@ -124,10 +124,10 @@ export default function AdminSummaryCard({
         )}
       </div>
 
-      <h2 className="text-xl font-bold text-slate-800 mt-4 leading-tight">
+      <h2 className="font-headline-sm text-[20px] font-bold text-slate-800 mt-4 leading-tight">
         {profile?.fullName || user?.fullName || "Chưa thiết lập"}
       </h2>
-      <p className="text-sm text-slate-500 font-semibold mt-1">
+      <p className="font-body-md text-sm text-on-surface-variant/70 mt-1">
         {profile?.email || user?.email}
       </p>
 

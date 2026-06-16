@@ -21,6 +21,9 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load appsettings.Local.json for local development secrets (ignored by Git)
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 try
 {
     // Kết nối cơ sở dữ liệu
@@ -119,10 +122,24 @@ try
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
+    // Cấu hình MongoDb
+    builder.Services.Configure<PolyBabyAPI.Settings.MongoDbSettings>(
+        builder.Configuration.GetSection("MongoDbSettings")
+    );
+    builder.Services.AddSingleton<PolyBabyAPI.Interfaces.IMongoDbService, PolyBabyAPI.Services.MongoDbService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IRecommendationService, PolyBabyAPI.Services.RecommendationService>();
+
     // Cấu hình Cloudinary
     builder.Services.Configure<CloudinarySettings>(
         builder.Configuration.GetSection("Cloudinary")
     );
+
+    // Cấu hình Gemini
+    builder.Services.Configure<GeminiSettings>(
+        builder.Configuration.GetSection("Gemini")
+    );
+    builder.Services.AddHttpClient<IGeminiService, GeminiService>();
+
 
     // Cấu hình CORS
     builder.Services.AddCors(options =>
@@ -264,6 +281,7 @@ try
     builder.Services.AddScoped<LoyaltyMonthlyVoucherJob>();
     builder.Services.AddScoped<LoyaltyCycleResetJob>();
     builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
+    builder.Services.AddScoped<PolyBabyAPI.Jobs.ModelTrainingJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -365,6 +383,14 @@ try
             "loyalty-daily-birthday-gift-issuance",
             job => job.ExecuteAsync(),
             Cron.Daily(0, 5),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 4. Job huấn luyện AI Model (Chạy lúc 2 giờ sáng và 2 giờ chiều)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.ModelTrainingJob>(
+            "ai-model-training",
+            job => job.ExecuteAsync(),
+            "0 2,14 * * *", // Chạy lúc 2:00 AM và 2:00 PM mỗi ngày
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

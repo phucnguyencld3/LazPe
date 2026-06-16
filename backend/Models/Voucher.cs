@@ -83,6 +83,9 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Kiểu phân phối độc quyền")]
         public ExclusiveDistributionType ExclusiveType { get; set; } = ExclusiveDistributionType.None;
 
+        [Display(Name = "Giới hạn sử dụng trên mỗi người dùng")]
+        public int UsageLimitPerUser { get; set; } = 1;
+
         // Navigation
         public virtual ICollection<VoucherUsage> VoucherUsages { get; set; }
         public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();

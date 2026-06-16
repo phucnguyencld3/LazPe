@@ -59,12 +59,25 @@ namespace PolyBabyAPI.Controllers
                     {
                         session = await _context.ChatSessions
                             .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsClosed);
-                        
-                        if (session != null && session.CustomerName != fullName)
+                    }
+                    else
+                    {
+                        // Đóng tất cả các phiên chat cũ nếu yêu cầu tạo phiên mới
+                        var oldSessions = await _context.ChatSessions
+                            .Where(s => s.UserId == userId && !s.IsClosed)
+                            .ToListAsync();
+                        foreach (var s in oldSessions)
                         {
-                            session.CustomerName = fullName;
-                            await _context.SaveChangesAsync();
+                            s.IsClosed = true;
+                            s.UpdatedAt = DateTime.Now;
                         }
+                        await _context.SaveChangesAsync();
+                    }
+                        
+                    if (session != null && session.CustomerName != fullName)
+                    {
+                        session.CustomerName = fullName;
+                        await _context.SaveChangesAsync();
                     }
 
                     if (session == null)
@@ -324,7 +337,8 @@ namespace PolyBabyAPI.Controllers
                 _context.ChatMessages.Add(chatMessage);
 
                 // Cập nhật trạng thái phiên chat
-                session.LastMessageText = string.IsNullOrEmpty(input.MessageText) ? "[Hình ảnh]" : input.MessageText;
+                var rawMessage = string.IsNullOrEmpty(input.MessageText) ? "[Hình ảnh]" : input.MessageText;
+                session.LastMessageText = rawMessage.Length > 400 ? rawMessage.Substring(0, 400) : rawMessage;
                 session.UpdatedAt = DateTime.Now;
 
                 if (isFromAdmin)
@@ -350,7 +364,7 @@ namespace PolyBabyAPI.Controllers
                         CreatedAt = DateTime.Now.AddSeconds(1)
                     };
                     _context.ChatMessages.Add(autoReply);
-                    session.LastMessageText = autoReply.MessageText;
+                    session.LastMessageText = autoReply.MessageText.Length > 400 ? autoReply.MessageText.Substring(0, 400) : autoReply.MessageText;
                     session.UnreadByCustomer++;
                 }
 
@@ -415,6 +429,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var sessions = await _context.ChatSessions
+                    .Where(s => s.Messages.Any() || !string.IsNullOrEmpty(s.LastMessageText))
                     .OrderByDescending(s => s.UpdatedAt)
                     .Select(s => new
                     {
@@ -524,7 +539,7 @@ namespace PolyBabyAPI.Controllers
                     CreatedAt = DateTime.Now
                 };
                 _context.ChatMessages.Add(systemMsg);
-                session.LastMessageText = systemMsg.MessageText;
+                session.LastMessageText = systemMsg.MessageText.Length > 400 ? systemMsg.MessageText.Substring(0, 400) : systemMsg.MessageText;
 
                 await _context.SaveChangesAsync();
 

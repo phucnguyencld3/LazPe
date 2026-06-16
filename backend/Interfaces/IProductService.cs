@@ -21,5 +21,6 @@ namespace PolyBabyAPI.Interfaces
         Task<List<SupplierSelectDto>> GetSuppliersForSelectAsync();
         Task<bool> IsProductCodeExistAsync(string code, int? excludeId = null);
         Task<object> GetProductStatsAsync();
+        void ClearProductCache();
     }
 }

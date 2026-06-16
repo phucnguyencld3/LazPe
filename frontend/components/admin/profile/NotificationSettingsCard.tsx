@@ -56,12 +56,10 @@ export default function NotificationSettingsCard({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
+    <div className="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
       <div>
-        <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5">
-          <Bell size={20} className="text-rose-500" /> Cài Đặt Thông Báo
-        </h3>
-        <p className="text-sm text-slate-400 font-semibold mt-1">Cấu hình nhận thông báo hệ thống và email cá nhân.</p>
+        <h3 className="font-headline-sm text-headline-sm text-primary font-bold">Cài Đặt Thông Báo</h3>
+        <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Cấu hình nhận thông báo hệ thống và email cá nhân.</p>
       </div>
 
       <form onSubmit={handleUpdateNotifications} className="space-y-3">
@@ -74,7 +72,7 @@ export default function NotificationSettingsCard({
             type="checkbox" 
             checked={emailNotifications} 
             onChange={(e) => setEmailNotifications(e.target.checked)}
-            className="w-5 h-5 rounded border-slate-350 text-rose-500 focus:ring-rose-400 cursor-pointer accent-rose-500 flex-shrink-0"
+            className="w-5 h-5 rounded border-slate-350 text-primary focus:ring-primary cursor-pointer accent-primary flex-shrink-0"
           />
         </label>
 
@@ -87,7 +85,7 @@ export default function NotificationSettingsCard({
             type="checkbox" 
             checked={orderUpdates} 
             onChange={(e) => setOrderUpdates(e.target.checked)}
-            className="w-5 h-5 rounded border-slate-350 text-rose-500 focus:ring-rose-400 cursor-pointer accent-rose-500 flex-shrink-0"
+            className="w-5 h-5 rounded border-slate-350 text-primary focus:ring-primary cursor-pointer accent-primary flex-shrink-0"
           />
         </label>
 
@@ -100,7 +98,7 @@ export default function NotificationSettingsCard({
             type="checkbox" 
             checked={promotions} 
             onChange={(e) => setPromotions(e.target.checked)}
-            className="w-5 h-5 rounded border-slate-350 text-rose-500 focus:ring-rose-400 cursor-pointer accent-rose-500 flex-shrink-0"
+            className="w-5 h-5 rounded border-slate-350 text-primary focus:ring-primary cursor-pointer accent-primary flex-shrink-0"
           />
         </label>
 
@@ -108,7 +106,7 @@ export default function NotificationSettingsCard({
           <button
             type="submit"
             disabled={updatingNotifications}
-            className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md shadow-rose-500/10 transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-primary hover:opacity-90 text-on-primary rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
           >
             {updatingNotifications ? (
               <>

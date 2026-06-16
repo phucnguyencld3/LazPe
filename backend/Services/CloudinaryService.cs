@@ -43,7 +43,7 @@ namespace PolyBabyAPI.Service
                     Transformation = new Transformation()
                         .Width(folder.Contains("Avatar") ? 300 : 800)
                         .Height(folder.Contains("Avatar") ? 300 : 800)
-                        .Crop("fill")
+                        .Crop(folder.Contains("Avatar") ? "fill" : "limit")
                         .Quality("auto")
                         .FetchFormat("auto"),
                     UseFilename = true,

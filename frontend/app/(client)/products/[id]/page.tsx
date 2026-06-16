@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
@@ -11,23 +11,20 @@ import { ProductImageGallery } from "@/components/client/products/ProductImageGa
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
+import { ProductRecommendations } from "@/components/client/products/ProductRecommendations";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { logProductView } from "@/lib/recommendationApi";
 import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto, FlashSaleStatus } from "@/lib/features/flash-sales/flashSaleApi";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function ProductDetailPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const productId = Number(resolvedParams.id);
+export default function ProductDetailPage() {
+  const params = useParams();
+  const productId = Number(params.id);
   const router = useRouter();
 
   // Core Product State
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeFlashSale, setActiveFlashSale] = useState<FlashSaleResponseDto | null>(null);
@@ -53,20 +50,14 @@ export default function ProductDetailPage({ params }: PageProps) {
         if (data) {
           setProduct(data);
           
+          // Log view
+          logProductView(productId);
+          
           // Fetch related products in the same category
           const related = await getProducts(1, 4, undefined, data.categoryId);
           if (related) {
             const filtered = (related.items || []).filter((p) => p.id !== data.id);
             setRelatedProducts(filtered);
-          }
-
-          // Fetch recommended products
-          const recommended = await getProducts(1, 4);
-          if (recommended) {
-            const filtered = (recommended.items || []).filter(
-              (p) => p.id !== data.id && p.categoryId !== data.categoryId
-            );
-            setRecommendedProducts(filtered);
           }
         } else {
           setError("Không tìm thấy thông tin sản phẩm.");
@@ -88,16 +79,39 @@ export default function ProductDetailPage({ params }: PageProps) {
   useEffect(() => {
     const fetchFlashSale = async () => {
       try {
-        const sale = await getCurrentFlashSale();
-        if (sale && sale.isActive) {
-          setActiveFlashSale(sale);
+        const sales = await getCurrentFlashSale();
+        if (sales && sales.length > 0 && product) {
+          // Find if there is an active/upcoming sale containing this product or its variants
+          let matchedSale: FlashSaleResponseDto | null = null;
+          
+          const saleContainsProduct = (sale: FlashSaleResponseDto) => {
+            return sale.flashSaleItems.some(item => {
+              if (item.itemType === 1 && item.referenceId === productId) return true;
+              if (item.itemType === 2 && product.variants?.some(v => v.variantID === item.referenceId)) return true;
+              return false;
+            });
+          };
+
+          // Prioritize active sales (status === 1)
+          const activeSales = sales.filter(s => s.isActive && s.status === 1);
+          matchedSale = activeSales.find(saleContainsProduct) || null;
+
+          // Fallback to upcoming sales (status === 0)
+          if (!matchedSale) {
+            const upcomingSales = sales.filter(s => s.isActive && s.status === 0);
+            matchedSale = upcomingSales.find(saleContainsProduct) || null;
+          }
+
+          setActiveFlashSale(matchedSale);
         }
       } catch (err) {
         console.error("Failed to load product page flash sale:", err);
       }
     };
-    fetchFlashSale();
-  }, []);
+    if (product) {
+      fetchFlashSale();
+    }
+  }, [product, productId]);
 
   // Define helper to check if a variant option value is out of stock
   const isOptionValueOutOfStock = (optionName: string, value: string) => {
@@ -226,7 +240,7 @@ export default function ProductDetailPage({ params }: PageProps) {
       }
     }
 
-    return product?.image;
+    return product?.image || (product?.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : undefined);
   }, [activeVariant, product, selectedOptions]);
 
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
@@ -264,8 +278,11 @@ export default function ProductDetailPage({ params }: PageProps) {
 
     try {
       const cleaned = product.specifications.trim();
-      if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+      if ((cleaned.startsWith("{") && cleaned.endsWith("}")) || (cleaned.startsWith("[") && cleaned.endsWith("]"))) {
         const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => [item.key || "", item.value || ""] as [string, any]);
+        }
         if (parsed && typeof parsed === "object") {
           return Object.entries(parsed);
         }
@@ -340,6 +357,56 @@ export default function ProductDetailPage({ params }: PageProps) {
     }
   };
 
+  const handleBuyNow = async () => {
+    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!hasToken) {
+      toast.error("Vui lòng đăng nhập để tiếp tục!");
+      router.push("/login");
+      return;
+    }
+
+    const variantId = activeVariant?.variantID;
+    if (!variantId) {
+      // Use the first variant if no specific options
+      const firstVariantId = product?.variants?.[0]?.variantID;
+      if (!firstVariantId) {
+        toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
+        return;
+      }
+      
+      try {
+        const res = await addToCart({
+          variantID: firstVariantId,
+          quantity: quantity,
+        });
+        if (res.success) {
+          router.push("/cart");
+        } else {
+          toast.error(res.message || "Lỗi khi thêm vào giỏ hàng");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi kết nối mạng");
+      }
+      return;
+    }
+
+    try {
+      const res = await addToCart({
+        variantID: variantId,
+        quantity: quantity,
+      });
+      if (res.success) {
+        router.push("/cart");
+      } else {
+        toast.error(res.message || "Lỗi khi thêm vào giỏ hàng");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối mạng");
+    }
+  };
+
   const handleOptionSelect = (optionName: string, value: string) => {
     setSelectedOptions((prev) => ({
       ...prev,
@@ -395,6 +462,7 @@ export default function ProductDetailPage({ params }: PageProps) {
               hasDiscount={hasDiscount}
               displayPrice={displayPrice}
               displayDiscountPrice={displayDiscountPrice}
+              imageUrls={product?.imageUrls}
             />
 
             <ProductDetailInfo
@@ -412,6 +480,7 @@ export default function ProductDetailPage({ params }: PageProps) {
               handleDecreaseQuantity={handleDecreaseQuantity}
               handleIncreaseQuantity={handleIncreaseQuantity}
               handleAddToCart={handleAddToCart}
+              handleBuyNow={handleBuyNow}
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
               activeVariant={activeVariant}
@@ -429,8 +498,9 @@ export default function ProductDetailPage({ params }: PageProps) {
 
         <RelatedProducts
           relatedProducts={relatedProducts}
-          recommendedProducts={recommendedProducts}
         />
+
+        <ProductRecommendations limit={5} excludeProductId={productId} />
       </div>
     </div>
   );

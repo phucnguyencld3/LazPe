@@ -123,9 +123,12 @@ export default function Header() {
 
     loadNotifications(token);
 
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+    const hubUrl = apiBase.replace(/\/api$/, "") + "/notificationHub";
+
     // Thiết lập kết nối SignalR
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5101/notificationHub", {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => token
       })
       .withAutomaticReconnect()

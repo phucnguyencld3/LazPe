@@ -34,6 +34,7 @@ namespace PolyBabyAPI.DTOs
 
         public List<CreateFullProductOptionDto> Options { get; set; } = new();
         public List<CreateFullVariantDto> Variants { get; set; } = new();
+        public List<string>? Images { get; set; } = new();
     }
 
     public class CreateFullProductOptionDto

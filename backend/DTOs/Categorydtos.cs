@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -21,6 +21,7 @@ namespace PolyBabyAPI.DTOs
         public bool Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CreatedBy { get; set; }
+        public int ProductCount { get; set; }
     }
 
     /// <summary>

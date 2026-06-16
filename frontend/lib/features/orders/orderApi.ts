@@ -107,3 +107,27 @@ export const updateOrderStatus = async (token: string, id: string, actionUrl: st
   });
   return res.json();
 };
+
+export const bulkConfirmOrders = async (token: string, invoiceIds: number[]): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/bulk-confirm`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ invoiceIds })
+  });
+  return res.json();
+};
+
+export const bulkMarkShippedOrders = async (token: string, invoiceIds: number[]): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/bulk-mark-shipped`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ invoiceIds })
+  });
+  return res.json();
+};

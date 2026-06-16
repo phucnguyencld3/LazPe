@@ -16,6 +16,7 @@ export interface VoucherAdminInfo {
   voucherType: number; // 1: ProductDiscount, 2: ShippingDiscount
   isFreeShipping: boolean;
   maxShippingDiscount: number | null;
+  usageLimitPerUser: number;
 }
 
 export interface CreateVoucherPayload {
@@ -34,6 +35,7 @@ export interface CreateVoucherPayload {
   voucherType: number;
   isFreeShipping: boolean;
   maxShippingDiscount: number | null;
+  usageLimitPerUser: number;
 }
 
 export interface UpdateVoucherPayload {
@@ -51,6 +53,7 @@ export interface UpdateVoucherPayload {
   voucherType: number;
   isFreeShipping: boolean;
   maxShippingDiscount: number | null;
+  usageLimitPerUser: number;
 }
 
 export interface VoucherUsageInfo {
@@ -98,6 +101,7 @@ export interface DirectAssignmentInfo {
   userFullName: string;
   userEmail: string;
   userPhone: string;
+  issuedCode: string | null;
   status: string; // e.g. "Unused", "Used", "Expired"
   collectedAt: string;
   usedAt: string | null;

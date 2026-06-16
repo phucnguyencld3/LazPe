@@ -20,7 +20,6 @@ namespace PolyBabyAPI.Models
         public string ProductName { get; set; }
 
         [Required(ErrorMessage = "Mô tả sản phẩm là bắt buộc")]
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
 
@@ -80,5 +79,6 @@ namespace PolyBabyAPI.Models
         // ✅ Thêm navigation property thiếu
         public virtual ICollection<Variant>? Variants { get; set; } = new List<Variant>();
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
+        public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     }
 }

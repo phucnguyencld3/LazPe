@@ -165,6 +165,11 @@ namespace PolyBabyAPI.Controllers
                 var token = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
                 var isAdmin = userRoles.Contains("Admin");
 
+                var refreshToken = GenerateRefreshToken();
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _userManager.UpdateAsync(user);
+
                 _logger.LogInformation("Đăng nhập thành công cho: {Email} với roles: {Roles} và {PermissionCount} permissions",
                     user.Email ?? user.UserName, string.Join(", ", userRoles), userPermissions.Count);
 
@@ -173,6 +178,7 @@ namespace PolyBabyAPI.Controllers
                     success = true,
                     message = "Đăng nhập thành công",
                     token = token ?? string.Empty,
+                    refreshToken = refreshToken,
                     user = new
                     {
                         id = user.Id ?? string.Empty,
@@ -183,7 +189,8 @@ namespace PolyBabyAPI.Controllers
                         avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                         roles = userRoles ?? new List<string>(),
                         permissions = userPermissions.Select(p => p.Name).ToList(), // THÊM permissions
-                        isAdmin = isAdmin
+                        isAdmin = isAdmin,
+                        isOnboarded = user.IsOnboarded
                     }
                 });
             }
@@ -247,6 +254,11 @@ namespace PolyBabyAPI.Controllers
                 // Tạo JWT token với permissions
                 var token = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
 
+                var refreshToken = GenerateRefreshToken();
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _userManager.UpdateAsync(user);
+
                 _logger.LogInformation("Admin đăng nhập thành công: {Username}", model.Username);
 
                 return Ok(new
@@ -254,6 +266,7 @@ namespace PolyBabyAPI.Controllers
                     success = true,
                     message = "Đăng nhập admin thành công",
                     token = token ?? string.Empty,
+                    refreshToken = refreshToken,
                     user = new
                     {
                         id = user.Id ?? string.Empty,
@@ -275,6 +288,48 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+            try
+            {
+                var principal = GetPrincipalFromExpiredToken(model.Token);
+                if (principal == null)
+                    return BadRequest(new { success = false, message = "Token không hợp lệ" });
+
+                var userId = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return BadRequest(new { success = false, message = "Token không hợp lệ" });
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                    return BadRequest(new { success = false, message = "Refresh token không hợp lệ hoặc đã hết hạn" });
+
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id);
+                var newToken = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
+                var newRefreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _userManager.UpdateAsync(user);
+
+                return Ok(new
+                {
+                    success = true,
+                    token = newToken,
+                    refreshToken = newRefreshToken
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi refresh token");
+                return BadRequest(new { success = false, message = "Token không hợp lệ" });
+            }
+        }
 
         /// <summary>
         /// Đăng ký tài khoản mới (Legacy - Đã chuyển sang dùng OTP)
@@ -494,7 +549,8 @@ namespace PolyBabyAPI.Controllers
                             avatar = user.Avatar ?? "/assets/img/avatars/1.png",
                             roles = userRoles ?? new List<string>(),
                             permissions = userPermissions.Select(p => p.Name).ToList(),
-                            isAdmin = userRoles?.Contains("Admin") ?? false
+                            isAdmin = userRoles?.Contains("Admin") ?? false,
+                            isOnboarded = user.IsOnboarded
                         }
                     });
                 }
@@ -587,7 +643,8 @@ namespace PolyBabyAPI.Controllers
                         registerDate = user.RegisterDate,
                         roles = roles,
                         permissions = userPermissions.Select(p => p.Name).ToList(),
-                        isAdmin = roles.Contains("Admin")
+                        isAdmin = roles.Contains("Admin"),
+                        isOnboarded = user.IsOnboarded
                     }
                 });
             }
@@ -1189,6 +1246,11 @@ namespace PolyBabyAPI.Controllers
                 var token = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
                 var isAdmin = userRoles.Contains("Admin");
 
+                var refreshToken = GenerateRefreshToken();
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _userManager.UpdateAsync(user);
+
                 _logger.LogInformation("Xác thực 2FA thành công cho: {Email}", user.Email ?? user.UserName);
 
                 return Ok(new
@@ -1196,6 +1258,7 @@ namespace PolyBabyAPI.Controllers
                     success = true,
                     message = "Đăng nhập thành công",
                     token = token ?? string.Empty,
+                    refreshToken = refreshToken,
                     user = new
                     {
                         id = user.Id ?? string.Empty,
@@ -1279,6 +1342,33 @@ namespace PolyBabyAPI.Controllers
             }
 
             await _userManager.AddToRoleAsync(user, defaultRole);
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"] ?? string.Empty)),
+                ValidateLifetime = false // Bỏ qua kiểm tra hạn của token cũ
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
         }
 
         #endregion

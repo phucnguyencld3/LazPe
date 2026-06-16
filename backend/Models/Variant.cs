@@ -30,6 +30,7 @@ namespace PolyBabyAPI.Models
         [Range(0, 100, ErrorMessage = "Giảm giá biến thể phải từ 0 đến 100")]
         public decimal VariantDiscountPercent { get; set; } = 0;
 
+        [ConcurrencyCheck]
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]
         public int Stock { get; set; }
 
@@ -39,10 +40,8 @@ namespace PolyBabyAPI.Models
         public string? ImageUrl { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập mô tả")]
-        [MaxLength(500, ErrorMessage = "Mô tả tối đa 1000 ký tự")]
         public string Description { get; set; }
 
-        // ✅ SỬA: CreatedAt thay vì CreateDate
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [MaxLength(100, ErrorMessage = "Người tạo tối đa 100 ký tự")]

@@ -12,7 +12,8 @@ import {
   updateBrand,
   deleteBrand,
   fetchAllBrands,
-  BrandInfo
+  BrandInfo,
+  EditBrandPayload
 } from "@/lib/features/brands/brandApi";
 
 export default function AdminBrandsPage() {
@@ -22,8 +23,7 @@ export default function AdminBrandsPage() {
 
   // Loaders
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   // Stats state
   const [stats, setStats] = useState<{
@@ -42,23 +42,11 @@ export default function AdminBrandsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 8;
-
-  // Form states (Right column)
-  const [isOpenForm, setIsOpenForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
-  const [brandName, setBrandName] = useState("");
-  const [logo, setLogo] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState(true);
+  const itemsPerPage = 10;
 
   // Deletion Modal states
   const [brandToDelete, setBrandToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // File input ref
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadStats = async () => {
     try {
@@ -112,93 +100,42 @@ export default function AdminBrandsPage() {
     loadBrands(1);
   }, [searchTerm, statusFilter]);
 
-  // Trigger edit mode if URL contains ?edit=id
-  useEffect(() => {
-    if (editParam && brands.length > 0) {
-      const brandToEdit = brands.find(b => b.supplierID === Number(editParam));
-      if (brandToEdit && editId !== brandToEdit.supplierID) {
-        handleEditClick(brandToEdit);
-      }
-    }
-  }, [editParam, brands]);
-
   const handlePageChange = (page: number) => {
     loadBrands(page);
   };
 
-  const handleEditClick = (brand: BrandInfo) => {
-    setIsEditing(true);
-    setEditId(brand.supplierID);
-    setBrandName(brand.supplierName);
-    setLogo(brand.logo || "");
-    setDescription(brand.description || "");
-    setStatus(brand.status);
-    setIsOpenForm(true);
 
-    const input = document.getElementById("brandNameInput");
-    if (input) {
-      input.focus();
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
-  const resetForm = () => {
-    setIsEditing(false);
-    setEditId(null);
-    setBrandName("");
-    setLogo("");
-    setDescription("");
-    setStatus(true);
-    setIsOpenForm(false);
-  };
-
-  const handleFormSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!brandName.trim()) {
-      toast.warning("Vui lòng nhập tên thương hiệu.");
-      return;
-    }
-
+  const handleToggleStatus = async (brand: BrandInfo) => {
+    if (togglingId !== null) return;
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
 
-      setSubmitting(true);
-
-      const payload = {
-        supplierName: brandName.trim(),
-        logo: logo || null,
-        description: description.trim() || null,
-        status: status
+      setTogglingId(brand.supplierID);
+      
+      const payload: EditBrandPayload = {
+        supplierName: brand.supplierName,
+        logo: brand.logo || null,
+        description: brand.description || null,
+        status: !brand.status
       };
 
-      if (isEditing && editId !== null) {
-        const res = await updateBrand(token, editId, payload);
-        if (res.success) {
-          toast.success("Cập nhật thương hiệu thành công!");
-          resetForm();
-          loadBrands(currentPage);
-          loadStats();
-        } else {
-          toast.error(res.message || "Không thể cập nhật thương hiệu.");
-        }
+      const res = await updateBrand(token, brand.supplierID, payload);
+      if (res.success) {
+        toast.success("Cập nhật trạng thái thương hiệu thành công!");
+        setBrands(prev =>
+          prev.map(b => (b.supplierID === brand.supplierID ? { ...b, status: !b.status } : b))
+        );
+        loadStats();
       } else {
-        const res = await createBrand(token, payload);
-        if (res.success) {
-          toast.success("Tạo thương hiệu mới thành công!");
-          resetForm();
-          loadBrands(1);
-          loadStats();
-        } else {
-          toast.error(res.message || "Không thể tạo thương hiệu.");
-        }
+        toast.error(res.message || "Không thể cập nhật trạng thái thương hiệu.");
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Đã xảy ra lỗi khi lưu thương hiệu.");
+      toast.error(err.message || "Đã xảy ra lỗi khi cập nhật trạng thái.");
     } finally {
-      setSubmitting(false);
+      setTogglingId(null);
     }
   };
 
@@ -228,64 +165,7 @@ export default function AdminBrandsPage() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const allowedExtensions = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (!allowedExtensions.includes(file.type)) {
-      toast.warning("Chỉ hỗ trợ file ảnh JPG, PNG, GIF, WebP");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.warning("Kích thước ảnh không được vượt quá 10MB");
-      return;
-    }
-
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      setUploadingLogo(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "polystation/brands");
-
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
-      const res = await fetch(`${API_URL}/Upload/image`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!res.ok) {
-        throw new Error("Lỗi khi tải ảnh lên máy chủ");
-      }
-
-      const result = await res.json();
-      if (result.success) {
-        setLogo(result.url);
-        toast.success("Tải ảnh logo lên thành công!");
-      } else {
-        toast.error(result.message || "Upload thất bại.");
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Có lỗi xảy ra khi upload ảnh.");
-    } finally {
-      setUploadingLogo(false);
-    }
-  };
-
-  const removeLogo = () => {
-    setLogo("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
 
   const getInitials = (name: string) => {
     return name
@@ -309,84 +189,70 @@ export default function AdminBrandsPage() {
             Xem, tạo mới, chỉnh sửa thông tin các thương hiệu của sản phẩm trong hệ thống
           </p>
         </div>
-        {!isOpenForm && (
-          <button
-            onClick={() => {
-              resetForm();
-              setIsOpenForm(true);
-            }}
-            className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            Thêm thương hiệu mới
-          </button>
-        )}
+        <button
+          onClick={() => router.push("/admin/brands/new")}
+          className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">add</span>
+          Thêm thương hiệu mới
+        </button>
       </div>
 
-      {/* Stats Bento Grid */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Card 1: Total */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">verified</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">verified</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng thương hiệu</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Tổng thương hiệu</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.total ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.total ?? "..."}</span>
         </div>
 
         {/* Card 2: Active */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <span className="material-symbols-outlined">check_circle</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Đang hoạt động</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.active ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.active ?? "..."}</span>
         </div>
 
         {/* Card 3: Inactive */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500">
-              <span className="material-symbols-outlined">unpublished</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">unpublished</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Ngừng hoạt động</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Ngừng hoạt động</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.inactive ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.inactive ?? "..."}</span>
         </div>
 
         {/* Card 4: Linked Products */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
-              <span className="material-symbols-outlined">inventory</span>
+        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">inventory</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm liên kết</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Sản phẩm liên kết</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.totalProducts ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.totalProducts ?? "..."}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column - List of Brands */}
-        <div className={`${isOpenForm ? "lg:col-span-8" : "lg:col-span-12"} flex flex-col gap-6 transition-all duration-300`}>
+        <div className="lg:col-span-12 flex flex-col gap-6 transition-all duration-300">
           <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
             {/* Search and Filters */}
-            <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between">
-              {/* Search input */}
-              <div className="w-full sm:w-72 relative">
-                <span className="material-symbols-outlined text-slate-400 text-lg absolute left-4.5 top-1/2 -translate-y-1/2">
+            <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
+              {/* Search box */}
+              <div className="flex-1 min-w-[260px] relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                   search
                 </span>
                 <input
@@ -394,31 +260,34 @@ export default function AdminBrandsPage() {
                   placeholder="Tìm kiếm thương hiệu..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-sm font-semibold text-slate-700"
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <span className="material-symbols-outlined text-base">close</span>
-                  </button>
-                )}
               </div>
 
               {/* Status filter */}
-              <div className="w-full sm:w-auto flex items-center gap-2 justify-end">
-                <span className="text-xs font-bold text-slate-400 uppercase">Lọc trạng thái:</span>
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                  className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700"
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Ngừng hoạt động</option>
+              </select>
+
+              {/* Reset Filters button */}
+              {(searchTerm || statusFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("all");
+                  }}
+                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <option value="all">Tất cả</option>
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Ngừng hoạt động</option>
-                </select>
-              </div>
+                  <span className="material-symbols-outlined text-[18px]">clear</span>
+                  Xóa bộ lọc
+                </button>
+              )}
             </div>
 
             {/* Table */}
@@ -436,25 +305,26 @@ export default function AdminBrandsPage() {
                   <p className="text-xs text-slate-400 mt-1">Hãy thử thay đổi điều kiện tìm kiếm hoặc thêm mới</p>
                 </div>
               ) : (
+              <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-50 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                      <th className="px-6 py-4">ID</th>
+                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                      <th className="px-6 py-4 text-center w-[80px]">STT</th>
                       <th className="px-6 py-4">Logo</th>
-                      <th className="px-6 py-4">Tên thương hiệu</th>
-                      <th className="px-6 py-4 text-center">Trạng thái</th>
-                      <th className="px-6 py-4">Ngày tạo</th>
+                      <th className="px-6 py-4 w-full">Tên thương hiệu</th>
+                      <th className="px-6 py-4 text-right">Trạng thái</th>
                       <th className="px-6 py-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {brands.map(brand => (
-                      <tr key={brand.supplierID} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-xs font-bold text-slate-500">
-                          #{brand.supplierID}
+                    {brands.map((brand, index) => (
+                      <tr key={brand.supplierID} className="hover:bg-slate-100/70 transition-all duration-200 group">
+                        <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
+                          {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
+
                         <td className="px-6 py-4">
-                          <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                          <div className="w-24 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                             {brand.logo ? (
                               <img
                                 src={brand.logo}
@@ -473,22 +343,24 @@ export default function AdminBrandsPage() {
                             {brand.supplierName}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          {brand.status ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              Hoạt động
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className={`text-[10px] font-bold uppercase min-w-[55px] text-right ${brand.status ? "text-secondary" : "text-slate-400"}`}>
+                              {brand.status ? "Hoạt động" : "Đã ẩn"}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                              Ngừng hoạt động
-                            </span>
-                          )}
+                            <label className="relative inline-flex items-center cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={brand.status}
+                                disabled={togglingId === brand.supplierID}
+                                onChange={() => handleToggleStatus(brand)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-xs font-bold text-slate-400">
-                          {new Date(brand.createdAt).toLocaleDateString("vi-VN")}
-                        </td>
+
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <Link
@@ -499,7 +371,7 @@ export default function AdminBrandsPage() {
                               <span className="material-symbols-outlined text-lg">visibility</span>
                             </Link>
                             <button
-                              onClick={() => handleEditClick(brand)}
+                              onClick={() => router.push(`/admin/brands/edit/${brand.supplierID}`)}
                               className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"
                               title="Sửa"
                             >
@@ -518,6 +390,7 @@ export default function AdminBrandsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
               )}
             </div>
 
@@ -532,173 +405,7 @@ export default function AdminBrandsPage() {
           </div>
         </div>
 
-        {/* Right Column - Create/Edit Form */}
-        {isOpenForm && (
-          <div className="lg:col-span-4 animate-in slide-in-from-right duration-300">
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm sticky top-28">
-              <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">
-                    {isEditing ? "edit_note" : "add_circle"}
-                  </span>
-                  <h3 className="text-lg font-bold text-slate-800">
-                    {isEditing ? "Chỉnh sửa thương hiệu" : "Tạo thương hiệu mới"}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer text-slate-400 hover:text-slate-600"
-                  title="Đóng bảng"
-                >
-                  <span className="material-symbols-outlined text-lg">close</span>
-                </button>
-              </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-6">
-              {/* Brand Name */}
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-                  Tên thương hiệu <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  id="brandNameInput"
-                  type="text"
-                  required
-                  value={brandName}
-                  onChange={e => setBrandName(e.target.value)}
-                  placeholder="Nhập tên thương hiệu..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
-                />
-              </div>
-
-              {/* Logo upload & preview */}
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-                  Logo thương hiệu
-                </label>
-
-                {logo ? (
-                  /* Image preview state */
-                  <div className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 h-40 flex items-center justify-center">
-                    <img
-                      src={logo}
-                      alt="Brand logo preview"
-                      className="w-full h-full object-contain p-2"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="p-2.5 rounded-full bg-white text-slate-800 hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-md"
-                        title="Thay đổi ảnh"
-                      >
-                        <span className="material-symbols-outlined text-base">cached</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={removeLogo}
-                        className="p-2.5 rounded-full bg-rose-500 text-white hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-md"
-                        title="Xóa ảnh"
-                      >
-                        <span className="material-symbols-outlined text-base">delete</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* File upload input state */
-                  <div
-                    onClick={() => !uploadingLogo && fileInputRef.current?.click()}
-                    className={`border-2 border-dashed border-slate-200 rounded-2xl hover:border-primary/50 bg-slate-50/50 hover:bg-slate-50 transition-all p-6 flex flex-col items-center justify-center gap-2 cursor-pointer ${uploadingLogo ? "opacity-60 cursor-not-allowed" : ""
-                      }`}
-                  >
-                    {uploadingLogo ? (
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-                    ) : (
-                      <span className="material-symbols-outlined text-slate-400 text-3xl">
-                        upload_file
-                      </span>
-                    )}
-                    <span className="text-xs font-bold text-slate-500">
-                      {uploadingLogo ? "Đang tải lên..." : "Tải logo từ máy tính"}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Chấp nhận JPG, PNG, GIF, WebP (tối đa 10MB)</span>
-                  </div>
-                )}
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  accept="image/*"
-                  disabled={uploadingLogo}
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-                  Mô tả thương hiệu
-                </label>
-                <textarea
-                  rows={4}
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Mô tả tóm tắt về thương hiệu..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
-                />
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                <div>
-                  <p className="text-xs font-bold text-slate-800">Trạng thái hoạt động</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Cho phép hiển thị & lọc thương hiệu khi mua hàng</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={status}
-                    onChange={e => setStatus(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-10 h-5.5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
-                  disabled={submitting}
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || uploadingLogo}
-                  className="flex-1 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
-                      <span>Đang lưu...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-[16px]">save</span>
-                      <span>{isEditing ? "Cập nhật" : "Tạo thương hiệu"}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
       </div>
 
       {/* Deletion Confirmation Modal */}

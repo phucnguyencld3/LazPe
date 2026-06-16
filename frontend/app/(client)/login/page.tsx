@@ -98,6 +98,8 @@ export default function LoginPage() {
 
         if (hasDashboardAccess) {
           window.location.href = "/admin";
+        } else if (!result.user?.isOnboarded) {
+          window.location.href = "/onboarding";
         } else {
           window.location.href = "/";
         }
@@ -125,6 +127,8 @@ export default function LoginPage() {
 
           if (hasDashboardAccess) {
             window.location.replace("/admin");
+          } else if (!user?.isOnboarded) {
+            window.location.replace("/onboarding");
           } else {
             window.location.replace("/");
           }
@@ -204,6 +208,8 @@ export default function LoginPage() {
 
         if (hasDashboardAccess) {
           window.location.href = "/admin";
+        } else if (!data.user?.isOnboarded) {
+          window.location.href = "/onboarding";
         } else {
           window.location.href = "/";
         }

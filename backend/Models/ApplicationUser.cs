@@ -42,6 +42,29 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Nhận thông báo khuyến mãi")]
         public bool ReceivePromotions { get; set; } = true;
 
+        [Display(Name = "Sở thích màu sắc của mẹ")]
+        [StringLength(200, ErrorMessage = "Sở thích màu sắc không được vượt quá 200 ký tự")]
+        public string? MomFavoriteColors { get; set; }
+
+        [Display(Name = "Giới tính của bé")]
+        [StringLength(20, ErrorMessage = "Giới tính không được vượt quá 20 ký tự")]
+        public string? ChildGender { get; set; }
+
+        [Display(Name = "Tuổi của bé (tháng)")]
+        [Range(0, 120, ErrorMessage = "Độ tuổi của bé phải từ 0 đến 120 tháng")]
+        public int? ChildAgeMonths { get; set; }
+
+        [Display(Name = "Cân nặng của bé (kg)")]
+        [Range(0, 100, ErrorMessage = "Cân nặng của bé phải từ 0 đến 100 kg")]
+        public double? ChildWeightKg { get; set; }
+
+        [Display(Name = "Đã hoàn thành onboarding")]
+        public bool IsOnboarded { get; set; } = false;
+
+        // Refresh Token
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+
         // Navigation Properties
         public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
         public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();

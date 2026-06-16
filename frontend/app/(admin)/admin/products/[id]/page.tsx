@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   AdminProductDetailInfo,
@@ -14,21 +14,47 @@ import { formatCurrency } from "@/lib/utils/formatters";
 export default function AdminProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get("page") || "1";
 
   const [product, setProduct] = useState<AdminProductDetailInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // Deletion Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  const mainImageUrl = useMemo(() => {
+    if (!product) return null;
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls[0] || null;
+    }
+    if (product.variants && product.variants.length > 0) {
+      const imgVar = product.variants.find(v => v.imageUrl && v.imageUrl.trim() !== "");
+      if (imgVar && imgVar.imageUrl) return imgVar.imageUrl;
+    }
+    return null;
+  }, [product]);
+
+  // Update selectedImage if it's null and we now have a mainImageUrl
+  useEffect(() => {
+    if (mainImageUrl && !selectedImage) {
+      setSelectedImage(mainImageUrl);
+    }
+  }, [mainImageUrl, selectedImage]);
 
   // Parse specifications JSON
   const parsedSpecsList = (() => {
     if (!product || !product.specifications) return [];
     try {
       const parsed = JSON.parse(product.specifications);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item: any) => [item.key || "", item.value || ""]);
+      }
       if (parsed && typeof parsed === "object") {
         return Object.entries(parsed);
       }
@@ -92,6 +118,7 @@ export default function AdminProductDetailPage() {
   // Trigger custom confirmation modal
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
+    setDeleteConfirmText("");
   };
 
   // Perform actual deletion
@@ -140,17 +167,6 @@ export default function AdminProductDetailPage() {
     );
   }
 
-  // Get first variant image or fallback to box icon
-  const getProductImage = () => {
-    if (product.variants && product.variants.length > 0) {
-      const imgVar = product.variants.find(v => v.imageUrl && v.imageUrl.trim() !== "");
-      if (imgVar) return imgVar.imageUrl;
-    }
-    return null;
-  };
-
-  const mainImageUrl = getProductImage();
-
   // Get effective price: discount applied
   const salePrice = product.productDiscountPercent > 0
     ? product.price * (1 - product.productDiscountPercent / 100)
@@ -182,7 +198,7 @@ export default function AdminProductDetailPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <button
-            onClick={() => router.push("/admin/products")}
+            onClick={() => router.push(`/admin/products?page=${fromPage}`)}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-2 font-bold"
           >
             <span className="material-symbols-outlined">arrow_back</span>
@@ -201,7 +217,7 @@ export default function AdminProductDetailPage() {
           <button
             onClick={() => {
               toast.info("Điều hướng đến trang chỉnh sửa sản phẩm");
-              router.push(`/admin/products/edit/${product.productID}`);
+              router.push(`/admin/products/edit/${product.productID}?page=${fromPage}`);
             }}
             className="px-8 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
           >
@@ -239,23 +255,38 @@ export default function AdminProductDetailPage() {
             {/* Image Box */}
             <div className="md:col-span-2">
               <div className="aspect-[0.9] bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden group relative flex items-center justify-center">
-                {mainImageUrl ? (
+                {selectedImage ? (
                   <img
-                    src={mainImageUrl}
+                    src={selectedImage}
                     alt={product.productName}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <span className="material-symbols-outlined text-slate-300 text-5xl">inventory_2</span>
                 )}
-                {mainImageUrl && (
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4">
+                {selectedImage && (
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4 pointer-events-none">
                     <div className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-primary shadow-sm">
                       <span className="material-symbols-outlined text-lg">zoom_in</span>
                     </div>
                   </div>
                 )}
               </div>
+              
+              {/* Thumbnail Gallery */}
+              {product.imageUrls && product.imageUrls.length > 0 && (
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {product.imageUrls.map((url, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setSelectedImage(url)}
+                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 cursor-pointer shrink-0 transition-all ${selectedImage === url ? 'border-primary shadow-sm' : 'border-transparent hover:border-primary/50'}`}
+                    >
+                      <img src={url} className="w-full h-full object-cover" alt="Gallery item" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details Box */}
@@ -351,7 +382,7 @@ export default function AdminProductDetailPage() {
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">
                     <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Tổng tồn kho</p>
-                    <p className="text-2xl font-bold text-slate-800">{product.stock}</p>
+                    <p className="text-2xl font-bold text-slate-800">{product.variants.length > 0 ? totalVariantStock : product.stock}</p>
                     <p className="text-[10px] text-secondary font-bold mt-1">Sản phẩm gốc</p>
                   </div>
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">
@@ -568,9 +599,22 @@ export default function AdminProductDetailPage() {
             
             {/* Body */}
             <div className="p-6">
-              <p className="text-slate-600 text-sm leading-relaxed mb-6">
+              <p className="text-slate-600 text-sm leading-relaxed mb-4">
                 Bạn có chắc chắn muốn xóa sản phẩm <strong className="text-slate-800">"{product.productName}"</strong> không? Hành động này không thể hoàn tác và sẽ xóa toàn bộ các biến thể liên quan nếu sản phẩm chưa phát sinh đơn hàng.
               </p>
+              
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Vui lòng nhập <span className="text-error">tôi đồng ý xóa</span> để xác nhận:
+                </label>
+                <input 
+                  type="text" 
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="tôi đồng ý xóa"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
+                />
+              </div>
               
               <div className="flex justify-end gap-3">
                 <button
@@ -582,8 +626,8 @@ export default function AdminProductDetailPage() {
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  disabled={deleting}
+                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={deleting || deleteConfirmText.trim().toLowerCase() !== "tôi đồng ý xóa"}
                 >
                   {deleting ? (
                     <>

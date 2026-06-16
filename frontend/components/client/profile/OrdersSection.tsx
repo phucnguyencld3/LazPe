@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getUserOrders, retryVnPayPayment } from "@/lib/api";
+import { getUserOrders, retryVnPayPayment, markOrderCompleted } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { Loader, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { OrderDetailView } from "./OrderDetailView";
@@ -183,6 +183,24 @@ export function OrdersSection({
       toast.dismiss();
       console.error("Error retrying payment:", err);
       toast.error("Lỗi kết nối mạng.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmReceived = async (orderId: number) => {
+    setActionLoading(true);
+    try {
+      const res = await markOrderCompleted(orderId, token);
+      if (res && res.success) {
+        toast.success("Đã xác nhận nhận hàng thành công!");
+        loadOrders();
+      } else {
+        toast.error(res?.message || "Có lỗi xảy ra khi xác nhận.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối.");
     } finally {
       setActionLoading(false);
     }
@@ -403,9 +421,18 @@ export function OrdersSection({
                                     toast.success("Đang mở form đánh giá sản phẩm");
                                   }
                                 }}
-                                className="bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform"
+                                className="bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform cursor-pointer"
                               >
                                 Đánh giá
+                              </button>
+                            )}
+                            {order.statusCode === 2 && (
+                              <button
+                                onClick={() => handleConfirmReceived(order.invoiceID)}
+                                disabled={actionLoading}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                Đã nhận hàng
                               </button>
                             )}
                             {canRetry && (

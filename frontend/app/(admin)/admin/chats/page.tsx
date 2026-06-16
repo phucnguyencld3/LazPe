@@ -472,10 +472,10 @@ export default function AdminChatsPage() {
               <div
                 key={session.id}
                 onClick={() => selectRoom(session)}
-                className={`p-4 border-b border-slate-100 flex items-start gap-3 cursor-pointer transition-colors duration-200 ${
+                className={`p-4 mx-2 mt-2 rounded-xl flex items-start gap-3 cursor-pointer transition-all duration-200 ${
                   selectedSession?.id === session.id
-                    ? "bg-primary/5 border-l-4 border-primary"
-                    : "hover:bg-slate-100/50 bg-white"
+                    ? "bg-primary/10 border border-primary/20 shadow-sm"
+                    : "hover:bg-slate-100/80 bg-white border border-transparent"
                 }`}
               >
                 <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
@@ -551,28 +551,28 @@ export default function AdminChatsPage() {
 
             {/* Claim/Staff Status Banner */}
             {!selectedSession.isClosed && (
-              <div className="px-4 py-2 bg-white border-b text-xs flex justify-between items-center shrink-0">
+              <div className="px-4 py-3 bg-white border-b border-slate-100 text-xs flex justify-between items-center shrink-0">
                 {!selectedSession.adminId ? (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2.5 rounded-lg w-full flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <span className="material-symbols-outlined text-sm">warning</span>
+                  <div className="bg-warning-container border border-warning/20 text-on-warning-container p-3 rounded-xl w-full flex items-center justify-between shadow-sm">
+                    <span className="flex items-center gap-2 font-semibold">
+                      <span className="material-symbols-outlined text-warning">warning</span>
                       Chưa có nhân viên nhận hỗ trợ cuộc chat này.
                     </span>
                     <button
                       onClick={claimRoom}
-                      className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1 px-3 rounded-full text-[11px] transition-colors cursor-pointer"
+                      className="bg-warning hover:bg-warning/90 text-on-warning font-bold py-1.5 px-4 rounded-full text-xs transition-colors cursor-pointer shadow-sm bouncy-hover"
                     >
                       Nhận hỗ trợ
                     </button>
                   </div>
                 ) : selectedSession.adminId === currentAdmin?.id ? (
-                  <div className="bg-green-50 border border-green-200 text-green-800 p-2.5 rounded-lg w-full flex items-center gap-1.5 font-medium">
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                  <div className="bg-success-container border border-success/20 text-on-success-container p-3 rounded-xl w-full flex items-center gap-2 font-medium">
+                    <span className="material-symbols-outlined text-success">check_circle</span>
                     Bạn đang hỗ trợ khách hàng này.
                   </div>
                 ) : (
-                  <div className="bg-rose-50 border border-rose-200 text-rose-800 p-2.5 rounded-lg w-full flex items-center gap-1.5 font-medium">
-                    <span className="material-symbols-outlined text-sm">lock</span>
+                  <div className="bg-error-container border border-error/20 text-on-error-container p-3 rounded-xl w-full flex items-center gap-2 font-medium">
+                    <span className="material-symbols-outlined text-error">lock</span>
                     Cuộc chat này đang được nhận hỗ trợ bởi nhân viên: <strong className="underline">{selectedSession.adminName}</strong>
                   </div>
                 )}
@@ -580,7 +580,7 @@ export default function AdminChatsPage() {
             )}
 
             {/* Messages area Zalo Style Background */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#e2e9f1]" style={{ scrollbarWidth: "thin" }}>
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-surface-container-lowest" style={{ scrollbarWidth: "thin" }}>
               {messages.length === 0 ? (
                 <div className="text-center text-slate-500 py-10 text-xs bg-white/40 rounded-xl p-4">
                   Không có tin nhắn nào trong phòng này.
@@ -610,8 +610,8 @@ export default function AdminChatsPage() {
                       <div
                         className={`max-w-[70%] rounded-2xl p-3 text-sm shadow-sm ${
                           msg.isFromAdmin
-                            ? "bg-[#cce4ff] text-[#081c36] rounded-tr-none"
-                            : "bg-white text-slate-800 rounded-tl-none border border-slate-100/30"
+                            ? "bg-primary-container text-on-primary-container rounded-tr-none"
+                            : "bg-surface text-on-surface rounded-tl-none border border-slate-100"
                         } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none" : ""}`}
                       >
                         {isMediaUrl(msg.messageText) ? (

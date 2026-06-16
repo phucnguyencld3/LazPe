@@ -3,6 +3,9 @@ using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
+using System.Threading;
 
 namespace PolyBabyAPI.Services
 {
@@ -10,11 +13,24 @@ namespace PolyBabyAPI.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ProductService> _logger;
+        private readonly IMemoryCache _cache;
+        private static CancellationTokenSource _resetCacheToken = new CancellationTokenSource();
 
-        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger)
+        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache)
         {
             _context = context;
             _logger = logger;
+            _cache = cache;
+        }
+
+        public void ClearProductCache()
+        {
+            if (!_resetCacheToken.IsCancellationRequested)
+            {
+                _resetCacheToken.Cancel();
+                _resetCacheToken.Dispose();
+                _resetCacheToken = new CancellationTokenSource();
+            }
         }
 
         public async Task<ProductPaginationDto> GetProductsPaginatedAsync(
@@ -23,17 +39,19 @@ namespace PolyBabyAPI.Services
             decimal? minPrice = null, decimal? maxPrice = null,
             string sortBy = "CreatedAt", string sortDirection = "desc")
         {
+            var cacheKey = $"Products_{page}_{pageSize}_{searchTerm}_{categoryId}_{supplierId}_{status}_{minPrice}_{maxPrice}_{sortBy}_{sortDirection}";
+            if (_cache.TryGetValue(cacheKey, out ProductPaginationDto? cachedResult) && cachedResult != null)
+            {
+                return cachedResult;
+            }
+
             try
             {
-                var query = _context.Products
-                    .AsNoTracking()
-                    .AsQueryable();
+                var query = _context.Products.AsNoTracking().AsQueryable();
 
                 // Apply filters
                 if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
                     query = query.Where(p => p.ProductName.Contains(searchTerm));
-                }
 
                 if (categoryId.HasValue)
                     query = query.Where(p => p.CategoryID == categoryId.Value);
@@ -53,86 +71,50 @@ namespace PolyBabyAPI.Services
                 // Apply sorting
                 query = sortBy.ToLower() switch
                 {
-                    "productname" => sortDirection.ToLower() == "asc" 
-                        ? query.OrderBy(p => p.ProductName) 
-                        : query.OrderByDescending(p => p.ProductName),
-                    "price" => sortDirection.ToLower() == "asc"
-                        ? query.OrderBy(p => p.Price)
-                        : query.OrderByDescending(p => p.Price),
-                    "code" => sortDirection.ToLower() == "asc"
-                        ? query.OrderBy(p => p.Code)
-                        : query.OrderByDescending(p => p.Code),
-                    "categoryname" => sortDirection.ToLower() == "asc"
-                        ? query.OrderBy(p => p.Category.CategoryName)
-                        : query.OrderByDescending(p => p.Category.CategoryName),
-                    _ => sortDirection.ToLower() == "asc"
-                        ? query.OrderBy(p => p.CreatedAt)
-                        : query.OrderByDescending(p => p.CreatedAt)
+                    "productname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.ProductName) : query.OrderByDescending(p => p.ProductName),
+                    "price" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
+                    "code" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Code) : query.OrderByDescending(p => p.Code),
+                    "categoryname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Category!.CategoryName) : query.OrderByDescending(p => p.Category!.CategoryName),
+                    _ => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt)
                 };
 
                 var totalItems = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-                var products = await query
+                // Câu query 1: Lấy thông tin cơ bản của Product và include Category, Supplier
+                var productsBase = await query
+                    .Include(p => p.Category)
+                    .Include(p => p.Supplier)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(p => new ProductListItemDto
-                    {
-                        ProductID = p.ProductID,
-                        Code = p.Code,
-                        ProductName = p.ProductName,
-                        Description = p.Description,
-                        Specifications = p.Specifications,
-                        Price = p.Price,
-                        ProductDiscountPercent = p.ProductDiscountPercent,
-                        Stock = p.Stock,
-                        Status = p.Status,
-                        CategoryID = p.CategoryID,
-                        CategoryName = p.Category.CategoryName,
-                        SupplierID = p.SupplierID,
-                        SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "",
-                        CreatedAt = p.CreatedAt,
-                        CreatedBy = p.CreatedBy,
-                        ImageUrl = p.Variants
-                            .Where(v => v.ImageUrl != null && v.ImageUrl != "")
-                            .OrderBy(v => v.VariantID)
-                            .Select(v => v.ImageUrl)
-                            .FirstOrDefault(),
-                        TotalStock = p.Variants.Sum(v => v.Stock),
-                        MinPrice = p.Variants.Where(v => v.Status).Any() 
-                            ? p.Variants.Where(v => v.Status).Min(v => v.UnitPrice) 
-                            : 0,
-                        MaxPrice = p.Variants.Where(v => v.Status).Any() 
-                            ? p.Variants.Where(v => v.Status).Max(v => v.UnitPrice) 
-                            : 0,
-                        MinEffectivePrice = 0,
-                        MaxEffectivePrice = 0,
-                        VariantCount = p.Variants.Count
-                    })
                     .ToListAsync();
 
-                var productIds = products.Select(p => p.ProductID).ToList();
-                if (productIds.Count > 0)
+                var productIds = productsBase.Select(p => p.ProductID).ToList();
+                var productDtos = new List<ProductListItemDto>();
+
+                if (productIds.Any())
                 {
-                    var variantPriceRows = await _context.Variants
+                    // Câu query 2: Lấy thông tin Variants
+                    var variants = await _context.Variants
                         .AsNoTracking()
-                        .Where(v => v.Status && productIds.Contains(v.ProductID))
-                        .Select(v => new
-                        {
-                            v.ProductID,
-                            v.UnitPrice,
-                            v.VariantDiscountPercent
-                        })
+                        .Where(v => productIds.Contains(v.ProductID))
                         .ToListAsync();
 
-                    var variantMap = variantPriceRows
-                        .GroupBy(v => v.ProductID)
-                        .ToDictionary(g => g.Key, g => g.ToList());
+                    var variantMap = variants.GroupBy(v => v.ProductID).ToDictionary(g => g.Key, g => g.ToList());
 
+                    // Câu query 3: Lấy thông tin Images
+                    var images = await _context.ProductImages
+                        .AsNoTracking()
+                        .Where(i => productIds.Contains(i.ProductID))
+                        .ToListAsync();
+
+                    var imageMap = images.GroupBy(i => i.ProductID).ToDictionary(g => g.Key, g => g.ToList());
+
+                    // Câu query 4: Lấy Review stats
                     var reviewStats = await _context.Reviews
                         .AsNoTracking()
                         .Where(r => !r.IsHidden && r.Variant != null && productIds.Contains(r.Variant.ProductID))
-                        .GroupBy(r => r.Variant.ProductID)
+                        .GroupBy(r => r.Variant!.ProductID)
                         .Select(g => new {
                             ProductID = g.Key,
                             AverageRating = g.Average(r => r.Rating),
@@ -140,37 +122,70 @@ namespace PolyBabyAPI.Services
                         })
                         .ToDictionaryAsync(x => x.ProductID, x => x);
 
-                    foreach (var product in products)
+                    // Map dữ liệu trên RAM (Tránh N+1)
+                    foreach (var p in productsBase)
                     {
-                        if (reviewStats.TryGetValue(product.ProductID, out var stats))
+                        var pVariants = variantMap.GetValueOrDefault(p.ProductID) ?? new List<Variant>();
+                        var pActiveVariants = pVariants.Where(v => v.Status).ToList();
+                        var pImages = imageMap.GetValueOrDefault(p.ProductID) ?? new List<ProductImage>();
+
+                        var dto = new ProductListItemDto
                         {
-                            product.Rating = stats.AverageRating;
-                            product.RatingCount = stats.RatingCount;
+                            ProductID = p.ProductID,
+                            Code = p.Code,
+                            ProductName = p.ProductName,
+                            Description = p.Description,
+                            Specifications = p.Specifications,
+                            Price = p.Price,
+                            ProductDiscountPercent = p.ProductDiscountPercent,
+                            Stock = p.Stock,
+                            Status = p.Status,
+                            CategoryID = p.CategoryID,
+                            CategoryName = p.Category?.CategoryName ?? "",
+                            SupplierID = p.SupplierID,
+                            SupplierName = p.Supplier?.SupplierName ?? "",
+                            CreatedAt = p.CreatedAt,
+                            CreatedBy = p.CreatedBy,
+                            
+                            TotalStock = pVariants.Sum(v => v.Stock),
+                            VariantCount = pVariants.Count,
+                            
+                            ImageUrl = pVariants.Where(v => !string.IsNullOrEmpty(v.ImageUrl)).OrderBy(v => v.VariantID).Select(v => v.ImageUrl).FirstOrDefault()
+                                       ?? pImages.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).FirstOrDefault()
+                        };
+
+                        if (pActiveVariants.Any())
+                        {
+                            dto.MinPrice = pActiveVariants.Min(v => v.UnitPrice);
+                            dto.MaxPrice = pActiveVariants.Max(v => v.UnitPrice);
+
+                            var effectivePrices = pActiveVariants.Select(v =>
+                                v.UnitPrice * (1m - ((v.VariantDiscountPercent > 0 ? v.VariantDiscountPercent : p.ProductDiscountPercent) / 100m)));
+
+                            dto.MinEffectivePrice = effectivePrices.Min();
+                            dto.MaxEffectivePrice = effectivePrices.Max();
                         }
                         else
                         {
-                            product.Rating = 0;
-                            product.RatingCount = 0;
+                            dto.MinPrice = 0;
+                            dto.MaxPrice = 0;
+                            dto.MinEffectivePrice = 0;
+                            dto.MaxEffectivePrice = 0;
                         }
 
-                        if (!variantMap.TryGetValue(product.ProductID, out var variants) || variants.Count == 0)
+                        if (reviewStats.TryGetValue(p.ProductID, out var stats))
                         {
-                            product.MinEffectivePrice = 0;
-                            product.MaxEffectivePrice = 0;
-                            continue;
+                            dto.Rating = stats.AverageRating;
+                            dto.RatingCount = stats.RatingCount;
                         }
 
-                        var effectivePrices = variants.Select(v =>
-                            v.UnitPrice * (1m - ((v.VariantDiscountPercent > 0 ? v.VariantDiscountPercent : product.ProductDiscountPercent) / 100m)));
-
-                        product.MinEffectivePrice = effectivePrices.Min();
-                        product.MaxEffectivePrice = effectivePrices.Max();
+                        productDtos.Add(dto);
                     }
                 }
 
-                return new ProductPaginationDto
+                var result = new ProductPaginationDto
                 {
-                    Products = products,
+                    Products = productDtos,
                     CurrentPage = page,
                     TotalPages = totalPages,
                     TotalItems = totalItems,
@@ -184,6 +199,14 @@ namespace PolyBabyAPI.Services
                     SortBy = sortBy,
                     SortDirection = sortDirection
                 };
+
+                // Lưu vào cache
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(10))
+                    .AddExpirationToken(new CancellationChangeToken(_resetCacheToken.Token));
+                _cache.Set(cacheKey, result, cacheOptions);
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -265,6 +288,7 @@ namespace PolyBabyAPI.Services
                                 .ThenInclude(pov => pov.ProductOption)
                     .Include(p => p.ProductOptions)
                         .ThenInclude(po => po.ProductOptionValues)
+                    .Include(p => p.Images)
                     .FirstOrDefaultAsync(p => p.ProductID == id);
 
                 if (product == null) return null;
@@ -350,7 +374,8 @@ namespace PolyBabyAPI.Services
                             Price = pov.Price,
                             DisplayOrder = pov.DisplayOrder
                         }).ToList()
-                    }).ToList()
+                    }).ToList(),
+                    ImageUrls = product.Images?.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).ToList() ?? new List<string>()
                 };
             }
             catch (Exception ex)
@@ -398,6 +423,7 @@ namespace PolyBabyAPI.Services
 
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
+                ClearProductCache();
 
                 // Return created product
                 var result = await GetProductByIdAsync(product.ProductID);
@@ -542,6 +568,26 @@ namespace PolyBabyAPI.Services
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
 
+                // 8.1 Thêm ảnh sản phẩm
+                if (dto.Images != null && dto.Images.Any())
+                {
+                    int index = 1;
+                    foreach (var imgUrl in dto.Images)
+                    {
+                        if (!string.IsNullOrWhiteSpace(imgUrl))
+                        {
+                            _context.ProductImages.Add(new ProductImage
+                            {
+                                ProductID = product.ProductID,
+                                ImageUrl = imgUrl,
+                                DisplayOrder = index++
+                            });
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+
                 // Map để lưu trữ ID của Option Value phục vụ cho ánh xạ Variant
                 // Key cấp 1: Tên Option (vd: "Màu sắc")
                 // Key cấp 2: Giá trị (vd: "Đỏ")
@@ -629,6 +675,7 @@ namespace PolyBabyAPI.Services
                 }
 
                 await transaction.CommitAsync();
+                ClearProductCache();
 
                 _logger.LogInformation("Product Created: {ProductName} (ID: {ProductID})", product.ProductName, product.ProductID);
                 _logger.LogInformation("Variants Generated: {VariantCount} variants created", dto.Variants.Count);
@@ -707,6 +754,45 @@ namespace PolyBabyAPI.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Cập nhật ProductImages nếu được truyền lên
+                if (dto.Images != null)
+                {
+                    // Xóa ảnh cũ
+                    var oldImages = await _context.ProductImages.Where(i => i.ProductID == product.ProductID).ToListAsync();
+                    _context.ProductImages.RemoveRange(oldImages);
+                    
+                    // Thêm ảnh mới
+                    if (dto.Images.Any())
+                    {
+                        int index = 1;
+                        foreach (var imgUrl in dto.Images)
+                        {
+                            if (!string.IsNullOrWhiteSpace(imgUrl))
+                            {
+                                _context.ProductImages.Add(new ProductImage
+                                {
+                                    ProductID = product.ProductID,
+                                    ImageUrl = imgUrl,
+                                    DisplayOrder = index++
+                                });
+                            }
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                // Xóa ảnh biến thể nếu được yêu cầu (ưu tiên ảnh sản phẩm)
+                if (dto.ClearVariantImages && product.Variants != null)
+                {
+                    foreach (var variant in product.Variants)
+                    {
+                        variant.ImageUrl = null;
+                    }
+                    await _context.SaveChangesAsync();
+                }
+                
+                ClearProductCache();
 
                 // Return updated product
                 var result = await GetProductByIdAsync(product.ProductID);
@@ -828,6 +914,7 @@ namespace PolyBabyAPI.Services
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+                ClearProductCache();
 
                 return new ServiceResult<bool>
                 {
@@ -871,6 +958,7 @@ namespace PolyBabyAPI.Services
 
                 product.Status = !product.Status;
                 await _context.SaveChangesAsync();
+                ClearProductCache();
 
                 return new ServiceResult<bool>
                 {
@@ -902,7 +990,8 @@ namespace PolyBabyAPI.Services
                     CategoryName = c.CategoryName,
                     ParentID = c.ParentID,
                     Level = c.Level,
-                    Status = c.Status
+                    Status = c.Status,
+                    ProductCount = c.Products.Count(p => p.Status)
                 })
                 .ToListAsync();
         }
@@ -937,7 +1026,13 @@ namespace PolyBabyAPI.Services
         {
             var totalProducts = await _context.Products.CountAsync();
             var activeProducts = await _context.Products.CountAsync(p => p.Status);
-            var outOfStockProducts = await _context.Products.CountAsync(p => p.Stock == 0);
+            // S\u1ea3n ph\u1ea9m \u0111\u01b0\u1ee3c coi l\u00e0 h\u1ebft h\u00e0ng khi:
+            // - Kh\u00f4ng c\u00f3 bi\u1ebfn th\u1ec3: Stock g\u1ed1c == 0
+            // - C\u00f3 bi\u1ebfn th\u1ec3: T\u1ed5ng t\u1ed3n kho bi\u1ebfn th\u1ec3 == 0
+            var outOfStockProducts = await _context.Products
+                .CountAsync(p => p.Variants.Any()
+                    ? p.Variants.Sum(v => v.Stock) == 0
+                    : p.Stock == 0);
             
             var oneWeekAgo = DateTime.Now.AddDays(-7);
             var newProducts = await _context.Products.CountAsync(p => p.CreatedAt >= oneWeekAgo);

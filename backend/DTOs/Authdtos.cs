@@ -220,4 +220,13 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Phương thức xác thực là bắt buộc")]
         public string Provider { get; set; } = string.Empty; // "Email" hoặc "Authenticator"
     }
+
+    public class RefreshTokenRequestDto
+    {
+        [Required(ErrorMessage = "Token là bắt buộc")]
+        public string Token { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "RefreshToken là bắt buộc")]
+        public string RefreshToken { get; set; } = string.Empty;
+    }
 }

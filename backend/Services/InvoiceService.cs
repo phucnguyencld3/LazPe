@@ -12,13 +12,15 @@ namespace PolyBabyAPI.Services
         private readonly ILogger<InvoiceService> _logger;
         private readonly ILoyaltyService _loyaltyService;
         private readonly IVoucherService _voucherService;
+        private readonly IRecommendationService _recommendationService;
 
-        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService)
+        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService, IRecommendationService recommendationService)
         {
             _context = context;
             _logger = logger;
             _loyaltyService = loyaltyService;
             _voucherService = voucherService;
+            _recommendationService = recommendationService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -33,7 +35,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.ShippingVoucher)
                 .Include(i => i.PaymentTransactions)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Category)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Supplier)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
@@ -58,7 +60,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.PaymentTransactions)
                 .Include(i => i.Voucher)
                 .Include(i => i.ShippingVoucher)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .OrderByDescending(i => i.CreatedAt)
                 .ToListAsync();
@@ -74,7 +76,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.Voucher)
                 .Include(i => i.ShippingVoucher)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .Include(i => i.PaymentTransactions)
                 .FirstOrDefaultAsync(i => i.InvoiceID == id && !i.IsDeleted);
@@ -265,6 +267,9 @@ namespace PolyBabyAPI.Services
 
                     // Trừ số lượng Flash Sale (nếu có chiến dịch đang diễn ra)
                     await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, item.VariantID.Value, null, item.Quantity);
+
+                    // Thêm Log AI Purchase
+                    await _recommendationService.LogInteractionAsync(cart.UserID, item.Variant.ProductID, PolyBabyAPI.Models.Mongo.InteractionType.Purchase);
                 }
                 else if (item.BundleID.HasValue && item.Bundle != null)
                 {
@@ -434,6 +439,12 @@ namespace PolyBabyAPI.Services
                     invoice.InvoiceID, subTotal, discountAmount, invoice.TotalPrice, invoice.ShippingFee);
 
                 return invoice;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogWarning(ex, "Lỗi đồng bộ tồn kho khi tạo hóa đơn từ giỏ hàng {CartId}", cartId);
+                throw new InvalidOperationException("Sản phẩm trong giỏ hàng vừa bị một khách hàng khác mua hết hoặc thay đổi số lượng. Vui lòng làm mới trang và thử lại!");
             }
             catch (Exception ex)
             {

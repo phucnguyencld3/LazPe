@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
-import { OrderInfo, fetchOrders } from "@/lib/features/orders/orderApi";
+import { OrderInfo, fetchOrders, bulkConfirmOrders, bulkMarkShippedOrders } from "@/lib/features/orders/orderApi";
 import { OrderSummaryCards } from "@/components/admin/orders/OrderSummaryCards";
 import { OrderFilters } from "@/components/admin/orders/OrderFilters";
 import { OrderTable } from "@/components/admin/orders/OrderTable";
@@ -22,29 +22,70 @@ export default function AdminOrdersPage() {
   // Reset page to 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedInvoiceIds([]);
   }, [statusFilter, searchTerm]);
+
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<number[]>([]);
+
+  const loadOrders = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+      setLoading(true);
+      const data = await fetchOrders(token);
+      setOrders(data);
+      setSelectedInvoiceIds([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể tải danh sách đơn hàng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch initial data
   useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-        if (!token) {
-          router.push("/login");
-          return;
-        }
-        setLoading(true);
-        const data = await fetchOrders(token);
-        setOrders(data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Không thể tải danh sách đơn hàng.");
-      } finally {
-        setLoading(false);
-      }
-    };
     loadOrders();
   }, [router]);
+
+  const handleBulkConfirm = async () => {
+    if (selectedInvoiceIds.length === 0) return;
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+      const res = await bulkConfirmOrders(token, selectedInvoiceIds);
+      if (res.errors && res.errors.length > 0) {
+        toast.warning(res.message + " " + res.errors[0]);
+      } else {
+        toast.success(res.message || "Xác nhận hàng loạt thành công!");
+      }
+      loadOrders();
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi khi xác nhận hàng loạt.");
+    }
+  };
+
+  const handleBulkMarkShipped = async () => {
+    if (selectedInvoiceIds.length === 0) return;
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+      const res = await bulkMarkShippedOrders(token, selectedInvoiceIds);
+      if (res.errors && res.errors.length > 0) {
+        toast.warning(res.message + " " + res.errors[0]);
+      } else {
+        toast.success(res.message || "Cập nhật giao hàng hàng loạt thành công!");
+      }
+      loadOrders();
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi khi cập nhật giao hàng hàng loạt.");
+    }
+  };
 
   // Derived state: Filtered orders
   const filteredOrders = useMemo(() => {
@@ -70,7 +111,7 @@ export default function AdminOrdersPage() {
   const metrics = useMemo(() => {
     const pending = orders.filter(o => o.statusCode === 0).length;
     const shipping = orders.filter(o => o.statusCode === 2).length;
-    const completed = orders.filter(o => o.statusCode === 4).length;
+    const completed = orders.filter(o => o.statusCode === 3).length;
     return { pending, shipping, completed };
   }, [orders]);
 
@@ -91,7 +132,7 @@ export default function AdminOrdersPage() {
       pending: orders.filter(o => o.statusCode === 0).length,
       processing: orders.filter(o => o.statusCode === 1).length,
       shipping: orders.filter(o => o.statusCode === 2).length,
-      completed: orders.filter(o => o.statusCode === 4).length,
+      completed: orders.filter(o => o.statusCode === 3).length,
       cancelled: orders.filter(o => o.statusCode === 5).length,
     };
   }, [orders]);
@@ -138,6 +179,11 @@ export default function AdminOrdersPage() {
         totalItems={filteredOrders.length}
         itemsPerPage={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
+        statusFilter={statusFilter}
+        selectedInvoiceIds={selectedInvoiceIds}
+        setSelectedInvoiceIds={setSelectedInvoiceIds}
+        onBulkConfirm={handleBulkConfirm}
+        onBulkMarkShipped={handleBulkMarkShipped}
       />
     </main>
   );

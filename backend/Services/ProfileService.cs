@@ -47,7 +47,12 @@ namespace PolyBabyAPI.Service
                     Status = user.Status,
                     ReceiveEmailNotifications = user.ReceiveEmailNotifications,
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
-                    ReceivePromotions = user.ReceivePromotions
+                    ReceivePromotions = user.ReceivePromotions,
+                    MomFavoriteColors = user.MomFavoriteColors,
+                    ChildGender = user.ChildGender,
+                    ChildAgeMonths = user.ChildAgeMonths,
+                    ChildWeightKg = user.ChildWeightKg,
+                    IsOnboarded = user.IsOnboarded
                 };
             }
             catch (Exception ex)
@@ -92,6 +97,15 @@ namespace PolyBabyAPI.Service
                 if (updateDto.ReceivePromotions.HasValue)
                 {
                     user.ReceivePromotions = updateDto.ReceivePromotions.Value;
+                }
+
+                user.MomFavoriteColors = updateDto.MomFavoriteColors;
+                user.ChildGender = updateDto.ChildGender;
+                user.ChildAgeMonths = updateDto.ChildAgeMonths;
+                user.ChildWeightKg = updateDto.ChildWeightKg;
+                if (updateDto.IsOnboarded.HasValue)
+                {
+                    user.IsOnboarded = updateDto.IsOnboarded.Value;
                 }
 
                 _logger.LogInformation("Updating user {UserId}. Avatar: {Avatar}",
@@ -233,7 +247,12 @@ namespace PolyBabyAPI.Service
                     Status = user.Status,
                     ReceiveEmailNotifications = user.ReceiveEmailNotifications,
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
-                    ReceivePromotions = user.ReceivePromotions
+                    ReceivePromotions = user.ReceivePromotions,
+                    MomFavoriteColors = user.MomFavoriteColors,
+                    ChildGender = user.ChildGender,
+                    ChildAgeMonths = user.ChildAgeMonths,
+                    ChildWeightKg = user.ChildWeightKg,
+                    IsOnboarded = user.IsOnboarded
                 };
             }
             catch (Exception ex)

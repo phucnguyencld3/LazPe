@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -25,7 +26,7 @@ export default function AdminUsersPage() {
   }, [searchTerm]);
 
   // Reset page when search term changes
-  useEffect(() => setPage(1), [debouncedSearch]);
+  useEffect(() => setPage(1), [debouncedSearch, statusFilter]);
 
   // Fetch data
   useEffect(() => {
@@ -39,9 +40,18 @@ export default function AdminUsersPage() {
         setStats(statsData);
 
         const usersData = await fetchUsers(token, debouncedSearch, page);
-        const filteredList = (usersData.data || []).filter(
-          (u: any) => !u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")
-        );
+        const filteredList = (usersData.data || []).filter((u: any) => {
+          // Remove admins
+          if (u.roles?.some((r: string) => r.toLowerCase() === "administrator" || r.toLowerCase() === "admin")) {
+            return false;
+          }
+          // Filter by status
+          if (statusFilter === "active" && u.isLocked) return false;
+          if (statusFilter === "locked" && !u.isLocked) return false;
+          
+          return true;
+        });
+
         setUsers(filteredList);
         setTotalPages(usersData.pagination.totalPages);
         setTotalCount(usersData.pagination.totalCount - (usersData.data.length - filteredList.length));
@@ -52,11 +62,12 @@ export default function AdminUsersPage() {
       }
     };
     loadData();
-  }, [page, debouncedSearch, router]);
+  }, [page, debouncedSearch, statusFilter, router]);
 
   const resetSearch = () => {
     setSearchTerm("");
     setDebouncedSearch("");
+    setStatusFilter("all");
     setPage(1);
   };
 
@@ -72,20 +83,14 @@ export default function AdminUsersPage() {
           <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý người dùng</h1>
           <p className="font-body-md text-body-md text-on-surface-variant/70">Theo dõi và kiểm soát tài khoản người dùng</p>
         </div>
-        <button className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold">
-          <span className="material-symbols-outlined">file_export</span>
+        <button className="border border-primary text-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer">
+          <span className="material-symbols-outlined text-[18px]">file_export</span>
           Xuất dữ liệu
         </button>
       </header>
       
       <div className="space-y-lg">
         <UserStats stats={stats} />
-        
-        <UserFilters 
-          searchTerm={searchTerm} 
-          onSearchChange={setSearchTerm} 
-          onReset={resetSearch} 
-        />
         
         <UserTable 
           users={users}
@@ -95,6 +100,11 @@ export default function AdminUsersPage() {
           totalCount={totalCount}
           onPageChange={setPage}
           onRowClick={goToDetails}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          onReset={resetSearch}
         />
       </div>
     </div>

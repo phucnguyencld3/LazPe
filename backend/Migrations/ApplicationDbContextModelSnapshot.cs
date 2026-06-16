@@ -226,6 +226,16 @@ namespace PolyBabyAPI.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int?>("ChildAgeMonths")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChildGender")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<double?>("ChildWeightKg")
+                        .HasColumnType("float");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -245,11 +255,18 @@ namespace PolyBabyAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("IsOnboarded")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("MomFavoriteColors")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -283,6 +300,12 @@ namespace PolyBabyAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("RegisterDate")
                         .HasColumnType("datetime2");
@@ -429,6 +452,9 @@ namespace PolyBabyAPI.Migrations
                     b.Property<decimal>("SubTotal")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("TierDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -463,6 +489,9 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<int>("CartID")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsGift")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -673,12 +702,19 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BannerUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
@@ -697,6 +733,9 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("FlashSales");
@@ -713,7 +752,13 @@ namespace PolyBabyAPI.Migrations
                     b.Property<decimal>("DiscountPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("int");
+
                     b.Property<int>("FlashSaleId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GiftVariantId")
                         .HasColumnType("int");
 
                     b.Property<int>("ItemType")
@@ -723,6 +768,9 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("ReferenceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RequiredQuantity")
                         .HasColumnType("int");
 
                     b.Property<int>("SoldQuantity")
@@ -819,6 +867,9 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("SubTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TierDiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalPrice")
@@ -1607,8 +1658,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -1640,6 +1690,31 @@ namespace PolyBabyAPI.Migrations
                     b.HasIndex("SupplierID");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
+                {
+                    b.Property<int>("ProductImageID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductImageID"));
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductImageID");
+
+                    b.HasIndex("ProductID");
+
+                    b.ToTable("ProductImages");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ProductOption", b =>
@@ -2272,6 +2347,10 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int?>("InvoiceID")
                         .HasColumnType("int");
 
+                    b.Property<string>("IssuedCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("SourceType")
                         .HasColumnType("int");
 
@@ -2317,8 +2396,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
@@ -2335,6 +2413,7 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("Stock")
+                        .IsConcurrencyToken()
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
@@ -2425,6 +2504,9 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("TotalQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsageLimitPerUser")
                         .HasColumnType("int");
 
                     b.Property<int>("UsedQuantity")
@@ -2899,6 +2981,17 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Supplier");
                 });
 
+            modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
+                {
+                    b.HasOne("PolyBabyAPI.Models.Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("PolyBabyAPI.Models.ProductOption", b =>
                 {
                     b.HasOne("PolyBabyAPI.Models.Product", "Product")
@@ -3307,6 +3400,8 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.Product", b =>
                 {
+                    b.Navigation("Images");
+
                     b.Navigation("ProductOptions");
 
                     b.Navigation("Variants");

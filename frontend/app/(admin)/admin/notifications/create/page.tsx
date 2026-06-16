@@ -117,7 +117,8 @@ export default function CreateCampaignPage() {
 
     try {
       toast.success("Đang tải ảnh lên Cloudinary...");
-      const response = await fetch("http://localhost:5101/api/Upload/image", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+      const response = await fetch(`${API_BASE_URL}/Upload/image`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`

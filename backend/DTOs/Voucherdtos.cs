@@ -44,6 +44,7 @@ namespace PolyBabyAPI.DTOs
             public int VoucherType { get; set; } = 1;
             public bool IsFreeShipping { get; set; } = false;
             public decimal? MaxShippingDiscount { get; set; }
+            public int UsageLimitPerUser { get; set; } = 1;
         }
 
         public class UpdateVoucherRequest
@@ -68,6 +69,7 @@ namespace PolyBabyAPI.DTOs
             public int VoucherType { get; set; }
             public bool IsFreeShipping { get; set; }
             public decimal? MaxShippingDiscount { get; set; }
+            public int UsageLimitPerUser { get; set; } = 1;
         }
 
         public class ActivateExclusiveVoucherRequest
