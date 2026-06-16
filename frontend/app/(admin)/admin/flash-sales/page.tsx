@@ -303,6 +303,9 @@ export default function AdminFlashSalesPage() {
           itemType: item.itemType,
           referenceId: item.referenceId,
           discountPrice: item.discountPrice,
+          discountType: item.discountType,
+          requiredQuantity: item.requiredQuantity,
+          giftVariantId: item.giftVariantId,
           totalQuantity: item.totalQuantity,
           maxQuantityPerUser: item.maxQuantityPerUser
         }))
