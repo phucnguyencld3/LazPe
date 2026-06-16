@@ -186,7 +186,7 @@ namespace PolyBabyAPI.Controllers
                         userName = user.UserName ?? string.Empty,
                         fullName = user.FullName ?? string.Empty,
                         phoneNumber = user.PhoneNumber ?? string.Empty,
-                        avatar = user.Avatar ?? "/assets/img/avatars/1.png",
+                        avatar = user.Avatar,
                         roles = userRoles ?? new List<string>(),
                         permissions = userPermissions.Select(p => p.Name).ToList(), // THÊM permissions
                         isAdmin = isAdmin,
@@ -274,7 +274,7 @@ namespace PolyBabyAPI.Controllers
                         userName = user.UserName ?? string.Empty,
                         fullName = user.FullName ?? string.Empty,
                         phoneNumber = user.PhoneNumber ?? string.Empty,
-                        avatar = user.Avatar ?? "/assets/img/avatars/1.png",
+                        avatar = user.Avatar,
                         roles = userRoles ?? new List<string>(),
                         permissions = userPermissions.Select(p => p.Name).ToList(), // THÊM permissions
                         isAdmin = true
@@ -546,7 +546,7 @@ namespace PolyBabyAPI.Controllers
                             userName = user.UserName ?? string.Empty,
                             fullName = user.FullName ?? string.Empty,
                             phoneNumber = user.PhoneNumber ?? string.Empty,
-                            avatar = user.Avatar ?? "/assets/img/avatars/1.png",
+                            avatar = user.Avatar,
                             roles = userRoles ?? new List<string>(),
                             permissions = userPermissions.Select(p => p.Name).ToList(),
                             isAdmin = userRoles?.Contains("Admin") ?? false,
@@ -1266,7 +1266,7 @@ namespace PolyBabyAPI.Controllers
                         userName = user.UserName ?? string.Empty,
                         fullName = user.FullName ?? string.Empty,
                         phoneNumber = user.PhoneNumber ?? string.Empty,
-                        avatar = user.Avatar ?? "/assets/img/avatars/1.png",
+                        avatar = user.Avatar,
                         roles = userRoles ?? new List<string>(),
                         permissions = userPermissions.Select(p => p.Name).ToList(),
                         isAdmin = isAdmin
@@ -1302,7 +1302,7 @@ namespace PolyBabyAPI.Controllers
                 new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
                 new Claim("FullName", user.FullName ?? string.Empty),
-                new Claim("Avatar", user.Avatar ?? "/assets/img/avatars/1.png"),
+                new Claim("Avatar", user.Avatar ?? ""),
                 new Claim("UserId", user.Id ?? string.Empty)
             };
 
