@@ -258,7 +258,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
                             <div className="flex-grow space-y-0.5 text-left">
                               <h4 className="font-semibold text-xs sm:text-sm text-slate-800 line-clamp-1 leading-snug">
-                                {associatedGift.variant?.product?.name || associatedGift.product?.name || "Quà tặng miễn phí"}
+                                {associatedGift.product?.name || "Quà tặng miễn phí"}
                               </h4>
 
                               <div className="flex flex-wrap gap-1.5 items-center">
@@ -294,7 +294,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 }
                 const subtext = `Phân loại: ${gift.variant?.color || "Tiêu chuẩn"}${sizeText}`;
                 const image = gift.variant?.imageUrl || gift.product?.imageUrl;
-                const name = gift.product?.name || gift.variant?.product?.name || "Quà tặng";
+                const name = gift.product?.name || "Quà tặng";
 
                 return (
                   <div
