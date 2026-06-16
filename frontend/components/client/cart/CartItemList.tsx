@@ -85,7 +85,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
             <>
               {nonGifts.map((detail) => {
                 const isChecked = !!checkedDetails[detail.cartDetailID];
-                
+
                 // Product or Bundle info resolution
                 const isBundle = !!detail.bundleID;
                 const name = isBundle ? detail.bundle?.name : detail.product?.name;
@@ -95,8 +95,8 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 if (detail.variant?.size && detail.variant.size.toLowerCase() !== "xem chi tiết" && detail.variant.size.toLowerCase() !== "default") {
                   sizeText = ` - Cỡ: ${detail.variant.size}`;
                 }
-                const subtext = isBundle 
-                  ? "Gói Combo sản phẩm" 
+                const subtext = isBundle
+                  ? "Gói Combo sản phẩm"
                   : `Phân loại: ${detail.variant?.color || "Tiêu chuẩn"}${sizeText}`;
 
                 // Flash Sale checking
@@ -141,11 +141,10 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   <div key={detail.cartDetailID} className="flex flex-col relative mb-4">
                     {/* Main Product */}
                     <div
-                      className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 items-center group transition-all border relative z-10 ${
-                        isChecked 
-                          ? "border-rose-200 bg-rose-500/[0.02]" 
-                          : "border-slate-100 hover:border-slate-200"
-                      }`}
+                      className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 items-center group transition-all border relative z-10 ${isChecked
+                        ? "border-rose-200 bg-rose-500/[0.02]"
+                        : "border-slate-100 hover:border-slate-200"
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -153,7 +152,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                         onChange={() => handleToggleCheck(detail.cartDetailID)}
                         className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 shrink-0 transition-all cursor-pointer"
                       />
-                      
+
                       {/* Product Image */}
                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-100 border border-slate-100 shrink-0 relative">
                         {image ? (
@@ -180,7 +179,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                             </Link>
                           )}
                         </h3>
-                        
+
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                           <p className="text-on-surface-variant text-[10px] sm:text-xs font-semibold bg-slate-50 px-1.5 py-0.5 rounded inline-block">
                             {subtext}
@@ -224,7 +223,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                             <Plus size={10} />
                           </button>
                         </div>
-                        
+
                         <button
                           onClick={() => handleRemoveItem(detail.cartDetailID)}
                           className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-1.5 hover:bg-rose-50 rounded-full transition-all active:scale-90 text-[18px]"
@@ -242,7 +241,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                             <div className="w-6 h-6 flex items-center justify-center text-emerald-500 shrink-0 bg-emerald-100 rounded-full">
                               <span className="material-symbols-outlined text-[14px]">redeem</span>
                             </div>
-                            
+
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden bg-white border border-slate-100 shrink-0 relative">
                               {associatedGift.variant?.imageUrl || associatedGift.product?.imageUrl ? (
                                 <img
@@ -261,7 +260,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                               <h4 className="font-semibold text-xs sm:text-sm text-slate-800 line-clamp-1 leading-snug">
                                 {associatedGift.variant?.product?.name || associatedGift.product?.name || "Quà tặng miễn phí"}
                               </h4>
-                              
+
                               <div className="flex flex-wrap gap-1.5 items-center">
                                 <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded shadow-sm">
                                   QUÀ TẶNG
@@ -289,15 +288,15 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
               {/* Any remaining unassociated gifts */}
               {remainingGifts.map((gift) => {
-                 let sizeText = "";
-                 if (gift.variant?.size && gift.variant.size.toLowerCase() !== "xem chi tiết" && gift.variant.size.toLowerCase() !== "default") {
-                   sizeText = ` - Cỡ: ${gift.variant.size}`;
-                 }
-                 const subtext = `Phân loại: ${gift.variant?.color || "Tiêu chuẩn"}${sizeText}`;
-                 const image = gift.variant?.imageUrl || gift.product?.imageUrl;
-                 const name = gift.product?.name || gift.variant?.product?.name || "Quà tặng";
+                let sizeText = "";
+                if (gift.variant?.size && gift.variant.size.toLowerCase() !== "xem chi tiết" && gift.variant.size.toLowerCase() !== "default") {
+                  sizeText = ` - Cỡ: ${gift.variant.size}`;
+                }
+                const subtext = `Phân loại: ${gift.variant?.color || "Tiêu chuẩn"}${sizeText}`;
+                const image = gift.variant?.imageUrl || gift.product?.imageUrl;
+                const name = gift.product?.name || gift.variant?.product?.name || "Quà tặng";
 
-                 return (
+                return (
                   <div
                     key={gift.cartDetailID}
                     className="bg-emerald-50/[0.3] p-3 sm:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 items-center group transition-all border border-emerald-200 mb-4"
@@ -305,7 +304,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                     <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-emerald-500 shrink-0">
                       <span className="material-symbols-outlined text-[16px] sm:text-[18px]">redeem</span>
                     </div>
-                    
+
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-white border border-slate-100 shrink-0 relative">
                       {image ? (
                         <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Ảnh sản phẩm" src={image} />
@@ -335,7 +334,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                       </span>
                     </div>
                   </div>
-                 );
+                );
               })}
             </>
           );
