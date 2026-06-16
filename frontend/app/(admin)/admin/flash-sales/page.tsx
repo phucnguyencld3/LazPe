@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { formatCurrency } from "@/lib/utils/formatters";
@@ -45,14 +45,15 @@ export default function AdminFlashSalesPage() {
   const [formBannerUrl, setFormBannerUrl] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formIsActive, setFormIsActive] = useState(true);
-  const [formItems, setFormItems] = useState<any[]>([]); // { type, refId, name, originalPrice, discountPrice, discountType, requiredQty, giftVariantId, giftName, totalQty, maxPerUser, sku, imageUrl }
+  const [formItems, setFormItems] = useState<any[]>([]); // { type, refId, name, originalPrice, discountPrice, discountType, requiredQty, giftVariantIds, giftNames, giftImageUrls, totalQty, maxPerUser, sku, imageUrl }
   const [savingForm, setSavingForm] = useState(false);
 
   // Modal Selector States
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-  const [selectorTab, setSelectorTab] = useState<"product" | "variant" | "bundle">("product");
+  const [selectorTab, setSelectorTab] = useState<"product" | "variant" | "bundle">("variant");
   const [selectorSearch, setSelectorSearch] = useState("");
   const [selectorLoading, setSelectorLoading] = useState(false);
+  const [giftTargetIndex, setGiftTargetIndex] = useState<number | null>(null);
   
   // Data for selector
   const [selectorProducts, setSelectorProducts] = useState<AdminProductInfo[]>([]);
@@ -126,8 +127,9 @@ export default function AdminFlashSalesPage() {
           discountPrice: displayDiscount,
           discountType: item.discountType !== undefined ? item.discountType : DiscountType.FixedPrice,
           requiredQty: item.requiredQuantity || 0,
-          giftVariantId: item.giftVariantId,
-          giftName: item.giftName,
+          giftVariantIds: item.giftVariantIds || [],
+          giftNames: item.giftNames || [],
+          giftImageUrls: item.giftImageUrls || [],
           totalQty: item.totalQuantity,
           maxPerUser: item.maxQuantityPerUser,
           sku: item.sku,
@@ -202,11 +204,13 @@ export default function AdminFlashSalesPage() {
 
     // Validate prices and quantities
     for (const item of formItems) {
-      if (item.discountType === DiscountType.FixedPrice && item.discountPrice >= item.originalPrice) {
+      const effDiscountType = formType === CampaignType.BuyXGetY ? DiscountType.FreeGift : item.discountType;
+
+      if (effDiscountType === DiscountType.FixedPrice && item.discountPrice >= item.originalPrice) {
         toast.error(`Giá sale của "${item.name}" phải nhỏ hơn giá gốc (${formatCurrency(item.originalPrice)}).`);
         return;
       }
-      if (item.discountType === DiscountType.Percentage && (item.discountPrice <= 0 || item.discountPrice >= 100)) {
+      if (effDiscountType === DiscountType.Percentage && (item.discountPrice <= 0 || item.discountPrice >= 100)) {
         toast.error(`Mức giảm phần trăm của "${item.name}" phải từ 1% đến 99%.`);
         return;
       }
@@ -214,8 +218,20 @@ export default function AdminFlashSalesPage() {
         toast.error(`Số lượng sale của "${item.name}" phải lớn hơn 0.`);
         return;
       }
-      if (item.discountType === DiscountType.FreeGift && (!item.giftVariantId || item.requiredQty <= 0)) {
+      if (effDiscountType === DiscountType.FreeGift && (!item.giftVariantIds || item.giftVariantIds.length === 0 || item.requiredQty <= 0)) {
         toast.error(`Mặt hàng "${item.name}" chọn loại tặng quà nhưng thiếu sản phẩm tặng hoặc số lượng yêu cầu.`);
+        return;
+      }
+      if (effDiscountType === DiscountType.FreeGift && item.giftPrices && item.giftPrices.length > 0) {
+        const maxGiftPrice = Math.max(...item.giftPrices);
+        const maxAllowedPrice = item.originalPrice + maxGiftPrice;
+        if (item.discountPrice > maxAllowedPrice) {
+          toast.error(`Giá bán của "${item.name}" không được vượt quá (Sản phẩm chính + Quà cao nhất) là ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(maxAllowedPrice)}.`);
+          return;
+        }
+      }
+      if (item.maxPerUser > 0 && item.maxPerUser < item.requiredQty) {
+        toast.error(`Giới hạn mua tối đa (Max/Khách) của "${item.name}" không được nhỏ hơn số lượng yêu cầu (Mua từ).`);
         return;
       }
     }
@@ -229,20 +245,22 @@ export default function AdminFlashSalesPage() {
       description: formDescription,
       isActive: formIsActive,
       flashSaleItems: formItems.map(item => {
+        let finalDiscountType = formType === CampaignType.BuyXGetY ? DiscountType.FreeGift : item.discountType;
         let finalDiscountPrice = Number(item.discountPrice);
-        if (item.discountType === DiscountType.Percentage) {
+        
+        if (finalDiscountType === DiscountType.Percentage) {
             finalDiscountPrice = Math.round(item.originalPrice * (1 - finalDiscountPrice / 100));
-        } else if (item.discountType === DiscountType.FreeGift) {
-            finalDiscountPrice = item.originalPrice;
+        } else if (finalDiscountType === DiscountType.FreeGift) {
+            finalDiscountPrice = Number(item.discountPrice) >= 0 ? Number(item.discountPrice) : item.originalPrice;
         }
 
         return {
           itemType: item.type,
           referenceId: item.refId,
           discountPrice: finalDiscountPrice,
-          discountType: item.discountType,
+          discountType: finalDiscountType,
           requiredQuantity: Number(item.requiredQty),
-          giftVariantId: item.giftVariantId,
+          giftVariantIds: item.giftVariantIds || [],
           totalQuantity: Number(item.totalQty),
           maxQuantityPerUser: Number(item.maxPerUser)
         };
@@ -403,6 +421,11 @@ export default function AdminFlashSalesPage() {
   };
 
   const addProductToSale = (product: AdminProductInfo) => {
+    if (giftTargetIndex !== null) {
+      toast.warning("Vui lòng bấm vào sản phẩm và chọn 1 biến thể cụ thể làm quà tặng.");
+      return;
+    }
+
     const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
     if (actualStock <= 0) {
       toast.error("Sản phẩm này đã hết hàng trong tồn kho.");
@@ -413,15 +436,19 @@ export default function AdminFlashSalesPage() {
       return;
     }
 
+    const defaultDiscount = formType === CampaignType.BuyXGetY ? DiscountType.FreeGift : DiscountType.FixedPrice;
+
     const newItem = {
       type: FlashSaleItemType.Product,
       refId: product.productID,
       name: product.productName,
       originalPrice: product.price,
-      discountPrice: Math.round(product.price * 0.8), // default 20% off
-      discountType: DiscountType.FixedPrice,
-      requiredQty: 0,
-      giftVariantId: undefined,
+      discountPrice: defaultDiscount === DiscountType.FreeGift ? product.price : Math.round(product.price * 0.8),
+      discountType: defaultDiscount,
+      giftVariantIds: undefined,
+      giftNames: undefined,
+      giftImageUrls: undefined,
+      requiredQty: 1,
       totalQty: 10,
       maxPerUser: 1,
       sku: product.code,
@@ -438,20 +465,65 @@ export default function AdminFlashSalesPage() {
       toast.error("Biến thể này đã hết hàng trong tồn kho.");
       return;
     }
+    if (giftTargetIndex !== null) {
+      const targetItem = formItems[giftTargetIndex];
+      if (!targetItem) {
+        toast.error("Mặt hàng mục tiêu không còn tồn tại.");
+        setGiftTargetIndex(null);
+        setIsSelectorOpen(false);
+        return;
+      }
+      const currentGiftIds = targetItem.giftVariantIds || [];
+      const currentGiftNames = targetItem.giftNames || [];
+      const currentGiftImageUrls = targetItem.giftImageUrls || [];
+      const currentGiftPrices = targetItem.giftPrices || [];
+
+      let newGiftIds;
+      let newGiftNames;
+      let newGiftImageUrls;
+      let newGiftPrices;
+
+      if (currentGiftIds.includes(variant.variantID)) {
+        // Toggle OFF
+        const index = currentGiftIds.indexOf(variant.variantID);
+        newGiftIds = currentGiftIds.filter((id: number) => id !== variant.variantID);
+        newGiftNames = currentGiftNames.filter((_: string, i: number) => i !== index);
+        newGiftImageUrls = currentGiftImageUrls.filter((_: string, i: number) => i !== index);
+        newGiftPrices = currentGiftPrices.filter((_: number, i: number) => i !== index);
+        toast.info(`Đã bỏ chọn quà tặng: ${variant.variantName}`);
+      } else {
+        // Toggle ON
+        newGiftIds = [...currentGiftIds, variant.variantID];
+        newGiftNames = [...currentGiftNames, `${productName} (${variant.variantName})`];
+        newGiftImageUrls = [...currentGiftImageUrls, variant.imageUrl || selectedProductForVariants?.imageUrl || ""];
+        newGiftPrices = [...currentGiftPrices, variant.unitPrice];
+        toast.success(`Đã chọn quà tặng: ${productName} (${variant.variantName})`);
+      }
+
+      updateItemInForm(giftTargetIndex, "giftVariantIds", newGiftIds);
+      updateItemInForm(giftTargetIndex, "giftNames", newGiftNames);
+      updateItemInForm(giftTargetIndex, "giftImageUrls", newGiftImageUrls);
+      updateItemInForm(giftTargetIndex, "giftPrices", newGiftPrices);
+      return;
+    }
     if (formItems.some(item => item.type === FlashSaleItemType.Variant && item.refId === variant.variantID)) {
       toast.warning("Biến thể này đã được thêm vào chiến dịch.");
       return;
     }
+
+    const defaultDiscount = formType === CampaignType.BuyXGetY ? DiscountType.FreeGift : DiscountType.FixedPrice;
 
     const newItem = {
       type: FlashSaleItemType.Variant,
       refId: variant.variantID,
       name: `${productName} (${variant.variantName})`,
       originalPrice: variant.unitPrice,
-      discountPrice: Math.round(variant.unitPrice * 0.8), // default 20% off
-      discountType: DiscountType.FixedPrice,
-      requiredQty: 0,
-      giftVariantId: undefined,
+      discountPrice: defaultDiscount === DiscountType.FreeGift ? variant.unitPrice : Math.round(variant.unitPrice * 0.8),
+      discountType: defaultDiscount,
+      giftVariantIds: undefined,
+      giftNames: undefined,
+      giftImageUrls: undefined,
+      requiredQty: 1,
       totalQty: 10,
       maxPerUser: 1,
       sku: variant.sku,
@@ -466,6 +538,11 @@ export default function AdminFlashSalesPage() {
   };
 
   const addBundleToSale = (bundle: BundleResponse) => {
+    if (giftTargetIndex !== null) {
+      toast.warning("Không thể chọn Combo làm quà tặng. Vui lòng chọn Biến thể.");
+      return;
+    }
+
     const bundleStock = bundle.stock !== undefined ? bundle.stock : 0;
     if (bundleStock <= 0) {
       toast.error("Combo này đã hết hàng trong tồn kho.");
@@ -476,15 +553,19 @@ export default function AdminFlashSalesPage() {
       return;
     }
 
+    const defaultDiscount = formType === CampaignType.BuyXGetY ? DiscountType.FreeGift : DiscountType.FixedPrice;
+
     const newItem = {
       type: FlashSaleItemType.Bundle,
       refId: bundle.bundleID,
       name: bundle.name,
       originalPrice: bundle.originalPrice || bundle.price,
-      discountPrice: Math.round((bundle.originalPrice || bundle.price) * 0.8), // default 20% off
-      discountType: DiscountType.FixedPrice,
-      requiredQty: 0,
-      giftVariantId: undefined,
+      discountPrice: defaultDiscount === DiscountType.FreeGift ? (bundle.originalPrice || bundle.price) : Math.round((bundle.originalPrice || bundle.price) * 0.8),
+      discountType: defaultDiscount,
+      giftVariantIds: undefined,
+      giftNames: undefined,
+      giftImageUrls: undefined,
+      requiredQty: 1,
       totalQty: 5,
       maxPerUser: 1,
       sku: bundle.code,
@@ -494,6 +575,16 @@ export default function AdminFlashSalesPage() {
     setFormItems(prev => [...prev, newItem]);
     toast.success(`Đã thêm Combo "${bundle.name}"`);
     setIsSelectorOpen(false);
+  };
+
+  const addTierToItem = (index: number) => {
+    setFormItems(prev => {
+      const sourceItem = prev[index];
+      const newItem = { ...sourceItem, requiredQty: Number(sourceItem.requiredQty) + 1 };
+      const newArray = [...prev];
+      newArray.splice(index + 1, 0, newItem);
+      return newArray;
+    });
   };
 
   const filteredSales = sales.filter(sale => {
@@ -776,8 +867,13 @@ export default function AdminFlashSalesPage() {
 
                             <button
                               onClick={() => handleDeleteClick(sale)}
-                              className="p-1.5 hover:bg-rose-50 rounded-full text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
-                              title="Xóa"
+                              disabled={sale.flashSaleItems?.some(item => item.soldQuantity > 0)}
+                              className={`p-1.5 rounded-full transition-colors ${
+                                sale.flashSaleItems?.some(item => item.soldQuantity > 0)
+                                  ? "text-slate-300 cursor-not-allowed"
+                                  : "hover:bg-rose-50 text-rose-500 hover:text-rose-700 cursor-pointer"
+                              }`}
+                              title={sale.flashSaleItems?.some(item => item.soldQuantity > 0) ? "Đã có người mua, không thể xóa" : "Xóa"}
                             >
                               <span className="material-symbols-outlined text-lg">delete</span>
                             </button>
@@ -937,8 +1033,10 @@ export default function AdminFlashSalesPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    setGiftTargetIndex(null);
                     setIsSelectorOpen(true);
                     setSelectorSearch("");
+                    setSelectorTab("product");
                   }}
                   className="px-5 py-2.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold text-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
@@ -955,157 +1053,257 @@ export default function AdminFlashSalesPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {formItems.map((item, index) => {
-                    let typeBadge = "";
-                    let typeIcon = "";
-                    if (item.type === FlashSaleItemType.Product) {
-                      typeBadge = "bg-purple-50 text-purple-600 border-purple-100";
-                      typeIcon = "inventory_2";
-                    } else if (item.type === FlashSaleItemType.Variant) {
-                      typeBadge = "bg-blue-50 text-blue-600 border-blue-100";
-                      typeIcon = "layers";
-                    } else {
-                      typeBadge = "bg-green-50 text-green-600 border-green-100";
-                      typeIcon = "sell";
-                    }
+                  {(() => {
+                    const groups: { type: number, refId: number, baseItem: any, tiers: { index: number, item: any }[] }[] = [];
+                    formItems.forEach((item, index) => {
+                      let group = groups.find(g => g.type === item.type && g.refId === item.refId);
+                      if (!group) {
+                        group = { type: item.type, refId: item.refId, baseItem: item, tiers: [] };
+                        groups.push(group);
+                      }
+                      group.tiers.push({ index, item });
+                    });
 
-                    return (
-                      <div 
-                        key={index} 
-                        className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-100 rounded-2xl gap-4 hover:border-slate-200 transition-all group"
-                      >
-                        {/* Thumbnail & Title */}
-                        <div className="flex items-center gap-3 md:w-1/3">
-                          <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
-                            {item.imageUrl ? (
-                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="material-symbols-outlined text-slate-300">inventory_2</span>
+                    return groups.map((group, groupIdx) => {
+                      let typeBadge = "";
+                      let typeIcon = "";
+                      if (group.baseItem.type === FlashSaleItemType.Product) {
+                        typeBadge = "bg-purple-50 text-purple-600 border-purple-100";
+                        typeIcon = "inventory_2";
+                      } else if (group.baseItem.type === FlashSaleItemType.Variant) {
+                        typeBadge = "bg-blue-50 text-blue-600 border-blue-100";
+                        typeIcon = "layers";
+                      } else {
+                        typeBadge = "bg-green-50 text-green-600 border-green-100";
+                        typeIcon = "sell";
+                      }
+
+                      return (
+                        <div 
+                          key={groupIdx} 
+                          className="flex flex-col p-4 border border-slate-100 rounded-2xl gap-4 hover:border-slate-200 transition-all group/card bg-white"
+                        >
+                          {/* Header: Thumbnail & Title & Add Tier button */}
+                          <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                                {group.baseItem.imageUrl ? (
+                                  <img src={group.baseItem.imageUrl} alt={group.baseItem.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="material-symbols-outlined text-slate-300">inventory_2</span>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-slate-700 text-sm leading-snug line-clamp-2">{group.baseItem.name}</h4>
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                  <span className={`px-1.5 py-0.5 border text-[11px] font-bold rounded-md flex items-center gap-1 ${typeBadge}`}>
+                                    <span className="material-symbols-outlined text-[12px]">{typeIcon}</span>
+                                    {group.baseItem.type === FlashSaleItemType.Product ? "SP" : group.baseItem.type === FlashSaleItemType.Variant ? "Biến thể" : "Combo"}
+                                  </span>
+                                  {group.baseItem.sku && (
+                                    <span className="text-xs font-bold text-slate-400 font-mono">SKU: {group.baseItem.sku}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Tiers Timeline (Progress Bar Style) */}
+                          <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-2 px-1 scrollbar-thin">
+                            {group.tiers.map(({ index, item }, i) => (
+                              <Fragment key={index}>
+                                {/* Tier Card: Main Config */}
+                                <div className="flex-shrink-0 w-[240px] bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
+                                  {/* Header */}
+                                  <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200/80">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-full shadow-sm">
+                                      {formType === CampaignType.ComboDiscount ? `Mốc ${i + 1}` : "Cấu hình"}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeItemFromForm(index)}
+                                      className="text-slate-400 hover:text-rose-500 transition-colors p-1 bg-white hover:bg-rose-50 rounded-full"
+                                      title={formType === CampaignType.ComboDiscount ? "Xóa mốc giá này" : "Xóa mặt hàng này"}
+                                    >
+                                      <span className="material-symbols-outlined text-sm block">close</span>
+                                    </button>
+                                  </div>
+
+                                  {/* Inputs */}
+                                  <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                      {formType !== CampaignType.FlashSale && (
+                                        <div className="flex-1">
+                                          <label className="text-[9px] text-slate-500 font-bold uppercase tracking-widest text-primary block mb-1">
+                                            {formType === CampaignType.BuyXGetY ? "Mua từ (SL)" : "Khách mua từ"}
+                                          </label>
+                                          <input
+                                            type="number"
+                                            required
+                                            min={1}
+                                            value={item.requiredQty}
+                                            onChange={(e) => updateItemInForm(index, "requiredQty", e.target.value)}
+                                            className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                            title="Số lượng tối thiểu"
+                                          />
+                                        </div>
+                                      )}
+                                      
+                                      {formType !== CampaignType.BuyXGetY && (
+                                        <div className="flex-1">
+                                          <label className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Loại giảm</label>
+                                          <select
+                                            value={item.discountType}
+                                            onChange={(e) => updateItemInForm(index, "discountType", Number(e.target.value))}
+                                            className="w-full px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                                          >
+                                            <option value={DiscountType.FixedPrice}>Giá giảm</option>
+                                            <option value={DiscountType.Percentage}>Giảm %</option>
+                                            {formType === CampaignType.ComboDiscount && (
+                                              <option value={DiscountType.FreeGift}>Tặng quà</option>
+                                            )}
+                                          </select>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">
+                                        {item.discountType === DiscountType.FreeGift ? "Giá bán" : "Giá trị giảm"}
+                                      </label>
+                                      <input
+                                        type="number"
+                                        required
+                                        min={0}
+                                        value={item.discountPrice}
+                                        onChange={(e) => updateItemInForm(index, "discountPrice", e.target.value)}
+                                        placeholder={item.discountType === DiscountType.FreeGift ? "VD: 150000" : "Mức giảm"}
+                                        className="w-full px-2 py-1.5 bg-rose-50/50 border border-rose-200 rounded-lg text-sm font-bold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all placeholder:text-rose-300"
+                                      />
+                                    </div>
+
+                                    <div className="flex gap-2 pt-2 mt-2 border-t border-slate-200/60">
+                                      <div className="flex-1">
+                                        <label className="text-[9px] text-slate-450 font-bold uppercase tracking-widest block mb-1">Tồn Sale</label>
+                                        <input
+                                          type="number"
+                                          required
+                                          min={1}
+                                          value={item.totalQty}
+                                          onChange={(e) => updateItemInForm(index, "totalQty", e.target.value)}
+                                          className="w-full px-2 py-1.5 bg-white border border-slate-100 rounded-md text-xs font-semibold text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                                        />
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="text-[9px] text-slate-450 font-bold uppercase tracking-widest block mb-1">Max/Khách</label>
+                                        <input
+                                          type="number"
+                                          required
+                                          min={0}
+                                          value={item.maxPerUser}
+                                          onChange={(e) => updateItemInForm(index, "maxPerUser", e.target.value)}
+                                          className="w-full px-2 py-1.5 bg-white border border-slate-100 rounded-md text-xs font-semibold text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Tier Card: Gift List (if applicable) */}
+                                {item.discountType === DiscountType.FreeGift && (
+                                  <>
+                                    <div className="flex-shrink-0 w-6 border-t-2 border-dashed border-slate-300 relative self-center">
+                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                    </div>
+
+                                    <div className="flex-shrink-0 w-[260px] bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
+                                      <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200/80">
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-full shadow-sm text-primary">
+                                          Danh sách quà tặng
+                                        </span>
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        {item.giftVariantIds && item.giftVariantIds.length > 0 ? (
+                                          <div className="flex flex-col gap-1.5 w-full">
+                                            {item.giftVariantIds.map((id: number, gIdx: number) => (
+                                              <div key={id} className="flex items-center justify-between w-full px-2 py-1.5 bg-primary/5 border border-primary/20 rounded-lg text-xs transition-all text-left">
+                                                <span className="truncate flex-1 text-primary font-bold pr-2" title={item.giftNames?.[gIdx] || `ID Quà: ${id}`}>
+                                                  {item.giftNames?.[gIdx] || `ID Quà: ${id}`}
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const newIds = item.giftVariantIds.filter((_: any, k: number) => k !== gIdx);
+                                                    const newNames = (item.giftNames || []).filter((_: any, k: number) => k !== gIdx);
+                                                    const newImageUrls = (item.giftImageUrls || []).filter((_: any, k: number) => k !== gIdx);
+                                                    const newPrices = (item.giftPrices || []).filter((_: any, k: number) => k !== gIdx);
+                                                    updateItemInForm(index, "giftVariantIds", newIds);
+                                                    updateItemInForm(index, "giftNames", newNames);
+                                                    updateItemInForm(index, "giftImageUrls", newImageUrls);
+                                                    updateItemInForm(index, "giftPrices", newPrices);
+                                                  }}
+                                                  className="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors shrink-0"
+                                                  title="Xóa quà tặng này"
+                                                >
+                                                  <span className="material-symbols-outlined text-[14px] block">close</span>
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="py-3 text-center text-[11px] text-slate-400 font-semibold border border-dashed border-slate-200 rounded-lg bg-white">
+                                            Chưa có món quà nào
+                                          </div>
+                                        )}
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setGiftTargetIndex(index);
+                                            setSelectorTab("variant");
+                                            setIsSelectorOpen(true);
+                                          }}
+                                          className="w-full px-2 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-[11px] font-bold transition-all text-center flex items-center justify-center gap-1 mt-1"
+                                        >
+                                          <span className="material-symbols-outlined text-[14px]">add</span>
+                                          Thêm quà tặng
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* Connecting Line */}
+                                {i < group.tiers.length - 1 && (
+                                  <div className="flex-shrink-0 w-6 border-t-2 border-dashed border-slate-300 relative">
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                  </div>
+                                )}
+                              </Fragment>
+                            ))}
+
+                            {/* Add Tier Node Button */}
+                            {formType === CampaignType.ComboDiscount && (
+                              <>
+                                <div className="flex-shrink-0 w-6 border-t-2 border-dashed border-primary/40 relative">
+                                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => addTierToItem(group.tiers[group.tiers.length - 1].index)}
+                                  className="flex-shrink-0 w-12 h-12 ml-1 rounded-full border-2 border-dashed border-primary/50 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center justify-center shadow-sm hover:shadow-lg active:scale-95 group/addbtn"
+                                  title="Tạo mốc giảm sâu tiếp theo"
+                                >
+                                  <span className="material-symbols-outlined text-2xl group-hover/addbtn:rotate-90 transition-transform">add</span>
+                                </button>
+                              </>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-slate-700 text-sm leading-snug line-clamp-2">{item.name}</h4>
-                            <div className="flex items-center gap-1.5 mt-1.5">
-                              <span className={`px-1.5 py-0.5 border text-[11px] font-bold rounded-md flex items-center gap-1 ${typeBadge}`}>
-                                <span className="material-symbols-outlined text-[12px]">{typeIcon}</span>
-                                {item.type === FlashSaleItemType.Product ? "SP" : item.type === FlashSaleItemType.Variant ? "Biến thể" : "Combo"}
-                              </span>
-                              {item.sku && (
-                                <span className="text-xs font-bold text-slate-400 font-mono">SKU: {item.sku}</span>
-                              )}
-                            </div>
-                          </div>
                         </div>
-
-                        {/* Prices Input */}
-                        <div className="flex flex-wrap items-center gap-4 flex-1 md:justify-end">
-                          {/* Original Price Label */}
-                          <div className="w-24 shrink-0 text-right">
-                            <span className="text-xs text-slate-400 font-bold block uppercase tracking-widest">Giá gốc</span>
-                            <span className="text-sm font-bold text-slate-500 line-through mt-0.5 block">{formatCurrency(item.originalPrice)}</span>
-                          </div>
-
-                          <div className="w-28 shrink-0">
-                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Loại Giảm</label>
-                            <select
-                              value={item.discountType}
-                              onChange={(e) => updateItemInForm(index, "discountType", Number(e.target.value))}
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
-                            >
-                              <option value={DiscountType.FixedPrice}>Giá giảm</option>
-                              <option value={DiscountType.Percentage}>Giảm %</option>
-                              <option value={DiscountType.FreeGift}>Tặng quà</option>
-                            </select>
-                          </div>
-
-                          {item.discountType !== DiscountType.FreeGift ? (
-                            <div className="w-28 shrink-0">
-                              <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Mức giảm</label>
-                              <input
-                                type="number"
-                                required
-                                min={0}
-                                value={item.discountPrice}
-                                onChange={(e) => updateItemInForm(index, "discountPrice", e.target.value)}
-                                placeholder="Mức giảm"
-                                className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                              />
-                            </div>
-                          ) : (
-                            <>
-                              <div className="w-24 shrink-0">
-                                <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">SL Yêu cầu</label>
-                                <input
-                                  type="number"
-                                  required
-                                  min={1}
-                                  value={item.requiredQty}
-                                  onChange={(e) => updateItemInForm(index, "requiredQty", e.target.value)}
-                                  placeholder="Mua X"
-                                  className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                                  title="Số lượng sản phẩm khách cần mua để nhận quà"
-                                />
-                              </div>
-                              <div className="w-24 shrink-0">
-                                <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">ID Quà Tặng</label>
-                                <input
-                                  type="number"
-                                  required
-                                  min={1}
-                                  value={item.giftVariantId || ""}
-                                  onChange={(e) => updateItemInForm(index, "giftVariantId", e.target.value ? Number(e.target.value) : undefined)}
-                                  placeholder="Tặng Y"
-                                  className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                                  title="Nhập Variant ID của sản phẩm quà tặng"
-                                />
-                              </div>
-                            </>
-                          )}
-
-                          {/* Limit Stock Input */}
-                          <div className="w-24 shrink-0">
-                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">Số lượng Sale</label>
-                            <input
-                              type="number"
-                              required
-                              min={1}
-                              value={item.totalQty}
-                              onChange={(e) => updateItemInForm(index, "totalQty", e.target.value)}
-                              placeholder="Tồn Sale"
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                            />
-                          </div>
-
-                          {/* User limit quantity */}
-                          <div className="w-24 shrink-0">
-                            <label className="text-xs text-slate-455 font-bold block uppercase tracking-widest">G.Hạn/Khách</label>
-                            <input
-                              type="number"
-                              required
-                              min={0}
-                              value={item.maxPerUser}
-                              onChange={(e) => updateItemInForm(index, "maxPerUser", e.target.value)}
-                              placeholder="Giới hạn"
-                              className="w-full px-3 py-2 mt-1 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                              title="Số lượng tối đa 1 người mua (0 là không giới hạn)"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Remove Action Button */}
-                        <div className="shrink-0 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() => removeItemFromForm(index)}
-                            className="p-1.5 text-slate-450 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors cursor-pointer"
-                            title="Xóa khỏi danh sách"
-                          >
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </div>
@@ -1271,11 +1469,16 @@ export default function AdminFlashSalesPage() {
             {/* Header */}
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-2xl font-bold animate-pulse">add_shopping_cart</span>
-                <h3 className="text-xl font-bold text-slate-900">Thêm mặt hàng vào Flash Sale</h3>
+                <span className="material-symbols-outlined text-primary text-2xl font-bold animate-pulse">
+                  {giftTargetIndex !== null ? "card_giftcard" : "add_shopping_cart"}
+                </span>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {giftTargetIndex !== null ? "Chọn quà tặng" : "Thêm mặt hàng vào Flash Sale"}
+                </h3>
               </div>
               <button 
                 onClick={() => {
+                  setGiftTargetIndex(null);
                   setIsSelectorOpen(false);
                   setSelectedProductForVariants(null);
                   setSelectedProductVariants([]);
@@ -1289,13 +1492,15 @@ export default function AdminFlashSalesPage() {
             {/* Selector Tabs */}
             {!selectedProductForVariants && (
               <div className="flex border-b border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => { setSelectorTab("product"); setSelectorSearch(""); }}
-                  className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "product" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
-                >
-                  Sản phẩm (Product)
-                </button>
+                {giftTargetIndex === null && (
+                  <button
+                    type="button"
+                    onClick={() => { setSelectorTab("product"); setSelectorSearch(""); }}
+                    className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "product" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
+                  >
+                    Sản phẩm (Product)
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => { setSelectorTab("variant"); setSelectorSearch(""); }}
@@ -1303,13 +1508,15 @@ export default function AdminFlashSalesPage() {
                 >
                   Biến thể (Variant)
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectorTab("bundle"); setSelectorSearch(""); }}
-                  className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "bundle" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
-                >
-                  Combo (Bundle)
-                </button>
+                {giftTargetIndex === null && (
+                  <button
+                    type="button"
+                    onClick={() => { setSelectorTab("bundle"); setSelectorSearch(""); }}
+                    className={`flex-1 py-3.5 text-center text-sm font-bold transition-all border-b-2 ${selectorTab === "bundle" ? "border-primary text-primary" : "border-transparent text-slate-450 hover:text-slate-655"}`}
+                  >
+                    Combo (Bundle)
+                  </button>
+                )}
               </div>
             )}
 
@@ -1373,13 +1580,21 @@ export default function AdminFlashSalesPage() {
                         return <p className="text-sm font-semibold text-slate-400 py-4 text-center">Tất cả các biến thể đã hết hàng hoặc đã được thêm vào chiến dịch.</p>;
                       }
 
-                      return availableVariantsForSale.map((variant) => (
+                      return availableVariantsForSale.map((variant) => {
+                        const isSelectedGift = giftTargetIndex !== null && (formItems[giftTargetIndex]?.giftVariantIds || []).includes(variant.variantID);
+
+                        return (
                         <div 
                           key={variant.variantID}
                           onClick={() => addVariantToSale(variant, selectedProductForVariants.productName)}
-                          className="flex items-center justify-between p-3.5 border border-slate-100 rounded-xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                          className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5"}`}
                         >
-                          <div className="flex items-center gap-3">
+                          {isSelectedGift && (
+                            <div className="absolute top-0 right-0 w-8 h-8 bg-primary rounded-bl-xl flex items-center justify-center shadow-sm z-10">
+                              <span className="material-symbols-outlined text-white text-[16px] font-bold">check</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-3 relative z-0">
                             <div className="w-18 h-18 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                               {variant.imageUrl ? (
                                 <img src={variant.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
@@ -1390,18 +1605,18 @@ export default function AdminFlashSalesPage() {
                               )}
                             </div>
                             <div>
-                              <h5 className="font-bold text-slate-700 text-sm leading-snug group-hover:text-primary transition-colors">
+                              <h5 className={`font-bold text-sm leading-snug transition-colors ${isSelectedGift ? "text-primary" : "text-slate-700 group-hover:text-primary"}`}>
                                 {variant.variantName}
                               </h5>
                               <p className="text-xs font-bold text-slate-400 font-mono mt-1">SKU: {variant.sku || "N/A"}</p>
                             </div>
                           </div>
-                          <div className="text-right shrink-0">
+                          <div className="text-right shrink-0 relative z-0">
                             <span className="font-bold text-slate-700 text-sm">{formatCurrency(variant.unitPrice)}</span>
                             <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {variant.stock}</p>
                           </div>
                         </div>
-                      ));
+                      )});
                     })()}
                   </div>
                 </div>

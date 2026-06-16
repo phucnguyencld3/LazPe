@@ -49,8 +49,8 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Số lượng yêu cầu (Mua X)")]
         public int RequiredQuantity { get; set; } = 1;
 
-        [Display(Name = "Phân loại quà tặng (Nếu có)")]
-        public int? GiftVariantId { get; set; }
+        [Display(Name = "Danh sách ID quà tặng (Nếu có)")]
+        public string? GiftVariantIds { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]

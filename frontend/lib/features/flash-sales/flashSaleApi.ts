@@ -30,7 +30,7 @@ export interface CreateFlashSaleItemDto {
   discountPrice: number;
   discountType: DiscountType;
   requiredQuantity: number;
-  giftVariantId?: number;
+  giftVariantIds?: number[];
   totalQuantity: number;
   maxQuantityPerUser: number;
 }
@@ -69,9 +69,9 @@ export interface FlashSaleItemResponseDto {
   discountPrice: number;
   discountType: DiscountType;
   requiredQuantity: number;
-  giftVariantId?: number;
-  giftName?: string;
-  giftImageUrl?: string;
+  giftVariantIds?: number[];
+  giftNames?: string[];
+  giftImageUrls?: string[];
   totalQuantity: number;
   soldQuantity: number;
   maxQuantityPerUser: number;

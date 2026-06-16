@@ -39,6 +39,8 @@ export default function ProductDetailPage() {
   };
   const [activeTab, setActiveTab] = useState<"description" | "specifications" | "shipping">("description");
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Fetch product detail
   useEffect(() => {
@@ -155,6 +157,52 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
+  const activeFlashSaleItem = useMemo(() => {
+    if (!activeFlashSale || !product) return null;
+
+    let matchedItems: FlashSaleItemResponseDto[] = [];
+    
+    // We need current variant here, so moved this up
+    const currentVariant = product.variants?.find((variant) => {
+      return Object.entries(selectedOptions).every(([optionName, optionValue]) => {
+        const option = product.productOptions?.find((o) => o.name.toLowerCase() === optionName.toLowerCase());
+        const optVal = option?.productOptionValues.find((v) => v.value.toLowerCase() === optionValue.toLowerCase());
+        if (!optVal) return false;
+        return variant.variantOptionValues.some((vov) => vov.productOptionValueID === optVal.productOptionValueID);
+      });
+    });
+
+    if (currentVariant) {
+      matchedItems = activeFlashSale.flashSaleItems.filter(
+        (item) => item.itemType === 2 && item.referenceId === currentVariant.variantID
+      );
+    }
+    
+    if (matchedItems.length === 0) {
+      matchedItems = activeFlashSale.flashSaleItems.filter(
+        (item) => item.itemType === 1 && item.referenceId === product.id
+      );
+    }
+    
+    if (matchedItems.length === 0) return null;
+    
+    // Sort by requiredQty DESC
+    matchedItems.sort((a, b) => (b.requiredQuantity || 1) - (a.requiredQuantity || 1));
+    
+    // Find the tier that matches the current quantity
+    const tier = matchedItems.find(item => quantity >= (item.requiredQuantity || 1));
+    
+    return tier || matchedItems[matchedItems.length - 1];
+  }, [activeFlashSale, product, selectedOptions, quantity]);
+
+  useEffect(() => {
+    if (activeFlashSaleItem?.giftVariantIds && activeFlashSaleItem.giftVariantIds.length > 0) {
+      setSelectedGiftId(activeFlashSaleItem.giftVariantIds[0]);
+    } else {
+      setSelectedGiftId(null);
+    }
+  }, [activeFlashSaleItem]);
+
   // Find matching variant based on selected options
   const activeVariant = useMemo(() => {
     if (!product || !product.variants || product.variants.length === 0) return null;
@@ -178,22 +226,6 @@ export default function ProductDetailPage() {
       });
     });
   }, [product, selectedOptions]);
-
-  const activeFlashSaleItem = useMemo(() => {
-    if (!activeFlashSale || !product) return null;
-
-    if (activeVariant) {
-      const variantItem = activeFlashSale.flashSaleItems.find(
-        (item) => item.itemType === 2 && item.referenceId === activeVariant.variantID
-      );
-      if (variantItem) return variantItem;
-    }
-
-    const productItem = activeFlashSale.flashSaleItems.find(
-      (item) => item.itemType === 1 && item.referenceId === product.id
-    );
-    return productItem;
-  }, [activeFlashSale, product, activeVariant]);
 
   // Derived Values
   const displayImage = useMemo(() => {
@@ -246,13 +278,13 @@ export default function ProductDetailPage() {
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
   
   const displayDiscountPrice = useMemo(() => {
-    if (activeFlashSaleItem) {
+    if (activeFlashSaleItem && activeFlashSale?.status === 1) {
       return activeFlashSaleItem.discountPrice;
     }
     return activeVariant 
       ? (activeVariant.effectiveDiscountPercent > 0 ? activeVariant.finalPrice : undefined)
       : product?.discountPrice;
-  }, [activeFlashSaleItem, activeVariant, product]);
+  }, [activeFlashSaleItem, activeVariant, product, activeFlashSale]);
 
   const displayStock = activeVariant ? activeVariant.stock : product?.quantity ?? 0;
   const displaySku = activeVariant ? activeVariant.sku : `LP-${product?.id}`;
@@ -315,45 +347,33 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const variantId = activeVariant?.variantID;
-    if (!variantId) {
-      // If there are no options, but there is at least one variant, use the first variant
-      const firstVariantId = product?.variants?.[0]?.variantID;
-      if (!firstVariantId) {
+    const fallbackVariantId = product?.variants?.[0]?.variantID || (product?.variants?.[0] as any)?.variantId;
+    const finalVariantId = activeVariant?.variantID || (activeVariant as any)?.variantId || fallbackVariantId;
+
+    const payload = {
+        variantID: finalVariantId,
+        quantity: quantity,
+        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && quantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
+    };
+
+    if (!payload.variantID) {
         toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
         return;
-      }
-      
-      try {
-        const res = await addToCart({
-          variantID: firstVariantId,
-          quantity: quantity,
-        });
-        if (res.success) {
-          toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng thành công!`);
-        } else {
-          toast.error(res.message || "Không thể thêm sản phẩm vào giỏ hàng");
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("Lỗi kết nối mạng");
-      }
-      return;
     }
 
     try {
-      const res = await addToCart({
-        variantID: variantId,
-        quantity: quantity,
-      });
+      setIsAddingToCart(true);
+      const res = await addToCart(payload);
       if (res.success) {
-        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng! (Phân loại: ${activeVariant?.variantName || "Tiêu chuẩn"})`);
+        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng! ${activeVariant?.variantName ? `(Phân loại: ${activeVariant.variantName})` : ""}`);
       } else {
         toast.error(res.message || "Không thể thêm sản phẩm vào giỏ hàng");
       }
     } catch (err) {
       console.error(err);
       toast.error("Lỗi kết nối mạng");
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -365,37 +385,22 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const variantId = activeVariant?.variantID;
-    if (!variantId) {
-      // Use the first variant if no specific options
-      const firstVariantId = product?.variants?.[0]?.variantID;
-      if (!firstVariantId) {
+    const fallbackVariantId = product?.variants?.[0]?.variantID || (product?.variants?.[0] as any)?.variantId;
+    const finalVariantId = activeVariant?.variantID || (activeVariant as any)?.variantId || fallbackVariantId;
+
+    const payload = {
+        variantID: finalVariantId,
+        quantity: quantity,
+        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && quantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
+    };
+
+    if (!payload.variantID) {
         toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
         return;
-      }
-      
-      try {
-        const res = await addToCart({
-          variantID: firstVariantId,
-          quantity: quantity,
-        });
-        if (res.success) {
-          router.push("/cart");
-        } else {
-          toast.error(res.message || "Lỗi khi thêm vào giỏ hàng");
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("Lỗi kết nối mạng");
-      }
-      return;
     }
 
     try {
-      const res = await addToCart({
-        variantID: variantId,
-        quantity: quantity,
-      });
+      const res = await addToCart(payload);
       if (res.success) {
         router.push("/cart");
       } else {
@@ -485,8 +490,11 @@ export default function ProductDetailPage() {
               setIsWishlisted={setIsWishlisted}
               activeVariant={activeVariant}
               activeFlashSaleItem={activeFlashSaleItem}
-              flashSaleEndTime={activeFlashSale?.endTime}
+              flashSaleEndTime={activeFlashSale?.status === 0 ? activeFlashSale?.startTime : activeFlashSale?.endTime}
               flashSaleStatus={activeFlashSale?.status}
+              selectedGiftId={selectedGiftId}
+              setSelectedGiftId={setSelectedGiftId}
+              isAddingToCart={isAddingToCart}
             />
           </div>
         </div>

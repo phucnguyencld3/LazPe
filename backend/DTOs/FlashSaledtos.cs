@@ -44,7 +44,7 @@ namespace PolyBabyAPI.DTOs
 
         public int RequiredQuantity { get; set; } = 1;
 
-        public int? GiftVariantId { get; set; }
+        public List<int>? GiftVariantIds { get; set; }
 
         [Required(ErrorMessage = "Tổng số lượng sản phẩm Sale là bắt buộc")]
         [Range(1, int.MaxValue, ErrorMessage = "Tổng số lượng phải lớn hơn 0")]
@@ -106,9 +106,9 @@ namespace PolyBabyAPI.DTOs
         public decimal DiscountPrice { get; set; }
         public DiscountType DiscountType { get; set; }
         public int RequiredQuantity { get; set; }
-        public int? GiftVariantId { get; set; }
-        public string? GiftName { get; set; }
-        public string? GiftImageUrl { get; set; }
+        public List<int>? GiftVariantIds { get; set; }
+        public List<string>? GiftNames { get; set; }
+        public List<string>? GiftImageUrls { get; set; }
         public int TotalQuantity { get; set; }
         public int SoldQuantity { get; set; }
         public int MaxQuantityPerUser { get; set; }

@@ -25,6 +25,9 @@ interface ProductDetailInfoProps {
   activeFlashSaleItem?: any;
   flashSaleEndTime?: string;
   flashSaleStatus?: number;
+  selectedGiftId?: number | null;
+  setSelectedGiftId?: (id: number | null) => void;
+  isAddingToCart?: boolean;
 }
 
 export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
@@ -49,15 +52,15 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   activeFlashSaleItem = null,
   flashSaleEndTime = "",
   flashSaleStatus = 0,
+  selectedGiftId = null,
+  setSelectedGiftId = () => {},
+  isAddingToCart = false,
 }) => {
   const maxAllowedQuantity = useMemo(() => {
     let limit = displayStock;
     if (activeFlashSaleItem) {
       const remainingSaleQty = activeFlashSaleItem.totalQuantity - activeFlashSaleItem.soldQuantity;
       limit = Math.min(limit, remainingSaleQty);
-      if (activeFlashSaleItem.maxQuantityPerUser > 0) {
-        limit = Math.min(limit, activeFlashSaleItem.maxQuantityPerUser);
-      }
     }
     return Math.max(0, limit);
   }, [displayStock, activeFlashSaleItem]);
@@ -120,68 +123,86 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
         </div>
 
         {/* Price Display / Flash Sale Widget */}
-        {activeFlashSaleItem && flashSaleEndTime ? (
-          <div className="rounded-2xl border border-rose-200 overflow-hidden mb-6 shadow-sm shadow-rose-500/5">
-            {/* Flash Sale Header */}
-            <div className="bg-gradient-to-r from-rose-600 to-orange-500 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-white">
-              <div className="flex items-center gap-1.5 font-black uppercase text-xs sm:text-sm tracking-wider">
-                <span className="material-symbols-outlined text-yellow-300 animate-bounce">bolt</span>
-                <span>FLASH SALE ĐANG DIỄN RA</span>
+        {/* Price Display / Flash Sale Widget */}
+        {activeFlashSaleItem && flashSaleEndTime && (
+          <div className={`rounded-[10px] border overflow-hidden mb-4 shadow-sm ${flashSaleStatus === 0 ? "border-blue-200 shadow-blue-500/5" : "border-rose-200 shadow-rose-500/5"}`}>
+            <div className={`px-2 py-1 flex flex-wrap items-center justify-between gap-2 text-white ${flashSaleStatus === 0 ? "bg-gradient-to-r from-blue-600 to-indigo-500" : "bg-gradient-to-r from-rose-600 to-orange-500"}`}>
+              <div className="flex items-center gap-1 font-black uppercase text-[10px] sm:text-xs tracking-wider">
+                {flashSaleStatus === 0 ? (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] text-yellow-300">event</span>
+                    <span>SẮP DIỄN RA</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] text-yellow-300 animate-bounce">bolt</span>
+                    <span>FLASH SALE</span>
+                  </>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-rose-100">Kết thúc sau:</span>
-                <CountdownTimer endTime={flashSaleEndTime} variant="light" size="sm" />
+              <div className="flex items-center gap-1.5 text-[10px]">
+                <span className={`font-semibold ${flashSaleStatus === 0 ? "text-blue-100" : "text-rose-100"}`}>
+                  {flashSaleStatus === 0 ? "Bắt đầu sau:" : "Kết thúc sau:"}
+                </span>
+                <div className="scale-75 origin-right -my-2 [&_.text-slate-400]:!text-white/90">
+                  <CountdownTimer endTime={flashSaleEndTime} variant="light" size="sm" />
+                </div>
               </div>
             </div>
 
-            {/* Flash Sale Price Detail */}
-            <div className="bg-rose-50/20 p-4 sm:p-6 space-y-4">
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="text-3xl font-black text-rose-600">
-                  ₫{activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
+            <div className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${flashSaleStatus === 0 ? "bg-blue-50/20" : "bg-rose-50/20"}`}>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-xl sm:text-2xl font-black leading-none ${flashSaleStatus === 0 ? "text-blue-600" : "text-rose-600"}`}>
+                  ₫{flashSaleStatus === 0 
+                    ? activeFlashSaleItem.discountPrice.toLocaleString("vi-VN").replace(/^(\d)[^\d]*(\d)/, (m) => m.slice(0, -1) + "?") 
+                    : activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
                 </span>
                 {activeFlashSaleItem.discountType !== 2 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
-                  <span className="text-sm text-slate-400 line-through font-semibold">
+                  <span className="text-xs text-slate-400 line-through font-semibold">
                     ₫{activeFlashSaleItem.originalPrice.toLocaleString("vi-VN")}
                   </span>
                 )}
                 {activeFlashSaleItem.discountType === 2 ? (
-                  <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md uppercase flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[12px]">redeem</span> Mua là có quà
+                  <span className={`border text-[9px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-0.5 ${flashSaleStatus === 0 ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-emerald-100 text-emerald-700 border-emerald-200"}`}>
+                    <span className="material-symbols-outlined text-[10px]">redeem</span> Có quà
                   </span>
                 ) : activeFlashSaleItem.originalPrice > 0 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
-                  <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${flashSaleStatus === 0 ? "bg-blue-100 text-blue-600" : "bg-rose-100 text-rose-600"}`}>
                     Tiết kiệm {Math.round(((activeFlashSaleItem.originalPrice - activeFlashSaleItem.discountPrice) / activeFlashSaleItem.originalPrice) * 100)}%
                   </span>
                 )}
               </div>
 
-              {/* Progress bar */}
-              <div className="space-y-1.5">
-                <div className="relative w-full h-5 bg-rose-100 rounded-full overflow-hidden flex items-center justify-center border border-rose-200">
-                  <div 
-                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-500 to-orange-500 transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.max(0, (activeFlashSaleItem.soldQuantity / activeFlashSaleItem.totalQuantity) * 100))}%` }}
-                  ></div>
-                  <span className="relative z-10 text-[9px] sm:text-[10px] font-black text-slate-800 uppercase tracking-wider">
-                    {activeFlashSaleItem.soldQuantity >= activeFlashSaleItem.totalQuantity 
-                      ? "Cháy hàng" 
-                      : `Đã bán ${activeFlashSaleItem.soldQuantity} / ${activeFlashSaleItem.totalQuantity} sản phẩm`
-                    }
-                  </span>
+              <div className="flex items-center gap-2">
+                <div className="w-24 sm:w-32">
+                  <div className={`relative w-full h-3 rounded-full overflow-hidden flex items-center justify-center border ${flashSaleStatus === 0 ? "bg-slate-100 border-slate-200" : "bg-rose-100 border-rose-200"}`}>
+                    <div 
+                      className={`absolute left-0 top-0 h-full transition-all duration-500 ${flashSaleStatus === 0 ? "bg-slate-300" : "bg-gradient-to-r from-rose-500 to-orange-500"}`}
+                      style={{ width: `${flashSaleStatus === 0 ? 0 : Math.min(100, Math.max(0, (activeFlashSaleItem.soldQuantity / activeFlashSaleItem.totalQuantity) * 100))}%` }}
+                    ></div>
+                    <span className={`relative z-10 text-[8px] font-black uppercase tracking-wider ${flashSaleStatus === 0 ? "text-slate-500" : "text-slate-800"}`}>
+                      {flashSaleStatus === 0 
+                        ? "Sắp mở bán"
+                        : activeFlashSaleItem.soldQuantity >= activeFlashSaleItem.totalQuantity 
+                          ? "Cháy hàng" 
+                          : `Đã bán ${activeFlashSaleItem.soldQuantity}/${activeFlashSaleItem.totalQuantity}`
+                      }
+                    </span>
+                  </div>
                 </div>
+                
+                {activeFlashSaleItem.maxQuantityPerUser > 0 && (
+                  <div className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap ${flashSaleStatus === 0 ? "text-blue-500 bg-blue-50/50 border-blue-100/50" : "text-rose-500 bg-rose-50/50 border-rose-100/50"}`}>
+                    Tối đa {activeFlashSaleItem.maxQuantityPerUser}
+                  </div>
+                )}
               </div>
-
-              {/* Limits */}
-              {activeFlashSaleItem.maxQuantityPerUser > 0 && (
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-500 bg-rose-50/50 p-2 rounded-xl border border-rose-100/50">
-                  <span className="material-symbols-outlined text-sm">info</span>
-                  Mỗi khách hàng được mua tối đa {activeFlashSaleItem.maxQuantityPerUser} sản phẩm
-                </div>
-              )}
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* Normal Price Display if not active flash sale */}
+        {(!activeFlashSaleItem || flashSaleStatus === 0) && (
           <div className="bg-slate-50/80 rounded-2xl p-4 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {(() => {
               const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
@@ -265,6 +286,82 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
           </div>
         )}
 
+        {/* Gift Selection UI */}
+        {activeFlashSaleItem?.discountType === 2 && activeFlashSaleItem?.giftVariantIds && activeFlashSaleItem.giftVariantIds.length > 0 && (
+          <div className="space-y-3 mb-6 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-700">Quà tặng / Ưu đãi:</span>
+              </div>
+              {quantity < activeFlashSaleItem.requiredQuantity && (
+                <span className="text-[10px] text-rose-500 font-medium bg-rose-50 px-2 py-0.5 rounded-md">
+                  Mua từ {activeFlashSaleItem.requiredQuantity} sp để nhận quà
+                </span>
+              )}
+            </div>
+            
+            <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x" style={{ scrollbarWidth: 'none' }}>
+              {activeFlashSaleItem.giftVariantIds.map((giftId: number, index: number) => {
+                const giftName = activeFlashSaleItem.giftNames?.[index] || "Quà tặng bí mật";
+                const giftImage = activeFlashSaleItem.giftImageUrls?.[index] || "/assets/img/products/default-product.jpg";
+                const isSelected = selectedGiftId === giftId;
+                const tooltipText = `• Tặng 1 sản phẩm kèm theo (tối đa 1 combo/KH)\n• ${giftName}\n• Số lượng: 1`;
+                
+                return (
+                  <button
+                    key={giftId}
+                    disabled={quantity < activeFlashSaleItem.requiredQuantity}
+                    onClick={() => setSelectedGiftId && setSelectedGiftId(giftId)}
+                    title={tooltipText}
+                    className={`relative min-w-[96px] w-[96px] snap-center shrink-0 flex flex-col p-2 rounded-[10px] border transition-all text-left ${
+                      quantity < activeFlashSaleItem.requiredQuantity
+                        ? "border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed"
+                        : isSelected 
+                          ? "border-rose-500 bg-rose-50/30 shadow-sm" 
+                          : "border-slate-200 bg-white hover:border-rose-200"
+                    }`}
+                  >
+                    {/* Image */}
+                    <div className="w-full aspect-square relative rounded-md overflow-hidden bg-slate-50 mb-2 border border-slate-100">
+                      <img src={giftImage} alt={giftName} className="w-full h-full object-cover mix-blend-multiply" />
+                    </div>
+                    
+                    {/* Free Badge */}
+                    <div className="mb-1.5 flex justify-center w-full">
+                      <span className="text-[9px] font-black text-[#00a5ff] bg-[#e8f6ff] border border-[#bce4ff] px-1.5 py-0.5 rounded-md flex items-center gap-0.5 w-fit uppercase">
+                        <span className="material-symbols-outlined text-[10px]">redeem</span> Free
+                      </span>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-baseline justify-center gap-1 mb-2 w-full">
+                      <span className="font-bold text-[11px] text-slate-900">0đ</span>
+                      <span className="text-[9px] text-slate-400 line-through">155.000đ</span>
+                    </div>
+
+                    {/* Radio Button */}
+                    <div className="flex items-center justify-center gap-1 mt-auto w-full">
+                      {isSelected ? (
+                        <>
+                          <div className="w-3.5 h-3.5 rounded-full bg-rose-500 flex items-center justify-center text-white shrink-0">
+                            <span className="material-symbols-outlined text-[8px] font-bold">check</span>
+                          </div>
+                          <span className="text-[10px] font-medium text-rose-500 truncate">Được chọn</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0"></div>
+                          <span className="text-[10px] text-slate-500 truncate">Chọn</span>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Dynamic Variants Selectors (Text Only) */}
         {product.productOptions && product.productOptions.length > 0 && (
           <div className="space-y-4 mb-6 pt-4 border-t border-slate-100">
@@ -327,17 +424,23 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              disabled={!displayInStock || maxAllowedQuantity <= 0}
+              disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
               className="w-1/2 h-12 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
             >
-              <ShoppingCart size={18} />
-              Thêm giỏ hàng
+              {isAddingToCart ? (
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <ShoppingCart size={18} />
+                  Thêm giỏ hàng
+                </>
+              )}
             </button>
 
             {/* Buy Now Button */}
             <button
               onClick={handleBuyNow}
-              disabled={!displayInStock || maxAllowedQuantity <= 0}
+              disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
               className="w-1/2 h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
             >
               Mua ngay

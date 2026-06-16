@@ -9,7 +9,7 @@ namespace PolyBabyAPI.Interfaces
         Task<Cart> GetCartByIdAsync(int cartId);
         
         // Phương thức thao tác giỏ hàng cơ bản (nếu chưa có trong CartController cũ)
-        Task AddToCartAsync(string userId, int? variantId, int? bundleId, int quantity);
+        Task AddToCartAsync(string userId, int? variantId, int? bundleId, int quantity, int? selectedGiftVariantId = null);
         Task RemoveFromCartAsync(int cartDetailId);
         Task UpdateQuantityAsync(int cartDetailId, int quantity);
         Task ClearCartAsync(int cartId);

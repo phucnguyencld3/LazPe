@@ -93,7 +93,7 @@ namespace PolyBabyAPI.Controllers
                         DiscountPrice = item.DiscountPrice,
                         DiscountType = item.DiscountType,
                         RequiredQuantity = item.RequiredQuantity,
-                        GiftVariantId = item.GiftVariantId,
+                        GiftVariantIds = !string.IsNullOrEmpty(item.GiftVariantIds) ? item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList() : null,
                         TotalQuantity = item.TotalQuantity,
                         SoldQuantity = item.SoldQuantity,
                         MaxQuantityPerUser = item.MaxQuantityPerUser
@@ -139,15 +139,24 @@ namespace PolyBabyAPI.Controllers
                         }
                     }
 
-                    if (item.GiftVariantId.HasValue)
+                    if (!string.IsNullOrEmpty(item.GiftVariantIds))
                     {
-                        var giftVariant = await _context.Variants
-                            .Include(v => v.Product)
-                            .FirstOrDefaultAsync(v => v.VariantID == item.GiftVariantId);
-                        if (giftVariant != null)
+                        var giftIds = item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+                        if (giftIds.Any())
                         {
-                            itemDto.GiftName = $"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})";
-                            itemDto.GiftImageUrl = giftVariant.ImageUrl;
+                            var giftVariants = await _context.Variants
+                                .Include(v => v.Product)
+                                .Where(v => giftIds.Contains(v.VariantID))
+                                .ToListAsync();
+
+                            itemDto.GiftNames = new List<string>();
+                            itemDto.GiftImageUrls = new List<string>();
+
+                            foreach (var giftVariant in giftVariants)
+                            {
+                                itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
+                                itemDto.GiftImageUrls.Add(giftVariant.ImageUrl);
+                            }
                         }
                     }
 
@@ -213,7 +222,7 @@ namespace PolyBabyAPI.Controllers
                         DiscountPrice = item.DiscountPrice,
                         DiscountType = item.DiscountType,
                         RequiredQuantity = item.RequiredQuantity,
-                        GiftVariantId = item.GiftVariantId,
+                        GiftVariantIds = !string.IsNullOrEmpty(item.GiftVariantIds) ? item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList() : null,
                         TotalQuantity = item.TotalQuantity,
                         SoldQuantity = item.SoldQuantity,
                         MaxQuantityPerUser = item.MaxQuantityPerUser
@@ -264,7 +273,7 @@ namespace PolyBabyAPI.Controllers
                     DiscountPrice = item.DiscountPrice,
                     DiscountType = item.DiscountType,
                     RequiredQuantity = item.RequiredQuantity,
-                    GiftVariantId = item.GiftVariantId,
+                    GiftVariantIds = !string.IsNullOrEmpty(item.GiftVariantIds) ? item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList() : null,
                     TotalQuantity = item.TotalQuantity,
                     SoldQuantity = item.SoldQuantity,
                     MaxQuantityPerUser = item.MaxQuantityPerUser
@@ -304,15 +313,24 @@ namespace PolyBabyAPI.Controllers
                     }
                 }
 
-                if (item.GiftVariantId.HasValue)
+                if (!string.IsNullOrEmpty(item.GiftVariantIds))
                 {
-                    var giftVariant = await _context.Variants
-                        .Include(v => v.Product)
-                        .FirstOrDefaultAsync(v => v.VariantID == item.GiftVariantId);
-                    if (giftVariant != null)
+                    var giftIds = item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+                    if (giftIds.Any())
                     {
-                        itemDto.GiftName = $"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})";
-                        itemDto.GiftImageUrl = giftVariant.ImageUrl;
+                        var giftVariants = await _context.Variants
+                            .Include(v => v.Product)
+                            .Where(v => giftIds.Contains(v.VariantID))
+                            .ToListAsync();
+
+                        itemDto.GiftNames = new List<string>();
+                        itemDto.GiftImageUrls = new List<string>();
+
+                        foreach (var giftVariant in giftVariants)
+                        {
+                            itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
+                            itemDto.GiftImageUrls.Add(giftVariant.ImageUrl);
+                        }
                     }
                 }
 
@@ -327,9 +345,9 @@ namespace PolyBabyAPI.Controllers
         public async Task<IActionResult> CreateFlashSale([FromBody] CreateFlashSaleDto dto)
         {
             var now = DateTime.Now;
-            if (dto.StartTime < now.AddMinutes(-2))
+            if (dto.StartTime < now.AddMinutes(-5))
             {
-                return BadRequest(new { message = "Thời gian bắt đầu không được ở quá khứ." });
+                return BadRequest(new { message = "Thời gian bắt đầu không được ở quá khứ quá 5 phút." });
             }
 
             if (dto.EndTime <= now)
@@ -340,6 +358,13 @@ namespace PolyBabyAPI.Controllers
             if (dto.StartTime >= dto.EndTime)
             {
                 return BadRequest(new { message = "Thời gian kết thúc phải lớn hơn thời gian bắt đầu." });
+            }
+
+            // Kiểm tra trùng lặp sản phẩm trong các Flash Sale khác cùng thời điểm
+            var overlapError = await CheckOverlapFlashSaleItemsAsync(dto.FlashSaleItems, dto.StartTime, dto.EndTime, null);
+            if (!string.IsNullOrEmpty(overlapError))
+            {
+                return BadRequest(new { message = overlapError });
             }
 
             var sale = new FlashSale
@@ -364,7 +389,7 @@ namespace PolyBabyAPI.Controllers
                     DiscountPrice = itemDto.DiscountPrice,
                     DiscountType = itemDto.DiscountType,
                     RequiredQuantity = itemDto.RequiredQuantity,
-                    GiftVariantId = itemDto.GiftVariantId,
+                    GiftVariantIds = itemDto.GiftVariantIds != null && itemDto.GiftVariantIds.Any() ? string.Join(",", itemDto.GiftVariantIds) : null,
                     TotalQuantity = itemDto.TotalQuantity,
                     SoldQuantity = 0,
                     MaxQuantityPerUser = itemDto.MaxQuantityPerUser
@@ -399,15 +424,22 @@ namespace PolyBabyAPI.Controllers
 
             if (sale.Status == FlashSaleStatus.Upcoming || dto.StartTime != sale.StartTime)
             {
-                if (dto.StartTime < now.AddMinutes(-2))
+                if (dto.StartTime < now.AddMinutes(-5))
                 {
-                    return BadRequest(new { message = "Thời gian bắt đầu không được ở quá khứ." });
+                    return BadRequest(new { message = "Thời gian bắt đầu không được ở quá khứ quá 5 phút." });
                 }
             }
 
             if (dto.StartTime >= dto.EndTime)
             {
                 return BadRequest(new { message = "Thời gian kết thúc phải lớn hơn thời gian bắt đầu." });
+            }
+
+            // Kiểm tra trùng lặp sản phẩm trong các Flash Sale khác cùng thời điểm
+            var overlapError = await CheckOverlapFlashSaleItemsAsync(dto.FlashSaleItems, dto.StartTime, dto.EndTime, id);
+            if (!string.IsNullOrEmpty(overlapError))
+            {
+                return BadRequest(new { message = overlapError });
             }
 
             sale.Name = dto.Name;
@@ -438,7 +470,7 @@ namespace PolyBabyAPI.Controllers
                     DiscountPrice = itemDto.DiscountPrice,
                     DiscountType = itemDto.DiscountType,
                     RequiredQuantity = itemDto.RequiredQuantity,
-                    GiftVariantId = itemDto.GiftVariantId,
+                    GiftVariantIds = itemDto.GiftVariantIds != null && itemDto.GiftVariantIds.Any() ? string.Join(",", itemDto.GiftVariantIds) : null,
                     TotalQuantity = itemDto.TotalQuantity,
                     SoldQuantity = 0,
                     MaxQuantityPerUser = itemDto.MaxQuantityPerUser
@@ -563,6 +595,37 @@ namespace PolyBabyAPI.Controllers
             return User.FindFirst("UserId")?.Value
                    ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                    ?? string.Empty;
+        }
+
+        private async Task<string> CheckOverlapFlashSaleItemsAsync(List<CreateFlashSaleItemDto> items, DateTime startTime, DateTime endTime, int? excludeFlashSaleId)
+        {
+            var overlappingSales = await _context.FlashSales
+                .Include(fs => fs.FlashSaleItems)
+                .Where(fs => fs.IsActive && fs.Status != FlashSaleStatus.Ended)
+                .Where(fs => fs.StartTime < endTime && fs.EndTime > startTime)
+                .Where(fs => !excludeFlashSaleId.HasValue || fs.Id != excludeFlashSaleId.Value)
+                .ToListAsync();
+
+            if (!overlappingSales.Any())
+            {
+                return null;
+            }
+
+            foreach (var sale in overlappingSales)
+            {
+                foreach (var existingItem in sale.FlashSaleItems)
+                {
+                    foreach (var newItem in items)
+                    {
+                        if (existingItem.ItemType == newItem.ItemType && existingItem.ReferenceId == newItem.ReferenceId)
+                        {
+                            return $"Mặt hàng có ID '{newItem.ReferenceId}' (Loại: {newItem.ItemType}) đã tồn tại trong chương trình Flash Sale '{sale.Name}' đang hoặc sắp diễn ra. Một mặt hàng chỉ được tham gia 1 chương trình trong cùng một thời điểm.";
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }
