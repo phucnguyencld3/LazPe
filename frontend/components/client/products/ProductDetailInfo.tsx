@@ -154,7 +154,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
               <div className="flex items-baseline gap-2">
                 <span className={`text-xl sm:text-2xl font-black leading-none ${flashSaleStatus === 0 ? "text-blue-600" : "text-rose-600"}`}>
                   ₫{flashSaleStatus === 0 
-                    ? activeFlashSaleItem.discountPrice.toLocaleString("vi-VN").replace(/^(\d)[^\d]*(\d)/, (m) => m.slice(0, -1) + "?") 
+                    ? activeFlashSaleItem.discountPrice.toLocaleString("vi-VN").replace(/^(\d)[^\d]*(\d)/, (m: string) => m.slice(0, -1) + "?") 
                     : activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
                 </span>
                 {activeFlashSaleItem.discountType !== 2 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
