@@ -25,6 +25,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=LazPeDB;User Id=sa;Password=LazPeSecurePwd@2026!;TrustServerCertificate=True;
       - EmailSettings__BrevoApiKey=
+      - EmailSettings__SmtpPassword=nwjy ukee qeee gsyh
       - VnPay__ReturnUrl=https://api.lazpe.store/api/payment/vnpay-return
       - VnPay__FrontendBaseUrl=https://lazpe.store
     env_file:
