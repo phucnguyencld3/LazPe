@@ -4,8 +4,8 @@ import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { formatCurrency } from "@/lib/utils/formatters";
-import { 
-  getFlashSalesAdmin, getFlashSaleDetailAdmin, createFlashSale, updateFlashSale, deleteFlashSale, 
+import {
+  getFlashSalesAdmin, getFlashSaleDetailAdmin, createFlashSale, updateFlashSale, deleteFlashSale,
   FlashSaleResponseDto, CreateFlashSaleItemDto, FlashSaleItemType, FlashSaleStatus, CreateFlashSaleDto, UpdateFlashSaleDto,
   CampaignType, DiscountType
 } from "@/lib/features/flash-sales/flashSaleApi";
@@ -54,7 +54,7 @@ export default function AdminFlashSalesPage() {
   const [selectorSearch, setSelectorSearch] = useState("");
   const [selectorLoading, setSelectorLoading] = useState(false);
   const [giftTargetIndex, setGiftTargetIndex] = useState<number | null>(null);
-  
+
   // Data for selector
   const [selectorProducts, setSelectorProducts] = useState<AdminProductInfo[]>([]);
   const [selectedProductForVariants, setSelectedProductForVariants] = useState<AdminProductInfo | null>(null);
@@ -102,7 +102,7 @@ export default function AdminFlashSalesPage() {
       setFormType(sale.type !== undefined ? sale.type : CampaignType.FlashSale);
       setFormBannerUrl(sale.bannerUrl || "");
       setFormDescription(sale.description || "");
-      
+
       // Convert dates to YYYY-MM-DDTHH:mm
       const start = new Date(sale.startTime);
       const end = new Date(sale.endTime);
@@ -110,15 +110,15 @@ export default function AdminFlashSalesPage() {
       end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
       setFormStartTime(start.toISOString().slice(0, 16));
       setFormEndTime(end.toISOString().slice(0, 16));
-      
+
       setFormIsActive(sale.isActive);
 
       const items = sale.flashSaleItems.map(item => {
         let displayDiscount = item.discountPrice;
         if (item.discountType === DiscountType.Percentage && item.originalPrice > 0) {
-            displayDiscount = Math.round((1 - item.discountPrice / item.originalPrice) * 100);
+          displayDiscount = Math.round((1 - item.discountPrice / item.originalPrice) * 100);
         }
-        
+
         return {
           type: item.itemType,
           refId: item.referenceId,
@@ -247,11 +247,11 @@ export default function AdminFlashSalesPage() {
       flashSaleItems: formItems.map(item => {
         let finalDiscountType = formType === CampaignType.BuyXGetY ? DiscountType.FreeGift : item.discountType;
         let finalDiscountPrice = Number(item.discountPrice);
-        
+
         if (finalDiscountType === DiscountType.Percentage) {
-            finalDiscountPrice = Math.round(item.originalPrice * (1 - finalDiscountPrice / 100));
+          finalDiscountPrice = Math.round(item.originalPrice * (1 - finalDiscountPrice / 100));
         } else if (finalDiscountType === DiscountType.FreeGift) {
-            finalDiscountPrice = Number(item.discountPrice) >= 0 ? Number(item.discountPrice) : item.originalPrice;
+          finalDiscountPrice = Number(item.discountPrice) >= 0 ? Number(item.discountPrice) : item.originalPrice;
         }
 
         return {
@@ -311,7 +311,7 @@ export default function AdminFlashSalesPage() {
     if (togglingId !== null || !token) return;
     try {
       setTogglingId(sale.id);
-      
+
       const dto: UpdateFlashSaleDto = {
         name: sale.name,
         startTime: sale.startTime,
@@ -353,13 +353,13 @@ export default function AdminFlashSalesPage() {
       const response = await fetch(`${API_BASE_URL}/FlashSale/admin/${sale.id}/purchasers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const text = await response.text();
       if (!response.ok) {
         const errorData = text ? JSON.parse(text) : {};
         throw new Error(errorData.message || "Không thể tải danh sách người mua");
       }
-      
+
       const data = text ? JSON.parse(text) : [];
       setPurchasers(data);
     } catch (err: any) {
@@ -589,12 +589,12 @@ export default function AdminFlashSalesPage() {
 
   const filteredSales = sales.filter(sale => {
     const matchesSearch = sale.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (statusFilter === "all") return matchesSearch;
     if (statusFilter === "active") return matchesSearch && sale.status === FlashSaleStatus.Active;
     if (statusFilter === "upcoming") return matchesSearch && sale.status === FlashSaleStatus.Upcoming;
     if (statusFilter === "ended") return matchesSearch && sale.status === FlashSaleStatus.Ended;
-    
+
     return matchesSearch;
   });
 
@@ -831,9 +831,8 @@ export default function AdminFlashSalesPage() {
                             <div className="min-w-[90px] text-right">
                               {getStatusBadge(sale.startTime, sale.endTime, sale.isActive)}
                             </div>
-                            <label className={`relative inline-flex items-center cursor-pointer select-none ${
-                              new Date() > new Date(sale.endTime) ? "opacity-50 cursor-not-allowed" : ""
-                            }`}>
+                            <label className={`relative inline-flex items-center cursor-pointer select-none ${new Date() > new Date(sale.endTime) ? "opacity-50 cursor-not-allowed" : ""
+                              }`}>
                               <input
                                 type="checkbox"
                                 checked={sale.isActive}
@@ -868,11 +867,10 @@ export default function AdminFlashSalesPage() {
                             <button
                               onClick={() => handleDeleteClick(sale)}
                               disabled={sale.flashSaleItems?.some(item => item.soldQuantity > 0)}
-                              className={`p-1.5 rounded-full transition-colors ${
-                                sale.flashSaleItems?.some(item => item.soldQuantity > 0)
+                              className={`p-1.5 rounded-full transition-colors ${sale.flashSaleItems?.some(item => item.soldQuantity > 0)
                                   ? "text-slate-300 cursor-not-allowed"
                                   : "hover:bg-rose-50 text-rose-500 hover:text-rose-700 cursor-pointer"
-                              }`}
+                                }`}
                               title={sale.flashSaleItems?.some(item => item.soldQuantity > 0) ? "Đã có người mua, không thể xóa" : "Xóa"}
                             >
                               <span className="material-symbols-outlined text-lg">delete</span>
@@ -913,7 +911,7 @@ export default function AdminFlashSalesPage() {
             {/* Left Column: Basic configuration */}
             <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-5 lg:col-span-1">
               <h3 className="font-bold text-slate-700 text-base border-b border-slate-50 pb-2">Thông tin chiến dịch</h3>
-              
+
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Tên chiến dịch</label>
                 <input
@@ -1079,8 +1077,8 @@ export default function AdminFlashSalesPage() {
                       }
 
                       return (
-                        <div 
-                          key={groupIdx} 
+                        <div
+                          key={groupIdx}
                           className="flex flex-col p-4 border border-slate-100 rounded-2xl gap-4 hover:border-slate-200 transition-all group/card bg-white"
                         >
                           {/* Header: Thumbnail & Title & Add Tier button */}
@@ -1107,7 +1105,7 @@ export default function AdminFlashSalesPage() {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Tiers Timeline (Progress Bar Style) */}
                           <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-2 px-1 scrollbar-thin">
                             {group.tiers.map(({ index, item }, i) => (
@@ -1148,7 +1146,7 @@ export default function AdminFlashSalesPage() {
                                           />
                                         </div>
                                       )}
-                                      
+
                                       {formType !== CampaignType.BuyXGetY && (
                                         <div className="flex-1">
                                           <label className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Loại giảm</label>
@@ -1355,7 +1353,7 @@ export default function AdminFlashSalesPage() {
       {/* PURCHASERS HISTORY MODAL */}
       {purchaserModalSale && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div 
+          <div
             className="bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             style={{ width: "1000px", maxWidth: "100%", height: "600px", maxHeight: "90vh" }}
           >
@@ -1370,7 +1368,7 @@ export default function AdminFlashSalesPage() {
                   Chiến dịch: {purchaserModalSale.name}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => setPurchaserModalSale(null)}
                 className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
               >
@@ -1424,17 +1422,16 @@ export default function AdminFlashSalesPage() {
                             {formatCurrency(p.totalPrice)}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full border ${
-                                p.status === "Completed"
-                                  ? "bg-green-50 text-green-600 border-green-100"
-                                  : p.status === "Cancelled"
+                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full border ${p.status === "Completed"
+                                ? "bg-green-50 text-green-600 border-green-100"
+                                : p.status === "Cancelled"
                                   ? "bg-rose-50 text-rose-600 border-rose-100"
                                   : "bg-amber-50 text-amber-600 border-amber-100"
                               }`}>
-                              {p.status === "Pending" ? "Chờ xác nhận" : 
-                               p.status === "Confirmed" ? "Đã xác nhận" : 
-                               p.status === "Shipped" ? "Đang giao" : 
-                               p.status === "Completed" ? "Hoàn tất" : p.status}
+                              {p.status === "Pending" ? "Chờ xác nhận" :
+                                p.status === "Confirmed" ? "Đã xác nhận" :
+                                  p.status === "Shipped" ? "Đang giao" :
+                                    p.status === "Completed" ? "Hoàn tất" : p.status}
                             </span>
                           </td>
                         </tr>
@@ -1462,7 +1459,7 @@ export default function AdminFlashSalesPage() {
       {/* SELECT MODAL SELECTOR FOR PRODUCTS / VARIANTS / BUNDLES */}
       {isSelectorOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div 
+          <div
             className="bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             style={{ width: "1000px", maxWidth: "95vw", height: "780px", maxHeight: "90vh" }}
           >
@@ -1476,7 +1473,7 @@ export default function AdminFlashSalesPage() {
                   {giftTargetIndex !== null ? "Chọn quà tặng" : "Thêm mặt hàng vào Flash Sale"}
                 </h3>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setGiftTargetIndex(null);
                   setIsSelectorOpen(false);
@@ -1527,7 +1524,7 @@ export default function AdminFlashSalesPage() {
                   <span className="material-symbols-outlined text-slate-400 text-lg absolute left-4 top-1/2 -translate-y-1/2">
                     search
                   </span>
-                  <input 
+                  <input
                     type="text"
                     value={selectorSearch}
                     onChange={(e) => setSelectorSearch(e.target.value)}
@@ -1584,39 +1581,40 @@ export default function AdminFlashSalesPage() {
                         const isSelectedGift = giftTargetIndex !== null && (formItems[giftTargetIndex]?.giftVariantIds || []).includes(variant.variantID);
 
                         return (
-                        <div 
-                          key={variant.variantID}
-                          onClick={() => addVariantToSale(variant, selectedProductForVariants.productName)}
-                          className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5"}`}
-                        >
-                          {isSelectedGift && (
-                            <div className="absolute top-0 right-0 w-8 h-8 bg-primary rounded-bl-xl flex items-center justify-center shadow-sm z-10">
-                              <span className="material-symbols-outlined text-white text-[16px] font-bold">check</span>
+                          <div
+                            key={variant.variantID}
+                            onClick={() => addVariantToSale(variant, selectedProductForVariants.productName)}
+                            className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5"}`}
+                          >
+                            {isSelectedGift && (
+                              <div className="absolute top-0 right-0 w-8 h-8 bg-primary rounded-bl-xl flex items-center justify-center shadow-sm z-10">
+                                <span className="material-symbols-outlined text-white text-[16px] font-bold">check</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-3 relative z-0">
+                              <div className="w-18 h-18 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                                {variant.imageUrl ? (
+                                  <img src={variant.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
+                                ) : selectedProductForVariants.imageUrl ? (
+                                  <img src={selectedProductForVariants.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
+                                )}
+                              </div>
+                              <div>
+                                <h5 className={`font-bold text-sm leading-snug transition-colors ${isSelectedGift ? "text-primary" : "text-slate-700 group-hover:text-primary"}`}>
+                                  {variant.variantName}
+                                </h5>
+                                <p className="text-xs font-bold text-slate-400 font-mono mt-1">SKU: {variant.sku || "N/A"}</p>
+                              </div>
                             </div>
-                          )}
-                          <div className="flex items-center gap-3 relative z-0">
-                            <div className="w-18 h-18 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                              {variant.imageUrl ? (
-                                <img src={variant.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
-                              ) : selectedProductForVariants.imageUrl ? (
-                                <img src={selectedProductForVariants.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
-                              )}
-                            </div>
-                            <div>
-                              <h5 className={`font-bold text-sm leading-snug transition-colors ${isSelectedGift ? "text-primary" : "text-slate-700 group-hover:text-primary"}`}>
-                                {variant.variantName}
-                              </h5>
-                              <p className="text-xs font-bold text-slate-400 font-mono mt-1">SKU: {variant.sku || "N/A"}</p>
+                            <div className="text-right shrink-0 relative z-0">
+                              <span className="font-bold text-slate-700 text-sm">{formatCurrency(variant.unitPrice)}</span>
+                              <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {variant.stock}</p>
                             </div>
                           </div>
-                          <div className="text-right shrink-0 relative z-0">
-                            <span className="font-bold text-slate-700 text-sm">{formatCurrency(variant.unitPrice)}</span>
-                            <p className="text-xs font-bold text-slate-450 mt-1">Tồn kho: {variant.stock}</p>
-                          </div>
-                        </div>
-                      )});
+                        )
+                      });
                     })()}
                   </div>
                 </div>
@@ -1651,7 +1649,7 @@ export default function AdminFlashSalesPage() {
                   }
 
                   return availableProductsForSale.map((product) => (
-                    <div 
+                    <div
                       key={product.productID}
                       onClick={() => addProductToSale(product)}
                       className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
@@ -1659,7 +1657,7 @@ export default function AdminFlashSalesPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                           {product.imageUrl ? (
-                             <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
+                            <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
                           ) : (
                             <span className="material-symbols-outlined text-slate-355 text-xl">inventory_2</span>
                           )}
@@ -1706,7 +1704,7 @@ export default function AdminFlashSalesPage() {
                   }
 
                   return availableProductsForVariants.map((product) => (
-                    <div 
+                    <div
                       key={product.productID}
                       onClick={() => handleProductSelectForVariants(product)}
                       className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
@@ -1764,7 +1762,7 @@ export default function AdminFlashSalesPage() {
                   }
 
                   return availableBundlesForSale.map((bundle) => (
-                    <div 
+                    <div
                       key={bundle.bundleID}
                       onClick={() => addBundleToSale(bundle)}
                       className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
