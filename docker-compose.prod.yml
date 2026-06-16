@@ -24,8 +24,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=LazPeDB;User Id=sa;Password=LazPeSecurePwd@2026!;TrustServerCertificate=True;
-      - VnPay__ReturnUrl=https://api.lazpe.vn/api/payment/vnpay-return
-      - VnPay__FrontendBaseUrl=https://lazpe.vn
+      - VnPay__ReturnUrl=https://api.lazpe.store/api/payment/vnpay-return
+      - VnPay__FrontendBaseUrl=https://lazpe.store
     depends_on:
       - db
     networks:
@@ -36,7 +36,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://api.lazpe.vn/api
+        - NEXT_PUBLIC_API_URL=https://api.lazpe.store/api
     container_name: lazpe-frontend-prod
     restart: always
     ports:
