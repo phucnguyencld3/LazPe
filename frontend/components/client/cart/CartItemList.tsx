@@ -175,7 +175,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                           {isBundle ? (
                             name
                           ) : (
-                            <Link href={`/products/${detail.product?.productID || detail.variant?.productID || detail.variantID}`}>
+                            <Link href={`/products/${detail.product?.productID || detail.variantID}`}>
                               {name}
                             </Link>
                           )}
