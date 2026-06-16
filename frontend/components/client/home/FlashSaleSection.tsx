@@ -146,7 +146,7 @@ export const FlashSaleSection: React.FC = () => {
             return (
               <div 
                 key={item.id} 
-                className="group flex flex-col bg-white rounded-xl border border-slate-100 hover:border-rose-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden relative"
+                className="group flex flex-col bg-white rounded-[10px] border border-slate-100 hover:border-rose-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden relative"
               >
                 {/* Image & Badges */}
                 <div className="relative aspect-[4/5] bg-slate-50 overflow-hidden">
@@ -154,7 +154,7 @@ export const FlashSaleSection: React.FC = () => {
                     <img 
                       src={item.imageUrl} 
                       alt={item.itemName} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 mix-blend-multiply"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 text-xs font-medium">
@@ -164,12 +164,12 @@ export const FlashSaleSection: React.FC = () => {
 
                   {/* Discount/Gift Badge */}
                   {isGift ? (
-                    <div className="absolute top-2 left-2 bg-emerald-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black shadow-md z-10 flex items-center gap-1">
+                    <div className="absolute top-1.5 left-1.5 bg-emerald-500 text-white px-2 py-0.5 rounded-md text-[9px] font-black shadow-md z-10 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[10px]">redeem</span>
                       TẶNG QUÀ
                     </div>
                   ) : discountPercent > 0 && (
-                    <div className="absolute top-2 left-2 bg-rose-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black shadow-md z-10">
+                    <div className="absolute top-1.5 left-1.5 bg-rose-500 text-white px-2 py-0.5 rounded-md text-[9px] font-black shadow-md z-10">
                       -{discountPercent}%
                     </div>
                   )}
@@ -177,7 +177,7 @@ export const FlashSaleSection: React.FC = () => {
                   {/* Out of Stock Overlay */}
                   {!hasStock && isActive && (
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
-                      <span className="text-white font-extrabold text-sm uppercase bg-slate-800/90 px-4 py-1.5 rounded-full">
+                      <span className="text-white font-extrabold text-xs uppercase bg-slate-800/90 px-3 py-1 rounded-full">
                         Hết hàng
                       </span>
                     </div>
@@ -185,27 +185,27 @@ export const FlashSaleSection: React.FC = () => {
                 </div>
 
                 {/* Details Section */}
-                <div className="p-3 flex-1 flex flex-col justify-between gap-2 border-t border-slate-50">
+                <div className="p-2 flex-1 flex flex-col justify-between gap-1.5 border-t border-slate-50">
                   <div className="space-y-1">
                     {/* Item Name */}
                     <Link href={itemLink}>
                       <h3 
                         title={item.itemName}
-                        className="text-xs sm:text-sm font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-rose-500 transition-colors"
+                        className="font-semibold text-slate-900 text-[11px] sm:text-xs leading-tight group-hover:text-rose-600 transition-colors truncate block"
                       >
                         {item.itemName}
                       </h3>
                     </Link>
                   </div>
 
-                  <div className="space-y-2 mt-1">
+                  <div className="space-y-1.5 mt-0.5">
                     {/* Prices */}
-                    <div className="flex flex-wrap items-baseline gap-1.5 leading-none">
-                      <span className="text-sm sm:text-base font-black text-rose-600">
+                    <div className="flex flex-wrap items-baseline gap-1 overflow-hidden whitespace-nowrap">
+                      <span className="text-[11px] sm:text-xs font-extrabold text-rose-600 whitespace-nowrap truncate">
                         ₫{item.discountPrice.toLocaleString("vi-VN")}
                       </span>
                       {(!isGift && item.discountPrice < item.originalPrice) && (
-                        <span className="text-[10px] text-slate-400 line-through font-semibold">
+                        <span className="text-[9px] text-slate-400 line-through font-semibold whitespace-nowrap truncate">
                           ₫{item.originalPrice.toLocaleString("vi-VN")}
                         </span>
                       )}
@@ -213,12 +213,12 @@ export const FlashSaleSection: React.FC = () => {
 
                     {/* Progress Bar */}
                     {isActive && (
-                      <div className="relative w-full h-3 bg-rose-100 rounded-full overflow-hidden flex items-center justify-center">
+                      <div className="relative w-full h-2.5 bg-rose-100 rounded-full overflow-hidden flex items-center justify-center">
                         <div 
                           className="absolute left-0 top-0 h-full bg-rose-500"
                           style={{ width: `${progressPercent}%` }}
                         ></div>
-                        <span className="relative z-10 text-[8px] font-extrabold text-white uppercase tracking-wide drop-shadow-md">
+                        <span className="relative z-10 text-[7px] font-extrabold text-white uppercase tracking-wide drop-shadow-md">
                           {item.soldQuantity === 0 
                             ? "Vừa mở bán" 
                             : item.soldQuantity >= item.totalQuantity 
@@ -231,18 +231,18 @@ export const FlashSaleSection: React.FC = () => {
                   </div>
 
                   {/* Button */}
-                  <div className="mt-2">
+                  <div className="mt-1">
                     <Link href={itemLink} className="block w-full">
                       {isUpcoming ? (
-                        <button className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] sm:text-xs font-bold rounded-xl active:scale-95 transition-all">
+                        <button className="w-full py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] sm:text-[11px] font-bold rounded-[8px] active:scale-95 transition-all">
                           Xem chi tiết
                         </button>
                       ) : hasStock ? (
-                        <button className="w-full py-2 bg-gradient-to-r from-rose-500 to-orange-400 hover:brightness-110 text-white text-[11px] sm:text-xs font-bold rounded-xl active:scale-95 transition-all shadow-md">
+                        <button className="w-full py-1 bg-gradient-to-r from-rose-500 to-orange-400 hover:brightness-110 text-white text-[10px] sm:text-[11px] font-bold rounded-[8px] active:scale-95 transition-all shadow-md">
                           Mua ngay
                         </button>
                       ) : (
-                        <button disabled className="w-full py-2 bg-slate-100 text-slate-400 text-[11px] sm:text-xs font-bold rounded-xl cursor-not-allowed">
+                        <button disabled className="w-full py-1 bg-slate-100 text-slate-400 text-[10px] sm:text-[11px] font-bold rounded-[8px] cursor-not-allowed">
                           Hết hàng
                         </button>
                       )}

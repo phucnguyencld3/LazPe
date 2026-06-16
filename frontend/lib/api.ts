@@ -973,7 +973,7 @@ export async function removeVoucherFromCart(
 
 export async function addToCart(
   token: string,
-  data: { variantID?: number; bundleID?: number; quantity: number }
+  data: { variantID?: number; bundleID?: number; quantity: number; selectedGiftVariantId?: number }
 ): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
   try {
     const response = await fetch(`${API_BASE_URL}/Cart/add`, {
@@ -986,6 +986,7 @@ export async function addToCart(
         variantID: data.variantID || null,
         bundleID: data.bundleID || null,
         quantity: data.quantity,
+        selectedGiftVariantId: data.selectedGiftVariantId || null,
       }),
     });
 

@@ -61,6 +61,8 @@ namespace PolyBabyAPI.Controllers
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
             }
 
+            _logger.LogInformation("Received AddToCart: VariantID={VariantID}, BundleID={BundleID}, Quantity={Quantity}, SelectedGiftVariantId={SelectedGiftVariantId}", dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId);
+
             // ✅ Kiểm tra phải có ít nhất VariantID hoặc BundleID
             if (!dto.IsValid)
             {
@@ -75,7 +77,7 @@ namespace PolyBabyAPI.Controllers
                     return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
                 }
 
-                await _cartService.AddToCartAsync(userId, dto.VariantID, dto.BundleID, dto.Quantity);
+                await _cartService.AddToCartAsync(userId, dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId);
 
                 var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
                 var cartDto = MapCartToDto(updatedCart);

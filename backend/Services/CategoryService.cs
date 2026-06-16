@@ -259,7 +259,7 @@ namespace PolyBabyAPI.Services
                 .ToListAsync();
         }
 
-        public async Task<CategoryDetailDto> GetCategoryDetailAsync(int id)
+        public async Task<CategoryDetailDto?> GetCategoryDetailAsync(int id)
         {
             var category = await _context.Categories
                 .Include(c => c.Products)
