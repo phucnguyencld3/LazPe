@@ -298,6 +298,7 @@ export default function AdminFlashSalesPage() {
         name: sale.name,
         startTime: sale.startTime,
         endTime: sale.endTime,
+        type: sale.type,
         isActive: !sale.isActive,
         flashSaleItems: sale.flashSaleItems.map(item => ({
           itemType: item.itemType,
