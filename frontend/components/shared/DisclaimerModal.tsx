@@ -31,7 +31,7 @@ export default function DisclaimerModal() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative"
+        className="bg-white rounded-2xl shadow-2xl w-[90vw] sm:w-[450px] max-w-[450px] min-w-[300px] p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative"
       >
         {/* Decorative pattern at top */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary rounded-t-2xl"></div>
