@@ -28,7 +28,28 @@ namespace PolyBabyAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var vouchers = await _voucherService.GetAllVouchersAsync();
-            return Ok(vouchers);
+            var result = vouchers.Select(v => new
+            {
+                v.VoucherID,
+                v.Code,
+                v.Name,
+                v.DiscountType,
+                v.DiscountValue,
+                v.MinOrderValue,
+                v.MaxDiscount,
+                v.StartDate,
+                v.EndDate,
+                v.TotalQuantity,
+                v.UsedQuantity,
+                v.Status,
+                v.VisibilityType,
+                v.ExclusiveType,
+                v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
+            });
+            return Ok(result);
         }
 
         // GET: api/vouchers/public
@@ -164,7 +185,27 @@ namespace PolyBabyAPI.Controllers
             if (voucher == null)
                 return NotFound();
 
-            return Ok(voucher);
+            return Ok(new
+            {
+                voucher.VoucherID,
+                voucher.Code,
+                voucher.Name,
+                voucher.DiscountType,
+                voucher.DiscountValue,
+                voucher.MinOrderValue,
+                voucher.MaxDiscount,
+                voucher.StartDate,
+                voucher.EndDate,
+                voucher.TotalQuantity,
+                voucher.UsedQuantity,
+                voucher.Status,
+                voucher.VisibilityType,
+                voucher.ExclusiveType,
+                voucher.VoucherType,
+                voucher.IsFreeShipping,
+                voucher.MaxShippingDiscount,
+                voucher.UsageLimitPerUser
+            });
         }
 
         // GET: api/vouchers/5/usages
@@ -270,7 +311,27 @@ namespace PolyBabyAPI.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = voucher.VoucherID }, new
             {
-                voucher,
+                voucher = new
+                {
+                    voucher.VoucherID,
+                    voucher.Code,
+                    voucher.Name,
+                    voucher.DiscountType,
+                    voucher.DiscountValue,
+                    voucher.MinOrderValue,
+                    voucher.MaxDiscount,
+                    voucher.StartDate,
+                    voucher.EndDate,
+                    voucher.TotalQuantity,
+                    voucher.UsedQuantity,
+                    voucher.Status,
+                    voucher.VisibilityType,
+                    voucher.ExclusiveType,
+                    voucher.VoucherType,
+                    voucher.IsFreeShipping,
+                    voucher.MaxShippingDiscount,
+                    voucher.UsageLimitPerUser
+                },
                 autoAssignedCount,
                 message = autoAssignedCount > 0
                     ? $"Tạo voucher thành công. Đã tự động phát {autoAssignedCount} voucher vào ví người dùng."
@@ -325,7 +386,27 @@ namespace PolyBabyAPI.Controllers
 
             return Ok(new
             {
-                voucher,
+                voucher = new
+                {
+                    voucher.VoucherID,
+                    voucher.Code,
+                    voucher.Name,
+                    voucher.DiscountType,
+                    voucher.DiscountValue,
+                    voucher.MinOrderValue,
+                    voucher.MaxDiscount,
+                    voucher.StartDate,
+                    voucher.EndDate,
+                    voucher.TotalQuantity,
+                    voucher.UsedQuantity,
+                    voucher.Status,
+                    voucher.VisibilityType,
+                    voucher.ExclusiveType,
+                    voucher.VoucherType,
+                    voucher.IsFreeShipping,
+                    voucher.MaxShippingDiscount,
+                    voucher.UsageLimitPerUser
+                },
                 autoAssignedCount,
                 message = autoAssignedCount > 0
                     ? $"Cập nhật thành công. Đã tự động phát thêm {autoAssignedCount} voucher vào ví người dùng."
