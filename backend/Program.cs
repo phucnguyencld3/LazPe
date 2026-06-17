@@ -348,7 +348,7 @@ try
         app.UseHsts();
     }
 
-    app.UseHttpsRedirection();
+    // app.UseHttpsRedirection(); // Đã có Nginx/Cloudflare xử lý HTTPS, tắt cái này để tránh lỗi redirect loop 301
     app.UseCors("AllowMVC");
     app.UseRateLimiter();
     app.UseAuthentication(); 
