@@ -52,9 +52,9 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
       </div>
 
       {!hasPreferences ? (
-        <div className="py-6 text-center space-y-3">
-          <Baby className="w-12 h-12 text-slate-300 mx-auto stroke-[1.5]" />
-          <p className="text-slate-400 text-sm font-semibold max-w-sm mx-auto">
+        <div className="py-6 w-full flex flex-col items-center space-y-3">
+          <Baby className="w-12 h-12 text-slate-300 stroke-[1.5]" />
+          <p className="text-slate-400 text-sm font-semibold text-center w-full max-w-[500px]">
             Mẹ chưa cập nhật sở thích màu sắc của mẹ và thông tin tuổi, cân nặng bé cưng để AI giúp gợi ý sản phẩm phù hợp.
           </p>
           <button

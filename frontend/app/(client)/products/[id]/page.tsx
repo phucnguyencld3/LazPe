@@ -447,20 +447,22 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 min-h-screen py-4 sm:py-8 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <button
-          onClick={() => router.back()}
-          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm hover:shadow active:scale-95"
-        >
-          <ArrowLeft size={16} />
-          Quay lại danh sách
-        </button>
+        <div className="px-4 sm:px-0">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 sm:mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm hover:shadow active:scale-95"
+          >
+            <ArrowLeft size={16} />
+            Quay lại danh sách
+          </button>
+        </div>
 
         {/* Product Container */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 sm:p-8 lg:p-12">
+        <div className="bg-white sm:rounded-3xl sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-8 sm:mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 p-4 sm:p-8 lg:p-12">
             <ProductImageGallery
               displayImage={displayImage}
               productName={product.name}

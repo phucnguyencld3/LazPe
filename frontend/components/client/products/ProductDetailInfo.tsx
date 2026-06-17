@@ -425,14 +425,14 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <button
               onClick={handleAddToCart}
               disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-12 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+              className="w-1/2 h-11 sm:h-12 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base px-1 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
             >
               {isAddingToCart ? (
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <ShoppingCart size={18} />
-                  Thêm giỏ hàng
+                  <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="truncate">Thêm giỏ hàng</span>
                 </>
               )}
             </button>
@@ -441,9 +441,9 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <button
               onClick={handleBuyNow}
               disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+              className="w-1/2 h-11 sm:h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base px-1 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
             >
-              Mua ngay
+              <span className="truncate">Mua ngay</span>
             </button>
           </div>
 

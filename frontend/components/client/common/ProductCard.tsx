@@ -31,14 +31,14 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Bestseller Badge */}
           {product.rating && product.rating >= 4.4 && (
-            <div className="absolute top-3 left-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm z-10">
+            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm z-10">
               Bán chạy
             </div>
           )}
 
           {/* Discount Badge */}
           {product.discountPrice && product.discountPrice < product.price && (
-            <div className={`absolute ${product.rating && product.rating >= 4.4 ? 'top-12' : 'top-3'} left-3 bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm z-10`}>
+            <div className={`absolute ${product.rating && product.rating >= 4.4 ? 'top-8 sm:top-12' : 'top-2 sm:top-3'} left-2 sm:left-3 bg-rose-600 text-white px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold shadow-sm z-10`}>
               -{Math.round(((product.price - product.discountPrice) / product.price) * 100)}%
             </div>
           )}
@@ -57,7 +57,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               e.stopPropagation();
               toggleWishlist(product);
             }}
-            className="absolute top-3 right-3 bg-white/90 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
+            className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 hover:bg-white w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
           >
             <Heart
               size={16}
@@ -82,7 +82,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {/* Product Name */}
             <h3
               title={product.name}
-              className="font-semibold text-slate-900 text-sm leading-tight group-hover:text-rose-600 transition-colors truncate h-5 block"
+              className="font-semibold text-slate-900 text-[13px] sm:text-sm leading-snug group-hover:text-rose-600 transition-colors line-clamp-2 min-h-[36px] sm:min-h-[40px]"
             >
               {product.name}
             </h3>

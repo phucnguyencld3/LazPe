@@ -187,8 +187,8 @@ export default function HeaderV2() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-slate-200">
       {/* Main Header Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-0">
+        <div className="flex flex-wrap items-center justify-between sm:h-16 gap-3 sm:gap-8">
           
           {/* Logo (Simple text like before) */}
           <Link href="/" className="flex-shrink-0">
@@ -198,7 +198,7 @@ export default function HeaderV2() {
           </Link>
 
           {/* Search Bar - Wide */}
-          <div className="flex-1 max-w-3xl">
+          <div className="w-full order-last mt-2 sm:mt-0 sm:order-none sm:w-auto sm:flex-1 max-w-3xl">
             <div className="relative group">
               <input 
                 type="text" 
@@ -212,9 +212,9 @@ export default function HeaderV2() {
             {/* Quick search tags have been removed */}
           </div>
 
-          {/* Actions (Reverted to the old Header functional buttons) */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            <Link href="/wishlist" className="p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Sản phẩm yêu thích">
+          {/* Actions */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            <Link href="/wishlist" className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Sản phẩm yêu thích">
               <Heart size={22} className="hover:text-primary transition-colors" />
               {mounted && wishlistCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold animate-in zoom-in-50 duration-150">
@@ -223,7 +223,7 @@ export default function HeaderV2() {
               )}
             </Link>
 
-            <Link href="/cart" className="p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Giỏ hàng">
+            <Link href="/cart" className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Giỏ hàng">
               <ShoppingCart size={22} className="hover:text-primary transition-colors" />
               {mounted && cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold">
@@ -237,7 +237,7 @@ export default function HeaderV2() {
               <div className="relative">
                 <button
                   onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
-                  className={`p-2 text-slate-600 hover:text-primary rounded-full transition-colors relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
+                  className={`p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-full transition-colors relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
                   title="Thông báo"
                 >
                   <Bell size={22} />

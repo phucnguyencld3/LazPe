@@ -12,7 +12,7 @@ export function Footer() {
             <h3 className="font-bold text-base text-on-surface mb-1">Công Ty Cổ Phần LazPe</h3>
             <p className="font-semibold text-xs text-on-surface-variant">Thành viên Tập đoàn LazPe Group</p>
 
-            <ul className="space-y-1 text-xs text-on-surface-variant">
+            <ul className="space-y-2 md:space-y-1 text-xs md:text-sm text-on-surface-variant">
               <li><strong>Email:</strong> lazpevn@gmail.com</li>
               <li><strong>Điện thoại:</strong> 0123 456 789</li>
               <li><strong>ĐKKD:</strong> 9999 Nguyễn Du, P.Sài Gòn, Tp.HCM</li>
@@ -31,7 +31,7 @@ export function Footer() {
           {/* Cột 2: Hỗ trợ khách hàng */}
           <div>
             <h3 className="font-bold text-sm text-on-surface mb-2">Hỗ Trợ Khách Hàng</h3>
-            <ul className="space-y-1 text-xs text-on-surface-variant">
+            <ul className="space-y-2 md:space-y-1 text-sm md:text-xs text-on-surface-variant">
               <li><Link href="/Invoice" className="hover:text-primary transition-colors">Tra cứu hoá đơn</Link></li>
               <li><Link href="/products" className="hover:text-primary transition-colors">Mua & Giao nhận Online</Link></li>
               <li><Link href="/products" className="hover:text-primary transition-colors">Tin Khuyến Mãi</Link></li>
@@ -46,7 +46,7 @@ export function Footer() {
           <div className="space-y-4">
             <div>
               <h3 className="font-bold text-sm text-on-surface mb-2">Về LazPe</h3>
-              <ul className="space-y-1 text-xs text-on-surface-variant">
+              <ul className="space-y-2 md:space-y-1 text-sm md:text-xs text-on-surface-variant">
                 <li><Link href="/about-us" className="hover:text-primary transition-colors">Giới thiệu về LazPe</Link></li>
                 <li><Link href="/privacy" className="hover:text-primary transition-colors">Chính sách bảo mật</Link></li>
                 <li><Link href="/terms" className="hover:text-primary transition-colors">Điều khoản chung</Link></li>
@@ -77,7 +77,7 @@ export function Footer() {
           {/* Cột 4: Kết nối với chúng tôi */}
           <div>
             <h3 className="font-bold text-sm text-on-surface mb-2">Kết Nối Với Chúng Tôi</h3>
-            <div className="space-y-2">
+            <div className="space-y-3 md:space-y-2">
               <a href="mailto:lazpevn@gmail.com" className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary/10">
                   <Mail size={16} />
@@ -95,7 +95,7 @@ export function Footer() {
               <a href="#" className="flex items-center gap-2 text-on-surface-variant hover:text-blue-500 transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-blue-50">
                   <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12c0-5.523-4.477-10-10-10z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <span className="font-medium text-xs">Facebook</span>

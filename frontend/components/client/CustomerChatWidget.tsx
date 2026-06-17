@@ -502,7 +502,7 @@ export default function CustomerChatWidget() {
       {/* FAB Button Zalo Style */}
       <button
         onClick={toggleOpen}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#0068ff] hover:bg-[#0056d6] text-white flex items-center justify-center shadow-lg cursor-pointer bouncy-hover transition-transform duration-300 transform active:scale-95"
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#0068ff] hover:bg-[#0056d6] text-white flex items-center justify-center shadow-lg cursor-pointer bouncy-hover transition-transform duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
         style={{
           boxShadow: "0 8px 24px rgba(0, 104, 255, 0.3)",
         }}
@@ -512,10 +512,10 @@ export default function CustomerChatWidget() {
         </span>
       </button>
 
-      {/* Chat Window Container Zalo Style (Tăng kích thước to hơn) */}
+      {/* Chat Window Container Zalo Style */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 z-50 w-[430px] max-w-[95vw] h-[610px] max-h-[85vh] bg-[#f4f6f9] rounded-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 shadow-2xl"
+          className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[430px] h-[100dvh] sm:h-[610px] sm:max-h-[85vh] bg-[#f4f6f9] sm:rounded-2xl sm:border border-slate-200/80 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 shadow-2xl"
           style={{
             boxShadow: "0 12px 40px rgba(0, 0, 0, 0.16)",
           }}
