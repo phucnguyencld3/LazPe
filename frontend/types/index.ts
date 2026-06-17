@@ -57,6 +57,7 @@ export interface Product {
   categoryName?: string;
   inStock: boolean;
   quantity?: number;
+  isBundle?: boolean;
   variants?: Variant[];
   productOptions?: ProductOption[];
 }
@@ -89,6 +90,31 @@ export interface Voucher {
   voucherType?: number;
   isFreeShipping?: boolean;
   maxShippingDiscount?: number | null;
+}
+
+export interface FlashSaleItem {
+  flashSaleItemId: number;
+  campaignId: number;
+  itemType: number;
+  referenceId: number;
+  productId?: number;
+  itemName?: string;
+  imageUrl?: string;
+  originalPrice: number;
+  discountPrice: number;
+  totalQuantity: number;
+  soldQuantity: number;
+  status: number;
+}
+
+export interface FlashSaleCampaign {
+  campaignId: number;
+  name: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  status: number;
+  flashSaleItems: FlashSaleItem[];
 }
 
 export interface ApiResponse<T> {

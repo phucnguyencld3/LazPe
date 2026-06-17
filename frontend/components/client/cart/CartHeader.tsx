@@ -3,8 +3,8 @@ import { ChevronRight } from "lucide-react";
 
 export const CartHeader: React.FC = () => {
   return (
-    <div className="flex flex-col items-center mb-12">
-      <h1 className="text-3xl font-extrabold text-slate-800 mb-6 tracking-tight">Giỏ hàng của bạn</h1>
+    <div className="flex flex-col items-center mb-8">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-4 tracking-tight">Giỏ hàng của bạn</h1>
       
       {/* Checkout Steps */}
       <div className="flex items-center space-x-3 text-sm">

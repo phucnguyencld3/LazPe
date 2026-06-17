@@ -33,13 +33,14 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] string searchTerm = "",
             [FromQuery] int? categoryId = null,
             [FromQuery] string sortBy = "CreatedAt",
-            [FromQuery] string sortDirection = "desc")
+            [FromQuery] string sortDirection = "desc",
+            [FromQuery] bool? hasDiscount = null)
         {
             try
             {
                 var result = await _productService.GetProductsPaginatedAsync(
                     page, pageSize, searchTerm, categoryId, null,
-                    true, null, null, sortBy, sortDirection);
+                    true, null, null, sortBy, sortDirection, hasDiscount);
 
                 return Ok(new
                 {

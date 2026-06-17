@@ -2,10 +2,11 @@ import React from "react";
 
 interface ProductsHeroProps {
   sortParam: string | null;
+  categoryName?: string;
 }
 
-export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam }) => {
-  let pageTitle = "Tất cả sản phẩm";
+export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam, categoryName }) => {
+  let pageTitle = categoryName || "Tất cả sản phẩm";
   let pageSubtitle = "Khám phá bộ sưu tập đồ chơi gỗ cao cấp, quần áo cotton mềm mại và những món quà tuyệt vời dành riêng cho thiên thần nhỏ của bạn tại LazPe.";
 
   if (sortParam === "bestseller") {
@@ -14,7 +15,7 @@ export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam }) => {
   } else if (sortParam === "newest") {
     pageTitle = "Sản phẩm mới nhất";
     pageSubtitle = "Cập nhật những mẫu đồ chơi gỗ thông minh và trang phục cotton mới nhất cho bé yêu tại LazPe.";
-  } else if (sortParam === "sale") {
+  } else if (sortParam === "sale" && !categoryName) {
     pageTitle = "Sản phẩm khuyến mãi";
     pageSubtitle = "Sở hữu những sản phẩm cao cấp cho bé với mức giá ưu đãi cực sốc chỉ có tại LazPe.";
   }

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
-import FilterSidebar from "@/components/client/products/FilterSidebar";
+import { HorizontalFilterBar } from "@/components/client/products/HorizontalFilterBar";
+import { TopRandomBanner } from "@/components/client/products/TopRandomBanner";
 import { Product, Category } from "@/types";
 import { getProducts, getCategories } from "@/lib/api";
 import { ProductsHero } from "@/components/client/products/ProductsHero";
@@ -42,11 +43,14 @@ function ProductsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Filters State
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [activeSearch, setActiveSearch] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(initialCategory);
   const [maxPrice, setMaxPrice] = useState<number>(2000000);
+
+  // Quick Filters State
+  const [filter4Star, setFilter4Star] = useState(false);
+  const [filterSale, setFilterSale] = useState(false);
   
   // Sort and Page State
   const [sortBy, setSortBy] = useState(initialSort);
@@ -159,8 +163,19 @@ function ProductsContent() {
       const price = product.discountPrice || product.price;
       if (price > maxPrice) return false;
 
-      // Sale filter: only show items with a discount price less than original price
-      if (sortParam === "sale") {
+      // Quick Filters logic
+      if (filter4Star && (product.rating === undefined || product.rating < 4)) {
+        return false;
+      }
+      
+      if (filterSale) {
+        if (!product.discountPrice || product.discountPrice >= product.price) {
+          return false;
+        }
+      }
+
+      // Sale filter from url param (legacy)
+      if (sortParam === "sale" && !filterSale) {
         if (!product.discountPrice || product.discountPrice >= product.price) {
           return false;
         }
@@ -175,7 +190,8 @@ function ProductsContent() {
       if (!a.inStock && b.inStock) return 1;
       return 0;
     });
-  }, [products, maxPrice, sortParam]);
+    // filteredProducts depends on quick filters too
+  }, [products, maxPrice, sortParam, filter4Star, filterSale]);
 
   // Handler for search form submission
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -190,6 +206,8 @@ function ProductsContent() {
     setActiveSearch("");
     setSelectedCategory(null);
     setMaxPrice(2000000);
+    setFilter4Star(false);
+    setFilterSale(false);
     setSortBy("CreatedAt");
     setSortDirection("desc");
     setCurrentPage(1);
@@ -225,31 +243,39 @@ function ProductsContent() {
     return "newest";
   };
 
+  const currentCategoryName = useMemo(() => {
+    if (selectedCategory === null) return undefined;
+    const cat = categories.find(c => c.id === selectedCategory);
+    return cat ? cat.name : undefined;
+  }, [categories, selectedCategory]);
+
   return (
     <div className="bg-slate-50 min-h-screen">
-      <ProductsHero sortParam={sortParam} />
+      <ProductsHero sortParam={sortParam} categoryName={currentCategoryName} />
 
       {/* Main Grid Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col gap-6">
           
-          {/* Desktop Filter Sidebar (hidden on mobile) */}
-          <aside className="hidden lg:block w-64 shrink-0 bg-white rounded-xl p-6 shadow-sm border border-slate-100 h-fit sticky top-24">
-            <FilterSidebar
-              searchInput={searchInput}
-              setSearchInput={setSearchInput}
-              handleSearchSubmit={handleSearchSubmit}
+          {/* Top Random Banner */}
+          {!loading && !error && products.length > 0 && (
+            <TopRandomBanner products={products} />
+          )}
+          
+          {/* Filter and Control Bar Wrapper */}
+          <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 mb-6">
+            <HorizontalFilterBar
+              categories={categories}
               selectedCategory={selectedCategory}
               handleCategorySelect={handleCategorySelect}
-              categories={categories}
-              maxPrice={maxPrice}
-              setMaxPrice={setMaxPrice}
-              handleClearFilters={handleClearFilters}
+              filter4Star={filter4Star}
+              setFilter4Star={setFilter4Star}
+              filterSale={filterSale}
+              setFilterSale={setFilterSale}
             />
-          </aside>
 
-          {/* Product Grid and Controls */}
-          <div className="flex-1">
+            <hr className="border-slate-100 mx-4 sm:mx-5" />
+
             <ProductControlBar
               totalFiltered={filteredProducts.length}
               totalItems={totalItems}
@@ -258,6 +284,10 @@ function ProductsContent() {
               sortDirection={sortDirection}
               handleSortChange={handleSortChange}
             />
+          </div>
+
+          {/* Product Grid */}
+          <div className="flex-1">
 
             <ProductGrid
               loading={loading}
@@ -299,17 +329,38 @@ function ProductsContent() {
               </button>
             </div>
             
-            <FilterSidebar
-              searchInput={searchInput}
-              setSearchInput={setSearchInput}
-              handleSearchSubmit={handleSearchSubmit}
-              selectedCategory={selectedCategory}
-              handleCategorySelect={handleCategorySelect}
-              categories={categories}
-              maxPrice={maxPrice}
-              setMaxPrice={setMaxPrice}
-              handleClearFilters={handleClearFilters}
-            />
+            {/* Removed FilterSidebar from Mobile view as the HorizontalFilterBar is responsive */}
+            <p className="text-slate-500 mb-4">Các bộ lọc đã được hiển thị trên thanh điều hướng ngang.</p>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <h3 className="font-headline-md text-lg font-bold text-slate-800 mb-4">Khoảng giá tối đa</h3>
+              <input
+                type="range"
+                min="100000"
+                max="2000000"
+                step="50000"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="w-full accent-primary h-2 bg-slate-200 rounded-full cursor-pointer"
+              />
+              <div className="flex justify-between mt-2 text-xs text-slate-500 font-medium">
+                <span>100.000đ</span>
+                <span className="text-primary font-bold text-sm">
+                  {maxPrice.toLocaleString("vi-VN")}đ
+                </span>
+                <span>2.000.000đ+</span>
+              </div>
+            </div>
+
+            {/* Clear Button */}
+            <button
+              onClick={() => {
+                handleClearFilters();
+                setShowMobileFilters(false);
+              }}
+              className="mt-8 w-full h-11 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              Đặt lại bộ lọc
+            </button>
           </div>
         </div>
       )}

@@ -1,10 +1,61 @@
-import { Product, Category, ApiResponse, PaginatedResponse, Voucher } from "@/types";
+import { Product, Category, ApiResponse, PaginatedResponse, Voucher, FlashSaleCampaign } from "@/types";
 
 let apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.endsWith('/api')) {
   apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 }
-const API_BASE_URL = apiUrl;
+export const API_BASE_URL = apiUrl;
+
+export async function getRecommendations(limit: number = 24): Promise<Product[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Recommendation/for-you?limit=${limit}`, { cache: 'no-store' });
+    if (!response.ok) return [];
+    const json = await response.json();
+    if (json.success && json.data) {
+      return json.data.map((item: any) => ({
+        id: item.productId,
+        name: item.productName,
+        price: item.price,
+        discountPrice: item.discountPrice,
+        image: item.imageUrl,
+        categoryId: 0,
+        inStock: true,
+        rating: item.rating,
+        ratingCount: item.reviewsCount
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch recommendations:", error);
+    return [];
+  }
+}
+
+export async function getBundlesAsProducts(): Promise<Product[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Bundle/public`, { cache: 'no-store' });
+    if (!response.ok) return [];
+    const json = await response.json();
+    if (json.success && json.data) {
+      return json.data.map((item: any) => ({
+        id: item.bundleID,
+        name: "[Combo] " + item.name,
+        description: item.description ?? "",
+        price: item.originalPrice > 0 ? item.originalPrice : item.price,
+        discountPrice: item.originalPrice > 0 ? item.price : undefined,
+        image: item.imageUrl,
+        categoryId: 0,
+        inStock: true,
+        quantity: item.stock ?? 10,
+        isBundle: true,
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch bundles:", error);
+    return [];
+  }
+}
 
 export async function getProducts(
   page: number = 1,
@@ -12,7 +63,8 @@ export async function getProducts(
   searchTerm: string = "",
   categoryId?: number,
   sortBy: string = "CreatedAt",
-  sortDirection: string = "desc"
+  sortDirection: string = "desc",
+  hasDiscount?: boolean
 ): Promise<PaginatedResponse<Product> | null> {
   try {
     const params = new URLSearchParams({
@@ -25,6 +77,10 @@ export async function getProducts(
 
     if (categoryId) {
       params.append("categoryId", categoryId.toString());
+    }
+    
+    if (hasDiscount) {
+      params.append("hasDiscount", "true");
     }
 
     const response = await fetch(`${API_BASE_URL}/product/shop?${params.toString()}`, {
@@ -76,6 +132,29 @@ export async function getProducts(
     return null;
   }
 }
+
+export async function getCurrentFlashSales(): Promise<FlashSaleCampaign[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/FlashSale/current`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      next: { revalidate: 60 } // Cache for 60 seconds
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch flash sales:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching flash sales:", error);
+    return null;
+  }
+}
+
 
 export async function getProductDetail(id: number): Promise<Product | null> {
   try {

@@ -8,7 +8,7 @@ namespace PolyBabyAPI.Interfaces
             int page, int pageSize, string searchTerm = "",
             int? categoryId = null, int? supplierId = null, bool? status = null,
             decimal? minPrice = null, decimal? maxPrice = null,
-            string sortBy = "CreatedAt", string sortDirection = "desc");
+            string sortBy = "CreatedAt", string sortDirection = "desc", bool? hasDiscount = null);
 
         Task<ProductDto?> GetProductByIdAsync(int id);
         Task<ProductDetailDto?> GetProductDetailAsync(int id);

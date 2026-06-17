@@ -13,10 +13,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const isLiked = isInWishlist(product.id);
   return (
-    <Link href={`/products/${product.id}`} className="h-full flex flex-col">
+    <Link href={product.isBundle ? `/bundles/${product.id}` : `/products/${product.id}`} className="h-full flex flex-col">
       <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between">
         {/* Product Image */}
-        <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
+        <div className="relative aspect-square bg-slate-100 overflow-hidden">
           {product.image ? (
             <img
               src={product.image}

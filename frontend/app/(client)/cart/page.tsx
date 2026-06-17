@@ -436,7 +436,7 @@ export default function CartPage() {
 
   return (
     <div className="bg-slate-50/60 text-slate-800 font-sans min-h-screen pb-24 relative selection:bg-rose-100 selection:text-rose-900">
-      <main className="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+      <main className="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop pt-6 pb-12">
         {/* Cart Header & Progress */}
         <CartHeader />
 

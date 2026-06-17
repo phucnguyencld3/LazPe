@@ -26,7 +26,7 @@ export const ProductControlBar: React.FC<ProductControlBarProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div className="p-4 sm:px-5 flex flex-col sm:flex-row justify-between items-center gap-4">
       {/* Product Counter */}
       <div className="text-sm text-slate-600 font-medium flex items-center gap-2">
         <span>Hiển thị:</span>

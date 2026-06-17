@@ -37,7 +37,7 @@ namespace PolyBabyAPI.Services
             int page, int pageSize, string searchTerm = "",
             int? categoryId = null, int? supplierId = null, bool? status = null,
             decimal? minPrice = null, decimal? maxPrice = null,
-            string sortBy = "CreatedAt", string sortDirection = "desc")
+            string sortBy = "CreatedAt", string sortDirection = "desc", bool? hasDiscount = null)
         {
             var cacheKey = $"Products_{page}_{pageSize}_{searchTerm}_{categoryId}_{supplierId}_{status}_{minPrice}_{maxPrice}_{sortBy}_{sortDirection}";
             if (_cache.TryGetValue(cacheKey, out ProductPaginationDto? cachedResult) && cachedResult != null)
@@ -67,6 +67,9 @@ namespace PolyBabyAPI.Services
 
                 if (maxPrice.HasValue)
                     query = query.Where(p => p.Price <= maxPrice.Value);
+
+                if (hasDiscount.HasValue && hasDiscount.Value)
+                    query = query.Where(p => p.ProductDiscountPercent > 0 || p.Variants.Any(v => v.VariantDiscountPercent > 0));
 
                 // Apply sorting
                 query = sortBy.ToLower() switch
