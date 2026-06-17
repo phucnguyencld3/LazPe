@@ -17,6 +17,8 @@ interface ProductDetailInfoProps {
   quantity: number;
   handleDecreaseQuantity: () => void;
   handleIncreaseQuantity: () => void;
+  handleQuantityChange?: (val: string) => void;
+  setQuantity?: (val: number) => void;
   handleAddToCart: () => void;
   handleBuyNow: () => void;
   isWishlisted: boolean;
@@ -44,6 +46,8 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   quantity,
   handleDecreaseQuantity,
   handleIncreaseQuantity,
+  handleQuantityChange,
+  setQuantity,
   handleAddToCart,
   handleBuyNow,
   isWishlisted,
@@ -363,7 +367,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
         )}
 
         {/* Dynamic Variants Selectors (Text Only) */}
-        {product.productOptions && product.productOptions.length > 0 && (
+        {product.productOptions && product.productOptions.length > 0 && !(product.productOptions.length === 1 && product.productOptions[0].productOptionValues.length === 1) && (
           <div className="space-y-4 mb-6 pt-4 border-t border-slate-100">
             {product.productOptions.map((option) => (
               <div key={option.productOptionID} className="flex flex-col gap-2">
@@ -402,15 +406,26 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           {/* Quantity Counter */}
-          <div className="flex items-center justify-between w-full sm:w-32 h-12 bg-slate-100 rounded-full px-4 border border-slate-200">
+          <div className="flex items-center justify-between w-full sm:w-28 h-10 sm:h-11 bg-slate-50/80 rounded-full px-3 border border-slate-200 hover:border-slate-300 transition-colors">
             <button
               onClick={handleDecreaseQuantity}
               disabled={quantity <= 1}
-              className="text-slate-500 hover:text-slate-900 disabled:opacity-50 transition-colors"
+              className="text-slate-500 hover:text-slate-900 disabled:opacity-30 transition-colors p-1"
             >
               <Minus size={16} />
             </button>
-            <span className="font-bold text-slate-800 text-sm">{quantity}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={quantity === 0 ? "" : quantity}
+              onChange={(e) => handleQuantityChange && handleQuantityChange(e.target.value)}
+              onBlur={() => {
+                if (quantity === 0 && setQuantity) {
+                  setQuantity(1);
+                }
+              }}
+              className="font-bold text-slate-800 text-sm w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
+            />
             <button
               onClick={handleIncreaseQuantity}
               disabled={!displayInStock || quantity >= maxAllowedQuantity}
@@ -425,7 +440,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <button
               onClick={handleAddToCart}
               disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-11 sm:h-12 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base px-1 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+              className="w-1/2 h-10 sm:h-11 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
             >
               {isAddingToCart ? (
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -441,23 +456,12 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <button
               onClick={handleBuyNow}
               disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-11 sm:h-12 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base px-1 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+              className="w-1/2 h-10 sm:h-11 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
             >
               <span className="truncate">Mua ngay</span>
             </button>
           </div>
 
-          {/* Wishlist Toggle Button */}
-          <button
-            onClick={() => setIsWishlisted(!isWishlisted)}
-            className={`h-12 w-12 rounded-full flex items-center justify-center border transition-all shrink-0 active:scale-90 ${
-              isWishlisted
-                ? "bg-rose-50 border-rose-200 text-rose-500"
-                : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <Heart size={20} className={isWishlisted ? "fill-rose-500" : ""} />
-          </button>
         </div>
       </div>
     </div>

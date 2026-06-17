@@ -592,13 +592,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
-          {/* Left Sidebar Menu */}
-          <aside className="lg:col-span-1 lg:sticky lg:top-6">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] overflow-hidden">
-              {/* Quick User Section */}
+    <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
+        {/* Left Sidebar Menu */}
+        <aside className="lg:col-span-1 lg:sticky lg:top-[120px] z-10">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] overflow-hidden">
+            {/* Quick User Section */}
               <div className="p-5 border-b border-slate-100 flex lg:flex-col items-center lg:items-start gap-4">
                 <div
                   className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container relative bg-slate-100 flex-shrink-0 flex items-center justify-center cursor-pointer group"
@@ -765,7 +764,6 @@ export default function ProfilePage() {
             {activeTab === "privacy" && <PrivacySection />}
           </main>
         </div>
-      </div>
 
       <EditProfileModal
         isOpen={editProfileOpen}

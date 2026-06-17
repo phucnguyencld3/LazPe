@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingCart, Bell, User, Heart, Menu } from 'lucide-react';
+import { Search, ShoppingCart, Bell, User, Heart, Menu, X } from 'lucide-react';
 import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, UserNotificationItem } from "@/lib/api";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
@@ -17,10 +17,35 @@ export default function HeaderV2() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   
+  const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.roles ? [user.roles] : []);
+  const userPermissions = Array.isArray(user?.permissions) ? user.permissions : (user?.permissions ? [user.permissions] : []);
+  const hasDashboardAccess = user?.isAdmin || userRoles.includes("Admin") || userPermissions.includes("Admin.Access") || user?.email === 'lazpevn@gmail.com';
+
   // Notifications states
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const notifTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startNotifTimer = () => {
+    if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
+    notifTimeoutRef.current = setTimeout(() => {
+      setIsNotifDropdownOpen(false);
+    }, 3000);
+  };
+
+  const clearNotifTimer = () => {
+    if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
+  };
+
+  useEffect(() => {
+    if (isNotifDropdownOpen) {
+      startNotifTimer();
+    } else {
+      clearNotifTimer();
+    }
+    return () => clearNotifTimer();
+  }, [isNotifDropdownOpen]);
   
   const { wishlist } = useWishlist();
   const wishlistCount = wishlist.length;
@@ -190,11 +215,13 @@ export default function HeaderV2() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-0">
         <div className="flex flex-wrap items-center justify-between sm:h-16 gap-3 sm:gap-8">
           
-          {/* Logo (Simple text like before) */}
-          <Link href="/" className="flex-shrink-0">
-            <span className="text-3xl font-bold text-slate-900 tracking-tight">
-              Laz<span className="text-primary">Pe</span>
-            </span>
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0 flex items-center">
+            <img 
+              src="/logo/logo_1.png" 
+              alt="LazPe Logo" 
+              className="h-10 sm:h-14 w-auto object-contain transition-transform hover:scale-[1.02] mix-blend-multiply" 
+            />
           </Link>
 
           {/* Search Bar - Wide */}
@@ -234,7 +261,15 @@ export default function HeaderV2() {
 
             {/* Notification Bell */}
             {isAuth && (
-              <div className="relative">
+              <div 
+                className="relative"
+                onMouseEnter={clearNotifTimer}
+                onMouseLeave={() => {
+                  if (isNotifDropdownOpen) {
+                    startNotifTimer();
+                  }
+                }}
+              >
                 <button
                   onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
                   className={`p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-full transition-colors relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
@@ -253,14 +288,23 @@ export default function HeaderV2() {
                   <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
                       <span className="font-bold text-slate-800 text-sm">Thông báo mới</span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={handleMarkAllRead}
-                          className="text-[11px] text-primary hover:text-primary font-bold transition-colors"
+                      <div className="flex items-center gap-3">
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={handleMarkAllRead}
+                            className="text-[11px] text-primary hover:text-primary font-bold transition-colors"
+                          >
+                            Đọc tất cả
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => setIsNotifDropdownOpen(false)}
+                          className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                          title="Đóng"
                         >
-                          Đọc tất cả
+                          <X size={16} />
                         </button>
-                      )}
+                      </div>
                     </div>
                     
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
@@ -371,6 +415,16 @@ export default function HeaderV2() {
 
                     {/* Navigation Links */}
                     <div className="p-1 space-y-0.5">
+                      {hasDashboardAccess && (
+                        <Link
+                          href="/admin"
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <span className="material-symbols-outlined text-base">dashboard</span>
+                          Quản lý Dashboard
+                        </Link>
+                      )}
                       <Link
                         href="/profile?tab=profile"
                         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors"

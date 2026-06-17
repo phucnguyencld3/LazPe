@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Heart } from "lucide-react";
 
 interface ProductImageGalleryProps {
   displayImage: string | undefined;
@@ -7,6 +8,8 @@ interface ProductImageGalleryProps {
   displayPrice: number;
   displayDiscountPrice: number | undefined;
   imageUrls?: string[];
+  isWishlisted?: boolean;
+  setIsWishlisted?: (wishlisted: boolean) => void;
 }
 
 export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
@@ -16,6 +19,8 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   displayPrice,
   displayDiscountPrice,
   imageUrls = [],
+  isWishlisted = false,
+  setIsWishlisted,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(displayImage);
 
@@ -66,6 +71,43 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           ))}
         </div>
       )}
+
+      {/* Action Buttons (Wishlist & Share) */}
+      <div className="flex justify-start items-center gap-4 mt-4">
+        {/* Wishlist Toggle Button */}
+        <button
+          onClick={() => setIsWishlisted && setIsWishlisted(!isWishlisted)}
+          className={`h-10 w-10 rounded-full flex items-center justify-center border transition-all shrink-0 active:scale-90 ${
+            isWishlisted
+              ? "bg-rose-50 border-rose-200 text-rose-500"
+              : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 shadow-sm"
+          }`}
+          title="Thêm vào yêu thích"
+        >
+          <Heart size={20} className={isWishlisted ? "fill-rose-500" : ""} />
+        </button>
+
+        {/* Share Button */}
+        <button
+          onClick={() => {
+            const url = window.location.href;
+            if (navigator.share) {
+              navigator.share({
+                title: productName,
+                url: url,
+              }).catch(console.error);
+            } else {
+              navigator.clipboard.writeText(url);
+              const { toast } = require("@/lib/toast");
+              toast.success("Đã sao chép đường dẫn sản phẩm!");
+            }
+          }}
+          className="h-10 w-10 rounded-full flex items-center justify-center border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 active:scale-90 shadow-sm"
+          title="Chia sẻ sản phẩm"
+        >
+          <span className="material-symbols-outlined text-[18px]">share</span>
+        </button>
+      </div>
     </div>
   );
 };

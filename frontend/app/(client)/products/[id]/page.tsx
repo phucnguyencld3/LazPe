@@ -339,7 +339,21 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleQuantityChange = (val: string) => {
+    const num = parseInt(val.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(num)) {
+      if (num > maxAllowedQuantity) {
+        setQuantity(maxAllowedQuantity);
+      } else {
+        setQuantity(num);
+      }
+    } else if (val === "") {
+      setQuantity(0); // Temporary state while typing
+    }
+  };
+
   const handleAddToCart = async () => {
+    const finalQuantity = quantity === 0 ? 1 : quantity;
     const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!hasToken) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
@@ -352,8 +366,8 @@ export default function ProductDetailPage() {
 
     const payload = {
         variantID: finalVariantId,
-        quantity: quantity,
-        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && quantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
+        quantity: finalQuantity,
+        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && finalQuantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
     };
 
     if (!payload.variantID) {
@@ -365,7 +379,8 @@ export default function ProductDetailPage() {
       setIsAddingToCart(true);
       const res = await addToCart(payload);
       if (res.success) {
-        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng! ${activeVariant?.variantName ? `(Phân loại: ${activeVariant.variantName})` : ""}`);
+        toast.success(`Đã thêm ${finalQuantity} sản phẩm vào giỏ hàng! ${activeVariant?.variantName ? `(Phân loại: ${activeVariant.variantName})` : ""}`);
+        if (quantity === 0) setQuantity(1);
       } else {
         toast.error(res.message || "Không thể thêm sản phẩm vào giỏ hàng");
       }
@@ -378,6 +393,7 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = async () => {
+    const finalQuantity = quantity === 0 ? 1 : quantity;
     const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!hasToken) {
       toast.error("Vui lòng đăng nhập để tiếp tục!");
@@ -390,8 +406,8 @@ export default function ProductDetailPage() {
 
     const payload = {
         variantID: finalVariantId,
-        quantity: quantity,
-        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && quantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
+        quantity: finalQuantity,
+        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && finalQuantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
     };
 
     if (!payload.variantID) {
@@ -470,6 +486,8 @@ export default function ProductDetailPage() {
               displayPrice={displayPrice}
               displayDiscountPrice={displayDiscountPrice}
               imageUrls={product?.imageUrls}
+              isWishlisted={isWishlisted}
+              setIsWishlisted={setIsWishlisted}
             />
 
             <ProductDetailInfo
@@ -486,6 +504,8 @@ export default function ProductDetailPage() {
               quantity={quantity}
               handleDecreaseQuantity={handleDecreaseQuantity}
               handleIncreaseQuantity={handleIncreaseQuantity}
+              handleQuantityChange={handleQuantityChange}
+              setQuantity={setQuantity}
               handleAddToCart={handleAddToCart}
               handleBuyNow={handleBuyNow}
               isWishlisted={isWishlisted}
