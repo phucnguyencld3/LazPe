@@ -17,6 +17,7 @@ import {
   LoyaltyPolicySummaryResponse,
   normalizeName
 } from "@/lib/api";
+import { getCurrentFlashSale } from "@/lib/features/flash-sales/flashSaleApi";
 
 import { CheckoutHeader } from "@/components/client/checkout/CheckoutHeader";
 import { ShippingAddressSection } from "@/components/client/checkout/ShippingAddressSection";
@@ -212,7 +213,47 @@ export default function CheckoutPage() {
       }
 
       const selectedIds: number[] = JSON.parse(selectedIdsRaw);
-      const items = cartData.cartDetails.filter((cd) => selectedIds.includes(cd.cartDetailID));
+      const selectedNonGifts = cartData.cartDetails.filter((cd) => !cd.isGift && selectedIds.includes(cd.cartDetailID));
+      let items = [...selectedNonGifts];
+      const allGiftsInCart = cartData.cartDetails.filter(cd => cd.isGift);
+
+      try {
+        const sales = await getCurrentFlashSale();
+        const activeFlashSales = (sales || []).filter(sale => sale.isActive && sale.status === 1);
+        let remainingGifts = [...allGiftsInCart];
+
+        selectedNonGifts.forEach(detail => {
+          for (const sale of activeFlashSales) {
+            const matchedItem = sale.flashSaleItems.find((item) => {
+              if (item.itemType === 1 && detail.variantID && item.referenceId === detail.product?.productID) return true;
+              if (item.itemType === 2 && detail.variantID && item.referenceId === detail.variantID) return true;
+              if (item.itemType === 3 && detail.bundleID && item.referenceId === detail.bundleID) return true;
+              return false;
+            });
+
+            if (matchedItem && matchedItem.discountType === 2 && matchedItem.giftVariantIds && Array.isArray(matchedItem.giftVariantIds)) {
+              const giftIds = matchedItem.giftVariantIds;
+              const giftIndex = remainingGifts.findIndex(g => g.variantID && giftIds.includes(g.variantID));
+              if (giftIndex !== -1) {
+                items.push(remainingGifts[giftIndex]);
+                remainingGifts.splice(giftIndex, 1);
+                break;
+              }
+            }
+          }
+        });
+        
+        remainingGifts.forEach(g => {
+          if (selectedIds.includes(g.cartDetailID) && !items.some(i => i.cartDetailID === g.cartDetailID)) {
+             items.push(g);
+          }
+        });
+
+      } catch (e) {
+        console.error("Lỗi khi load flash sale ở checkout:", e);
+        const explicitGifts = allGiftsInCart.filter(g => selectedIds.includes(g.cartDetailID) && !items.some(i => i.cartDetailID === g.cartDetailID));
+        items = [...items, ...explicitGifts];
+      }
       
       if (items.length === 0) {
         toast.error("Không tìm thấy các sản phẩm đã chọn!");

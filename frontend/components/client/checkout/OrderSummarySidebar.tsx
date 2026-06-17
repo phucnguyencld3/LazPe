@@ -89,13 +89,13 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               return (
                 <div key={item.cartDetailID} className={`flex gap-3 items-center ${item.isGift ? "opacity-90" : ""}`}>
                   {/* Product Image */}
-                  <div className={`relative w-16 h-16 rounded-xl p-1 border flex-shrink-0 flex items-center justify-center overflow-hidden ${item.isGift ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"}`}>
+                  <div className={`relative w-16 h-16 rounded-xl p-1 border flex-shrink-0 flex items-center justify-center ${item.isGift ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"}`}>
                     <img
                       alt={name || "Sản phẩm"}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover rounded-lg"
                       src={image || "/images/placeholder.jpg"}
                     />
-                    <span className={`absolute -top-1.5 -left-1.5 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white ${item.isGift ? "bg-emerald-500" : "bg-rose-500"}`}>
+                    <span className={`absolute -top-2 -right-2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm ${item.isGift ? "bg-emerald-500" : "bg-rose-500"}`}>
                       x{item.quantity}
                     </span>
                   </div>

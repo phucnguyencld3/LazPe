@@ -9,7 +9,7 @@ interface CartItemListProps {
   checkedDetails: Record<number, boolean>;
   isAllChecked: () => boolean;
   handleToggleAllChecks: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleToggleCheck: (detailId: number) => void;
+  handleToggleCheck: (detailId: number, associatedGiftId?: number) => void;
   handleRemoveSelectedItems: () => void;
   handleClearAllCart: () => void;
   handleUpdateQuantity: (detail: CartDetailInfo, newQty: number) => void;
@@ -150,7 +150,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => handleToggleCheck(detail.cartDetailID)}
+                          onChange={() => handleToggleCheck(detail.cartDetailID, associatedGift?.cartDetailID)}
                           className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 transition-all cursor-pointer"
                         />
                       </div>
@@ -308,9 +308,12 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                     className="bg-emerald-50/[0.3] p-3 sm:p-4 rounded-xl shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border border-emerald-200 mb-4"
                   >
                     <div className="flex items-center h-16 sm:h-20 shrink-0">
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-emerald-500 shrink-0">
-                        <span className="material-symbols-outlined text-[16px] sm:text-[18px]">redeem</span>
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={!!checkedDetails[gift.cartDetailID]}
+                        onChange={() => handleToggleCheck(gift.cartDetailID)}
+                        className="w-4 h-4 sm:w-5 sm:h-5 rounded border-emerald-300 text-emerald-500 focus:ring-emerald-500/20 accent-emerald-500 transition-all cursor-pointer"
+                      />
                     </div>
 
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-white border border-slate-100 shrink-0 relative">

@@ -340,39 +340,48 @@ export function OrdersSection({
 
                           return (
                             <>
-                              {displayedDetails.map((item: any, idx: number) => (
-                                <div key={idx} className="flex gap-3 py-2 first:pt-0 last:pb-0">
+                              {displayedDetails.map((item: any, idx: number) => {
+                                const isGift = item.unitPrice === 0;
+                                return (
+                                <div key={idx} className={`flex gap-3 py-2 px-3 rounded-xl first:mt-0 last:mb-0 transition-colors ${isGift ? 'bg-emerald-50/40 border border-emerald-100' : 'bg-transparent'}`}>
                                   {/* Product Image */}
                                   {item.imageUrl ? (
                                     <img
                                       src={item.imageUrl}
                                       alt={item.productName}
-                                      className="w-12 h-12 rounded-lg object-cover shadow-sm flex-shrink-0"
+                                      className={`w-12 h-12 rounded-lg object-cover shadow-sm flex-shrink-0 border ${isGift ? 'border-emerald-200' : 'border-slate-100'}`}
                                     />
                                   ) : (
-                                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex flex-shrink-0 items-center justify-center text-primary font-bold text-xs shadow-sm">
+                                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-br flex flex-shrink-0 items-center justify-center font-bold text-xs shadow-sm ${isGift ? 'from-emerald-100 to-emerald-200 text-emerald-600' : 'from-primary/10 to-primary/20 text-primary'}`}>
                                       LazPe
                                     </div>
                                   )}
 
                                   <div className="flex-1 flex flex-col md:flex-row justify-between gap-1.5">
                                     <div className="space-y-0.5">
-                                      <h4 className="font-bold text-slate-800 text-xs md:text-sm line-clamp-1">
-                                        {item.productName}
-                                      </h4>
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <h4 className={`font-bold text-xs md:text-sm line-clamp-1 ${isGift ? 'text-emerald-800' : 'text-slate-800'}`}>
+                                          {item.productName}
+                                        </h4>
+                                        {isGift && (
+                                          <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-bold rounded-sm tracking-widest leading-none shrink-0 uppercase">
+                                            Quà
+                                          </span>
+                                        )}
+                                      </div>
                                       {item.variantName && (
-                                        <p className="text-[10px] text-slate-400 font-semibold">{item.variantName}</p>
+                                        <p className={`text-[10px] font-semibold ${isGift ? 'text-emerald-600' : 'text-slate-400'}`}>{item.variantName}</p>
                                       )}
                                       <p className="text-[10px] text-slate-500 font-bold">Số lượng: x{item.quantity}</p>
                                     </div>
                                     <div className="text-right">
-                                      <span className="font-bold text-primary text-xs md:text-sm">
-                                        {formatPrice(item.unitPrice)}
+                                      <span className={`font-bold text-xs md:text-sm ${isGift ? 'text-emerald-500' : 'text-primary'}`}>
+                                        {isGift ? '0 đ' : formatPrice(item.unitPrice)}
                                       </span>
                                     </div>
                                   </div>
                                 </div>
-                              ))}
+                              )})}
 
                               {details.length > 1 && (
                                 <div className="pt-3 flex justify-center border-t border-slate-50">

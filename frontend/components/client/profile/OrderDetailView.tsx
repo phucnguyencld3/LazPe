@@ -505,8 +505,10 @@ export function OrderDetailView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs md:text-sm">
-                  {order.invoiceDetails && order.invoiceDetails.map((item: any, idx: number) => (
-                    <tr key={idx} className="group hover:bg-slate-50/30 transition-colors">
+                  {order.invoiceDetails && order.invoiceDetails.map((item: any, idx: number) => {
+                    const isGift = item.unitPrice === 0;
+                    return (
+                    <tr key={idx} className={`group transition-colors ${isGift ? 'bg-emerald-50/30 hover:bg-emerald-50/60' : 'hover:bg-slate-50/30'}`}>
                       <td className="px-5 py-4 w-1/2">
                         <div className="flex items-center gap-3">
                           {/* Product Thumbnail */}
@@ -514,21 +516,28 @@ export function OrderDetailView({
                             <img 
                               src={item.imageUrl} 
                               alt={item.productName} 
-                              className="w-14 h-14 rounded-xl object-cover shadow-sm flex-shrink-0" 
+                              className={`w-14 h-14 rounded-xl object-cover shadow-sm flex-shrink-0 border ${isGift ? 'border-emerald-200' : 'border-slate-100'}`} 
                             />
                           ) : (
-                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 flex flex-shrink-0 items-center justify-center text-primary font-bold text-[10px] shadow-sm">
+                            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br flex flex-shrink-0 items-center justify-center font-bold text-[10px] shadow-sm ${isGift ? 'from-emerald-100 to-emerald-200 text-emerald-600' : 'from-primary/10 to-primary/20 text-primary'}`}>
                               LazPe
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-bold text-slate-800 group-hover:text-primary transition-colors text-xs md:text-sm break-words leading-relaxed">
-                              {item.productName}
-                            </h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className={`font-bold transition-colors text-xs md:text-sm break-words leading-relaxed ${isGift ? 'text-emerald-800' : 'text-slate-800 group-hover:text-primary'}`}>
+                                {item.productName}
+                              </h4>
+                              {isGift && (
+                                <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full shadow-sm tracking-wide shrink-0">
+                                  QUÀ TẶNG
+                                </span>
+                              )}
+                            </div>
                             {item.variantName && (
-                              <p className="text-[10px] text-slate-400 font-bold mt-1">Phân loại: {item.variantName}</p>
+                              <p className={`text-[10px] font-bold mt-1 ${isGift ? 'text-emerald-600' : 'text-slate-400'}`}>Phân loại: {item.variantName}</p>
                             )}
-                            {order.statusCode === 3 && (
+                            {order.statusCode === 3 && !isGift && (
                               <button
                                 onClick={() => {
                                   if (onChangeTab) {
@@ -551,17 +560,17 @@ export function OrderDetailView({
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-center font-semibold text-slate-700 whitespace-nowrap">
-                        {formatPrice(item.unitPrice)}
+                      <td className={`px-5 py-4 text-center font-semibold whitespace-nowrap ${isGift ? 'text-emerald-500' : 'text-slate-700'}`}>
+                        {isGift ? '0 đ' : formatPrice(item.unitPrice)}
                       </td>
                       <td className="px-5 py-4 text-center font-bold text-slate-600 whitespace-nowrap">
                         x{item.quantity}
                       </td>
-                      <td className="px-5 py-4 text-right font-bold text-primary whitespace-nowrap">
-                        {formatPrice(item.totalPrice)}
+                      <td className={`px-5 py-4 text-right font-bold whitespace-nowrap ${isGift ? 'text-emerald-500' : 'text-primary'}`}>
+                        {isGift ? 'Miễn phí' : formatPrice(item.totalPrice)}
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

@@ -11,6 +11,7 @@ import {
   CartInfo,
   CartDetailInfo
 } from "@/lib/api";
+import { getCurrentFlashSale } from "@/lib/features/flash-sales/flashSaleApi";
 import { useCart } from "@/context/CartContext";
 import { Product, Voucher } from "@/types";
 import ProductCard from "@/components/client/common/ProductCard";
@@ -304,7 +305,7 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!cart || cart.cartDetails.length === 0) return;
 
     // Chặn tài khoản admin/nhân viên hoặc tài khoản có bất kỳ quyền nào mua hàng
@@ -330,6 +331,40 @@ export default function CartPage() {
       .map(Number)
       .filter((id) => checkedDetails[id] && cart.cartDetails.some((cd) => cd.cartDetailID === id));
 
+    // Lấy thông tin flash sale để đảm bảo quà tặng được đưa vào checkout
+    try {
+      const sales = await getCurrentFlashSale();
+      const activeFlashSales = (sales || []).filter(sale => sale.isActive && sale.status === 1);
+      
+      const gifts = cart.cartDetails.filter((d) => d.isGift && !selectedIds.includes(d.cartDetailID));
+      let remainingGifts = [...gifts];
+      const selectedNonGifts = cart.cartDetails.filter(d => !d.isGift && selectedIds.includes(d.cartDetailID));
+
+      selectedNonGifts.forEach(detail => {
+        for (const sale of activeFlashSales) {
+          const matchedItem = sale.flashSaleItems.find((item) => {
+            if (detail.bundleID && item.itemType === 3 && item.referenceId === detail.bundleID) return true;
+            if (detail.variantID && item.itemType === 2 && item.referenceId === detail.variantID) return true;
+            if (detail.product?.productID && item.itemType === 1 && item.referenceId === detail.product.productID) return true;
+            return false;
+          });
+
+          if (matchedItem && matchedItem.discountType === 2 && matchedItem.giftVariantIds && Array.isArray(matchedItem.giftVariantIds)) {
+            const giftIds = matchedItem.giftVariantIds;
+            const giftIndex = remainingGifts.findIndex(g => g.variantID && giftIds.includes(g.variantID));
+            if (giftIndex !== -1) {
+              const associatedGift = remainingGifts[giftIndex];
+              selectedIds.push(associatedGift.cartDetailID); // Ép thêm quà tặng vào selectedIds
+              remainingGifts.splice(giftIndex, 1);
+              break;
+            }
+          }
+        }
+      });
+    } catch (e) {
+      console.error("Lỗi khi fetch flash sale để map quà tặng ở checkout:", e);
+    }
+
     if (selectedIds.length === 0) {
       showAlert("error", "Vui lòng chọn ít nhất một sản phẩm để đặt hàng!");
       return;
@@ -344,11 +379,18 @@ export default function CartPage() {
   };
 
   // Checkbox helpers
-  const handleToggleCheck = (detailId: number) => {
-    setCheckedDetails((prev) => ({
-      ...prev,
-      [detailId]: !prev[detailId],
-    }));
+  const handleToggleCheck = (detailId: number, associatedGiftId?: number) => {
+    setCheckedDetails((prev) => {
+      const newState = !prev[detailId];
+      const next = {
+        ...prev,
+        [detailId]: newState,
+      };
+      if (associatedGiftId !== undefined) {
+        next[associatedGiftId] = newState;
+      }
+      return next;
+    });
   };
 
   const handleToggleAllChecks = (e: React.ChangeEvent<HTMLInputElement>) => {

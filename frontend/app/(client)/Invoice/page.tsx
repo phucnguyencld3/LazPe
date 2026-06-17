@@ -199,13 +199,13 @@ function InvoiceContent() {
                       <div key={item.invoiceDetailID} className="flex gap-4 py-4 items-center">
                         
                         {/* Image */}
-                        <div className="relative w-16 h-16 bg-slate-50 rounded-xl p-1.5 border border-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        <div className={`relative w-16 h-16 rounded-xl p-1.5 border flex-shrink-0 flex items-center justify-center overflow-hidden ${item.unitPrice === 0 ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"}`}>
                           <img
                             alt={item.productName}
                             className="w-full h-full object-contain"
                             src={item.imageUrl || "/images/placeholder.jpg"}
                           />
-                          <span className="absolute -top-1.5 -left-1.5 bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-white">
+                          <span className={`absolute -top-1.5 -left-1.5 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-white ${item.unitPrice === 0 ? "bg-emerald-500" : "bg-rose-500"}`}>
                             x{item.quantity}
                           </span>
                         </div>
@@ -226,11 +226,11 @@ function InvoiceContent() {
 
                         {/* Price */}
                         <div className="text-right flex-shrink-0">
-                          <div className="text-sm font-extrabold text-rose-500">
-                            {formatVND(item.totalPrice)}
+                          <div className={`text-sm font-extrabold ${item.unitPrice === 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                            {item.unitPrice === 0 ? "QUÀ TẶNG" : formatVND(item.totalPrice)}
                           </div>
                           <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                            {formatVND(item.unitPrice)} / cái
+                            {item.unitPrice === 0 ? "Miễn phí" : `${formatVND(item.unitPrice)} / cái`}
                           </div>
                         </div>
 
