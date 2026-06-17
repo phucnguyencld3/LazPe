@@ -75,16 +75,45 @@ export default function HomePageV2() {
           setBestSellerProducts(bestSellerData.items);
         }
 
-        // Fetch Tất Cả (Mặc định)
-        const allData = await getProducts(1, 30, "", undefined, "CreatedAt", "desc");
-        if (isMounted && allData?.items) {
+        // Fetch dữ liệu cho tab hiện tại (từ URL)
+        let initialTab: TabKey = 'all';
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const tabParam = params.get('tab') as TabKey;
+          if (tabParam && ['all', 'foryou', 'combo', 'bestseller', 'newest', 'discount'].includes(tabParam)) {
+            initialTab = tabParam;
+            setActiveTab(initialTab);
+          }
+        }
+
+        let dataItems: Product[] = [];
+        if (initialTab === 'foryou') {
+          dataItems = await getRecommendations(10);
+          if (!dataItems || dataItems.length === 0) {
+             const fallbackData = await getProducts(1, 10, "", undefined, "CreatedAt", "asc");
+             dataItems = fallbackData?.items || [];
+          }
+        } else if (initialTab === 'combo') {
+          dataItems = await getBundlesAsProducts();
+        } else {
+          let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
+          if (initialTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+          if (initialTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
+          if (initialTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; } 
+          if (initialTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
+
+          const data = await getProducts(1, 30, "", undefined, sortBy, sortDir, hasDiscount);
+          dataItems = data?.items || [];
+        }
+
+        if (isMounted && dataItems.length > 0) {
            setTabData(prev => ({
             ...prev,
-            all: {
-              ...prev.all,
-              products: allData.items,
-              hasMore: allData.items.length >= 30,
-              displayedCount: 30
+            [initialTab]: {
+              ...prev[initialTab],
+              products: dataItems,
+              hasMore: initialTab === 'foryou' || initialTab === 'combo' ? false : dataItems.length >= 30,
+              displayedCount: initialTab === 'foryou' ? 10 : 30
             }
           }));
         }
@@ -105,6 +134,12 @@ export default function HomePageV2() {
 
   const handleTabChange = async (tab: TabKey) => {
     setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState(null, '', url.toString());
+    }
+
     if (tabData[tab].products.length === 0) {
       setLoadingTab(true);
       let dataItems: Product[] = [];
