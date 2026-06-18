@@ -237,8 +237,9 @@ export default function AdminLayout({
     checkAuth();
   }, [router, pathname, isAuth]);
 
-  const isActive = (path: string) => {
+  const isActive = (path: string, excludes: string[] = []) => {
     if (path === "/admin" && pathname !== "/admin") return false;
+    if (excludes.some(ex => pathname?.startsWith(ex))) return false;
     return pathname?.startsWith(path);
   };
 
@@ -504,7 +505,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin/orders"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/orders") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/orders", ["/admin/orders/batch-print"]) ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Xử lý Đơn hàng" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">shopping_cart</span>
