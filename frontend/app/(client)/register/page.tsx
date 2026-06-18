@@ -488,7 +488,7 @@ export default function RegisterPage() {
                       theme="outline"
                       size="large"
                       shape="pill"
-                      width="100%"
+                      width="320"
                       locale="vi"
                       text="signup_with"
                     />

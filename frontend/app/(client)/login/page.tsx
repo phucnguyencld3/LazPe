@@ -540,7 +540,7 @@ export default function LoginPage() {
                 theme="outline"
                 size="large"
                 shape="pill"
-                width="100%"
+                width="320"
                 locale="vi"
               />
             </div>
