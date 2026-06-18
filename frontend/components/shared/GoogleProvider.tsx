@@ -8,12 +8,10 @@ export default function GoogleProvider({ children }: { children: ReactNode }) {
   
   if (!clientId) {
     console.warn("Google Client ID is missing. Google Login will not work.");
-    // Fallback without provider if client ID is missing to prevent crashes
-    return <>{children}</>;
   }
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={clientId || "missing-client-id"}>
       {children}
     </GoogleOAuthProvider>
   );
