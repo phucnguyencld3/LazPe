@@ -185,6 +185,41 @@ namespace PolyBabyAPI.Service
             return await UploadImageAsync(newFile, folder);
         }
 
+        public async Task<string> UploadDocumentAsync(IFormFile file, string folder)
+        {
+            if (file == null || file.Length == 0)
+                return null;
+
+            try
+            {
+                using var stream = file.OpenReadStream();
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = folder,
+                    UseFilename = true,
+                    UniqueFilename = true
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    _logger.LogInformation("Document uploaded successfully to {Folder}. Public ID: {PublicId}", folder, uploadResult.PublicId);
+                    return uploadResult.SecureUrl.ToString();
+                }
+
+                _logger.LogError("Failed to upload document. Status: {Status}, Error: {Error}",
+                    uploadResult.StatusCode, uploadResult.Error?.Message);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading document to Cloudinary folder: {Folder}", folder);
+                return null;
+            }
+        }
+
         //Method upload local fallback
         public async Task<string> UploadAvatarLocalAsync(IFormFile file, string userId)
         {

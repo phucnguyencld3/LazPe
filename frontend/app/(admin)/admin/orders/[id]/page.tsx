@@ -125,7 +125,7 @@ export default function OrderDetailsPage() {
           order={order}
           onUpdateStatus={handleUpdateStatus}
           onShowCancelModal={() => setShowCancelModal(true)}
-          onPrintOrder={() => toast.info("Tính năng in đơn hàng chưa khả dụng")}
+          onPrintOrder={() => router.push(`/admin/orders/${id}/print`)}
         />
 
         {/* Two Column Grid */}

@@ -20,6 +20,7 @@ namespace PolyBabyAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IVnPayService _vnPayService;
         private readonly INotificationService _notificationService;
+        private readonly ICloudinaryService _cloudinaryService;
 
 
         public InvoiceController(
@@ -28,7 +29,8 @@ namespace PolyBabyAPI.Controllers
             ILogger<InvoiceController> logger,
             ApplicationDbContext context,
             IVnPayService vnPayService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ICloudinaryService cloudinaryService)
         {
             _invoiceService = invoiceService;
             _userManager = userManager;
@@ -36,6 +38,7 @@ namespace PolyBabyAPI.Controllers
             _context = context;
             _vnPayService = vnPayService;
             _notificationService = notificationService;
+            _cloudinaryService = cloudinaryService;
         }
 
         // ======================== GET ENDPOINTS ============================
@@ -1167,6 +1170,50 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Upload PDF phiếu in lên Cloudinary và lưu vào PrintTicketUrl
+        /// </summary>
+        [HttpPost("{id}/upload-pdf")]
+        [Authorize(Roles = "Admin,Employee")]
+        public async Task<IActionResult> UploadPdf(int id, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "File PDF không hợp lệ" });
+
+            try
+            {
+                var invoice = await _context.Invoices.FindAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                // Lưu file PDF vào server thay vì Cloudinary để tránh lỗi bảo mật (untrusted account)
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "invoices");
+                Directory.CreateDirectory(uploadsPath);
+
+                var fileExtension = Path.GetExtension(file.FileName);
+                var fileName = $"invoice_{invoice.InvoiceID}_{Guid.NewGuid():N}{fileExtension}";
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Trả về URL tương đối để frontend có thể tự xử lý tên miền (chuẩn nhất cho deploy)
+                var pdfUrl = $"/uploads/invoices/{fileName}";
+
+                invoice.PrintTicketUrl = pdfUrl;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, url = pdfUrl });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading PDF for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi hệ thống khi upload PDF", error = ex.Message });
+            }
+        }
+
         // ======================== HELPER METHODS ============================
 
         /// <summary>
@@ -1218,6 +1265,7 @@ namespace PolyBabyAPI.Controllers
                 PayMethodCode = (int?)invoice.PayMethod,
                 Status = invoice.Status.GetDisplayName(),
                 StatusCode = (int)invoice.Status,
+                invoice.PrintTicketUrl,
                 invoice.CreatedAt,
                 HasVoucher = invoice.VoucherID.HasValue,
                 VoucherCode = invoice.Voucher?.Code,
@@ -1296,6 +1344,7 @@ namespace PolyBabyAPI.Controllers
                 HasShippingVoucher = invoice.ShippingVoucherID.HasValue,
                 ShippingVoucherCode = invoice.ShippingVoucher?.Code,
                 ShippingVoucherName = invoice.ShippingVoucher?.Name,
+                invoice.PrintTicketUrl,
                 ItemCount = itemCount
             };
         }
@@ -1333,6 +1382,7 @@ namespace PolyBabyAPI.Controllers
                 PayMethodCode = (int?)invoice.PayMethod,
                 Status = invoice.Status.GetDisplayName(),
                 StatusCode = (int)invoice.Status,
+                invoice.PrintTicketUrl,
 
                 HasVoucher = invoice.VoucherID.HasValue,
                 Voucher = invoice.Voucher != null ? new

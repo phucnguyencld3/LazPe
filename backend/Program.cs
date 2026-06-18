@@ -349,7 +349,20 @@ try
     }
 
     // app.UseHttpsRedirection(); // Đã có Nginx/Cloudflare xử lý HTTPS, tắt cái này để tránh lỗi redirect loop 301
+    // Đảm bảo thư mục wwwroot tồn tại để phục vụ file tĩnh
+    var webRootPath = builder.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+    if (!Directory.Exists(webRootPath))
+    {
+        Directory.CreateDirectory(webRootPath);
+    }
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(webRootPath),
+        RequestPath = ""
+    });
     app.UseCors("AllowMVC");
+    app.UseRouting();
     app.UseRateLimiter();
     app.UseAuthentication(); 
     app.UseAuthorization();  
