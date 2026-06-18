@@ -1392,8 +1392,9 @@ namespace PolyBabyAPI.Controllers
                 {
                     payload = await GoogleJsonWebSignature.ValidateAsync(model.IdToken, settings);
                 }
-                catch (InvalidJwtException)
+                catch (InvalidJwtException ex)
                 {
+                    _logger.LogError(ex, "Token Google không hợp lệ. Configured ClientId: '{ClientId}'", _configuration["GoogleAuth:ClientId"]);
                     return Unauthorized(new { success = false, message = "Token Google không hợp lệ." });
                 }
 
