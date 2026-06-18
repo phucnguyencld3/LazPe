@@ -208,7 +208,7 @@ export function VoucherSection({ token }: VoucherSectionProps) {
   }
 
   return (
-    <section className="bg-white rounded-[10px] p-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
+    <section className="bg-white rounded-[10px] p-4 sm:p-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100 w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-3 border-b border-slate-100">
         <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">confirmation_number</span> Voucher của tôi
@@ -216,17 +216,17 @@ export function VoucherSection({ token }: VoucherSectionProps) {
       </div>
 
       {/* Search Bar */}
-      <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-3 max-w-[32rem]">
+      <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-2 sm:gap-3 w-full max-w-[32rem]">
         <input
           type="text"
           placeholder="Nhập mã voucher tại đây..."
           value={searchCode}
           onChange={(e) => setSearchCode(e.target.value)}
-          className="flex-1 px-4 py-2.5 rounded-[10px] border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
+          className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-[10px] border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
         />
         <button
           type="submit"
-          className="bg-primary hover:bg-primary/95 text-white px-6 py-2.5 rounded-[10px] font-bold text-sm bouncy-hover active:scale-95 transition-transform flex-shrink-0 whitespace-nowrap"
+          className="bg-primary hover:bg-primary/95 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-[10px] font-bold text-sm bouncy-hover active:scale-95 transition-transform shrink-0 whitespace-nowrap"
         >
           Áp dụng
         </button>
@@ -294,16 +294,17 @@ export function VoucherSection({ token }: VoucherSectionProps) {
               <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                 <div>
                   <div className="flex justify-between items-start gap-2">
-                    <span className="font-bold text-slate-800 text-sm md:text-base pr-2 line-clamp-1 flex-1" title={voucher.title}>
+                    <span className="font-bold text-slate-800 text-sm md:text-base pr-2 line-clamp-1 flex-1 min-w-0" title={voucher.title}>
                       {voucher.title}
                     </span>
                     <span
                       onClick={() => voucher.status === "unused" && handleCopyCode(voucher.code)}
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer select-none transition-colors border flex-shrink-0 ${
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer select-none transition-colors border shrink-0 max-w-[120px] sm:max-w-[180px] truncate ${
                         voucher.status === "unused"
                           ? "bg-primary-container text-on-primary-container border-primary-container hover:bg-primary hover:text-white"
                           : "bg-slate-200 text-slate-500 border-slate-200"
                       }`}
+                      title={voucher.code}
                     >
                       {voucher.code}
                     </span>

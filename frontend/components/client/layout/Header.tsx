@@ -346,7 +346,7 @@ export default function Header() {
 
                 {/* Dropdown Panel */}
                 {isNotifDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute right-[-2rem] sm:right-0 mt-3 w-[280px] sm:w-80 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
                       <span className="font-bold text-slate-800 text-sm">Thông báo mới</span>
                       {unreadCount > 0 && (
@@ -544,7 +544,7 @@ export default function Header() {
               <div>
                 <button
                   onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
-                  className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <span>Danh mục sản phẩm</span>
                   <ChevronDown
@@ -589,7 +589,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="block px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {item.label}
@@ -598,7 +598,7 @@ export default function Header() {
             
             <Link
               href="/wishlist"
-              className="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="block px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               <div className="flex items-center justify-between">

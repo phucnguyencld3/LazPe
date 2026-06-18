@@ -339,7 +339,21 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleQuantityChange = (val: string) => {
+    const num = parseInt(val.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(num)) {
+      if (num > maxAllowedQuantity) {
+        setQuantity(maxAllowedQuantity);
+      } else {
+        setQuantity(num);
+      }
+    } else if (val === "") {
+      setQuantity(0); // Temporary state while typing
+    }
+  };
+
   const handleAddToCart = async () => {
+    const finalQuantity = quantity === 0 ? 1 : quantity;
     const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!hasToken) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
@@ -352,8 +366,8 @@ export default function ProductDetailPage() {
 
     const payload = {
         variantID: finalVariantId,
-        quantity: quantity,
-        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && quantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
+        quantity: finalQuantity,
+        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && finalQuantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
     };
 
     if (!payload.variantID) {
@@ -365,7 +379,8 @@ export default function ProductDetailPage() {
       setIsAddingToCart(true);
       const res = await addToCart(payload);
       if (res.success) {
-        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng! ${activeVariant?.variantName ? `(Phân loại: ${activeVariant.variantName})` : ""}`);
+        toast.success(`Đã thêm ${finalQuantity} sản phẩm vào giỏ hàng! ${activeVariant?.variantName ? `(Phân loại: ${activeVariant.variantName})` : ""}`);
+        if (quantity === 0) setQuantity(1);
       } else {
         toast.error(res.message || "Không thể thêm sản phẩm vào giỏ hàng");
       }
@@ -378,6 +393,7 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = async () => {
+    const finalQuantity = quantity === 0 ? 1 : quantity;
     const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!hasToken) {
       toast.error("Vui lòng đăng nhập để tiếp tục!");
@@ -390,8 +406,8 @@ export default function ProductDetailPage() {
 
     const payload = {
         variantID: finalVariantId,
-        quantity: quantity,
-        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && quantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
+        quantity: finalQuantity,
+        selectedGiftVariantId: (activeFlashSaleItem && activeFlashSaleItem.discountType === 2 && finalQuantity >= (activeFlashSaleItem.requiredQuantity || 1)) ? selectedGiftId || undefined : undefined
     };
 
     if (!payload.variantID) {
@@ -447,20 +463,22 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 min-h-screen py-4 sm:py-8 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <button
-          onClick={() => router.back()}
-          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm hover:shadow active:scale-95"
-        >
-          <ArrowLeft size={16} />
-          Quay lại danh sách
-        </button>
+        <div className="px-4 sm:px-0">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 sm:mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm hover:shadow active:scale-95"
+          >
+            <ArrowLeft size={16} />
+            Quay lại danh sách
+          </button>
+        </div>
 
         {/* Product Container */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 sm:p-8 lg:p-12">
+        <div className="bg-white sm:rounded-3xl sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-8 sm:mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 p-4 sm:p-8 lg:p-12">
             <ProductImageGallery
               displayImage={displayImage}
               productName={product.name}
@@ -468,6 +486,8 @@ export default function ProductDetailPage() {
               displayPrice={displayPrice}
               displayDiscountPrice={displayDiscountPrice}
               imageUrls={product?.imageUrls}
+              isWishlisted={isWishlisted}
+              setIsWishlisted={setIsWishlisted}
             />
 
             <ProductDetailInfo
@@ -484,6 +504,8 @@ export default function ProductDetailPage() {
               quantity={quantity}
               handleDecreaseQuantity={handleDecreaseQuantity}
               handleIncreaseQuantity={handleIncreaseQuantity}
+              handleQuantityChange={handleQuantityChange}
+              setQuantity={setQuantity}
               handleAddToCart={handleAddToCart}
               handleBuyNow={handleBuyNow}
               isWishlisted={isWishlisted}

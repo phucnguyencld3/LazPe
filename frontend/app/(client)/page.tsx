@@ -75,16 +75,45 @@ export default function HomePageV2() {
           setBestSellerProducts(bestSellerData.items);
         }
 
-        // Fetch Tất Cả (Mặc định)
-        const allData = await getProducts(1, 30, "", undefined, "CreatedAt", "desc");
-        if (isMounted && allData?.items) {
+        // Fetch dữ liệu cho tab hiện tại (từ URL)
+        let initialTab: TabKey = 'all';
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const tabParam = params.get('tab') as TabKey;
+          if (tabParam && ['all', 'foryou', 'combo', 'bestseller', 'newest', 'discount'].includes(tabParam)) {
+            initialTab = tabParam;
+            setActiveTab(initialTab);
+          }
+        }
+
+        let dataItems: Product[] = [];
+        if (initialTab === 'foryou') {
+          dataItems = await getRecommendations(10);
+          if (!dataItems || dataItems.length === 0) {
+             const fallbackData = await getProducts(1, 10, "", undefined, "CreatedAt", "asc");
+             dataItems = fallbackData?.items || [];
+          }
+        } else if (initialTab === 'combo') {
+          dataItems = await getBundlesAsProducts();
+        } else {
+          let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
+          if (initialTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+          if (initialTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
+          if (initialTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; } 
+          if (initialTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
+
+          const data = await getProducts(1, 30, "", undefined, sortBy, sortDir, hasDiscount);
+          dataItems = data?.items || [];
+        }
+
+        if (isMounted && dataItems.length > 0) {
            setTabData(prev => ({
             ...prev,
-            all: {
-              ...prev.all,
-              products: allData.items,
-              hasMore: allData.items.length >= 30,
-              displayedCount: 30
+            [initialTab]: {
+              ...prev[initialTab],
+              products: dataItems,
+              hasMore: initialTab === 'foryou' || initialTab === 'combo' ? false : dataItems.length >= 30,
+              displayedCount: initialTab === 'foryou' ? 10 : 30
             }
           }));
         }
@@ -105,6 +134,12 @@ export default function HomePageV2() {
 
   const handleTabChange = async (tab: TabKey) => {
     setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState(null, '', url.toString());
+    }
+
     if (tabData[tab].products.length === 0) {
       setLoadingTab(true);
       let dataItems: Product[] = [];
@@ -207,7 +242,7 @@ export default function HomePageV2() {
       <div className="flex-1 w-full max-w-[calc(100vw-2rem)] lg:max-w-none flex flex-col gap-6 min-w-0">
 
         {/* Hero Banner Section (Image Slider) */}
-        <div className="rounded-[10px] w-full h-[280px] sm:h-[350px] relative overflow-hidden shadow-sm flex items-center justify-center group bg-slate-100">
+        <div className="rounded-[10px] w-full h-[180px] sm:h-[250px] md:h-[350px] relative overflow-hidden shadow-sm flex items-center justify-center group bg-slate-100">
           {bannerImages.map((src, index) => (
             <div
               key={index}
@@ -263,10 +298,10 @@ export default function HomePageV2() {
           </button>
         </div>
 
-        {/* Tiện Ích, Dịch Vụ */}
+        {/* Tiện Ích */}
         <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6">
-          <h3 className="font-bold text-xl mb-6 text-slate-800">Tiện Ích, Dịch Vụ</h3>
-          <div className="flex justify-between items-center overflow-x-auto pb-2 scrollbar-hide gap-4">
+          <h3 className="font-bold text-xl mb-6 text-slate-800">Tiện Ích</h3>
+          <div className="flex flex-nowrap overflow-x-auto lg:overflow-hidden pb-4 -mx-1 px-1 scrollbar-hide gap-4 sm:gap-6 lg:gap-2 xl:gap-4 lg:justify-between overscroll-x-contain touch-pan-x w-full">
             <UtilityIcon href="/profile?tab=orders" icon={<Package size={28} className="text-white" />} color="bg-cyan-500" label="Đơn Hàng Của Tôi" />
             <UtilityIcon href="/wishlist" icon={<Heart size={28} className="text-white" />} color="bg-rose-500" label="SP Yêu Thích" />
             <UtilityIcon href="/profile?tab=vouchers" icon={<Gift size={28} className="text-white" />} color="bg-pink-500" label="Kho Voucher" />
@@ -286,9 +321,9 @@ export default function HomePageV2() {
           </div>
         ) : flashSaleCampaigns.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {flashSaleCampaigns.slice(0, visibleCampaignsCount).map(campaign => (
-                <div key={campaign.campaignId} className={campaign.flashSaleItems.length <= 2 ? "col-span-1" : "col-span-1 md:col-span-2"}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {flashSaleCampaigns.slice(0, visibleCampaignsCount).map((campaign, index) => (
+                <div key={campaign.campaignId || `campaign-${index}`} className={campaign.flashSaleItems.length <= 2 ? "col-span-1" : "col-span-1 lg:col-span-2"}>
                   <FlashSaleCampaignBlock campaign={campaign} />
                 </div>
               ))}
@@ -377,7 +412,7 @@ export default function HomePageV2() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
                   {tabData[activeTab].products.slice(0, tabData[activeTab].displayedCount).map((p, index) => (
                     <ProductCard key={`${p.id}-${index}`} product={p} />
                   ))}
@@ -492,8 +527,8 @@ function FlashSaleCampaignBlock({ campaign }: { campaign: FlashSaleCampaign }) {
         </div>
       </div>
       <div className={`grid gap-2 md:gap-3 mb-0 flex-grow ${products.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
-        {products.slice(0, displayedCount).map(p => (
-          <div key={p.id} className="scale-95 origin-top mb-[-5%]">
+        {products.slice(0, displayedCount).map((p, index) => (
+          <div key={`${p.id}-${index}`} className="scale-95 origin-top mb-[-5%]">
             <ProductCard product={p} />
           </div>
         ))}
@@ -532,20 +567,20 @@ function UtilityIcon({ icon, color, label, badge, href }: any) {
   if (href) {
     if (href.startsWith('tel:')) {
       return (
-        <a href={href} className="flex flex-col items-center gap-2 cursor-pointer group min-w-[72px] hover:opacity-90">
+        <a href={href} className="flex flex-col items-center gap-2 cursor-pointer group min-w-[64px] w-[72px] lg:w-[88px] shrink-0 md:shrink hover:opacity-90">
           {content}
         </a>
       );
     }
     return (
-      <Link href={href} className="flex flex-col items-center gap-2 cursor-pointer group min-w-[72px] hover:opacity-90">
+      <Link href={href} className="flex flex-col items-center gap-2 cursor-pointer group min-w-[64px] w-[72px] lg:w-[88px] shrink-0 md:shrink hover:opacity-90">
         {content}
       </Link>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 cursor-pointer group min-w-[72px] hover:opacity-90">
+    <div className="flex flex-col items-center gap-2 cursor-pointer group min-w-[64px] w-[72px] lg:w-[88px] shrink-0 md:shrink hover:opacity-90">
       {content}
     </div>
   );

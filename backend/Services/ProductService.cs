@@ -835,6 +835,15 @@ namespace PolyBabyAPI.Services
                     };
                 }
 
+                if ((DateTime.Now - product.CreatedAt).TotalDays > 3)
+                {
+                    return new ServiceResult<bool>
+                    {
+                        Success = false,
+                        Message = "Chỉ cho phép xóa sản phẩm mới tạo trong vòng 3 ngày. Những sản phẩm cũ hơn vui lòng ẩn (chuyển trạng thái) thay vì xóa."
+                    };
+                }
+
                 var variantIds = await _context.Variants
                     .Where(v => v.ProductID == id)
                     .Select(v => v.VariantID)
@@ -906,13 +915,42 @@ namespace PolyBabyAPI.Services
                         _context.Variants.RemoveRange(variants);
                 }
 
-                // Xóa thuộc tính cấu hình (ProductOption)
+                // Xóa ảnh sản phẩm (ProductImage)
+                var productImages = await _context.ProductImages
+                    .Where(pi => pi.ProductID == id)
+                    .ToListAsync();
+
+                if (productImages.Count > 0)
+                    _context.ProductImages.RemoveRange(productImages);
+
+                // Xóa Wishlist (sản phẩm yêu thích)
+                var wishlists = await _context.Wishlists
+                    .Where(w => w.ProductID == id)
+                    .ToListAsync();
+                    
+                if (wishlists.Count > 0)
+                    _context.Wishlists.RemoveRange(wishlists);
+
+                // Xóa thuộc tính cấu hình (ProductOption) và giá trị của nó
                 var productOptions = await _context.ProductOptions
                     .Where(po => po.ProductID == id)
                     .ToListAsync();
 
                 if (productOptions.Count > 0)
+                {
+                    var optionIds = productOptions.Select(po => po.ProductOptionID).ToList();
+                    
+                    // Xóa ProductOptionValues
+                    var productOptionValues = await _context.ProductOptionValues
+                        .Where(pov => optionIds.Contains(pov.ProductOptionID))
+                        .ToListAsync();
+                        
+                    if (productOptionValues.Count > 0)
+                        _context.ProductOptionValues.RemoveRange(productOptionValues);
+
+                    // Xóa ProductOptions
                     _context.ProductOptions.RemoveRange(productOptions);
+                }
 
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();

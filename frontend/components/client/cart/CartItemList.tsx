@@ -141,17 +141,19 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   <div key={detail.cartDetailID} className="flex flex-col relative mb-4">
                     {/* Main Product */}
                     <div
-                      className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 items-center group transition-all border relative z-10 ${isChecked
+                      className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border relative z-10 ${isChecked
                         ? "border-rose-200 bg-rose-500/[0.02]"
                         : "border-slate-100 hover:border-slate-200"
                         }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleCheck(detail.cartDetailID)}
-                        className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 shrink-0 transition-all cursor-pointer"
-                      />
+                      <div className="flex items-center h-16 sm:h-20 shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleCheck(detail.cartDetailID)}
+                          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 transition-all cursor-pointer"
+                        />
+                      </div>
 
                       {/* Product Image */}
                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-100 border border-slate-100 shrink-0 relative">
@@ -168,68 +170,72 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                         )}
                       </div>
 
-                      {/* Product Info */}
-                      <div className="flex-grow space-y-0.5 text-center sm:text-left">
-                        <h3 className="font-bold text-sm sm:text-base text-slate-800 hover:text-rose-500 transition-colors line-clamp-2 leading-snug">
-                          {isBundle ? (
-                            name
-                          ) : (
-                            <Link href={`/products/${detail.product?.productID || detail.variantID}`}>
-                              {name}
-                            </Link>
-                          )}
-                        </h3>
+                      {/* Product Info & Actions Wrapper */}
+                      <div className="flex-grow flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 w-full">
+                        {/* Info */}
+                        <div className="flex-grow space-y-1 text-left min-w-0">
+                          <h3 className="font-bold text-sm sm:text-base text-slate-800 hover:text-rose-500 transition-colors line-clamp-2 leading-snug">
+                            {isBundle ? (
+                              name
+                            ) : (
+                              <Link href={`/products/${detail.product?.productID || detail.variantID}`}>
+                                {name}
+                              </Link>
+                            )}
+                          </h3>
 
-                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
-                          <p className="text-on-surface-variant text-[10px] sm:text-xs font-semibold bg-slate-50 px-1.5 py-0.5 rounded inline-block">
-                            {subtext}
-                          </p>
-                          {flashSaleItem && (
-                            <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-white bg-gradient-to-r from-rose-600 to-orange-500 px-1.5 py-0.5 rounded shadow-sm">
-                              <Bolt size={8} className="fill-white animate-pulse" /> FLASH SALE
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-rose-500 font-extrabold text-sm sm:text-base pt-0.5">
-                          ₫{price.toLocaleString("vi-VN")}
-                        </p>
-
-                        {isQtyExceeded && flashSaleItem && (
-                          <div className="text-[9px] text-rose-500 font-bold flex items-center justify-center sm:justify-start gap-1 mt-1 bg-rose-50 border border-rose-100 rounded-md px-2 py-0.5 w-fit mx-auto sm:mx-0">
-                            <AlertCircle size={10} />
-                            Vượt số lượng FS!
+                          <div className="flex flex-wrap items-center justify-start gap-1.5">
+                            <p className="text-on-surface-variant text-[10px] sm:text-xs font-semibold bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded inline-block">
+                              {subtext}
+                            </p>
+                            {flashSaleItem && (
+                              <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-white bg-gradient-to-r from-rose-600 to-orange-500 px-1.5 py-0.5 rounded shadow-sm">
+                                <Bolt size={8} className="fill-white animate-pulse" /> FLASH SALE
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Quantity & Delete Actions */}
-                      <div className="flex items-center gap-3 sm:gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-start pt-3 sm:pt-0 border-t sm:border-t-0 border-dashed border-slate-100 mt-2 sm:mt-0">
-                        <div className="flex items-center bg-slate-100 rounded-full p-0.5 border border-slate-200">
-                          <button
-                            onClick={() => handleUpdateQuantity(detail, detail.quantity - 1)}
-                            className="w-6 h-6 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
-                          >
-                            <Minus size={10} />
-                          </button>
-                          <span className="w-8 text-center font-bold text-slate-800 text-xs">
-                            {detail.quantity}
-                          </span>
-                          <button
-                            onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
-                            disabled={flashSaleItem && detail.quantity >= maxAllowedQuantity}
-                            className="w-6 h-6 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Plus size={10} />
-                          </button>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                            <p className="text-rose-500 font-extrabold text-sm sm:text-base">
+                              ₫{price.toLocaleString("vi-VN")}
+                            </p>
+                            {isQtyExceeded && flashSaleItem && (
+                              <div className="text-[9px] text-rose-500 font-bold flex items-center justify-start gap-1 bg-rose-50 border border-rose-100 rounded-md px-1.5 py-0.5 w-fit">
+                                <AlertCircle size={10} />
+                                Vượt số lượng FS!
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        <button
-                          onClick={() => handleRemoveItem(detail.cartDetailID)}
-                          className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-1.5 hover:bg-rose-50 rounded-full transition-all active:scale-90 text-[18px]"
-                        >
-                          delete
-                        </button>
+                        {/* Quantity & Delete Actions */}
+                        <div className="flex items-center gap-3 sm:gap-4 shrink-0 justify-between sm:justify-start w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-slate-100">
+                          <div className="flex items-center bg-slate-100 rounded-full p-0.5 border border-slate-200">
+                            <button
+                              onClick={() => handleUpdateQuantity(detail, detail.quantity - 1)}
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
+                            >
+                              <Minus size={10} />
+                            </button>
+                            <span className="w-8 sm:w-10 text-center font-bold text-slate-800 text-xs sm:text-sm">
+                              {detail.quantity}
+                            </span>
+                            <button
+                              onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
+                              disabled={flashSaleItem && detail.quantity >= maxAllowedQuantity}
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Plus size={10} />
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => handleRemoveItem(detail.cartDetailID)}
+                            className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-1.5 hover:bg-rose-50 rounded-full transition-all active:scale-90 text-[18px]"
+                          >
+                            delete
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -299,10 +305,12 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 return (
                   <div
                     key={gift.cartDetailID}
-                    className="bg-emerald-50/[0.3] p-3 sm:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 items-center group transition-all border border-emerald-200 mb-4"
+                    className="bg-emerald-50/[0.3] p-3 sm:p-4 rounded-xl shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border border-emerald-200 mb-4"
                   >
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-emerald-500 shrink-0">
-                      <span className="material-symbols-outlined text-[16px] sm:text-[18px]">redeem</span>
+                    <div className="flex items-center h-16 sm:h-20 shrink-0">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-emerald-500 shrink-0">
+                        <span className="material-symbols-outlined text-[16px] sm:text-[18px]">redeem</span>
+                      </div>
                     </div>
 
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-white border border-slate-100 shrink-0 relative">
@@ -313,25 +321,27 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                       )}
                     </div>
 
-                    <div className="flex-grow space-y-0.5 text-center sm:text-left">
-                      <h3 className="font-bold text-sm sm:text-base text-slate-800 hover:text-emerald-600 transition-colors line-clamp-2 leading-snug">
-                        {name}
-                      </h3>
-                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
-                        <p className="text-on-surface-variant text-[10px] sm:text-xs font-semibold bg-white border border-slate-100 px-1.5 py-0.5 rounded inline-block">
-                          {subtext}
-                        </p>
-                        <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded shadow-sm">
-                          QUÀ TẶNG
+                    <div className="flex-grow flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 w-full">
+                      <div className="flex-grow space-y-1 text-left min-w-0">
+                        <h3 className="font-bold text-sm sm:text-base text-slate-800 hover:text-emerald-600 transition-colors line-clamp-2 leading-snug">
+                          {name}
+                        </h3>
+                        <div className="flex flex-wrap items-center justify-start gap-1.5">
+                          <p className="text-on-surface-variant text-[10px] sm:text-xs font-semibold bg-white border border-slate-100 px-1.5 py-0.5 rounded inline-block">
+                            {subtext}
+                          </p>
+                          <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded shadow-sm">
+                            QUÀ TẶNG
+                          </span>
+                        </div>
+                        <p className="text-emerald-600 font-extrabold text-sm sm:text-base">Miễn phí</p>
+                      </div>
+
+                      <div className="flex items-center shrink-0 w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-emerald-200 justify-end">
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
+                          Số lượng: {gift.quantity}
                         </span>
                       </div>
-                      <p className="text-emerald-600 font-extrabold text-sm sm:text-base pt-0.5">Miễn phí</p>
-                    </div>
-
-                    <div className="flex items-center shrink-0 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-dashed border-emerald-200 mt-2 sm:mt-0">
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
-                        Số lượng: {gift.quantity}
-                      </span>
                     </div>
                   </div>
                 );

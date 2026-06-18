@@ -499,30 +499,25 @@ export default function CustomerChatWidget() {
 
   return (
     <>
-      {/* FAB Button Zalo Style */}
+      {/* FAB Button Premium Style */}
       <button
         onClick={toggleOpen}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#0068ff] hover:bg-[#0056d6] text-white flex items-center justify-center shadow-lg cursor-pointer bouncy-hover transition-transform duration-300 transform active:scale-95"
-        style={{
-          boxShadow: "0 8px 24px rgba(0, 104, 255, 0.3)",
-        }}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white flex items-center justify-center shadow-[0_8px_20px_rgba(225,29,72,0.3)] hover:shadow-[0_12px_25px_rgba(225,29,72,0.4)] cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
       >
-        <span className="material-symbols-outlined text-3xl">
-          {isOpen ? "close" : "sms"}
+        <span className="material-symbols-outlined text-[28px]">
+          {isOpen ? "close" : "forum"}
         </span>
       </button>
 
-      {/* Chat Window Container Zalo Style (Tăng kích thước to hơn) */}
+      {/* Chat Window Container Premium Style */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 z-50 w-[430px] max-w-[95vw] h-[610px] max-h-[85vh] bg-[#f4f6f9] rounded-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 shadow-2xl"
-          style={{
-            boxShadow: "0 12px 40px rgba(0, 0, 0, 0.16)",
-          }}
+          className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[380px] h-[100dvh] sm:h-[600px] sm:max-h-[85vh] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
         >
-          {/* Zalo Blue Header */}
-          <div className="bg-[#0068ff] text-white px-4 py-3.5 flex items-center justify-between select-none">
-            <div className="flex items-center gap-3">
+          {/* Premium Gradient Header */}
+          <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="flex items-center gap-3 relative z-10">
               <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-base text-white">
                 {isAiMode ? "AI" : "LP"}
               </div>
@@ -538,10 +533,10 @@ export default function CustomerChatWidget() {
             </div>
 
             {/* Header Action Icons */}
-            <div className="flex items-center gap-2 text-white/90">
+            <div className="flex items-center gap-1.5 text-white/90 relative z-10">
               <button
                 onClick={() => setIsAiMode(!isAiMode)}
-                className={`text-xs px-2 py-1 rounded-full border transition-colors ${isAiMode ? "bg-white text-[#0068ff] border-white" : "bg-transparent border-white hover:bg-white/10"}`}
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${isAiMode ? "bg-white text-rose-500 border-white shadow-sm" : "bg-white/10 border-white/20 hover:bg-white/20"}`}
                 title="Chuyển đổi chế độ AI / Nhân viên"
               >
                 {isAiMode ? "AI Mode" : "Human"}
@@ -549,7 +544,7 @@ export default function CustomerChatWidget() {
               {isStarted && (
                 <button
                   onClick={() => setShowEndChatModal(true)}
-                  className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer text-xl"
+                  className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl"
                   title="Kết thúc trò chuyện"
                 >
                   delete
@@ -557,21 +552,23 @@ export default function CustomerChatWidget() {
               )}
               <button
                 onClick={toggleOpen}
-                className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer text-xl"
+                className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl"
               >
                 close
               </button>
             </div>
           </div>
 
-          {/* Messages Area Zalo Gray-Blue Background */}
-          <div className="flex-1 bg-[#e2e9f1] flex flex-col min-h-0 overflow-y-auto p-4 space-y-4" style={{ scrollbarWidth: "thin" }}>
+          {/* Messages Area Soft Background */}
+          <div className="flex-1 bg-slate-50/80 backdrop-blur-md flex flex-col min-h-0 overflow-y-auto p-4 space-y-5" style={{ scrollbarWidth: "thin" }}>
             {!isStarted ? (
               /* Start Chat Form for Guest */
-              <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white rounded-2xl m-2 shadow-sm">
-                <span className="material-symbols-outlined text-[#0068ff] text-6xl mb-4">chat</span>
-                <h4 className="font-bold text-slate-800 text-lg mb-2">Chào mừng bạn đến với LazPe</h4>
-                <p className="text-sm text-slate-500 mb-6 max-w-[260px]">
+              <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
+                <div className="w-20 h-20 bg-gradient-to-tr from-rose-100 to-pink-50 rounded-full flex items-center justify-center mb-5">
+                  <span className="material-symbols-outlined text-rose-500 text-4xl">forum</span>
+                </div>
+                <h4 className="font-extrabold text-slate-800 text-xl mb-2">Chào mừng đến LazPe</h4>
+                <p className="text-sm text-slate-500 mb-6 max-w-[260px] leading-relaxed">
                   Vui lòng cho biết tên của bạn để bắt đầu trò chuyện trực tuyến với chúng tôi.
                 </p>
                 <form onSubmit={startGuestChat} className="w-full space-y-4">
@@ -581,11 +578,11 @@ export default function CustomerChatWidget() {
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
                     placeholder="Nhập tên của bạn..."
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0068ff] focus:ring-2 focus:ring-blue-500/20 bg-white text-slate-800"
+                    className="w-full px-5 py-3.5 border-0 bg-white rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-shadow"
                   />
                   <button
                     type="submit"
-                    className="w-full bg-[#0068ff] hover:bg-[#0056d6] text-white font-bold py-3 px-4 rounded-xl text-sm transition-colors cursor-pointer shadow-md shadow-blue-500/10"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Bắt đầu trò chuyện
                   </button>
@@ -617,15 +614,15 @@ export default function CustomerChatWidget() {
                         key={msg.id}
                         className={`flex flex-col ${msg.isFromAdmin ? "items-start" : "items-end"}`}
                       >
-                        <span className="text-[10px] text-slate-500 mb-0.5 px-1.5">
+                        <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
                           {msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
 
                         <div
-                          className={`max-w-[80%] rounded-2xl p-3 text-[14px] leading-relaxed shadow-sm ${msg.isFromAdmin
-                            ? "bg-white text-slate-800 rounded-tl-sm border border-slate-100/30"
-                            : "bg-[#cce4ff] text-[#081c36] rounded-tr-sm"
-                            } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none" : ""}`}
+                          className={`max-w-[85%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed shadow-sm ${msg.isFromAdmin
+                            ? "bg-white text-slate-700 rounded-tl-sm border border-slate-100/50"
+                            : "bg-rose-500 text-white rounded-tr-sm"
+                            } ${msg.id < 0 ? "opacity-70" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                         >
                           {isMediaUrl(msg.messageText) ? (
                             <img
@@ -659,7 +656,7 @@ export default function CustomerChatWidget() {
                           )}
                         </div>
                         {msg.id < 0 && (
-                          <span className="text-[9px] text-[#0068ff] italic mt-0.5 px-1 animate-pulse">
+                          <span className="text-[10px] text-rose-500 italic mt-1 px-2 animate-pulse font-medium">
                             Đang gửi...
                           </span>
                         )}
@@ -682,21 +679,21 @@ export default function CustomerChatWidget() {
             )}
           </div>
 
-          {/* Footer Input Area Zalo Style */}
+          {/* Footer Input Area Premium Style */}
           {isStarted && (
             isClosed ? (
-              <div className="p-4 bg-white border-t border-slate-200 flex flex-col items-center gap-2 shrink-0">
-                <p className="text-xs text-slate-500 font-medium">Cuộc hội thoại đã được đóng.</p>
+              <div className="p-5 bg-white/90 backdrop-blur border-t border-slate-100 flex flex-col items-center gap-3 shrink-0">
+                <p className="text-xs text-slate-500 font-semibold">Cuộc hội thoại đã kết thúc.</p>
                 <button
                   type="button"
                   onClick={handleResetChat}
-                  className="w-full bg-[#0068ff] hover:bg-[#0056d6] text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors cursor-pointer text-center shadow-md shadow-blue-500/10"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer text-center shadow-md active:scale-[0.98]"
                 >
                   Bắt đầu cuộc chat mới
                 </button>
               </div>
             ) : (
-              <div className="bg-white border-t border-slate-200 flex flex-col shrink-0 relative">
+              <div className="bg-white/95 backdrop-blur-md border-t border-slate-100 flex flex-col shrink-0 relative pb-safe">
                 {/* Emoji/Sticker Picker Popup */}
                 {showPicker && (
                   <div className="absolute bottom-full right-4 mb-2 w-80 h-72 bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -705,7 +702,7 @@ export default function CustomerChatWidget() {
                       <button
                         type="button"
                         onClick={() => setPickerTab("emoji")}
-                        className={`flex-1 py-2 font-bold cursor-pointer transition-colors ${pickerTab === "emoji" ? "text-[#0068ff] border-b-2 border-[#0068ff]" : "text-slate-500 hover:text-slate-900"
+                        className={`flex-1 py-3 font-bold cursor-pointer transition-colors ${pickerTab === "emoji" ? "text-rose-500 border-b-2 border-rose-500 bg-rose-50/30" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                           }`}
                       >
                         Biểu cảm
@@ -713,10 +710,10 @@ export default function CustomerChatWidget() {
                       <button
                         type="button"
                         onClick={() => setPickerTab("sticker")}
-                        className={`flex-1 py-2 font-bold cursor-pointer transition-colors ${pickerTab === "sticker" ? "text-[#0068ff] border-b-2 border-[#0068ff]" : "text-slate-500 hover:text-slate-900"
+                        className={`flex-1 py-3 font-bold cursor-pointer transition-colors ${pickerTab === "sticker" ? "text-rose-500 border-b-2 border-rose-500 bg-rose-50/30" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                           }`}
                       >
-                        Sticker / GIF
+                        Sticker
                       </button>
                     </div>
 
@@ -730,7 +727,6 @@ export default function CustomerChatWidget() {
                               type="button"
                               onClick={() => {
                                 setInputText((prev) => prev + emoji);
-                                // giữ trạng thái không đóng picker ngay để chọn được nhiều emoji
                               }}
                               className="hover:bg-slate-100 rounded p-1 flex items-center justify-center cursor-pointer transition-colors active:scale-90"
                             >
@@ -752,7 +748,7 @@ export default function CustomerChatWidget() {
                                 alt={sticker.name}
                                 className="w-14 h-14 object-contain rounded-md"
                               />
-                              <span className="text-[10px] text-slate-500 mt-1 truncate max-w-full group-hover:text-[#0068ff]">
+                              <span className="text-[10px] text-slate-500 mt-1.5 font-medium truncate max-w-full group-hover:text-rose-500 transition-colors">
                                 {sticker.name}
                               </span>
                             </button>
@@ -763,29 +759,29 @@ export default function CustomerChatWidget() {
                   </div>
                 )}
 
-                {/* Zalo Options Toolbar */}
-                <div className="flex items-center gap-3 px-3 py-1.5 border-b border-slate-100 text-slate-400">
+                {/* Options Toolbar Premium */}
+                <div className="flex items-center gap-3 px-4 py-2 text-slate-400">
                   <button
                     type="button"
                     onClick={() => setShowPicker(!showPicker)}
-                    className={`hover:text-[#0068ff] hover:bg-slate-100 p-1.5 rounded-full transition-colors material-symbols-outlined text-xl cursor-pointer ${showPicker ? "text-[#0068ff] bg-slate-100" : ""
+                    className={`hover:text-rose-500 p-1.5 rounded-full transition-all material-symbols-outlined text-xl cursor-pointer ${showPicker ? "text-rose-500 bg-rose-50" : "hover:bg-slate-50"
                       }`}
                     title="Cảm xúc & Sticker"
                   >
-                    sentiment_satisfied
+                    mood
                   </button>
                 </div>
 
                 {/* Text input form */}
-                <form onSubmit={handleSend} className="p-3 flex items-end gap-2">
+                <form onSubmit={handleSend} className="px-4 pb-4 pt-1 flex items-end gap-2">
                   <textarea
                     ref={textareaRef}
                     rows={1}
                     value={inputText}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="Nhập tin nhắn..."
-                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-[20px] text-sm focus:outline-none focus:border-[#0068ff] focus:ring-1 focus:ring-blue-500/10 text-slate-800 resize-none max-h-[84px] overflow-y-auto min-h-[40px] leading-relaxed"
+                    placeholder="Gửi tin nhắn..."
+                    className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
                   />
                   <button
                     type="submit"
