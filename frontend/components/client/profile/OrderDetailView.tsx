@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { 
-  getOrderDetails, 
-  requestCancelOrder, 
-  markOrderCompleted, 
-  retryVnPayPayment 
+import {
+  getOrderDetails,
+  requestCancelOrder,
+  markOrderCompleted,
+  retryVnPayPayment
 } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { Loader, ArrowLeft, CheckCircle, HelpCircle, XCircle, Info, Copy, ClipboardCheck, X, AlertTriangle } from "lucide-react";
@@ -16,10 +16,10 @@ interface OrderDetailViewProps {
   onChangeTab?: (tabId: string) => void;
 }
 
-export function OrderDetailView({ 
-  orderId, 
-  token, 
-  onBack, 
+export function OrderDetailView({
+  orderId,
+  token,
+  onBack,
   onStatusUpdated,
   onChangeTab
 }: OrderDetailViewProps) {
@@ -220,7 +220,7 @@ export function OrderDetailView({
       <div className="text-center py-16 bg-white rounded-xl border border-slate-100 shadow-sm">
         <span className="material-symbols-outlined text-5xl text-rose-500 mb-2">error</span>
         <p className="text-slate-600 font-bold mb-4">Không tìm thấy thông tin đơn hàng này.</p>
-        <button 
+        <button
           onClick={onBack}
           className="px-6 py-2 rounded-xl bg-primary text-white font-bold transition-transform active:scale-95"
         >
@@ -235,7 +235,7 @@ export function OrderDetailView({
       {/* Navigation Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
         <div className="space-y-1">
-          <button 
+          <button
             onClick={onBack}
             className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-primary transition-colors mb-2"
           >
@@ -243,7 +243,7 @@ export function OrderDetailView({
           </button>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-              Chi tiết đơn hàng <span className="text-primary">#TT-{order.invoiceID}</span>
+              Chi tiết đơn hàng <span className="text-primary">#{order.invoiceCode || order.invoiceID}</span>
             </h1>
             {isExpired ? (
               <span className="px-3 py-1 text-xs font-bold border rounded-full text-rose-800 bg-rose-50 border-rose-300">
@@ -263,7 +263,7 @@ export function OrderDetailView({
         {/* Action Buttons in Header */}
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {canCancelOrder && (
-            <button 
+            <button
               onClick={() => setShowCancelModal(true)}
               className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-all"
               disabled={actionLoading}
@@ -272,7 +272,7 @@ export function OrderDetailView({
             </button>
           )}
           {canRetryPayment && (
-            <button 
+            <button
               onClick={handleRetryPayment}
               className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary/95 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all flex items-center justify-center gap-1"
               disabled={actionLoading}
@@ -281,7 +281,7 @@ export function OrderDetailView({
             </button>
           )}
           {canCompleteOrder && (
-            <button 
+            <button
               onClick={() => setShowCompleteModal(true)}
               className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary/95 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all flex items-center justify-center gap-1"
               disabled={actionLoading}
@@ -326,18 +326,18 @@ export function OrderDetailView({
         !isExpired && (
           <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-start gap-4">
             <XCircle className="text-rose-500 shrink-0 mt-0.5" size={24} />
-          <div className="space-y-1">
-            <h3 className="font-bold text-rose-800 text-sm md:text-base">
-              {order.statusCode === 4 ? "Đang chờ duyệt hủy đơn hàng" : "Đơn hàng đã được hủy thành công"}
-            </h3>
-            <p className="text-xs text-rose-700/80 font-medium">
-              Thời gian cập nhật: {formatDate(order.cancelledAt || order.createdAt)}
-            </p>
-            {order.cancelReason && (
-              <p className="text-xs md:text-sm text-rose-700 bg-rose-100/50 px-3 py-2 rounded-xl mt-2 italic font-semibold">
-                Lý do hủy: "{order.cancelReason}"
+            <div className="space-y-1">
+              <h3 className="font-bold text-rose-800 text-sm md:text-base">
+                {order.statusCode === 4 ? "Đang chờ duyệt hủy đơn hàng" : "Đơn hàng đã được hủy thành công"}
+              </h3>
+              <p className="text-xs text-rose-700/80 font-medium">
+                Thời gian cập nhật: {formatDate(order.cancelledAt || order.createdAt)}
               </p>
-            )}
+              {order.cancelReason && (
+                <p className="text-xs md:text-sm text-rose-700 bg-rose-100/50 px-3 py-2 rounded-xl mt-2 italic font-semibold">
+                  Lý do hủy: "{order.cancelReason}"
+                </p>
+              )}
             </div>
           </div>
         )
@@ -347,23 +347,22 @@ export function OrderDetailView({
           <div className="relative flex justify-between items-center max-w-3xl mx-auto">
             {/* Background Line Connector */}
             <div className="absolute top-5 left-0 w-full h-1 bg-slate-100 -z-0">
-              <div 
-                className="h-full bg-primary/70 transition-all duration-500" 
-                style={{ 
-                  width: order.statusCode === 0 ? "0%" : 
-                         order.statusCode === 1 ? "33.33%" : 
-                         order.statusCode === 2 ? "66.66%" : "100%" 
+              <div
+                className="h-full bg-primary/70 transition-all duration-500"
+                style={{
+                  width: order.statusCode === 0 ? "0%" :
+                    order.statusCode === 1 ? "33.33%" :
+                      order.statusCode === 2 ? "66.66%" : "100%"
                 }}
               />
             </div>
 
             {/* Step 1: Ordered */}
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                order.statusCode >= 0 
-                  ? "bg-primary/5 text-primary border-primary font-bold shadow-sm" 
-                  : "bg-white text-slate-300 border-slate-200"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 0
+                ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
+                : "bg-white text-slate-300 border-slate-200"
+                }`}>
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>list_alt</span>
               </div>
               <div className="text-center">
@@ -374,11 +373,10 @@ export function OrderDetailView({
 
             {/* Step 2: Confirmed */}
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                order.statusCode >= 1 
-                  ? "bg-primary/5 text-primary border-primary font-bold shadow-sm" 
-                  : "bg-white text-slate-300 border-slate-200"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 1
+                ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
+                : "bg-white text-slate-300 border-slate-200"
+                }`}>
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               </div>
               <div className="text-center">
@@ -391,11 +389,10 @@ export function OrderDetailView({
 
             {/* Step 3: Shipping */}
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                order.statusCode >= 2 
-                  ? "bg-primary/5 text-primary border-primary font-bold shadow-sm" 
-                  : "bg-white text-slate-300 border-slate-200"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 2
+                ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
+                : "bg-white text-slate-300 border-slate-200"
+                }`}>
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
               </div>
               <div className="text-center">
@@ -408,11 +405,10 @@ export function OrderDetailView({
 
             {/* Step 4: Completed */}
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                order.statusCode >= 3 
-                  ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm" 
-                  : "bg-white text-slate-300 border-slate-200"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 3
+                ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm"
+                : "bg-white text-slate-300 border-slate-200"
+                }`}>
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
               </div>
               <div className="text-center">
@@ -453,28 +449,21 @@ export function OrderDetailView({
             <span className="material-symbols-outlined text-lg">local_shipping</span>
             <h3 className="text-sm md:text-base text-slate-800">Thông tin vận chuyển</h3>
           </div>
-          
+
           <div className="flex flex-col gap-2.5 text-xs md:text-sm">
             <div className="flex justify-between items-center">
               <span className="text-slate-400 font-semibold">Đơn vị vận chuyển:</span>
-              <span className="font-bold text-slate-500 italic">Đang cập nhật (Chưa liên kết đối tác giao hàng)</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 font-semibold">Mã vận đơn:</span>
-              <span className="font-bold text-slate-400 italic">Chưa tạo mã</span>
+              <span className="font-bold text-slate-700">LazPe Express</span>
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 font-semibold">Dự kiến giao hàng:</span>
-              <span className="font-bold text-slate-500 italic">Đang cập nhật</span>
+              <span className="text-slate-400 font-semibold">Mã vận đơn:</span>
+              <span className="font-bold text-primary">{order.trackingCode || 'Đang cập nhật'}</span>
             </div>
-            
-            <div className="mt-1 bg-slate-50 p-2 rounded-lg border border-slate-100 flex items-start gap-1.5">
-              <span className="material-symbols-outlined text-slate-400 text-xs mt-0.5">info</span>
-              <p className="text-[10px] text-slate-400 font-medium leading-normal">
-                Hệ thống vận chuyển tự động đang được kết nối. Khi đơn hàng được xác nhận và bàn giao, mã vận đơn GHN sẽ tự động được hiển thị tại đây.
-              </p>
+
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-slate-400 font-semibold whitespace-nowrap">Dự kiến giao hàng:</span>
+              <span className="font-bold text-slate-500 italic text-right text-[11px] xl:text-xs">Từ 3-5 ngày kể từ ngày vận chuyển tùy khu vực</span>
             </div>
           </div>
         </div>
@@ -482,10 +471,10 @@ export function OrderDetailView({
 
       {/* Main Grid Content (Left Side: Products & Logs | Right Side: Summary Sticky) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
+
         {/* Left Side: Product List Table & Notes/Logs */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Product List Table */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-5 py-4 bg-slate-50/50 border-b border-slate-100">
@@ -493,7 +482,7 @@ export function OrderDetailView({
                 Sản phẩm đã mua ({order.invoiceDetails?.length || 0})
               </h3>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -508,69 +497,70 @@ export function OrderDetailView({
                   {order.invoiceDetails && order.invoiceDetails.map((item: any, idx: number) => {
                     const isGift = item.unitPrice === 0;
                     return (
-                    <tr key={idx} className={`group transition-colors ${isGift ? 'bg-emerald-50/30 hover:bg-emerald-50/60' : 'hover:bg-slate-50/30'}`}>
-                      <td className="px-5 py-4 w-1/2">
-                        <div className="flex items-center gap-3">
-                          {/* Product Thumbnail */}
-                          {item.imageUrl ? (
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.productName} 
-                              className={`w-14 h-14 rounded-xl object-cover shadow-sm flex-shrink-0 border ${isGift ? 'border-emerald-200' : 'border-slate-100'}`} 
-                            />
-                          ) : (
-                            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br flex flex-shrink-0 items-center justify-center font-bold text-[10px] shadow-sm ${isGift ? 'from-emerald-100 to-emerald-200 text-emerald-600' : 'from-primary/10 to-primary/20 text-primary'}`}>
-                              LazPe
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className={`font-bold transition-colors text-xs md:text-sm break-words leading-relaxed ${isGift ? 'text-emerald-800' : 'text-slate-800 group-hover:text-primary'}`}>
-                                {item.productName}
-                              </h4>
-                              {isGift && (
-                                <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full shadow-sm tracking-wide shrink-0">
-                                  QUÀ TẶNG
-                                </span>
+                      <tr key={idx} className={`group transition-colors ${isGift ? 'bg-emerald-50/30 hover:bg-emerald-50/60' : 'hover:bg-slate-50/30'}`}>
+                        <td className="px-5 py-4 w-1/2">
+                          <div className="flex items-center gap-3">
+                            {/* Product Thumbnail */}
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.productName}
+                                className={`w-14 h-14 rounded-xl object-cover shadow-sm flex-shrink-0 border ${isGift ? 'border-emerald-200' : 'border-slate-100'}`}
+                              />
+                            ) : (
+                              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br flex flex-shrink-0 items-center justify-center font-bold text-[10px] shadow-sm ${isGift ? 'from-emerald-100 to-emerald-200 text-emerald-600' : 'from-primary/10 to-primary/20 text-primary'}`}>
+                                LazPe
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className={`font-bold transition-colors text-xs md:text-sm break-words leading-relaxed ${isGift ? 'text-emerald-800' : 'text-slate-800 group-hover:text-primary'}`}>
+                                  {item.productName}
+                                </h4>
+                                {isGift && (
+                                  <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full shadow-sm tracking-wide shrink-0">
+                                    QUÀ TẶNG
+                                  </span>
+                                )}
+                              </div>
+                              {item.variantName && (
+                                <p className={`text-[10px] font-bold mt-1 ${isGift ? 'text-emerald-600' : 'text-slate-400'}`}>Phân loại: {item.variantName}</p>
+                              )}
+                              {order.statusCode === 3 && !isGift && (
+                                <button
+                                  onClick={() => {
+                                    if (onChangeTab) {
+                                      const url = new URL(window.location.href);
+                                      url.searchParams.set("tab", "reviews");
+                                      url.searchParams.set("invoiceId", String(order.invoiceID));
+                                      url.searchParams.set("detailId", String(item.invoiceDetailID));
+                                      window.history.pushState({}, "", url.pathname + url.search);
+                                      onChangeTab("reviews");
+                                    } else {
+                                      window.location.href = `/profile?tab=reviews&invoiceId=${order.invoiceID}&detailId=${item.invoiceDetailID}`;
+                                    }
+                                  }}
+                                  className="text-[11px] font-bold text-primary hover:underline mt-1.5 flex items-center gap-0.5"
+                                >
+                                  <span className="material-symbols-outlined text-[14px]">rate_review</span>
+                                  Đánh giá sản phẩm này
+                                </button>
                               )}
                             </div>
-                            {item.variantName && (
-                              <p className={`text-[10px] font-bold mt-1 ${isGift ? 'text-emerald-600' : 'text-slate-400'}`}>Phân loại: {item.variantName}</p>
-                            )}
-                            {order.statusCode === 3 && !isGift && (
-                              <button
-                                onClick={() => {
-                                  if (onChangeTab) {
-                                    const url = new URL(window.location.href);
-                                    url.searchParams.set("tab", "reviews");
-                                    url.searchParams.set("invoiceId", String(order.invoiceID));
-                                    url.searchParams.set("detailId", String(item.invoiceDetailID));
-                                    window.history.pushState({}, "", url.pathname + url.search);
-                                    onChangeTab("reviews");
-                                  } else {
-                                    window.location.href = `/profile?tab=reviews&invoiceId=${order.invoiceID}&detailId=${item.invoiceDetailID}`;
-                                  }
-                                }}
-                                className="text-[11px] font-bold text-primary hover:underline mt-1.5 flex items-center gap-0.5"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">rate_review</span>
-                                Đánh giá sản phẩm này
-                              </button>
-                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className={`px-5 py-4 text-center font-semibold whitespace-nowrap ${isGift ? 'text-emerald-500' : 'text-slate-700'}`}>
-                        {isGift ? '0 đ' : formatPrice(item.unitPrice)}
-                      </td>
-                      <td className="px-5 py-4 text-center font-bold text-slate-600 whitespace-nowrap">
-                        x{item.quantity}
-                      </td>
-                      <td className={`px-5 py-4 text-right font-bold whitespace-nowrap ${isGift ? 'text-emerald-500' : 'text-primary'}`}>
-                        {isGift ? 'Miễn phí' : formatPrice(item.totalPrice)}
-                      </td>
-                    </tr>
-                  )})}
+                        </td>
+                        <td className={`px-5 py-4 text-center font-semibold whitespace-nowrap ${isGift ? 'text-emerald-500' : 'text-slate-700'}`}>
+                          {isGift ? '0 đ' : formatPrice(item.unitPrice)}
+                        </td>
+                        <td className="px-5 py-4 text-center font-bold text-slate-600 whitespace-nowrap">
+                          x{item.quantity}
+                        </td>
+                        <td className={`px-5 py-4 text-right font-bold whitespace-nowrap ${isGift ? 'text-emerald-500' : 'text-primary'}`}>
+                          {isGift ? 'Miễn phí' : formatPrice(item.totalPrice)}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -592,7 +582,7 @@ export function OrderDetailView({
           {order.paymentTransactions && order.paymentTransactions.length > 0 && (
             <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
               <h4 className="font-bold text-slate-800 text-xs md:text-sm flex items-center gap-1.5 border-b border-slate-50 pb-2.5">
-                <span className="material-symbols-outlined text-primary text-sm">account_balance_wallet</span> 
+                <span className="material-symbols-outlined text-primary text-sm">account_balance_wallet</span>
                 Lịch sử giao dịch thanh toán VNPay
               </h4>
               <div className="space-y-3 divide-y divide-slate-55 max-h-[250px] overflow-y-auto pr-1">
@@ -610,13 +600,12 @@ export function OrderDetailView({
                       <p className="text-[10px] text-slate-400 font-medium">Thời gian: {formatDate(tx.createdAt)}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        tx.statusCode === 1 
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                          : tx.statusCode === 2
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${tx.statusCode === 1
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : tx.statusCode === 2
                           ? "bg-rose-50 text-rose-600 border-rose-200"
                           : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}>
+                        }`}>
                         {tx.statusLabel}
                       </span>
                     </div>
@@ -633,13 +622,13 @@ export function OrderDetailView({
             <h3 className="font-bold text-slate-800 text-base md:text-lg border-b border-slate-50 pb-3">
               Tóm tắt chi phí
             </h3>
-            
+
             <div className="space-y-3 text-xs md:text-sm">
               <div className="flex justify-between items-center text-slate-400 font-semibold">
                 <span>Tạm tính ({order.invoiceDetails?.length || 0} sản phẩm)</span>
                 <span className="text-slate-700 font-bold">{formatPrice(order.subTotal)}</span>
               </div>
-              
+
               <div className="flex justify-between items-center text-slate-400 font-semibold">
                 <span>Phí vận chuyển</span>
                 <span className="text-slate-700 font-bold">{formatPrice(order.shippingFee)}</span>
@@ -662,21 +651,21 @@ export function OrderDetailView({
                   <span>-{formatPrice(order.shippingDiscountAmount)}</span>
                 </div>
               )}
-              
-              <div className="pt-3 border-t border-slate-100 flex justify-between items-end">
-                <span className="font-bold text-slate-700 text-sm md:text-base">Tổng thanh toán</span>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-between items-end gap-3">
+                <span className="font-bold text-slate-700 text-sm md:text-base whitespace-nowrap shrink-0">Tổng thanh toán</span>
                 <div className="text-right">
-                  <span className="font-headline-lg text-lg md:text-xl font-bold text-primary">
+                  <span className="font-headline-lg text-lg md:text-xl font-bold text-primary whitespace-nowrap">
                     {formatPrice(order.finalAmount || (order.totalPrice + order.shippingFee - (order.shippingDiscountAmount || 0)))}
                   </span>
-                  <p className="text-[9px] text-slate-400 mt-0.5 font-bold italic">(Đã bao gồm VAT & Phí ship)</p>
+                  <p className="text-[9px] text-slate-400 mt-0.5 font-bold italic whitespace-nowrap">(Đã bao gồm VAT & Phí ship)</p>
                 </div>
               </div>
             </div>
 
             <div className="pt-4 space-y-2.5">
               {canRetryPayment && (
-                <button 
+                <button
                   onClick={handleRetryPayment}
                   className="w-full py-2.5 rounded-xl bg-primary text-white font-bold transition-all hover:bg-primary/95 shadow-sm hover:shadow hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-1.5 text-xs md:text-sm"
                   disabled={actionLoading}
@@ -684,7 +673,7 @@ export function OrderDetailView({
                   <span className="material-symbols-outlined text-sm">payment</span> Thanh toán ngay qua VNPay
                 </button>
               )}
-              <button 
+              <button
                 onClick={() => toast.info("Hotline hỗ trợ: 1800 1234. Chúng tôi trực 24/7.")}
                 className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold transition-colors hover:bg-slate-50 flex items-center justify-center gap-1 text-xs md:text-sm"
               >
@@ -699,26 +688,26 @@ export function OrderDetailView({
       {/* Cancel Order Dialog Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div 
+          <div
             className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
             style={{ width: '448px', maxWidth: 'calc(100vw - 32px)' }}
           >
             <div className="flex justify-between items-center">
               <h3 className="text-base sm:text-lg font-bold text-slate-800">Yêu cầu hủy đơn hàng</h3>
-              <button 
+              <button
                 onClick={() => setShowCancelModal(false)}
                 className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
-            
+
             <form onSubmit={handleCancelSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                   Lý do hủy đơn hàng
                 </label>
-                <textarea 
+                <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng để cải thiện dịch vụ..."
@@ -733,7 +722,7 @@ export function OrderDetailView({
               </div>
 
               <div className="flex gap-3 justify-end pt-2">
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowCancelModal(false)}
                   className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors"
@@ -741,7 +730,7 @@ export function OrderDetailView({
                 >
                   Bỏ qua
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
                   disabled={actionLoading}
@@ -758,7 +747,7 @@ export function OrderDetailView({
       {/* Confirm Completed Order Modal (Thay thế cho Modal mặc định của trình duyệt) */}
       {showCompleteModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div 
+          <div
             className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
             style={{ width: '384px', maxWidth: 'calc(100vw - 32px)' }}
           >
@@ -770,7 +759,7 @@ export function OrderDetailView({
               Bạn xác nhận đã nhận được đầy đủ các sản phẩm từ đơn hàng này và muốn hoàn tất giao dịch? Hành động này sẽ tích lũy điểm thưởng loyalty và không thể hoàn tác.
             </p>
             <div className="flex gap-3 justify-end pt-2">
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowCompleteModal(false)}
                 className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors"
@@ -778,7 +767,7 @@ export function OrderDetailView({
               >
                 Hủy bỏ
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={handleConfirmReceivedSubmit}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"

@@ -12,8 +12,8 @@ export default function OrderPrintTicket({ order }: OrderPrintTicketProps) {
   const isCOD = !order.payMethodCode || order.payMethod?.toLowerCase().includes("cod");
   const codAmount = isCOD ? (order.totalPrice + (order.shippingFee || 0) - (order.shippingDiscountAmount || 0)) : 0;
   
-  // Fake tracking number logic
-  const trackingNumber = `LZP${order.invoiceID.toString().padStart(8, '0')}VN`;
+  // Fake tracking number logic or real tracking code
+  const trackingNumber = order.trackingCode || `LZP${order.invoiceID.toString().padStart(8, '0')}VN`;
 
   return (
     <div className="bg-white text-black p-8 max-w-3xl mx-auto font-sans print:max-w-none print:w-[98%] print:mx-auto print:p-1 print:text-[11px] break-inside-avoid">
@@ -27,6 +27,7 @@ export default function OrderPrintTicket({ order }: OrderPrintTicketProps) {
                 src="/logo/Logo_2.png" 
                 alt="LazPe Logo" 
                 fill
+                sizes="(max-width: 768px) 100vw, 96px"
                 className="object-contain object-left" 
                 priority
               />
@@ -48,7 +49,7 @@ export default function OrderPrintTicket({ order }: OrderPrintTicketProps) {
               background="transparent"
             />
             <div className="text-xs mt-1 font-bold print:text-[10px]">
-              Mã đơn hàng: #{order.invoiceID}
+              Mã đơn hàng: #{order.invoiceCode || order.invoiceID}
             </div>
           </div>
         </div>

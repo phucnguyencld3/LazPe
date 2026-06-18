@@ -225,9 +225,17 @@ namespace PolyBabyAPI.Services
                 }
             }
 
+            // ✅ Tạo mã đơn hàng (InvoiceCode) và mã vận đơn (TrackingCode)
+            var random = new Random();
+            string letters = new string(Enumerable.Range(0, 2).Select(_ => (char)random.Next('A', 'Z' + 1)).ToArray());
+            string digits = random.Next(100000, 999999).ToString();
+            string dateStr = DateTime.Now.ToString("ddMM");
+
             // ✅ Tạo Invoice với thông tin voucher + điểm loyalty
             var invoice = new Invoice
             {
+                InvoiceCode = $"{letters}{dateStr}{digits}",
+                TrackingCode = $"LZP{dateStr}{digits}",
                 UserID = cart.UserID,
                 VoucherID = appliedVoucher?.VoucherID,
                 ShippingVoucherID = appliedShippingVoucher?.VoucherID,

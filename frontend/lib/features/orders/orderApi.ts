@@ -2,6 +2,8 @@
 
 export interface OrderInfo {
   invoiceID: number;
+  invoiceCode?: string;
+  trackingCode?: string;
   userID: string;
   userName: string | null;
   userFullName: string | null;

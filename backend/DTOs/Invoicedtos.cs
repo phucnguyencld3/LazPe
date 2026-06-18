@@ -40,6 +40,8 @@ namespace PolyBabyAPI.DTOs
         public class InvoiceListResponse
         {
             public int InvoiceID { get; set; }
+            public string? InvoiceCode { get; set; }
+            public string? TrackingCode { get; set; }
             public string? UserID { get; set; }
             public string? UserName { get; set; }
             public string? UserFullName { get; set; }

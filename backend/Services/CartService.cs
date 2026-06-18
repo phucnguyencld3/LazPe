@@ -332,7 +332,22 @@ namespace PolyBabyAPI.Services
 
             if (walletVoucher == null)
             {
-                return (false, "Voucher chưa có trong ví của bạn.");
+                if (voucher.VisibilityType == VoucherVisibilityType.Public)
+                {
+                    walletVoucher = new UserVoucher
+                    {
+                        UserID = cart.UserID,
+                        VoucherID = voucher.VoucherID,
+                        Status = UserVoucherStatus.Unused,
+                        CollectedAt = DateTime.Now
+                    };
+                    _context.UserVouchers.Add(walletVoucher);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    return (false, "Voucher chưa có trong ví của bạn.");
+                }
             }
             
             // Lưu voucher vào cart tương ứng loại

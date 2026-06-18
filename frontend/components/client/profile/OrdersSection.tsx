@@ -326,7 +326,7 @@ export function OrdersSection({
                           <span className="font-bold text-slate-700 text-sm">LazPe Store</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-semibold text-slate-400">Mã đơn: #TT-{order.invoiceID}</span>
+                          <span className="text-xs font-semibold text-slate-400">Mã đơn: #{order.invoiceCode || order.invoiceID}</span>
                           {getStatusBadge(order.statusCode)}
                         </div>
                       </div>

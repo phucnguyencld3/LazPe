@@ -168,11 +168,25 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpGet("{id}")]
         //[Authorize]
-        public async Task<ActionResult<object>> GetById(int id)
+        public async Task<ActionResult<object>> GetById(string id)
         {
             try
             {
-                var invoice = await _invoiceService.GetByIdAsync(id);
+                int numericId;
+                if (!int.TryParse(id, out numericId))
+                {
+                    var foundId = await _context.Invoices
+                        .Where(i => i.InvoiceCode == id || i.TrackingCode == id)
+                        .Select(i => i.InvoiceID)
+                        .FirstOrDefaultAsync();
+                        
+                    if (foundId == 0)
+                        return NotFound(new { message = "Không tìm thấy hóa đơn" });
+                        
+                    numericId = foundId;
+                }
+
+                var invoice = await _invoiceService.GetByIdAsync(numericId);
                 if (invoice == null)
                     return NotFound(new { message = "Không tìm thấy hóa đơn" });
 
@@ -534,8 +548,8 @@ namespace PolyBabyAPI.Controllers
                     var notifDto = new CreateNotificationDto
                     {
                         Title = "Đơn hàng mới",
-                        ShortDescription = $"Khách hàng {user.FullName} vừa đặt đơn hàng #{invoice.InvoiceID}",
-                        Content = $"<p>Đơn hàng mới <strong>#{invoice.InvoiceID}</strong> đã được đặt thành công bởi khách hàng <strong>{user.FullName}</strong> ({user.Email}).</p><p>Tổng giá trị: {invoice.TotalPrice:N0} đ.</p>",
+                        ShortDescription = $"Khách hàng {user.FullName} vừa đặt đơn hàng #{invoice.InvoiceCode}",
+                        Content = $"<p>Đơn hàng mới <strong>#{invoice.InvoiceCode}</strong> đã được đặt thành công bởi khách hàng <strong>{user.FullName}</strong> ({user.Email}).</p><p>Tổng giá trị: {invoice.TotalPrice:N0} đ.</p>",
                         Type = NotificationType.Order,
                         Priority = NotificationPriority.High,
                         ActionType = ActionType.CustomUrl,
@@ -647,8 +661,8 @@ namespace PolyBabyAPI.Controllers
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Đơn hàng đã được xác nhận",
-                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã được xác nhận.",
-                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã được xác nhận.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -696,8 +710,8 @@ namespace PolyBabyAPI.Controllers
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Đơn hàng đang được vận chuyển",
-                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã bắt đầu được vận chuyển.",
-                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã bắt đầu được vận chuyển.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -846,8 +860,8 @@ namespace PolyBabyAPI.Controllers
                                 var notifDto = new CreateNotificationDto
                                 {
                                     Title = "Đơn hàng đã được xác nhận",
-                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã được xác nhận.",
-                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã được xác nhận.",
+                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
                                     Type = NotificationType.Order,
                                     Priority = NotificationPriority.Medium,
                                     ActionType = ActionType.CustomUrl,
@@ -915,8 +929,8 @@ namespace PolyBabyAPI.Controllers
                                 var notifDto = new CreateNotificationDto
                                 {
                                     Title = "Đơn hàng đang được vận chuyển",
-                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceID} đã bắt đầu được vận chuyển.",
-                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã bắt đầu được vận chuyển.",
+                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
                                     Type = NotificationType.Order,
                                     Priority = NotificationPriority.Medium,
                                     ActionType = ActionType.CustomUrl,
@@ -1017,8 +1031,8 @@ namespace PolyBabyAPI.Controllers
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Đơn hàng đã bị hủy",
-                            ShortDescription = $"Đơn hàng #{invoice.InvoiceID} của bạn đã bị hủy.",
-                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã bị hủy bởi quản trị viên.</p><p>Lý do: {request?.Reason ?? "Không có lý do cụ thể"}</p>",
+                            ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} của bạn đã bị hủy.",
+                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã bị hủy bởi quản trị viên.</p><p>Lý do: {request?.Reason ?? "Không có lý do cụ thể"}</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.High,
                             ActionType = ActionType.CustomUrl,
@@ -1067,8 +1081,8 @@ namespace PolyBabyAPI.Controllers
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Yêu cầu hủy đơn được chấp nhận",
-                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceID} đã được phê duyệt.",
-                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã được phê duyệt thành công. Tiền, hàng và voucher (nếu có) đã được xử lý hoàn trả.</p>",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceCode} đã được phê duyệt.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được phê duyệt thành công. Tiền, hàng và voucher (nếu có) đã được xử lý hoàn trả.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -1117,8 +1131,8 @@ namespace PolyBabyAPI.Controllers
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Yêu cầu hủy đơn bị từ chối",
-                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceID} đã bị từ chối.",
-                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceID}</strong> của bạn đã bị từ chối. Đơn hàng của bạn sẽ tiếp tục được xử lý và giao đến bạn.</p>",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceCode} đã bị từ chối.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã bị từ chối. Đơn hàng của bạn sẽ tiếp tục được xử lý và giao đến bạn.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -1247,6 +1261,8 @@ namespace PolyBabyAPI.Controllers
             return new
             {
                 invoice.InvoiceID,
+                invoice.InvoiceCode,
+                invoice.TrackingCode,
                 invoice.UserID,
                 UserName = invoice.User?.UserName,
                 UserFullName = invoice.User?.FullName,
@@ -1321,6 +1337,8 @@ namespace PolyBabyAPI.Controllers
             return new
             {
                 invoice.InvoiceID,
+                invoice.InvoiceCode,
+                invoice.TrackingCode,
                 invoice.UserID,
                 UserName = invoice.User?.UserName,
                 UserFullName = invoice.User?.FullName,
@@ -1361,6 +1379,8 @@ namespace PolyBabyAPI.Controllers
             return new
             {
                 invoice.InvoiceID,
+                invoice.InvoiceCode,
+                invoice.TrackingCode,
                 invoice.UserID,
                 UserName = invoice.User?.UserName,
                 UserFullName = invoice.User?.FullName,

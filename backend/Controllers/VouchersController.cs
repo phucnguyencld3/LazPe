@@ -86,7 +86,8 @@ namespace PolyBabyAPI.Controllers
                 VisibilityType = v.VisibilityType.ToString(),
                 VoucherType = (int)v.VoucherType,
                 v.IsFreeShipping,
-                v.MaxShippingDiscount
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
             }).ToListAsync();
 
             if (string.IsNullOrWhiteSpace(userId))
@@ -109,16 +110,29 @@ namespace PolyBabyAPI.Controllers
                     IsCollected = false,
                     v.VoucherType,
                     v.IsFreeShipping,
-                    v.MaxShippingDiscount
+                    v.MaxShippingDiscount,
+                    v.UsageLimitPerUser
                 }));
             }
+
+            var userVoucherUsages = await _context.VoucherUsages
+                .Where(vu => vu.UserID == userId)
+                .GroupBy(vu => vu.VoucherID)
+                .Select(g => new { VoucherID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.VoucherID, x => x.Count);
 
             var collectedVoucherIds = await _context.UserVouchers
                 .Where(uv => uv.UserID == userId && uv.Status == UserVoucherStatus.Unused)
                 .Select(uv => uv.VoucherID)
                 .ToListAsync();
 
-            return Ok(vouchers.Select(v => new
+            var eligibleVouchers = vouchers.Where(v => 
+            {
+                userVoucherUsages.TryGetValue(v.VoucherID, out int usedCount);
+                return usedCount < v.UsageLimitPerUser;
+            });
+
+            return Ok(eligibleVouchers.Select(v => new
             {
                 v.VoucherID,
                 v.Code,
@@ -136,7 +150,8 @@ namespace PolyBabyAPI.Controllers
                 IsCollected = collectedVoucherIds.Contains(v.VoucherID),
                 v.VoucherType,
                 v.IsFreeShipping,
-                v.MaxShippingDiscount
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
             }));
         }
 

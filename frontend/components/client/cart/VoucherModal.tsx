@@ -29,6 +29,11 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
   if (!voucherModalOpen) return null;
 
   const filteredVouchers = vouchers.filter((v) => {
+    // Ẩn các voucher đã hết hạn hoặc hết lượt dùng
+    if (new Date(v.endDate).getTime() < Date.now() || v.usedQuantity >= v.totalQuantity) {
+      return false;
+    }
+
     if (activeTab === "product") {
       return v.voucherType !== 2; // Voucher đơn hàng (product discount)
     } else {
@@ -137,8 +142,8 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                   <div className="flex-grow min-w-0">
                     <h4 className={`font-bold text-sm truncate ${voucher.voucherType === 2 ? "text-sky-600" : "text-rose-500"}`}>{discountText}</h4>
                     <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">{voucher.name}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                      Đơn tối thiểu: ₫{voucher.minOrderValue.toLocaleString("vi-VN")}{maxDiscountText} | HSD: {new Date(voucher.endDate).toLocaleDateString("vi-VN")}
+                    <p className="text-[10px] text-slate-400 font-semibold mt-1 line-clamp-1">
+                      Đơn tối thiểu: ₫{voucher.minOrderValue.toLocaleString("vi-VN")}{maxDiscountText} | HSD: {new Date(voucher.endDate).toLocaleDateString("vi-VN")} | Còn: {Math.max(0, voucher.totalQuantity - voucher.usedQuantity)} lượt
                     </p>
                   </div>
 

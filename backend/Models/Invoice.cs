@@ -43,9 +43,14 @@ namespace PolyBabyAPI.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int InvoiceID { get; set; }
 
+        [MaxLength(50)]
+        public string? InvoiceCode { get; set; }
+
+        [MaxLength(50)]
+        public string? TrackingCode { get; set; }
+
         public string? UserID { get; set; }
 
-        // ✅ Thêm VoucherID liên kết voucher đã sử dụng
         public int? VoucherID { get; set; }
 
         public int? ShippingVoucherID { get; set; }
@@ -147,7 +152,7 @@ namespace PolyBabyAPI.Models
         [ValidateNever]
         public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 
-        // ✅ Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
+        // Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
         public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();
         public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 

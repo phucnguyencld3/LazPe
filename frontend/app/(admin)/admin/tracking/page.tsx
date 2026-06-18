@@ -87,14 +87,12 @@ export default function AdminTrackingPage() {
     try {
       let invoiceIdStr = codeToSearch.trim();
       
-      // Nếu có tiền tố LZP và hậu tố VN, cắt bỏ đi
+      // Nếu là mã vạch được sinh bằng logic cũ (LZP...VN), cắt bỏ tiền tố/hậu tố để lấy ID
       if (invoiceIdStr.toUpperCase().startsWith("LZP") && invoiceIdStr.toUpperCase().endsWith("VN")) {
         invoiceIdStr = invoiceIdStr.substring(3, invoiceIdStr.length - 2);
       }
       
-      const invoiceId = parseInt(invoiceIdStr, 10);
-      
-      if (isNaN(invoiceId)) {
+      if (!invoiceIdStr) {
         toast.error("Mã vạch không hợp lệ.");
         setLoading(false);
         return;
@@ -107,7 +105,7 @@ export default function AdminTrackingPage() {
         return;
       }
 
-      const data = await fetchOrderDetails(token, invoiceId.toString());
+      const data = await fetchOrderDetails(token, invoiceIdStr);
       if (data && data.invoiceID) {
         setOrder(data);
         toast.success("Tra cứu thành công!");
@@ -251,7 +249,7 @@ export default function AdminTrackingPage() {
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex justify-between items-start mb-6 pb-6 border-b border-slate-100">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-800 mb-1">Đơn hàng #{order.invoiceID}</h2>
+                  <h2 className="text-2xl font-black text-slate-800 mb-1">Đơn hàng #{order.invoiceCode || order.invoiceID}</h2>
                   <p className="text-sm text-slate-500">Đặt lúc: {formatDateTime(order.createdAt)}</p>
                 </div>
                 <div className={`px-4 py-2 rounded-xl text-sm font-bold ${getStatusBadgeColor(order.statusCode)}`}>

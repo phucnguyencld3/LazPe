@@ -189,7 +189,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-6 py-5">
-                      <span className="font-bold text-primary">#{order.invoiceID.toString().padStart(6, "0")}</span>
+                      <span className="font-bold text-primary">#{order.invoiceCode || order.invoiceID.toString().padStart(6, "0")}</span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">

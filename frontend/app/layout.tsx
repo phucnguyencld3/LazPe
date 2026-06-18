@@ -84,7 +84,7 @@ export default function RootLayout({
         <GoogleProvider>
           {children}
           <DisclaimerModal />
-          <Toaster richColors position="top-right" closeButton visibleToasts={3} />
+          <Toaster richColors position="top-right" closeButton visibleToasts={3} className="print:hidden" />
         </GoogleProvider>
       </body>
     </html>
