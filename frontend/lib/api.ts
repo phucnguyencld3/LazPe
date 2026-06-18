@@ -391,6 +391,57 @@ export async function updateUserProfile(
   }
 }
 
+export async function checkHasPassword(userId: string, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/has-password?userId=${userId}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const text = await response.text();
+    if (!text) return true;
+    
+    const result = JSON.parse(text);
+    if (response.ok && result.success) {
+      return result.hasPassword;
+    }
+    return true; // Default to true to prevent accidentally showing set password
+  } catch (error) {
+    console.error("Error checking password status:", error);
+    return true;
+  }
+}
+
+export async function setPassword(
+  userId: string,
+  token: string,
+  passwordData: any
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ProfileApi/set-password?userId=${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(passwordData),
+    });
+
+    const text = await response.text();
+    if (!text) return { success: false, message: "Lỗi phản hồi từ server" };
+
+    const result = JSON.parse(text);
+    if (response.ok && result.success) {
+      return { success: true };
+    }
+    return { success: false, message: result.message || "Thiết lập mật khẩu thất bại" };
+  } catch (error) {
+    console.error("Error setting password:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+
 export async function changePassword(
   userId: string,
   token: string,
@@ -2640,6 +2691,23 @@ export async function downloadSampleKeywordsExcel(): Promise<Blob | null> {
   } catch (error) {
     console.error("Error downloading sample keywords excel:", error);
     return null;
+  }
+}
+
+// GOOGLE LOGIN API
+export async function googleLogin(idToken: string): Promise<any> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/google-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error during Google login:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
   }
 }
 

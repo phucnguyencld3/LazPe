@@ -11,6 +11,7 @@ interface ChangePasswordModalProps {
   };
   setPasswordForm: React.Dispatch<React.SetStateAction<any>>;
   passwordError: string | null;
+  hasPassword?: boolean;
 }
 
 export function ChangePasswordModal({
@@ -19,16 +20,17 @@ export function ChangePasswordModal({
   onSubmit,
   passwordForm,
   setPasswordForm,
-  passwordError
+  passwordError,
+  hasPassword = true
 }: ChangePasswordModalProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-[500px] flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-primary text-white p-6">
-          <h3 className="font-bold text-lg flex items-center gap-2">
-            <span className="material-symbols-outlined text-white">lock</span> Đổi mật khẩu tài khoản
+        <div className="bg-primary px-6 py-4 rounded-t-[24px]">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="material-symbols-outlined text-white">lock</span> {hasPassword ? "Đổi mật khẩu tài khoản" : "Thiết lập mật khẩu tài khoản"}
           </h3>
         </div>
         <form onSubmit={onSubmit} className="p-6 space-y-4">
@@ -38,17 +40,19 @@ export function ChangePasswordModal({
             </div>
           )}
           
-          <div className="space-y-1">
-            <label className="font-bold text-sm text-slate-700 ml-1">Mật khẩu hiện tại</label>
-            <input
-              type="password"
-              required
-              value={passwordForm.currentPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-              placeholder="Nhập mật khẩu hiện tại"
-              className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none"
-            />
-          </div>
+          {hasPassword && (
+            <div className="space-y-1">
+              <label className="font-bold text-sm text-slate-700 ml-1">Mật khẩu hiện tại</label>
+              <input
+                type="password"
+                required
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                placeholder="Nhập mật khẩu hiện tại"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none"
+              />
+            </div>
+          )}
 
           <div className="space-y-1">
             <label className="font-bold text-sm text-slate-700 ml-1">Mật khẩu mới</label>
@@ -84,9 +88,9 @@ export function ChangePasswordModal({
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary/95 transition-colors shadow-md shadow-primary/10"
+              className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors shadow-sm"
             >
-              Đổi mật khẩu
+              {hasPassword ? "Lưu thay đổi" : "Thiết lập"}
             </button>
           </div>
         </form>

@@ -130,6 +130,22 @@ namespace PolyBabyAPI.Service
             }
         }
 
+        public async Task<bool> HasPasswordAsync(string userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null) return false;
+                
+                return await _userManager.HasPasswordAsync(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if user {UserId} has password", userId);
+                return false;
+            }
+        }
+
         public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto)
         {
             try
@@ -156,6 +172,36 @@ namespace PolyBabyAPI.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing password for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SetPasswordAsync(string userId, SetPasswordDto setPasswordDto)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId}", userId);
+                    return false;
+                }
+
+                var result = await _userManager.AddPasswordAsync(user, setPasswordDto.NewPassword);
+
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("Password set successfully for user {UserId}", userId);
+                    return true;
+                }
+
+                _logger.LogWarning("Failed to set password for user {UserId}. Errors: {Errors}",
+                    userId, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting password for user {UserId}", userId);
                 return false;
             }
         }

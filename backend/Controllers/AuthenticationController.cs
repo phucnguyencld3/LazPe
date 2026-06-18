@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using PolyBabyAPI.Interfaces;
+using Google.Apis.Auth;
 
 namespace PolyBabyAPI.Controllers
 {
@@ -1369,6 +1370,104 @@ namespace PolyBabyAPI.Controllers
                 throw new SecurityTokenException("Invalid token");
 
             return principal;
+        }
+
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+                }
+
+                var settings = new GoogleJsonWebSignature.ValidationSettings()
+                {
+                    Audience = new List<string>() { _configuration["GoogleAuth:ClientId"] }
+                };
+
+                GoogleJsonWebSignature.Payload payload;
+                try
+                {
+                    payload = await GoogleJsonWebSignature.ValidateAsync(model.IdToken, settings);
+                }
+                catch (InvalidJwtException)
+                {
+                    return Unauthorized(new { success = false, message = "Token Google không hợp lệ." });
+                }
+
+                var user = await _userManager.FindByEmailAsync(payload.Email);
+
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = payload.Email,
+                        Email = payload.Email,
+                        FullName = payload.Name,
+                        Avatar = payload.Picture,
+                        EmailConfirmed = true,
+                        IsOnboarded = false,
+                        Status = true,
+                        RegisterDate = DateTime.UtcNow
+                    };
+
+                    var result = await _userManager.CreateAsync(user);
+                    if (!result.Succeeded)
+                    {
+                        return BadRequest(new { success = false, message = "Không thể tạo tài khoản từ Google", errors = result.Errors });
+                    }
+
+                    await _userManager.AddToRoleAsync(user, "User");
+                }
+                else
+                {
+                    if (!user.Status)
+                    {
+                        return Unauthorized(new { success = false, message = "Tài khoản của bạn đã bị khóa." });
+                    }
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        return Unauthorized(new { success = false, message = "Tài khoản đang bị khóa tạm thời." });
+                    }
+                }
+
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id);
+
+                var tokenString = await GenerateJwtTokenAsync(user, userRoles, userPermissions);
+                var refreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+                await _userManager.UpdateAsync(user);
+
+                return Ok(new
+                {
+                    success = true,
+                    token = tokenString,
+                    refreshToken = refreshToken,
+                    user = new
+                    {
+                        id = user.Id,
+                        email = user.Email,
+                        fullName = user.FullName,
+                        avatar = user.Avatar,
+                        phoneNumber = user.PhoneNumber,
+                        isOnboarded = user.IsOnboarded,
+                        roles = userRoles,
+                        permissions = userPermissions,
+                        isAdmin = userRoles.Contains("Admin") || userPermissions.Count > 0
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi đăng nhập Google");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra trên server" });
+            }
         }
 
         #endregion
