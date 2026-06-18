@@ -1382,9 +1382,10 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
                 }
 
+                var clientId = _configuration["GoogleAuth:ClientId"] ?? "349039726314-iq3i1iud8jb1tbmv3f55e6vnckrm4tba.apps.googleusercontent.com";
                 var settings = new GoogleJsonWebSignature.ValidationSettings()
                 {
-                    Audience = new List<string>() { _configuration["GoogleAuth:ClientId"] }
+                    Audience = new List<string>() { clientId }
                 };
 
                 GoogleJsonWebSignature.Payload payload;
@@ -1392,8 +1393,9 @@ namespace PolyBabyAPI.Controllers
                 {
                     payload = await GoogleJsonWebSignature.ValidateAsync(model.IdToken, settings);
                 }
-                catch (InvalidJwtException)
+                catch (InvalidJwtException ex)
                 {
+                    _logger.LogError(ex, "Token Google không hợp lệ. Configured ClientId: '{ClientId}'", _configuration["GoogleAuth:ClientId"]);
                     return Unauthorized(new { success = false, message = "Token Google không hợp lệ." });
                 }
 
