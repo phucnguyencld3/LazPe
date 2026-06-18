@@ -9,6 +9,7 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "@/lib/toast";
 import * as signalR from "@microsoft/signalr";
 import { getValidToken, clearAuth } from "@/lib/utils/auth";
+import { useRouter } from 'next/navigation';
 
 export default function HeaderV2() {
   const [isAuth, setIsAuth] = useState(false);
@@ -16,6 +17,8 @@ export default function HeaderV2() {
   const [user, setUser] = useState<any>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
   
   const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.roles ? [user.roles] : []);
   const userPermissions = Array.isArray(user?.permissions) ? user.permissions : (user?.permissions ? [user.permissions] : []);
@@ -209,6 +212,15 @@ export default function HeaderV2() {
     window.location.href = "/";
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/products');
+    }
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-slate-200">
       {/* Main Header Container */}
@@ -226,16 +238,18 @@ export default function HeaderV2() {
 
           {/* Search Bar - Wide */}
           <div className="w-full order-last mt-2 sm:mt-0 sm:order-none sm:w-auto sm:flex-1 max-w-3xl">
-            <div className="relative group">
+            <form onSubmit={handleSearchSubmit} className="relative group">
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Ba mẹ muốn tìm mua gì hôm nay?" 
                 className="w-full h-11 pl-5 pr-14 rounded-full border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400"
               />
-              <button className="absolute right-1 top-1 bottom-1 w-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center transition-colors">
+              <button type="submit" className="absolute right-1 top-1 bottom-1 w-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center transition-colors">
                 <Search size={20} />
               </button>
-            </div>
+            </form>
             {/* Quick search tags have been removed */}
           </div>
 
