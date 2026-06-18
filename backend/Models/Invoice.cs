@@ -142,6 +142,8 @@ namespace PolyBabyAPI.Models
         [MaxLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự")]
         public string? Note { get; set; }
 
+        public string? PrintTicketUrl { get; set; }
+
         [ValidateNever]
         public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 

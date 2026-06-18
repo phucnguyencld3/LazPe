@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
@@ -58,6 +58,7 @@ namespace PolyBabyAPI.DTOs
             public string? VoucherCode { get; set; }
             public string? VoucherName { get; set; }
             public int ItemCount { get; set; }
+            public string? PrintTicketUrl { get; set; }
         }
     }
 }

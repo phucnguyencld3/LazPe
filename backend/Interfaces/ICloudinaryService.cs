@@ -8,6 +8,7 @@ namespace PolyBabyAPI.Interface
         Task<string> UploadAvatarLocalAsync(IFormFile file, string userId); 
         Task<bool> DeleteImageAsync(string imageUrl);
         Task<string> ReplaceImageAsync(string oldImageUrl, IFormFile newFile, string folder);
+        Task<string> UploadDocumentAsync(IFormFile file, string folder);
     }
 }
 

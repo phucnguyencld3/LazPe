@@ -28,6 +28,7 @@ export interface OrderInfo {
   hasShippingVoucher?: boolean;
   shippingVoucherCode?: string | null;
   shippingVoucherName?: string | null;
+  printTicketUrl?: string | null;
 }
 
 import { formatCurrency, formatDateTime } from "@/lib/utils/formatters";
@@ -68,9 +69,18 @@ export const getStatusLabel = (statusCode: number) => {
 // API calls
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
+export const resolveApiUrl = (url: string | null | undefined) => {
+  if (!url) return "#";
+  if (url.startsWith("http")) return url;
+  // Xóa chữ "/api" ở cuối API_BASE_URL để có domain gốc
+  const baseDomain = API_BASE_URL.replace(/\/api\/?$/, "");
+  return `${baseDomain}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
 export const fetchOrders = async (token: string): Promise<OrderInfo[]> => {
   const res = await fetch(`${API_BASE_URL}/Invoice`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store'
   });
   if (!res.ok) throw new Error("Failed to fetch orders");
   return res.json();
@@ -78,7 +88,8 @@ export const fetchOrders = async (token: string): Promise<OrderInfo[]> => {
 
 export const fetchOrderDetails = async (token: string, id: string): Promise<OrderInfo> => {
   const res = await fetch(`${API_BASE_URL}/Invoice/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store'
   });
   if (!res.ok) throw new Error("Failed to fetch order details");
   const data = await res.json();
@@ -94,6 +105,44 @@ export const cancelOrder = async (token: string, id: string, reason: string): Pr
     },
     body: JSON.stringify({ reason })
   });
+  return res.json();
+};
+
+export const requestCancelOrder = async (token: string, id: string, reason: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/request-cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ reason })
+  });
+  return res.json();
+};
+
+export const uploadPrintTicketPdf = async (token: string, id: string, file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/upload-pdf`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
+  
+  if (!res.ok) {
+    let errorText = "";
+    try {
+      const errJson = await res.json();
+      errorText = errJson.message || JSON.stringify(errJson);
+    } catch {
+      errorText = await res.text();
+    }
+    throw new Error(`Lỗi server (${res.status}): ${errorText}`);
+  }
+  
   return res.json();
 };
 

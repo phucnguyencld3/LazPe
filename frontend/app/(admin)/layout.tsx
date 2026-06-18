@@ -254,6 +254,14 @@ export default function AdminLayout({
     );
   }
 
+  if (pathname?.endsWith("/print") || pathname?.includes("/batch-print/execute")) {
+    return (
+      <div className="bg-white min-h-screen font-body-md text-black print:m-0 print:p-0">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative admin-scaled-layout">
       {/* Mobile Top Navigation */}
@@ -265,9 +273,14 @@ export default function AdminLayout({
           >
             menu
           </button>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Laz<span className="text-rose-500">Pe</span>
-          </h1>
+          <Image 
+            src="/logo/Logo_2.png" 
+            alt="LazPe Logo" 
+            width={120} 
+            height={32} 
+            className="object-contain h-8 w-auto"
+            priority
+          />
         </div>
         <Link href="/admin/profile" className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
@@ -425,16 +438,27 @@ export default function AdminLayout({
         >
           <div className="px-md mb-lg">
             <div className={`flex items-center ${isSidebarExpanded ? 'justify-between' : 'justify-center'} mb-xs`}>
-              <div className="flex items-center gap-sm">
-                <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
-                {isSidebarExpanded && (
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight whitespace-nowrap animate-in fade-in zoom-in-95 duration-300">
-                    Laz<span className="text-rose-500">Pe</span> <span className="text-sm font-semibold text-slate-500">Admin</span>
-                  </h2>
+              <div className="flex items-center w-full">
+                {isSidebarExpanded ? (
+                  <div className="relative w-64 h-20 flex items-center justify-start -ml-2">
+                    <img 
+                      src="/logo/Logo_2.png" 
+                      alt="LazPe Admin Logo" 
+                      className="w-full h-full object-contain object-left mix-blend-multiply animate-in fade-in zoom-in-95 duration-300"
+                    />
+                  </div>
+                ) : (
+                  <div className="relative w-16 h-16 flex items-center justify-center">
+                    <img 
+                      src="/logo/icon_logo.svg" 
+                      alt="LazPe Admin Icon" 
+                      className="w-full h-full object-contain mix-blend-multiply"
+                    />
+                  </div>
                 )}
               </div>
             </div>
-            {isSidebarExpanded && <p className="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap animate-in fade-in duration-300">Hệ thống quản lý LazPe</p>}
+
           </div>
           
           <nav className="flex-1 space-y-md pb-4">
@@ -485,6 +509,22 @@ export default function AdminLayout({
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">shopping_cart</span>
                 {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Xử lý Đơn hàng</span>}
+              </Link>
+              <Link
+                href="/admin/tracking"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/tracking") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Tra cứu Đơn hàng" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">barcode_scanner</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tra cứu Đơn hàng</span>}
+              </Link>
+              <Link
+                href="/admin/orders/batch-print"
+                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/orders/batch-print") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "In Đơn Hàng Loạt" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">print</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">In Đơn Hàng Loạt</span>}
               </Link>
               <Link
                 href="/admin/reviews"
