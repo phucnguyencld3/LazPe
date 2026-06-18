@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: "349039726314-iq3i1iud8jb1tbmv3f55e6vnckrm4tba.apps.googleusercontent.com",
+  },
 };
 
 export default nextConfig;
