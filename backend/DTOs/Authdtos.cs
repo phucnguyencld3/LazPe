@@ -229,4 +229,10 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "RefreshToken là bắt buộc")]
         public string RefreshToken { get; set; } = string.Empty;
     }
+
+    public class GoogleLoginDto
+    {
+        [Required(ErrorMessage = "IdToken is required")]
+        public string IdToken { get; set; } = string.Empty;
+    }
 }

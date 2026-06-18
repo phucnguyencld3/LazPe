@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getValidToken } from "@/lib/utils/auth";
-import { verify2FaLogin, send2FaLoginEmailOtp } from "@/lib/api";
+import { verify2FaLogin, send2FaLoginEmailOtp, googleLogin } from "@/lib/api";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -138,6 +139,57 @@ export default function LoginPage() {
       }
     }
   }, [router]);
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse.credential) {
+      setError("Đăng nhập Google thất bại (không có credential).");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const data = await googleLogin(credentialResponse.credential);
+      if (data.success) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+
+        if (rememberMe) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          sessionStorage.setItem("token", data.token);
+          sessionStorage.setItem("user", JSON.stringify(data.user));
+        }
+
+        let hasDashboardAccess = false;
+        try {
+          const user = data.user;
+          const roles = user?.roles || [];
+          const permissions = user?.permissions || [];
+          hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
+        } catch (evalError) {
+          console.error("Error evaluating redirect:", evalError);
+        }
+
+        if (hasDashboardAccess) {
+          window.location.href = "/admin";
+        } else if (!data.user?.isOnboarded) {
+          window.location.href = "/onboarding";
+        } else {
+          window.location.href = "/";
+        }
+      } else {
+        setError(data.message || "Đăng nhập Google thất bại");
+      }
+    } catch (err) {
+      setError("Có lỗi xảy ra khi kết nối đến server");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,13 +531,19 @@ export default function LoginPage() {
           </form>
 
           {/* Social Proof / Footer inside card */}
-          <div className="mt-20 flex justify-center gap-12">
-            <button className="p-6 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
-              <img alt="Google" className="w-6 h-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-Y_bpawEZwQ_1quHszPtLK_TJUWkc36jcScJCfI5xMV1EfUAHwjuQbdjhs96DksoRjtmNalPjJPSUjkFjCZNsN2ZoUGUF_Jv0HlkTWXIgi4d0GBEfdxFikp_UaQb_aZKG2nNZb1VcxBmMB41BU1UkGjllV_jAJGxmWNr_TURD7gJoGagWO7etGsaOi--8QErYYkAHRo9Lhpw1HUnoPP4l2-R5KlaeF39CWSg8Xxe2LA5PwYkYPu5dtBg9pRjTXJAyprHgufcnqOnp" />
-            </button>
-            <button className="p-6 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
-              <img alt="Facebook" className="w-6 h-6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUGmQ4Wc7m1zyg2hFUHGSmepByqTAVfek9d6OZQg8s0CgrCaAhdgSv9Z7mZ89m-Q9kWJDCRCDsDEqZx42xG7cJsU_Hxxc-V18HPCgTVgdPrLVcDr_5it3Xcq0W5Hya-0T-KDnanrQa8cpYgZX2RZvndB6m6V-DaQq1v4VV3DvA_2LsOpmuWDQXfhb6G3mJ_D99OovmKrhxmT6B9ZclJ1mA819aExRGFsLZYOWFpL_K8eotdNFsqBfHxd4jeLISdvyTeUvC_fZ_FFpU" />
-            </button>
+          <div className="mt-8 flex justify-center gap-6">
+            <div className="w-full max-w-sm flex justify-center flex-col items-center gap-4">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Đăng nhập Google thất bại")}
+                useOneTap
+                theme="outline"
+                size="large"
+                shape="pill"
+                width="100%"
+                locale="vi"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -2643,3 +2643,20 @@ export async function downloadSampleKeywordsExcel(): Promise<Blob | null> {
   }
 }
 
+// GOOGLE LOGIN API
+export async function googleLogin(idToken: string): Promise<any> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Authentication/google-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error during Google login:", error);
+    return { success: false, message: "Lỗi kết nối đến server" };
+  }
+}
+

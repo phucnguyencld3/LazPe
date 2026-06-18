@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { googleLogin } from "@/lib/api";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -47,6 +49,52 @@ export default function RegisterPage() {
 
   // States to track input focus for icon colors (mirroring the original jquery/vanilla js logic)
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse.credential) {
+      setError("Đăng ký Google thất bại (không có credential).");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const data = await googleLogin(credentialResponse.credential);
+      if (data.success) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        let hasDashboardAccess = false;
+        try {
+          const user = data.user;
+          const roles = user?.roles || [];
+          const permissions = user?.permissions || [];
+          hasDashboardAccess = !!(user?.isAdmin || roles.includes("Admin") || permissions.length > 0);
+        } catch (evalError) {
+          console.error("Error evaluating redirect:", evalError);
+        }
+
+        if (hasDashboardAccess) {
+          window.location.href = "/admin";
+        } else if (!data.user?.isOnboarded) {
+          window.location.href = "/onboarding";
+        } else {
+          window.location.href = "/";
+        }
+      } else {
+        setError(data.message || "Đăng nhập Google thất bại");
+      }
+    } catch (err) {
+      setError("Có lỗi xảy ra khi kết nối đến server");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -424,6 +472,28 @@ export default function RegisterPage() {
                     </>
                   )}
                 </button>
+                
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-outline-variant"></div>
+                  <span className="flex-shrink mx-6 font-bold text-xs text-on-surface-variant">Hoặc</span>
+                  <div className="flex-grow border-t border-outline-variant"></div>
+                </div>
+
+                <div className="flex justify-center mt-2">
+                  <div className="w-full flex justify-center items-center">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError("Đăng nhập Google thất bại")}
+                      useOneTap
+                      theme="outline"
+                      size="large"
+                      shape="pill"
+                      width="100%"
+                      locale="vi"
+                      text="signup_with"
+                    />
+                  </div>
+                </div>
               </form>
             ) : (
               <form className="space-y-6" onSubmit={handleVerifyOtp}>

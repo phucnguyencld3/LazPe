@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Quicksand, Plus_Jakarta_Sans } from "next/font/googl
 import "./globals.css";
 import { Toaster } from "sonner";
 import DisclaimerModal from "@/components/shared/DisclaimerModal";
+import GoogleProvider from "@/components/shared/GoogleProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -80,9 +81,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-full flex flex-col font-body-md bg-background text-on-background">
-        {children}
-        <DisclaimerModal />
-        <Toaster richColors position="top-right" closeButton visibleToasts={3} />
+        <GoogleProvider>
+          {children}
+          <DisclaimerModal />
+          <Toaster richColors position="top-right" closeButton visibleToasts={3} />
+        </GoogleProvider>
       </body>
     </html>
   );
