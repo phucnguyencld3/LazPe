@@ -22,6 +22,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=LazPeDB;User Id=sa;Password=YourSecurePassword123!;TrustServerCertificate=True;
+      - Meilisearch__Url=http://meilisearch:7700
+      - Meilisearch__ApiKey=LazPeMasterKey123!
     depends_on:
       - db
     networks:
@@ -43,8 +45,21 @@ services:
     networks:
       - lazpe-network
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.18
+    container_name: lazpe-meilisearch
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=LazPeMasterKey123!
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - lazpe-network
+
 volumes:
   mssql_data:
+  meili_data:
 
 networks:
   lazpe-network:

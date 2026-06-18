@@ -365,6 +365,26 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Đồng bộ dữ liệu lên Meilisearch (admin)
+        /// </summary>
+        [HttpPost("sync-meilisearch")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SyncMeilisearch([FromServices] PolyBabyAPI.Data.ApplicationDbContext context, [FromServices] ISearchEngineService searchEngine)
+        {
+            try
+            {
+                var products = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(context.Products);
+                await searchEngine.SyncAllProductsAsync(products);
+                return Ok(new { success = true, message = $"Đã đồng bộ {products.Count} sản phẩm lên Meilisearch." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi đồng bộ Meilisearch");
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Lấy thống kê số lượng sản phẩm (admin)
         /// </summary>
         [HttpGet("admin-stats")]

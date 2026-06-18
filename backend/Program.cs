@@ -244,6 +244,7 @@ try
 
     //Đăng ký Permission Service
     builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
 
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();

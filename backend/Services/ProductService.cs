@@ -14,13 +14,15 @@ namespace PolyBabyAPI.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ProductService> _logger;
         private readonly IMemoryCache _cache;
+        private readonly ISearchEngineService _searchEngineService;
         private static CancellationTokenSource _resetCacheToken = new CancellationTokenSource();
 
-        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache)
+        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache, ISearchEngineService searchEngineService)
         {
             _context = context;
             _logger = logger;
             _cache = cache;
+            _searchEngineService = searchEngineService;
         }
 
         public void ClearProductCache()
@@ -49,9 +51,29 @@ namespace PolyBabyAPI.Services
             {
                 var query = _context.Products.AsNoTracking().AsQueryable();
 
+                List<int>? meiliSortedIds = null;
                 // Apply filters
                 if (!string.IsNullOrWhiteSpace(searchTerm))
-                    query = query.Where(p => p.ProductName.Contains(searchTerm));
+                {
+                    try
+                    {
+                        var matchingIds = await _searchEngineService.SearchProductsAsync(searchTerm);
+                        if (matchingIds.Any())
+                        {
+                            query = query.Where(p => matchingIds.Contains(p.ProductID));
+                            meiliSortedIds = matchingIds;
+                        }
+                        else
+                        {
+                            query = query.Where(p => p.ProductID == 0); // Force empty
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Meilisearch query failed. Fallback to SQL Server LIKE.");
+                        query = query.Where(p => p.ProductName.Contains(searchTerm));
+                    }
+                }
 
                 if (categoryId.HasValue)
                     query = query.Where(p => p.CategoryID == categoryId.Value);
@@ -71,26 +93,49 @@ namespace PolyBabyAPI.Services
                 if (hasDiscount.HasValue && hasDiscount.Value)
                     query = query.Where(p => p.ProductDiscountPercent > 0 || p.Variants.Any(v => v.VariantDiscountPercent > 0));
 
+                bool useRelevanceSort = meiliSortedIds != null && sortBy.ToLower() == "createdat";
+
                 // Apply sorting
-                query = sortBy.ToLower() switch
+                if (!useRelevanceSort)
                 {
-                    "productname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.ProductName) : query.OrderByDescending(p => p.ProductName),
-                    "price" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
-                    "code" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Code) : query.OrderByDescending(p => p.Code),
-                    "categoryname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Category!.CategoryName) : query.OrderByDescending(p => p.Category!.CategoryName),
-                    _ => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt)
-                };
+                    query = sortBy.ToLower() switch
+                    {
+                        "productname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.ProductName) : query.OrderByDescending(p => p.ProductName),
+                        "price" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
+                        "code" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Code) : query.OrderByDescending(p => p.Code),
+                        "categoryname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Category!.CategoryName) : query.OrderByDescending(p => p.Category!.CategoryName),
+                        _ => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt)
+                    };
+                }
 
                 var totalItems = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-                // Câu query 1: Lấy thông tin cơ bản của Product và include Category, Supplier
-                var productsBase = await query
-                    .Include(p => p.Category)
-                    .Include(p => p.Supplier)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                List<Product> productsBase;
+                if (useRelevanceSort)
+                {
+                    // Lấy toàn bộ danh sách ID đã lọc (tối đa 100), sắp xếp trên RAM theo điểm relevance của Meilisearch, sau đó phân trang.
+                    var allMatching = await query
+                        .Include(p => p.Category)
+                        .Include(p => p.Supplier)
+                        .ToListAsync();
+
+                    productsBase = allMatching
+                        .OrderBy(p => meiliSortedIds!.IndexOf(p.ProductID))
+                        .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToList();
+                }
+                else
+                {
+                    // Câu query 1: Lấy thông tin cơ bản của Product và include Category, Supplier
+                    productsBase = await query
+                        .Include(p => p.Category)
+                        .Include(p => p.Supplier)
+                        .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync();
+                }
 
                 var productIds = productsBase.Select(p => p.ProductID).ToList();
                 var productDtos = new List<ProductListItemDto>();
@@ -428,6 +473,8 @@ namespace PolyBabyAPI.Services
                 await _context.SaveChangesAsync();
                 ClearProductCache();
 
+                try { await _searchEngineService.IndexProductAsync(product); } catch (Exception e) { _logger.LogError(e, "Error syncing to Meilisearch"); }
+
                 // Return created product
                 var result = await GetProductByIdAsync(product.ProductID);
                 
@@ -680,6 +727,8 @@ namespace PolyBabyAPI.Services
                 await transaction.CommitAsync();
                 ClearProductCache();
 
+                try { await _searchEngineService.IndexProductAsync(product); } catch (Exception e) { _logger.LogError(e, "Error syncing to Meilisearch"); }
+
                 _logger.LogInformation("Product Created: {ProductName} (ID: {ProductID})", product.ProductName, product.ProductID);
                 _logger.LogInformation("Variants Generated: {VariantCount} variants created", dto.Variants.Count);
 
@@ -796,6 +845,8 @@ namespace PolyBabyAPI.Services
                 }
                 
                 ClearProductCache();
+
+                try { await _searchEngineService.IndexProductAsync(product); } catch (Exception e) { _logger.LogError(e, "Error syncing to Meilisearch"); }
 
                 // Return updated product
                 var result = await GetProductByIdAsync(product.ProductID);
@@ -956,6 +1007,8 @@ namespace PolyBabyAPI.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 ClearProductCache();
+
+                try { await _searchEngineService.DeleteProductAsync(id); } catch (Exception e) { _logger.LogError(e, "Error deleting from Meilisearch"); }
 
                 return new ServiceResult<bool>
                 {

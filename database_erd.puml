@@ -1,0 +1,601 @@
+@startuml
+hide circle
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+entity "Address" as Address {
+  AddressID : int <<PK>>
+  UserID : string <<FK>>
+  RecipientName : string 
+  PhoneNumber : string 
+  Province : string 
+  District : string 
+  Ward : string 
+  DetailAddress : string 
+  IsDefault : bool 
+  CreatedAt : DateTime 
+}
+
+entity "ApplicationUser" as ApplicationUser {
+  FullName : string 
+  DateOfBirth : DateTime? 
+  Avatar : string? 
+  Status : bool 
+  RegisterDate : DateTime 
+  ReceiveEmailNotifications : bool 
+  ReceiveOrderUpdates : bool 
+  ReceivePromotions : bool 
+  MomFavoriteColors : string? 
+  ChildGender : string? 
+  ChildAgeMonths : int? 
+  ChildWeightKg : double? 
+  IsOnboarded : bool 
+  RefreshToken : string? 
+  RefreshTokenExpiryTime : DateTime? 
+  RoleTemplateId : int? <<FK>>
+}
+
+entity "Bundle" as Bundle {
+  BundleID : int <<PK>>
+  Name : string 
+  Code : string? 
+  Description : string? 
+  Price : decimal? 
+  OriginalPrice : decimal? 
+  DiscountPercent : decimal 
+  ImageUrl : string? 
+  Status : bool 
+  CreatedDate : DateTime 
+  UpdatedDate : DateTime? 
+  CreatedBy : string? 
+  UpdatedBy : string? 
+}
+
+entity "BundleItem" as BundleItem {
+  BundleItemID : int <<PK>>
+  BundleID : int <<FK>>
+  VariantID : int <<FK>>
+  Quantity : int 
+  SortOrder : int 
+}
+
+entity "Cart" as Cart {
+  CartID : int <<PK>>
+  UserID : string <<FK>>
+  VoucherID : int? <<FK>>
+  ShippingVoucherID : int? <<FK>>
+  CreatedDate : DateTime 
+  SubTotal : decimal 
+  DiscountAmount : decimal 
+  TierDiscountAmount : decimal 
+  ShippingDiscountAmount : decimal 
+  TotalAmount : decimal 
+  Status : bool 
+  ShippingVoucher : Voucher? 
+}
+
+entity "CartDetail" as CartDetail {
+  CartDetailID : int <<PK>>
+  CartID : int <<FK>>
+  VariantID : int? <<FK>>
+  BundleID : int? <<FK>>
+  Quantity : int 
+  UnitPrice : decimal 
+  TotalPrice : decimal 
+  IsGift : bool 
+}
+
+entity "Categories" as Categories {
+  CategoryID : int <<FK>>
+  CategoryName : string 
+  ParentID : int? <<FK>>
+  Level : int 
+  SortOrder : string 
+  Description : string 
+  CreatedAt : DateTime 
+  CreatedBy : string 
+  Status : bool 
+}
+
+entity "ChatMessage" as ChatMessage {
+  Id : int <<PK>>
+  ChatSessionId : string <<FK>>
+  SenderId : string? <<FK>>
+  SenderName : string 
+  IsFromAdmin : bool 
+  MessageText : string? 
+  ImageUrl : string? 
+  CreatedAt : DateTime 
+  Sender : ApplicationUser? 
+}
+
+entity "ChatSession" as ChatSession {
+  Id : string <<PK>>
+  UserId : string? <<FK>>
+  CustomerName : string 
+  CreatedAt : DateTime 
+  UpdatedAt : DateTime 
+  IsClosed : bool 
+  LastMessageText : string? 
+  UnreadByAdmin : int 
+  UnreadByCustomer : int 
+  AdminId : string? <<FK>>
+  AdminName : string? 
+  Admin : ApplicationUser? 
+}
+
+entity "District" as District {
+  DistrictID : int <<PK>>
+  Name : string 
+  Code : string 
+  ProvinceID : int <<FK>>
+  IsActive : bool 
+  ReplacedByCode : string? 
+  Note : string? 
+  ApiVersion : string 
+}
+
+entity "FlashSale" as FlashSale {
+  Id : int <<PK>>
+  Name : string 
+  StartTime : DateTime 
+  EndTime : DateTime 
+  BannerUrl : string? 
+  Description : string? 
+  IsActive : bool 
+  CreatedAt : DateTime 
+  CreatedBy : string? 
+}
+
+entity "FlashSaleItem" as FlashSaleItem {
+  Id : int <<PK>>
+  FlashSaleId : int <<FK>>
+  ReferenceId : int <<FK>>
+  DiscountPrice : decimal 
+  RequiredQuantity : int 
+  GiftVariantIds : string? 
+  TotalQuantity : int 
+  SoldQuantity : int 
+  MaxQuantityPerUser : int 
+}
+
+entity "Invoice" as Invoice {
+  InvoiceID : int <<PK>>
+  UserID : string? <<FK>>
+  VoucherID : int? <<FK>>
+  ShippingVoucherID : int? <<FK>>
+  ShippingVoucher : Voucher? 
+  SubTotal : decimal 
+  DiscountAmount : decimal 
+  TierDiscountAmount : decimal 
+  ShippingDiscountAmount : decimal 
+  TotalPrice : decimal 
+  ShippingFee : decimal 
+  ShippingAddress : string? 
+  ShippingProvince : string? 
+  ShippingDistrict : string? 
+  ShippingWard : string? 
+  ShippingStreetAddress : string? 
+  ShippingRecipientName : string? 
+  ShippingPhone : string? 
+  IsDeleted : bool 
+  CancelReason : string? 
+  CreatedAt : DateTime? 
+  ConfirmedAt : DateTime? 
+  ShippedAt : DateTime? 
+  CompletedAt : DateTime? 
+  CancelledAt : DateTime? 
+  Note : string? 
+  PrintTicketUrl : string? 
+}
+
+entity "InvoiceDetail" as InvoiceDetail {
+  InvoiceDetailID : int <<PK>>
+  InvoiceID : int <<FK>>
+  BundleID : int? <<FK>>
+  VariantID : int? <<FK>>
+  Quantity : int 
+  UnitPrice : decimal 
+  TotalPrice : decimal 
+}
+
+entity "Loyalty" as Loyalty {
+  UserID : string <<FK>>
+  CurrentTierID : int <<FK>>
+  AvailablePoints : int 
+  TotalPoints : int 
+  PointsToNextTier : int 
+  RankAdjustmentOffset : int 
+  LastUpdated : DateTime 
+  TierID : int <<FK>>
+  TierName : string 
+  MinPoints : int 
+  ColorHex : string 
+  BadgeIcon : string 
+  IsActive : bool 
+  CreatedAt : DateTime 
+  UpdatedAt : DateTime 
+  PrivilegeID : int <<FK>>
+  TierID : int <<FK>>
+  Name : string 
+  PrivilegeType : string 
+  Value : string? 
+  IsActive : bool 
+  CreatedBy : string 
+  CreatedAt : DateTime 
+  PolicyID : int <<FK>>
+  Name : string 
+  VndAmount : decimal 
+  PointsEarned : int 
+  StartDate : DateTime? 
+  EndDate : DateTime? 
+  IsActive : bool 
+  IsCampaign : bool 
+  Multiplier : decimal 
+  CreatedBy : string 
+  CreatedAt : DateTime 
+  PolicyID : int <<FK>>
+  Name : string 
+  PointsToRedeem : int 
+  DiscountVnd : decimal 
+  TierID : int? <<FK>>
+  StartDate : DateTime? 
+  EndDate : DateTime? 
+  IsActive : bool 
+  CreatedBy : string 
+  CreatedAt : DateTime 
+  HistoryID : long <<FK>>
+  UserID : string <<FK>>
+  TransactionType : string 
+  Amount : int 
+  InvoiceID : int? <<FK>>
+  Description : string 
+  CreatedAt : DateTime 
+  VoucherConfigID : int <<FK>>
+  TierID : int <<FK>>
+  VoucherCount : int 
+  DiscountType : int 
+  DiscountValue : decimal 
+  MinOrderValue : decimal 
+  MaxDiscount : decimal 
+  ValidityDays : int 
+  IsActive : bool 
+  CreatedAt : DateTime 
+  RevocationID : int <<FK>>
+  UserID : string <<FK>>
+  Amount : int 
+  Reason : string 
+  AuditorID : string <<FK>>
+  CreatedAt : DateTime 
+  LogID : long <<FK>>
+  Action : string 
+  ActorID : string <<FK>>
+  ActorEmail : string 
+  EntityName : string 
+  EntityID : string <<FK>>
+  OldValue : string? 
+  NewValue : string? 
+  Notes : string? 
+  Timestamp : DateTime 
+  GiftLogID : int <<FK>>
+  UserID : string <<FK>>
+  Year : int 
+  GiftType : string 
+  GiftValue : string 
+  IssuedBy : string 
+  ReceivedAt : DateTime 
+  Id : int <<PK>>
+  EnableReviewReward : bool 
+  ReviewRewardPoints : int 
+  MinimumReviewWords : int 
+  RequiredRatingForReward : int 
+  AllowMultipleRewardsPerProduct : bool 
+  ReviewWithImageRewardPoints : int 
+  ReviewWithVideoRewardPoints : int 
+  MinimumReviewChars : int 
+  AllowEditReviewTimeLimitMinutes : int 
+  MaxReviewDaysAfterReceipt : int 
+  RequireDeliveryToReview : bool 
+  UpdatedAt : DateTime 
+}
+
+entity "Notification" as Notification {
+  Id : int <<PK>>
+  Code : string 
+  Title : string 
+  ShortDescription : string 
+  Content : string 
+  ThumbnailImage : string? 
+  BannerImage : string? 
+  CustomTypeName : string? 
+  ActionUrl : string? 
+  TargetValue : string? 
+  PublishedAt : DateTime? 
+  ExpiredAt : DateTime? 
+  HangfireJobId : string? <<FK>>
+  CreatedBy : string? 
+  CreatedAt : DateTime 
+  UpdatedAt : DateTime? 
+  IsPinned : bool 
+  IsDeleted : bool 
+}
+
+entity "NotificationTemplate" as NotificationTemplate {
+  Id : int <<PK>>
+  TemplateName : string 
+  TemplateCode : string 
+  TemplateContent : string 
+  IsActive : bool 
+  CreatedAt : DateTime 
+  UpdatedAt : DateTime? 
+}
+
+entity "PaymentTransaction" as PaymentTransaction {
+  PaymentTransactionId : int <<PK>>
+  InvoiceID : int <<FK>>
+  TxnRef : string 
+  VnPayTransactionNo : string? 
+  ResponseCode : string? 
+  RawQuery : string? 
+  CreatedAt : DateTime 
+  PaidAt : DateTime? 
+}
+
+entity "Permission" as Permission {
+  Id : int <<PK>>
+  Name : string 
+  Description : string 
+  Resource : string 
+  Action : string 
+  CreatedAt : DateTime 
+  IsActive : bool 
+}
+
+entity "Product" as Product {
+  ProductID : int <<PK>>
+  CategoryID : int <<FK>>
+  SupplierID : int <<FK>>
+  Code : string 
+  ProductName : string 
+  Description : string 
+  Specifications : string? 
+  Price : decimal 
+  ProductDiscountPercent : decimal 
+  Stock : int 
+  Status : bool 
+  CreatedAt : DateTime 
+  CreatedBy : string 
+  Category : Categories? 
+}
+
+entity "ProductImage" as ProductImage {
+  ProductImageID : int <<PK>>
+  ProductID : int <<FK>>
+  ImageUrl : string 
+  DisplayOrder : int 
+}
+
+entity "ProductOption" as ProductOption {
+  ProductOptionID : int <<PK>>
+  ProductID : int <<FK>>
+  Name : string 
+  DisplayOrder : int 
+  CreatedAt : DateTime? 
+  CreatedBy : string 
+}
+
+entity "ProductOptionValue" as ProductOptionValue {
+  ProductOptionValueID : int <<PK>>
+  ProductOptionID : int <<FK>>
+  Value : string 
+  DisplayOrder : int 
+  Price : decimal 
+  CreatedAt : DateTime? 
+  CreatedBy : string 
+}
+
+entity "Province" as Province {
+  ProvinceID : int <<PK>>
+  Name : string 
+  Code : string 
+  IsActive : bool 
+  ReplacedByCode : string? 
+  Note : string? 
+  ApiVersion : string 
+}
+
+entity "Review" as Review {
+  ReviewID : int <<PK>>
+  UserID : string <<FK>>
+  VariantID : int <<FK>>
+  BundleID : int? <<FK>>
+  Rating : int 
+  Content : string 
+  CreatedAt : DateTime 
+  IsHidden : bool 
+  HasEarnedRewardPoints : bool 
+  LoyaltyPointsEarned : int 
+  UpdatedAt : DateTime? 
+  CensorshipReason : string? 
+  AutoModerationStatus : string? 
+  FlaggedReason : string? 
+  ViolationScore : int 
+}
+
+entity "ReviewCensorshipLog" as ReviewCensorshipLog {
+  LogID : int <<FK>>
+  ReviewID : int <<FK>>
+  ActorID : string <<FK>>
+  Actor : ApplicationUser? 
+  Action : string 
+  Reason : string 
+  Timestamp : DateTime 
+}
+
+entity "ReviewComment" as ReviewComment {
+  CommentID : int <<FK>>
+  ReviewID : int <<FK>>
+  UserID : string <<FK>>
+  ParentCommentID : int? <<FK>>
+  Content : string 
+  CreatedAt : DateTime 
+  IsHidden : bool 
+  ParentComment : ReviewComment 
+}
+
+entity "ReviewLike" as ReviewLike {
+  LikeID : int <<FK>>
+  ReviewID : int <<FK>>
+  UserID : string <<FK>>
+  CreatedAt : DateTime 
+}
+
+entity "ReviewMedia" as ReviewMedia {
+  MediaID : int <<FK>>
+  ReviewID : int <<FK>>
+  Url : string 
+  MediaType : string 
+  CreatedAt : DateTime 
+}
+
+entity "ReviewSensitiveKeyword" as ReviewSensitiveKeyword {
+  KeywordID : int <<FK>>
+  Word : string 
+  Severity : string 
+  Category : string 
+  CreatedAt : DateTime 
+}
+
+entity "RoleTemplate" as RoleTemplate {
+  Id : int <<PK>>
+  Name : string 
+  Description : string 
+  CreatedAt : DateTime 
+  IsActive : bool 
+}
+
+entity "Supplier" as Supplier {
+  SupplierID : int <<PK>>
+  SupplierName : string 
+  Logo : string 
+  Description : string 
+  CreatedBy : string 
+  CreatedAt : DateTime 
+  Status : bool 
+}
+
+entity "TemplatePermission" as TemplatePermission {
+  TemplateId : int <<FK>>
+  PermissionId : int <<FK>>
+}
+
+entity "UserAddress" as UserAddress {
+  AddressID : int <<FK>>
+  UserID : string <<FK>>
+  ProvinceID : int <<FK>>
+  DistrictID : int? <<FK>>
+  WardID : int <<FK>>
+  RecipientName : string 
+  PhoneNumber : string 
+  StreetAddress : string 
+  IsDefault : bool 
+  CreatedAt : DateTime 
+}
+
+entity "UserNotification" as UserNotification {
+  Id : int <<PK>>
+  UserId : string <<FK>>
+  NotificationId : int <<FK>>
+  IsRead : bool 
+  ReadAt : DateTime? 
+  IsDeleted : bool 
+  CreatedAt : DateTime 
+}
+
+entity "UserPermission" as UserPermission {
+  UserId : string <<FK>>
+  PermissionId : int <<FK>>
+  GrantedAt : DateTime 
+  GrantedBy : string? 
+  IsGranted : bool 
+}
+
+entity "UserVoucher" as UserVoucher {
+  UserVoucherID : int <<PK>>
+  UserID : string <<FK>>
+  VoucherID : int <<FK>>
+  InvoiceID : int? <<FK>>
+  IssuedCode : string? 
+  SourceType : UserVoucherSource 
+  CollectedAt : DateTime 
+  UsedAt : DateTime? 
+}
+
+entity "Variant" as Variant {
+  VariantID : int <<PK>>
+  ProductID : int <<FK>>
+  VariantName : string 
+  UnitPrice : decimal 
+  VariantDiscountPercent : decimal 
+  Stock : int 
+  SKU : string 
+  ImageUrl : string? 
+  Description : string 
+  CreatedAt : DateTime 
+  CreatedBy : string 
+  Status : bool 
+}
+
+entity "VariantOptionValue" as VariantOptionValue {
+  VariantOptionValueID : int <<PK>>
+  VariantID : int <<FK>>
+  ProductOptionValueID : int <<FK>>
+}
+
+entity "Voucher" as Voucher {
+  IsFreeShipping : bool 
+  MaxShippingDiscount : decimal? 
+  VoucherID : int <<PK>>
+  Code : string 
+  Name : string 
+  DiscountType : int 
+  DiscountValue : decimal 
+  MinOrderValue : decimal 
+  MaxDiscount : decimal 
+  StartDate : DateTime 
+  EndDate : DateTime 
+  TotalQuantity : int 
+  UsedQuantity : int 
+  Status : bool 
+  ExclusiveType : ExclusiveDistributionType 
+  UsageLimitPerUser : int 
+}
+
+entity "VoucherUsage" as VoucherUsage {
+  VoucherID : int <<FK>>
+  UserID : string <<FK>>
+  InvoiceID : int? <<FK>>
+  CartID : int? <<FK>>
+  UsedAt : DateTime 
+  DiscountAmount : decimal 
+  OrderValue : decimal 
+}
+
+entity "Ward" as Ward {
+  WardID : int <<PK>>
+  Name : string 
+  Code : string 
+  DistrictID : int <<FK>>
+  IsActive : bool 
+  ReplacedByCode : string? 
+  Note : string? 
+  ApiVersion : string 
+}
+
+entity "Wishlist" as Wishlist {
+  UserID : string <<FK>>
+  ProductID : int <<FK>>
+  CreatedAt : DateTime 
+}
+
+@enduml

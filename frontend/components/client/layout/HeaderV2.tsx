@@ -10,6 +10,9 @@ import { toast } from "@/lib/toast";
 import * as signalR from "@microsoft/signalr";
 import { getValidToken, clearAuth } from "@/lib/utils/auth";
 import { useRouter } from 'next/navigation';
+import { useDebounce } from 'use-debounce';
+import { getProducts } from "@/lib/api";
+import { Product } from "@/types";
 
 export default function HeaderV2() {
   const [isAuth, setIsAuth] = useState(false);
@@ -18,7 +21,14 @@ export default function HeaderV2() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   const router = useRouter();
+  
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   
   const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.roles ? [user.roles] : []);
   const userPermissions = Array.isArray(user?.permissions) ? user.permissions : (user?.permissions ? [user.permissions] : []);
@@ -49,6 +59,45 @@ export default function HeaderV2() {
     }
     return () => clearNotifTimer();
   }, [isNotifDropdownOpen]);
+
+  // Click outside to close search suggestions
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Fetch search suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!debouncedSearchQuery.trim()) {
+        setSuggestions([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const result = await getProducts(1, 5, debouncedSearchQuery.trim());
+        if (result && result.items) {
+          setSuggestions(result.items);
+          setShowSuggestions(true);
+        }
+      } catch (error) {
+        console.error("Error fetching search suggestions:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [debouncedSearchQuery]);
   
   const { wishlist } = useWishlist();
   const wishlistCount = wishlist.length;
@@ -215,6 +264,7 @@ export default function HeaderV2() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setShowSuggestions(false);
       router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
     } else {
       router.push('/products');
@@ -237,12 +287,21 @@ export default function HeaderV2() {
           </Link>
 
           {/* Search Bar - Wide */}
-          <div className="w-full order-last mt-2 sm:mt-0 sm:order-none sm:w-auto sm:flex-1 max-w-3xl">
+          <div className="relative w-full order-last mt-2 sm:mt-0 sm:order-none sm:w-auto sm:flex-1 max-w-3xl" ref={searchContainerRef}>
             <form onSubmit={handleSearchSubmit} className="relative group">
               <input 
                 type="text" 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                  if (!e.target.value.trim()) setIsSearching(false);
+                }}
+                onFocus={() => {
+                  if (searchQuery.trim() && suggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
                 placeholder="Ba mẹ muốn tìm mua gì hôm nay?" 
                 className="w-full h-11 pl-5 pr-14 rounded-full border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400"
               />
@@ -250,7 +309,62 @@ export default function HeaderV2() {
                 <Search size={20} />
               </button>
             </form>
-            {/* Quick search tags have been removed */}
+
+            {/* Auto-complete Dropdown */}
+            {showSuggestions && searchQuery.trim() !== "" && (
+              <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {isSearching ? (
+                  <div className="p-4 flex items-center justify-center text-slate-400">
+                    <div className="w-5 h-5 border-2 border-slate-200 border-t-primary rounded-full animate-spin mr-2"></div>
+                    <span className="text-sm font-medium">Đang tìm kiếm...</span>
+                  </div>
+                ) : suggestions.length > 0 ? (
+                  <div className="py-2">
+                    <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Sản phẩm gợi ý
+                    </div>
+                    <ul>
+                      {suggestions.map((product) => (
+                        <li key={product.id}>
+                          <Link
+                            href={`/products/${product.id}`}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors"
+                            onClick={() => setShowSuggestions(false)}
+                          >
+                            <div className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden flex-shrink-0 bg-white">
+                              {product.image ? (
+                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                  <ShoppingCart size={14} className="text-slate-300" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 line-clamp-1">{product.name}</p>
+                              <p className="text-xs font-bold text-primary">{(product.discountPrice || product.price).toLocaleString("vi-VN")}đ</p>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="px-2 pt-2 border-t border-slate-50 mt-1">
+                      <button
+                        onClick={handleSearchSubmit}
+                        className="w-full py-2 text-center text-xs font-bold text-primary hover:bg-primary/5 rounded-xl transition-colors"
+                      >
+                        Xem tất cả kết quả cho "{searchQuery}"
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-slate-500">
+                    <Search className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                    <p className="text-sm font-medium">Không tìm thấy sản phẩm nào phù hợp.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Actions */}

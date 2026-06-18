@@ -28,6 +28,8 @@ services:
       - EmailSettings__SmtpPassword=nwjy ukee qeee gsyh
       - VnPay__ReturnUrl=https://api.lazpe.store/api/payment/vnpay-return
       - VnPay__FrontendBaseUrl=https://lazpe.store
+      - Meilisearch__Url=http://meilisearch:7700
+      - Meilisearch__ApiKey=LazPeProdMasterKey@2026!
     env_file:
       - .env
     depends_on:
@@ -52,8 +54,23 @@ services:
     networks:
       - lazpe-network
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.18
+    container_name: lazpe-meilisearch-prod
+    restart: always
+    ports:
+      - "127.0.0.1:7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=LazPeProdMasterKey@2026!
+      - MEILI_ENV=production
+    volumes:
+      - meili_data_prod:/meili_data
+    networks:
+      - lazpe-network
+
 volumes:
   mssql_data_prod:
+  meili_data_prod:
 
 networks:
   lazpe-network:
