@@ -141,6 +141,17 @@ namespace PolyBabyAPI.DTOs
         public string ConfirmNewPassword { get; set; } = string.Empty;
     }
 
+    public class SetPasswordDto
+    {
+        [Required(ErrorMessage = "Mật khẩu mới là bắt buộc")]
+        [MinLength(6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
+        [Compare("NewPassword", ErrorMessage = "Mật khẩu xác nhận không khớp")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
+
     /// <summary>
     /// DTO upload avatar (multipart/form-data)
     /// </summary>

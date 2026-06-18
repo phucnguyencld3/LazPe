@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "@/lib/toast";
 
 interface SecurityAndSettingsProps {
+  hasPassword?: boolean;
   onChangePasswordClick: () => void;
   notificationSettings: {
     emailNotifications: boolean;
@@ -12,6 +13,7 @@ interface SecurityAndSettingsProps {
 }
 
 export function SecurityAndSettings({
+  hasPassword = true,
   onChangePasswordClick,
   notificationSettings,
   onNotificationToggle,
@@ -34,7 +36,9 @@ export function SecurityAndSettings({
               <span className="material-symbols-outlined">lock</span>
             </div>
             <div className="text-left min-w-0">
-              <p className="font-bold text-slate-800 whitespace-nowrap text-sm">Đổi mật khẩu</p>
+              <p className="font-bold text-slate-800 whitespace-nowrap text-sm">
+                {hasPassword ? "Đổi mật khẩu" : "Thiết lập mật khẩu"}
+              </p>
               <p className="text-xs text-slate-500 whitespace-nowrap">Bảo vệ tài khoản của bạn</p>
             </div>
           </div>

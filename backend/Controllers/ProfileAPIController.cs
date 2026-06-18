@@ -202,6 +202,75 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Kiểm tra xem user đã có mật khẩu hay chưa
+        /// </summary>
+        [HttpGet("has-password")]
+        public async Task<IActionResult> HasPassword([FromQuery] string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { success = false, message = "UserId không được để trống" });
+            }
+
+            try
+            {
+                if (!CanAccessUser(userId, "User.Read"))
+                    return Forbid();
+
+                var result = await _profileService.HasPasswordAsync(userId);
+                return Ok(new { success = true, hasPassword = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking password for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
+            }
+        }
+
+        /// <summary>
+        /// Thiết lập mật khẩu cho user chưa có mật khẩu
+        /// </summary>
+        [HttpPost("set-password")]
+        public async Task<IActionResult> SetPassword([FromQuery] string userId, [FromBody] SetPasswordDto setPasswordDto)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { success = false, message = "UserId không được để trống" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                if (!CanAccessUser(userId, "User.Update"))
+                    return Forbid();
+
+                var hasPassword = await _profileService.HasPasswordAsync(userId);
+                if (hasPassword)
+                {
+                    return BadRequest(new { success = false, message = "Tài khoản đã có mật khẩu. Vui lòng dùng chức năng đổi mật khẩu." });
+                }
+
+                var result = await _profileService.SetPasswordAsync(userId, setPasswordDto);
+                if (result)
+                {
+                    _logger.LogInformation("Password set successfully for user {UserId}", userId);
+                    return Ok(new { success = true, message = "Thiết lập mật khẩu thành công!" });
+                }
+
+                return BadRequest(new { success = false, message = "Có lỗi xảy ra khi thiết lập mật khẩu" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting password for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi thiết lập mật khẩu" });
+            }
+        }
+
+        /// <summary>
         /// Upload avatar lên Cloudinary
         /// </summary>
         [HttpPost("upload-avatar")]

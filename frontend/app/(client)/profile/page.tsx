@@ -8,6 +8,8 @@ import {
   getUserProfile,
   updateUserProfile,
   changePassword,
+  checkHasPassword,
+  setPassword,
   getUserAddresses,
   getProvinces,
   getDistricts,
@@ -46,6 +48,7 @@ export default function ProfilePage() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [hasPassword, setHasPassword] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [loyaltyProfile, setLoyaltyProfile] = useState<any>(null);
@@ -195,6 +198,10 @@ export default function ProfilePage() {
         });
       }
 
+      // Check has password
+      const hasPass = await checkHasPassword(userId, authToken);
+      setHasPassword(hasPass);
+
       const addressList = await getUserAddresses(userId, authToken);
       if (addressList) {
         setAddresses(addressList);
@@ -292,17 +299,27 @@ export default function ProfilePage() {
     }
 
     try {
-      const result = await changePassword(userProfile.userId, token, {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-        confirmNewPassword: passwordForm.confirmNewPassword
-      });
+      let result;
+      if (hasPassword) {
+        result = await changePassword(userProfile.userId, token, {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          confirmNewPassword: passwordForm.confirmNewPassword
+        });
+      } else {
+        result = await setPassword(userProfile.userId, token, {
+          newPassword: passwordForm.newPassword,
+          confirmNewPassword: passwordForm.confirmNewPassword
+        });
+      }
+
       if (result.success) {
-        toast.success("Đổi mật khẩu thành công!");
+        toast.success(hasPassword ? "Đổi mật khẩu thành công!" : "Thiết lập mật khẩu thành công!");
         setChangePasswordOpen(false);
         setPasswordForm({ currentPassword: "", newPassword: "", confirmNewPassword: "" });
+        setHasPassword(true); // User now has a password
       } else {
-        setPasswordError(result.message || "Đổi mật khẩu thất bại");
+        setPasswordError(result.message || (hasPassword ? "Đổi mật khẩu thất bại" : "Thiết lập mật khẩu thất bại"));
       }
     } catch (err) {
       console.error(err);
@@ -713,6 +730,7 @@ export default function ProfilePage() {
                   onEditClick={() => setEditBabyInfoOpen(true)}
                 />
                 <SecurityAndSettings
+                  hasPassword={hasPassword}
                   onChangePasswordClick={() => setChangePasswordOpen(true)}
                   notificationSettings={notificationSettings}
                   onNotificationToggle={handleNotificationToggle}
@@ -790,6 +808,7 @@ export default function ProfilePage() {
         passwordForm={passwordForm}
         setPasswordForm={setPasswordForm}
         passwordError={passwordError}
+        hasPassword={hasPassword}
       />
 
       <ProfileAddressModal
