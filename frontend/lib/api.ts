@@ -399,7 +399,10 @@ export async function checkHasPassword(userId: string, token: string): Promise<b
         "Authorization": `Bearer ${token}`,
       },
     });
-    const result = await response.json();
+    const text = await response.text();
+    if (!text) return true;
+    
+    const result = JSON.parse(text);
     if (response.ok && result.success) {
       return result.hasPassword;
     }
@@ -425,7 +428,10 @@ export async function setPassword(
       body: JSON.stringify(passwordData),
     });
 
-    const result = await response.json();
+    const text = await response.text();
+    if (!text) return { success: false, message: "Lỗi phản hồi từ server" };
+
+    const result = JSON.parse(text);
     if (response.ok && result.success) {
       return { success: true };
     }
