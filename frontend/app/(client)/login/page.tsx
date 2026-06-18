@@ -541,7 +541,6 @@ export default function LoginPage() {
                 size="large"
                 shape="pill"
                 width="320"
-                locale="vi"
               />
             </div>
           </div>

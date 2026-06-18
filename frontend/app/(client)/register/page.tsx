@@ -489,7 +489,6 @@ export default function RegisterPage() {
                       size="large"
                       shape="pill"
                       width="320"
-                      locale="vi"
                       text="signup_with"
                     />
                   </div>
