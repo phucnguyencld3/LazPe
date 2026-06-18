@@ -346,7 +346,19 @@ namespace PolyBabyAPI.Services
 
                     case "check_order_status":
                         var orderIdStr = args.ContainsKey("orderCode") ? args["orderCode"].ToString() : "";
-                        if (string.IsNullOrEmpty(orderIdStr) || !int.TryParse(orderIdStr, out int invoiceId)) return new { error = "Mã đơn hàng không hợp lệ (phải là số)" };
+                        if (string.IsNullOrEmpty(orderIdStr)) return new { error = "Mã đơn hàng không hợp lệ" };
+
+                        int invoiceId;
+                        if (!int.TryParse(orderIdStr, out invoiceId))
+                        {
+                            var foundId = await dbContext.Invoices
+                                .Where(i => i.InvoiceCode == orderIdStr || i.TrackingCode == orderIdStr)
+                                .Select(i => i.InvoiceID)
+                                .FirstOrDefaultAsync();
+
+                            if (foundId == 0) return new { error = "Không tìm thấy đơn hàng" };
+                            invoiceId = foundId;
+                        }
 
                         var order = await dbContext.Invoices
                             .Where(i => i.InvoiceID == invoiceId)
