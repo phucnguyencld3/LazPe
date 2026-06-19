@@ -74,7 +74,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
       <div>
         {/* Category & Stock Status */}
         <div className="flex justify-between items-center gap-4 mb-4">
-          <span className="bg-rose-50 text-rose-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          <span className="bg-rose-50 text-rose-600 text-xs font-bold px-3 py-1 rounded-[4px] uppercase tracking-wider">
             {product.categoryName || "Đồ chơi cao cấp"}
           </span>
           {displayInStock ? (
@@ -179,7 +179,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
               <div className="flex items-center gap-2">
                 <div className="w-24 sm:w-32">
-                  <div className={`relative w-full h-3 rounded-full overflow-hidden flex items-center justify-center border ${flashSaleStatus === 0 ? "bg-slate-100 border-slate-200" : "bg-rose-100 border-rose-200"}`}>
+                  <div className={`relative w-full h-3 rounded-[6px] overflow-hidden flex items-center justify-center border ${flashSaleStatus === 0 ? "bg-slate-100 border-slate-200" : "bg-rose-100 border-rose-200"}`}>
                     <div 
                       className={`absolute left-0 top-0 h-full transition-all duration-500 ${flashSaleStatus === 0 ? "bg-slate-300" : "bg-gradient-to-r from-rose-500 to-orange-500"}`}
                       style={{ width: `${flashSaleStatus === 0 ? 0 : Math.min(100, Math.max(0, (activeFlashSaleItem.soldQuantity / activeFlashSaleItem.totalQuantity) * 100))}%` }}
@@ -406,7 +406,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           {/* Quantity Counter */}
-          <div className="flex items-center justify-between w-full sm:w-28 h-10 sm:h-11 bg-slate-50/80 rounded-full px-3 border border-slate-200 hover:border-slate-300 transition-colors">
+          <div className="flex items-center justify-between w-full sm:w-28 h-10 sm:h-11 bg-slate-50/80 rounded-[6px] px-3 border border-slate-200 hover:border-slate-300 transition-colors">
             <button
               onClick={handleDecreaseQuantity}
               disabled={quantity <= 1}
@@ -440,7 +440,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <button
               onClick={handleAddToCart}
               disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-10 sm:h-11 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+              className="w-1/2 h-10 sm:h-11 rounded-[8px] border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
             >
               {isAddingToCart ? (
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -456,7 +456,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <button
               onClick={handleBuyNow}
               disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-10 sm:h-11 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+              className="w-1/2 h-10 sm:h-11 rounded-[8px] bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
             >
               <span className="truncate">Mua ngay</span>
             </button>

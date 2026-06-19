@@ -56,7 +56,7 @@ export default function ProductDetailPage() {
           logProductView(productId);
           
           // Fetch related products in the same category
-          const related = await getProducts(1, 4, undefined, data.categoryId);
+          const related = await getProducts(1, 10, undefined, data.categoryId);
           if (related) {
             const filtered = (related.items || []).filter((p) => p.id !== data.id);
             setRelatedProducts(filtered);
@@ -463,13 +463,13 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen py-4 sm:py-8 px-0 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 min-h-screen py-4 sm:py-6 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <div className="px-4 sm:px-0">
+        <div className="px-4 sm:px-0 mt-4 sm:mt-0">
           <button
             onClick={() => router.back()}
-            className="mb-4 sm:mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm hover:shadow active:scale-95"
+            className="mb-4 sm:mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-[8px] border border-slate-100 shadow-sm hover:shadow active:scale-95"
           >
             <ArrowLeft size={16} />
             Quay lại danh sách
@@ -477,8 +477,8 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Product Container */}
-        <div className="bg-white sm:rounded-3xl sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-8 sm:mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 p-4 sm:p-8 lg:p-12">
+        <div className="bg-white sm:rounded-[16px] sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8">
             <ProductImageGallery
               displayImage={displayImage}
               productName={product.name}

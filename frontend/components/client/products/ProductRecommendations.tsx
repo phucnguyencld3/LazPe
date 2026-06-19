@@ -49,7 +49,7 @@ export const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
           <Sparkles className="w-6 h-6 text-yellow-500" />
           {title}
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse bg-slate-200 rounded-2xl h-64 w-full"></div>
           ))}
@@ -66,7 +66,7 @@ export const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
         <Sparkles className="w-6 h-6 text-yellow-500" />
         {title}
       </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}

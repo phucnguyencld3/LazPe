@@ -124,9 +124,9 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => 
             return (
               <div key={star} className="flex items-center gap-3 text-xs font-bold text-slate-600">
                 <span className="w-12 text-right">{star} sao</span>
-                <div className="flex-grow h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                <div className="flex-grow h-2.5 bg-slate-100 rounded-[6px] overflow-hidden border border-slate-200/50">
                   <div
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-300 rounded-full"
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-300 rounded-[6px]"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
@@ -149,7 +149,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => 
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex gap-3 items-center">
                     {/* Avatar placeholder with initials */}
-                    <div className="w-10 h-10 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center font-bold text-sm text-primary shadow-inner shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-primary/5 border border-primary/10 flex items-center justify-center font-bold text-sm text-primary shadow-inner shrink-0">
                       {item.user?.fullName?.charAt(0) || "U"}
                     </div>
                     <div>
@@ -173,7 +173,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => 
                       </span>
                     )}
                     {item.hasEarnedRewardPoints && (
-                      <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-bold shadow-2xs">
+                      <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-[6px] bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-bold shadow-2xs">
                         <Award size={10} className="text-emerald-500" />
                         Đã xác minh mua hàng
                       </span>
@@ -226,7 +226,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => 
                   <button
                     onClick={() => handleLikeToggle(item.reviewID)}
                     disabled={likingId === item.reviewID}
-                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all border ${
+                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-[8px] transition-all border ${
                       item.isLikedByCurrentUser
                         ? "bg-primary/5 text-primary border-primary/20"
                         : "text-slate-400 bg-white border-slate-200 hover:text-slate-600 hover:bg-slate-50"
@@ -280,7 +280,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId }) => 
           <div className="relative max-w-3xl w-full max-h-[85vh] bg-slate-900 rounded-[2rem] overflow-hidden flex flex-col justify-center items-center shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setLightboxMedia(null)}
-              className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-105 z-10"
+              className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-[8px] flex items-center justify-center transition-transform hover:scale-105 z-10"
             >
               <X size={16} />
             </button>

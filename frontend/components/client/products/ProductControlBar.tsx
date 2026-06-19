@@ -38,7 +38,7 @@ export const ProductControlBar: React.FC<ProductControlBarProps> = ({
         {/* Mobile Filter Toggle Button */}
         <button
           onClick={() => setShowMobileFilters(true)}
-          className="lg:hidden h-10 px-4 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-colors"
+          className="lg:hidden h-10 px-4 rounded-[8px] border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-colors"
         >
           <SlidersHorizontal size={14} />
           Bộ lọc

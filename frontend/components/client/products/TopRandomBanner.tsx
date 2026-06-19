@@ -67,7 +67,7 @@ export const TopRandomBanner: React.FC<TopRandomBannerProps> = ({ products }) =>
 
           {/* Content Overlay */}
           <div className="absolute inset-0 p-4 flex flex-col justify-center items-start pointer-events-none w-2/3">
-            <div className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 shadow-sm transform transition-transform duration-500 group-hover:-translate-y-1">
+            <div className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-[4px] mb-2 shadow-sm transform transition-transform duration-500 group-hover:-translate-y-1">
               GỢI Ý HÔM NAY
             </div>
             <h3 className="text-sm sm:text-base font-bold text-white mb-2 transform transition-transform duration-500 group-hover:-translate-y-1 line-clamp-2 leading-tight">

@@ -45,7 +45,7 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
         </h2>
         <button
           onClick={onEditClick}
-          className="text-primary font-bold flex items-center gap-1 hover:text-rose-600 active:scale-95 transition-all text-[11px] bg-slate-50 py-1.5 px-3 rounded-full border border-slate-100 hover:bg-slate-100"
+          className="text-primary font-bold flex items-center gap-1 hover:text-rose-600 active:scale-95 transition-all text-[11px] bg-slate-50 py-1.5 px-3 rounded-[8px] border border-slate-100 hover:bg-slate-100"
         >
           <span className="material-symbols-outlined text-[11px] font-bold">edit</span> Thiết lập
         </button>
@@ -53,7 +53,7 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
 
       {!hasPreferences ? (
         <div className="py-6 w-full flex flex-col items-center space-y-3">
-          <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center">
+          <div className="w-14 h-14 bg-slate-50 rounded-[10px] flex items-center justify-center">
             <Baby className="w-7 h-7 text-slate-300 stroke-[1.5]" />
           </div>
           <p className="text-slate-500 text-[13px] font-medium text-center w-full max-w-[400px] leading-relaxed">
@@ -61,7 +61,7 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
           </p>
           <button
             onClick={onEditClick}
-            className="text-[13px] bg-primary text-white hover:bg-primary/90 font-bold px-5 py-2 rounded-full transition-colors shadow-sm"
+            className="text-[13px] bg-primary text-white hover:bg-primary/90 font-bold px-5 py-2 rounded-[8px] transition-colors shadow-sm"
           >
             Cập nhật ngay
           </button>

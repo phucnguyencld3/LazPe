@@ -13,7 +13,7 @@ export const PaymentMethodSection: React.FC<PaymentMethodSectionProps> = ({
   return (
     <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
+        <div className="w-8 h-8 rounded-[8px] bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
           2
         </div>
         <h2 className="text-lg font-bold text-slate-800">Phương thức thanh toán</h2>
@@ -25,16 +25,16 @@ export const PaymentMethodSection: React.FC<PaymentMethodSectionProps> = ({
         {/* Method 1: COD */}
         <div
           onClick={() => setPayMethod(null)}
-          className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bouncy-hover ${
+          className={`border-2 rounded-[8px] p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bouncy-hover ${
             payMethod === null
-              ? "border-rose-500 bg-rose-500/[0.03] shadow-sm"
+              ? "border-rose-500 bg-rose-500/[0.03]"
               : "border-slate-200 hover:border-rose-200"
           }`}
         >
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${
+          <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center mb-2 transition-colors ${
             payMethod === null ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"
           }`}>
-            <Coins className="h-6 w-6" />
+            <Coins className="h-5 w-5" />
           </div>
           <h3 className="font-bold text-sm text-slate-800 mb-1">Thanh toán khi nhận hàng</h3>
           <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">COD - Tiền mặt</p>
@@ -43,16 +43,16 @@ export const PaymentMethodSection: React.FC<PaymentMethodSectionProps> = ({
         {/* Method 2: Bank Transfer */}
         <div
           onClick={() => setPayMethod(2)}
-          className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bouncy-hover ${
+          className={`border-2 rounded-[8px] p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bouncy-hover ${
             payMethod === 2
-              ? "border-rose-500 bg-rose-500/[0.03] shadow-sm"
+              ? "border-rose-500 bg-rose-500/[0.03]"
               : "border-slate-200 hover:border-rose-200"
           }`}
         >
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${
+          <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center mb-2 transition-colors ${
             payMethod === 2 ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"
           }`}>
-            <CreditCard className="h-6 w-6" />
+            <CreditCard className="h-5 w-5" />
           </div>
           <h3 className="font-bold text-sm text-slate-800 mb-1">Chuyển khoản</h3>
           <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">Thẻ ngân hàng</p>
@@ -61,16 +61,16 @@ export const PaymentMethodSection: React.FC<PaymentMethodSectionProps> = ({
         {/* Method 3: E-wallet VNPay */}
         <div
           onClick={() => setPayMethod(3)}
-          className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bouncy-hover ${
+          className={`border-2 rounded-[8px] p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bouncy-hover ${
             payMethod === 3
-              ? "border-rose-500 bg-rose-500/[0.03] shadow-sm"
+              ? "border-rose-500 bg-rose-500/[0.03]"
               : "border-slate-200 hover:border-rose-200"
           }`}
         >
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${
+          <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center mb-2 transition-colors ${
             payMethod === 3 ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"
           }`}>
-            <Wallet className="h-6 w-6" />
+            <Wallet className="h-5 w-5" />
           </div>
           <h3 className="font-bold text-sm text-slate-800 mb-1">Cổng thanh toán VNPay</h3>
           <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">Ví điện tử / QR Code</p>

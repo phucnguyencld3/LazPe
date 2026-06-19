@@ -61,7 +61,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
           </h3>
           <button
             onClick={() => setVoucherModalOpen(false)}
-            className="hover:bg-slate-200 p-1.5 rounded-full text-slate-400 transition-colors"
+            className="hover:bg-slate-200 p-1.5 rounded-[8px] text-slate-400 transition-colors"
           >
             <X size={18} />
           </button>
@@ -152,7 +152,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                     {isApplied ? (
                       <button
                         onClick={() => handleRemoveVoucher(voucher.voucherType === 2 ? 2 : 1)}
-                        className="py-1.5 px-4 rounded-full font-bold text-xs shadow-md active:scale-95 transition-all bg-emerald-600 hover:bg-rose-600 text-white shadow-emerald-600/5 flex items-center gap-1 min-w-[90px] justify-center group"
+                        className="py-1.5 px-4 rounded-[8px] font-bold text-xs shadow-md active:scale-95 transition-all bg-emerald-600 hover:bg-rose-600 text-white shadow-emerald-600/5 flex items-center gap-1 min-w-[90px] justify-center group"
                       >
                         <Check size={12} className="shrink-0 group-hover:hidden" />
                         <span className="group-hover:hidden">Đã chọn</span>
@@ -161,7 +161,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                     ) : isEligible ? (
                       <button
                         onClick={() => handleApplyVoucherFromModal(voucher.code)}
-                        className={`py-1.5 px-4 rounded-full font-bold text-xs shadow-md active:scale-95 transition-all ${voucher.voucherType === 2
+                        className={`py-1.5 px-4 rounded-[8px] font-bold text-xs shadow-md active:scale-95 transition-all ${voucher.voucherType === 2
                           ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/5"
                           : "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/5"
                           }`}
@@ -169,7 +169,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                         Áp dụng
                       </button>
                     ) : (
-                      <span className="text-[10px] text-slate-400 font-bold bg-slate-200/50 px-2.5 py-1.5 rounded-full flex items-center gap-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold bg-slate-200/50 px-2.5 py-1.5 rounded-[6px] flex items-center gap-0.5">
                         <AlertCircle size={10} /> Chưa đủ ĐK
                       </span>
                     )}
@@ -186,7 +186,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
           <button
             onClick={() => setVoucherModalOpen(false)}
-            className="py-2.5 px-6 border border-slate-200 rounded-full font-bold text-slate-600 hover:bg-white text-xs transition-all active:scale-95"
+            className="py-2.5 px-6 border border-slate-200 rounded-[8px] font-bold text-slate-600 hover:bg-white text-xs transition-all active:scale-95"
           >
             Đóng
           </button>

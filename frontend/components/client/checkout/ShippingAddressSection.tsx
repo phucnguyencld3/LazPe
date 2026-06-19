@@ -17,7 +17,7 @@ export const ShippingAddressSection: React.FC<ShippingAddressSectionProps> = ({
     <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
+          <div className="w-8 h-8 rounded-[8px] bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
             1
           </div>
           <h2 className="text-lg font-bold text-slate-800">Địa chỉ giao hàng</h2>
@@ -32,8 +32,8 @@ export const ShippingAddressSection: React.FC<ShippingAddressSectionProps> = ({
 
       {/* Selected Address Card */}
       {selectedAddress ? (
-        <div className="border border-rose-100 bg-rose-50/20 rounded-xl p-4 relative overflow-hidden transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/10 rounded-full -mr-8 -mt-8 pointer-events-none" />
+        <div className="border border-rose-100 bg-rose-50/20 rounded-[12px] p-4 relative overflow-hidden transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/10 rounded-[16px] -mr-8 -mt-8 pointer-events-none" />
           
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <div className="space-y-2 flex-grow">
@@ -42,7 +42,7 @@ export const ShippingAddressSection: React.FC<ShippingAddressSectionProps> = ({
                 <span className="text-slate-300">|</span>
                 <span className="text-slate-600 font-medium">{selectedAddress.phoneNumber}</span>
                 {selectedAddress.isDefault && (
-                  <span className="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  <span className="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-[4px] font-bold uppercase tracking-wider">
                     Mặc Định
                   </span>
                 )}
@@ -58,7 +58,7 @@ export const ShippingAddressSection: React.FC<ShippingAddressSectionProps> = ({
 
             <button
               onClick={() => setAddressModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 hover:border-rose-300 text-rose-500 hover:bg-rose-50 rounded-full text-xs font-bold transition-all bouncy-hover shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 hover:border-rose-300 text-rose-500 hover:bg-rose-50 rounded-[8px] text-xs font-bold transition-all bouncy-hover shrink-0"
             >
               <Pencil className="h-3.5 w-3.5" />
               <span>Đổi địa chỉ</span>

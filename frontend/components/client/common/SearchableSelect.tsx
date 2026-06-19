@@ -89,7 +89,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm outline-none transition-all text-left ${
+        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-[8px] bg-slate-50 border border-slate-200 text-sm outline-none transition-all text-left ${
           disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-slate-100/50"
         } ${isOpen ? (accentColor === "primary" ? "border-primary ring-1 ring-primary" : "border-rose-500 ring-1 ring-rose-500") : ""}`}
       >
@@ -101,7 +101,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-[12px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
           {/* Search Input */}
           <div className="flex items-center px-3 py-2 border-b border-slate-100 bg-slate-50/50">
             <Search className="h-4 w-4 text-slate-400 mr-2 shrink-0" />

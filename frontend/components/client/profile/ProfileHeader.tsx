@@ -66,7 +66,7 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
   return (
     <section className="flex flex-col md:flex-row items-center gap-4 bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm">
       <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-        <div className="w-16 h-16 rounded-full overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center transition-transform hover:scale-105">
+        <div className="w-16 h-16 rounded-[16px] overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center transition-transform hover:scale-105">
           {uploadingAvatar ? (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
               <Loader className="animate-spin text-white" size={16} />
@@ -82,7 +82,7 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
             <User size={28} className="text-slate-400" />
           )}
         </div>
-        <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full shadow-md active:scale-90 transition-transform flex items-center justify-center">
+        <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-[8px] shadow-md active:scale-90 transition-transform flex items-center justify-center">
           <span className="material-symbols-outlined text-[10px] font-bold">edit</span>
         </button>
         <input
@@ -99,11 +99,11 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
 
         {/* Badges / Loyalty Info */}
         <div className="mt-1.5 flex flex-wrap justify-center md:justify-start gap-1.5">
-          <span className="px-2.5 py-0.5 bg-gradient-to-r from-rose-50 to-pink-50 text-rose-600 rounded-full text-[10px] font-bold shadow-sm border border-rose-100/50 flex items-center gap-1">
+          <span className="px-2.5 py-0.5 bg-rose-50 text-rose-600 rounded-[6px] text-[10px] font-bold border border-rose-100 flex items-center gap-1">
             <span className="material-symbols-outlined text-[12px]">military_tech</span>
             Thành viên {loyaltyProfile?.currentTierName || "Standard"}
           </span>
-          <span className="px-2.5 py-0.5 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 rounded-full text-[10px] font-bold shadow-sm border border-emerald-100/50 flex items-center gap-1">
+          <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-[6px] text-[10px] font-bold border border-emerald-100 flex items-center gap-1">
             <span className="material-symbols-outlined text-[12px]">stars</span>
             {loyaltyProfile?.availablePoints != null ? loyaltyProfile.availablePoints.toLocaleString("vi-VN") : "0"} điểm
           </span>

@@ -35,7 +35,7 @@ export function PersonalInfo({ userProfile, onEditClick }: PersonalInfoProps) {
         </h2>
         <button
           onClick={onEditClick}
-          className="text-primary font-bold flex items-center gap-1 hover:text-rose-600 active:scale-95 transition-all text-[11px] bg-slate-50 py-1.5 px-3 rounded-full border border-slate-100 hover:bg-slate-100"
+          className="text-primary font-bold flex items-center gap-1 hover:text-rose-600 active:scale-95 transition-all text-[11px] bg-slate-50 py-1.5 px-3 rounded-[8px] border border-slate-100 hover:bg-slate-100"
         >
           <span className="material-symbols-outlined text-[11px] font-bold">edit</span> Chỉnh sửa
         </button>

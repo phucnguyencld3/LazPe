@@ -85,7 +85,7 @@ export default function ProductCarousel({ products, showRank = false }: ProductC
       {showLeftBtn && (
         <button 
           onClick={() => slide('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-20 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all border border-slate-100 hidden md:flex"
+          className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-20 w-10 h-10 bg-white rounded-[8px] shadow-md flex items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all border border-slate-100 hidden md:flex"
         >
           <ChevronLeft size={24} />
         </button>
@@ -108,7 +108,7 @@ export default function ProductCarousel({ products, showRank = false }: ProductC
             className="w-[160px] min-w-[160px] sm:w-[180px] sm:min-w-[180px] lg:w-[calc(20%-12.8px)] lg:min-w-[calc(20%-12.8px)] snap-start relative flex-shrink-0"
           >
             {showRank && (
-              <span className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-orange-500 text-white font-black flex items-center justify-center border-2 border-white shadow-sm z-10 text-sm">
+              <span className="absolute -top-3 -left-3 w-8 h-8 rounded-[6px] bg-orange-500 text-white font-black flex items-center justify-center border-2 border-white shadow-sm z-10 text-sm">
                 {index + 1}
               </span>
             )}
@@ -136,7 +136,7 @@ export default function ProductCarousel({ products, showRank = false }: ProductC
       {showRightBtn && (
         <button 
           onClick={() => slide('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-20 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all border border-slate-100 hidden md:flex"
+          className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-20 w-10 h-10 bg-white rounded-[8px] shadow-md flex items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all border border-slate-100 hidden md:flex"
         >
           <ChevronRight size={24} />
         </button>

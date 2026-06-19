@@ -180,21 +180,21 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
   const getTransactionBadge = (type: string) => {
     switch (type?.toUpperCase()) {
       case "EARN":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Tích điểm</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Tích điểm</span>;
       case "SPEND":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100">Thanh toán</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100">Thanh toán</span>;
       case "REFUND":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">Hoàn điểm</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">Hoàn điểm</span>;
       case "REVOKE":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100">Thu hồi</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100">Thu hồi</span>;
       case "BONUS":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100">Thưởng</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100">Thưởng</span>;
       case "RESET":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-100">Hạ hạng</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-100">Hạ hạng</span>;
       case "DAILY_CHECKIN":
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">Điểm danh</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">Điểm danh</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800">{type}</span>;
+        return <span className="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-slate-100 text-slate-800">{type}</span>;
     }
   };
 
@@ -245,7 +245,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             <span className="material-symbols-outlined text-[200px] font-bold">military_tech</span>
           </div>
           <div className="absolute top-0 right-0 p-5 flex flex-col items-end">
-            <div className={`flex items-center gap-1.5 ${styles.badgeBg} backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase`}>
+            <div className={`flex items-center gap-1.5 ${styles.badgeBg} backdrop-blur-md px-3 py-1 rounded-[6px] text-[10px] font-black tracking-wider uppercase`}>
               <Sparkles className="h-3 w-3" />
               <span>Hạng {profile?.currentTierName}</span>
             </div>
@@ -320,9 +320,9 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
           </div>
 
           {/* Progress bar */}
-          <div className="relative w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="relative w-full h-2 bg-slate-100 rounded-[6px] overflow-hidden">
             <div
-              className={"absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-700"}
+              className={"absolute top-0 left-0 h-full bg-primary rounded-[6px] transition-all duration-700"}
               style={{ width: dynamicProgress + "%" }}
             />
           </div>
@@ -358,7 +358,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
                 {isUserTier && (
                   <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2 z-20">
                     <span
-                      className="text-[9px] bg-slate-800 text-white font-black px-3 py-0.5 rounded-full uppercase tracking-widest shadow-sm"
+                      className="text-[9px] bg-slate-800 text-white font-black px-3 py-0.5 rounded-[4px] uppercase tracking-widest shadow-sm"
                     >
                       Hạng của bạn
                     </span>

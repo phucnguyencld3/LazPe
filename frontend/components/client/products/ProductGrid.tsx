@@ -33,7 +33,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         <p className="text-red-500 font-semibold mb-4">{error}</p>
         <button
           onClick={handleRetry}
-          className="px-6 py-2 bg-primary text-white rounded-full font-medium shadow hover:brightness-110 active:scale-95 transition-all"
+          className="px-6 py-2 bg-primary text-white rounded-[8px] font-medium shadow hover:brightness-110 active:scale-95 transition-all"
         >
           Thử lại
         </button>
@@ -47,7 +47,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         <p className="text-slate-500 font-medium mb-4">Không tìm thấy sản phẩm nào phù hợp với bộ lọc.</p>
         <button
           onClick={handleClearFilters}
-          className="px-6 py-2 bg-primary text-white rounded-full font-medium shadow hover:brightness-110 active:scale-95 transition-all"
+          className="px-6 py-2 bg-primary text-white rounded-[8px] font-medium shadow hover:brightness-110 active:scale-95 transition-all"
         >
           Xóa bộ lọc
         </button>

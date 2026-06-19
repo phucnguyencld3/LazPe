@@ -303,9 +303,9 @@ export default function HeaderV2() {
                   }
                 }}
                 placeholder="Ba mẹ muốn tìm mua gì hôm nay?" 
-                className="w-full h-11 pl-5 pr-14 rounded-full border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400"
+                className="w-full h-11 pl-5 pr-14 rounded-[10px] border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400"
               />
-              <button type="submit" className="absolute right-1 top-1 bottom-1 w-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center transition-colors">
+              <button type="submit" className="absolute right-1 top-1 bottom-1 w-12 bg-primary hover:bg-primary/90 text-white rounded-[8px] flex items-center justify-center transition-colors">
                 <Search size={20} />
               </button>
             </form>
@@ -372,7 +372,7 @@ export default function HeaderV2() {
             <Link href="/wishlist" className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Sản phẩm yêu thích">
               <Heart size={22} className="hover:text-primary transition-colors" />
               {mounted && wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold animate-in zoom-in-50 duration-150">
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-[6px] flex items-center justify-center font-semibold animate-in zoom-in-50 duration-150">
                   {wishlistCount}
                 </span>
               )}
@@ -381,7 +381,7 @@ export default function HeaderV2() {
             <Link href="/cart" className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 transition-colors relative" title="Giỏ hàng">
               <ShoppingCart size={22} className="hover:text-primary transition-colors" />
               {mounted && cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-[6px] flex items-center justify-center font-semibold">
                   {cartCount}
                 </span>
               )}
@@ -400,12 +400,12 @@ export default function HeaderV2() {
               >
                 <button
                   onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
-                  className={`p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-full transition-colors relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
+                  className={`p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-[8px] transition-colors relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
                   title="Thông báo"
                 >
                   <Bell size={22} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                    <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] w-4.5 h-4.5 rounded-[6px] flex items-center justify-center font-bold">
                       {unreadCount}
                     </span>
                   )}
@@ -452,7 +452,7 @@ export default function HeaderV2() {
                               <span className="absolute top-4 right-3 w-2 h-2 bg-primary rounded-full"></span>
                             )}
 
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex-shrink-0 overflow-hidden flex items-center justify-center border border-primary/20 text-primary">
+                            <div className="w-9 h-9 rounded-[8px] bg-primary/10 flex-shrink-0 overflow-hidden flex items-center justify-center border border-primary/20 text-primary">
                               {notif.thumbnailImage ? (
                                 <img src={notif.thumbnailImage} alt="" className="w-full h-full object-cover" />
                               ) : (
@@ -499,7 +499,7 @@ export default function HeaderV2() {
                 onMouseLeave={() => setUserDropdownOpen(false)}
               >
                 {/* Avatar / Circle Trigger */}
-                <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center transition-all duration-200 hover:border-primary cursor-pointer">
+                <div className="w-9 h-9 rounded-[10px] overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center transition-all duration-200 hover:border-primary cursor-pointer">
                   {user?.avatar ? (
                     <img
                       src={user.avatar}
@@ -520,7 +520,7 @@ export default function HeaderV2() {
                   <div className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden py-2">
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-slate-50 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-[8px] overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0 flex items-center justify-center">
                         {user?.avatar ? (
                           <img
                             src={user.avatar}
@@ -605,7 +605,7 @@ export default function HeaderV2() {
                 </Link>
                 <Link 
                   href="/register" 
-                  className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-full transition-all duration-200 active:scale-95 shadow-sm"
+                  className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-[8px] transition-all duration-200 active:scale-95 shadow-sm"
                 >
                   Đăng ký
                 </Link>

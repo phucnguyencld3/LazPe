@@ -45,7 +45,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
   return (
     <div className="lg:col-span-8 space-y-md">
       {/* Bulk Actions Bar */}
-      <div className="bg-white p-5 rounded-2xl flex justify-between items-center shadow-sm border border-slate-100">
+      <div className="bg-white p-5 rounded-[12px] flex justify-between items-center shadow-sm border border-slate-100">
         <label className="flex items-center gap-sm cursor-pointer group">
           <input
             type="checkbox"
@@ -141,7 +141,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                   <div key={detail.cartDetailID} className="flex flex-col relative mb-4">
                     {/* Main Product */}
                     <div
-                      className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border relative z-10 ${isChecked
+                      className={`bg-white p-3 sm:p-4 rounded-[12px] shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border relative z-10 ${isChecked
                         ? "border-rose-200 bg-rose-500/[0.02]"
                         : "border-slate-100 hover:border-slate-200"
                         }`}
@@ -210,10 +210,10 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
                         {/* Quantity & Delete Actions */}
                         <div className="flex items-center gap-3 sm:gap-4 shrink-0 justify-between sm:justify-start w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-slate-100">
-                          <div className="flex items-center bg-slate-100 rounded-full p-0.5 border border-slate-200">
+                          <div className="flex items-center bg-slate-100 rounded-[6px] p-0.5 border border-slate-200">
                             <button
                               onClick={() => handleUpdateQuantity(detail, detail.quantity - 1)}
-                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-[6px] bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90"
                             >
                               <Minus size={10} />
                             </button>
@@ -223,7 +223,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                             <button
                               onClick={() => handleUpdateQuantity(detail, detail.quantity + 1)}
                               disabled={flashSaleItem && detail.quantity >= maxAllowedQuantity}
-                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-[6px] bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-rose-500 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Plus size={10} />
                             </button>
@@ -231,7 +231,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
                           <button
                             onClick={() => handleRemoveItem(detail.cartDetailID)}
-                            className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-1.5 hover:bg-rose-50 rounded-full transition-all active:scale-90 text-[18px]"
+                            className="material-symbols-outlined text-slate-400 hover:text-rose-500 p-1.5 hover:bg-rose-50 rounded-[6px] transition-all active:scale-90 text-[18px]"
                           >
                             delete
                           </button>
@@ -244,7 +244,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                       <div className="ml-8 sm:ml-12 pl-3 border-l-2 border-emerald-200 relative -mt-3 pt-4 z-0">
                         <div className="bg-emerald-50/[0.4] p-2 sm:p-2.5 rounded-lg border border-emerald-100 shadow-sm flex flex-col sm:flex-row gap-3 items-center group transition-all">
                           <div className="flex items-center w-full sm:w-auto gap-3">
-                            <div className="w-6 h-6 flex items-center justify-center text-emerald-500 shrink-0 bg-emerald-100 rounded-full">
+                            <div className="w-6 h-6 flex items-center justify-center text-emerald-500 shrink-0 bg-emerald-100 rounded-[6px]">
                               <span className="material-symbols-outlined text-[14px]">redeem</span>
                             </div>
 
@@ -281,7 +281,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
 
                           <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto shrink-0 gap-4 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-emerald-200">
                             <p className="text-emerald-600 font-extrabold text-xs sm:text-sm">Miễn phí</p>
-                            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 font-bold text-[10px] rounded-full border border-emerald-200">
+                            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 font-bold text-[10px] rounded-[4px] border border-emerald-200">
                               x{associatedGift.quantity}
                             </span>
                           </div>
@@ -305,7 +305,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 return (
                   <div
                     key={gift.cartDetailID}
-                    className="bg-emerald-50/[0.3] p-3 sm:p-4 rounded-xl shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border border-emerald-200 mb-4"
+                    className="bg-emerald-50/[0.3] p-3 sm:p-4 rounded-[12px] shadow-sm flex flex-row gap-3 sm:gap-4 items-start sm:items-center group transition-all border border-emerald-200 mb-4"
                   >
                     <div className="flex items-center h-16 sm:h-20 shrink-0">
                       <input
@@ -341,7 +341,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                       </div>
 
                       <div className="flex items-center shrink-0 w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-emerald-200 justify-end">
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-[4px] border border-emerald-200">
                           Số lượng: {gift.quantity}
                         </span>
                       </div>

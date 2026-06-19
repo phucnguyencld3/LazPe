@@ -5,7 +5,7 @@ import { ShoppingBag } from "lucide-react";
 export const EmptyCart: React.FC = () => {
   return (
     <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-100 space-y-6 max-w-2xl mx-auto my-12">
-      <div className="w-20 h-20 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
+      <div className="w-20 h-20 rounded-[16px] bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
         <ShoppingBag size={36} />
       </div>
       <div className="space-y-2">
@@ -17,7 +17,7 @@ export const EmptyCart: React.FC = () => {
       <div className="pt-4">
         <Link
           href="/products"
-          className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3.5 rounded-full font-bold shadow-md shadow-rose-500/10 transition-all inline-block hover:scale-105 active:scale-95"
+          className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3.5 rounded-[8px] font-bold shadow-md shadow-rose-500/10 transition-all inline-block hover:scale-105 active:scale-95"
         >
           Khám phá sản phẩm ngay
         </Link>

@@ -95,7 +95,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                       className="w-full h-full object-cover rounded-lg"
                       src={image || "/images/placeholder.jpg"}
                     />
-                    <span className={`absolute -top-2 -right-2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm ${item.isGift ? "bg-emerald-500" : "bg-rose-500"}`}>
+                    <span className={`absolute -top-2 -right-2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[6px] border-2 border-white shadow-sm ${item.isGift ? "bg-emerald-500" : "bg-rose-500"}`}>
                       x{item.quantity}
                     </span>
                   </div>

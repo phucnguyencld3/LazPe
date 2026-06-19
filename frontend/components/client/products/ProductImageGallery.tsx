@@ -33,12 +33,12 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-square rounded-2xl bg-slate-100 overflow-hidden border border-slate-100">
+      <div className="relative aspect-square rounded-[12px] bg-white overflow-hidden border border-slate-100 p-2">
         {currentImage ? (
           <img
             src={currentImage}
             alt={productName}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-contain transition-transform duration-300 hover:scale-105"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
@@ -47,7 +47,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         )}
 
         {hasDiscount && displayDiscountPrice !== undefined && (
-          <div className="absolute top-4 left-4 bg-rose-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm z-10">
+          <div className="absolute top-4 left-4 bg-rose-500 text-white px-3 py-1 rounded-[4px] text-xs font-semibold shadow-sm z-10">
             Khuyến mãi -{Math.round(((displayPrice - displayDiscountPrice) / displayPrice) * 100)}%
           </div>
         )}
@@ -60,7 +60,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             <button
               key={idx}
               onClick={() => setSelectedImage(url)}
-              className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+              className={`w-16 h-16 rounded-[8px] overflow-hidden border-2 shrink-0 transition-all bg-white ${
                 currentImage === url
                   ? "border-primary shadow-sm"
                   : "border-transparent hover:border-primary/50"
@@ -77,7 +77,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         {/* Wishlist Toggle Button */}
         <button
           onClick={() => setIsWishlisted && setIsWishlisted(!isWishlisted)}
-          className={`h-10 w-10 rounded-full flex items-center justify-center border transition-all shrink-0 active:scale-90 ${
+          className={`h-10 w-10 rounded-[8px] flex items-center justify-center border transition-all shrink-0 active:scale-90 ${
             isWishlisted
               ? "bg-rose-50 border-rose-200 text-rose-500"
               : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 shadow-sm"
@@ -102,7 +102,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
               toast.success("Đã sao chép đường dẫn sản phẩm!");
             }
           }}
-          className="h-10 w-10 rounded-full flex items-center justify-center border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 active:scale-90 shadow-sm"
+          className="h-10 w-10 rounded-[8px] flex items-center justify-center border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 active:scale-90 shadow-sm"
           title="Chia sẻ sản phẩm"
         >
           <span className="material-symbols-outlined text-[18px]">share</span>
