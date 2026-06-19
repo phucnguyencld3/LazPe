@@ -8,7 +8,7 @@ function UtilityIcon({ icon, color, label, badge, href }: any) {
   const content = (
     <>
       <div className={`relative w-12 h-12 md:w-14 md:h-14 rounded-[14px] bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm group-hover:bg-white group-hover:border-slate-200 group-hover:-translate-y-1 transition-all`}>
-        {React.cloneElement(icon as React.ReactElement, { className: color })}
+        {React.cloneElement(icon as React.ReactElement<any>, { className: color })}
         {badge && (
           <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/3 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm border border-white whitespace-nowrap">
             {badge}
