@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getPublicVouchers, getWalletVouchers, collectVoucher, activateExclusiveVoucher, Voucher, UserWalletVoucher } from '@/lib/api';
+import { getPublicVouchers, getWalletVouchers, collectVoucher, activateExclusiveVoucher, UserWalletVoucher } from '@/lib/api';
+import { Voucher } from '@/types';
 import { toast } from 'sonner';
 import { Ticket, Gift, Sparkles, Clock, CheckCircle } from 'lucide-react';
 
