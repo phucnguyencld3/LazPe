@@ -59,7 +59,7 @@ namespace PolyBabyAPI.Models
         [ValidateNever]
         public ApplicationUser User { get; set; }
 
-        // ✅ Navigation tới Voucher
+        // Navigation tới Voucher
         [ForeignKey(nameof(VoucherID))]
         [ValidateNever]
         public virtual Voucher? Voucher { get; set; }

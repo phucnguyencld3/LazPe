@@ -202,6 +202,8 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100">Thưởng</span>;
       case "RESET":
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-100">Hạ hạng</span>;
+      case "DAILY_CHECKIN":
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">Điểm danh</span>;
       default:
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800">{type}</span>;
     }
@@ -518,6 +520,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
                   { id: "SPEND", label: "Tiêu điểm" },
                   { id: "REFUND", label: "Hoàn điểm" },
                   { id: "REVOKE", label: "Thu hồi" },
+                  { id: "DAILY_CHECKIN", label: "Điểm danh" },
                 ]
               ).map((type) => (
                 <button

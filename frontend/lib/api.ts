@@ -2711,3 +2711,103 @@ export async function googleLogin(idToken: string): Promise<any> {
   }
 }
 
+// VOUCHER APIS
+export interface UserWalletVoucher {
+  userVoucherID: number;
+  voucherID: number;
+  voucherCode: string;
+  voucherName: string;
+  discountType: number;
+  discountValue: number;
+  minOrderValue: number;
+  maxDiscount: number;
+  startDate: string;
+  endDate: string;
+  voucherType: string;
+  sourceType: string;
+  status: string;
+  collectedAt: string;
+  usedAt: string | null;
+}
+
+export async function getWalletVouchers(token: string): Promise<UserWalletVoucher[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/wallet`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching wallet vouchers:", error);
+    return [];
+  }
+}
+
+export async function activateExclusiveVoucher(token: string, code: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/activate-code`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}` 
+      },
+      body: JSON.stringify({ code }),
+    });
+    const result = await response.json().catch(() => ({}));
+    return { success: response.ok, message: result.message || (response.ok ? "Kích hoạt voucher thành công." : "Mã voucher không hợp lệ.") };
+  } catch (error) {
+    console.error("Error activating exclusive voucher:", error);
+    return { success: false, message: "Lỗi kết nối server." };
+  }
+}
+
+// LOYALTY CHECK-IN APIS
+export interface DailyCheckInStatus {
+  hasCheckedInToday: boolean;
+  currentStreak: number;
+  pointsForNextCheckIn: number;
+  rewardSequence: number[];
+}
+
+export interface DailyCheckInResult {
+  success: boolean;
+  message: string;
+  pointsEarned: number;
+  newStreak: number;
+  totalPoints: number;
+}
+
+export async function getCheckInStatus(token: string): Promise<{ success: boolean; data?: DailyCheckInStatus; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/checkin/status`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return { success: false, message: "Lỗi kết nối server." };
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching check-in status:", error);
+    return { success: false, message: "Lỗi mạng." };
+  }
+}
+
+export async function performCheckIn(token: string): Promise<DailyCheckInResult> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Loyalty/checkin`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.data?.message || result.message || "Lỗi xử lý",
+      pointsEarned: result.data?.pointsEarned || 0,
+      newStreak: result.data?.newStreak || 0,
+      totalPoints: result.data?.totalPoints || 0
+    };
+  } catch (error) {
+    console.error("Error performing check-in:", error);
+    return { success: false, message: "Lỗi mạng", pointsEarned: 0, newStreak: 0, totalPoints: 0 };
+  }
+}

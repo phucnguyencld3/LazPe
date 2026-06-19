@@ -22,5 +22,8 @@ namespace PolyBabyAPI.Interface
         Task<bool> RefundPointsAsync(string userId, int pointsToUse, int invoiceId);
         Task<bool> AddPointsAsync(string userId, int amount, string transactionType, string description, int? invoiceId = null);
         Task<decimal> CalculateRedemptionDiscountAsync(string userId, int pointsToUse);
+
+        Task<PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInStatusResponse> GetCheckInStatusAsync(string userId);
+        Task<PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInResultResponse> PerformDailyCheckInAsync(string userId);
     }
 }

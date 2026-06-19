@@ -26,6 +26,10 @@ namespace PolyBabyAPI.Models
 
         public int RankAdjustmentOffset { get; set; } = 0;
 
+        public int CurrentCheckInStreak { get; set; } = 0;
+
+        public DateTime? LastCheckInDate { get; set; }
+
         public DateTime LastUpdated { get; set; } = DateTime.Now;
 
         [ValidateNever]

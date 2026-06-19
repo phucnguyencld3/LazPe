@@ -349,6 +349,66 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Tra cứu đơn hàng công khai qua InvoiceCode hoặc TrackingCode
+        /// </summary>
+        [HttpGet("public-tracking/{code}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PublicTracking(string code)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return BadRequest(new { message = "Vui lòng nhập mã đơn hàng hoặc mã vận đơn" });
+
+                var codeLower = code.Trim().ToLower();
+
+                // Tìm kiếm hóa đơn theo InvoiceCode, TrackingCode hoặc InvoiceID
+                var invoiceQuery = _context.Invoices
+                    .Include(i => i.InvoiceDetails)
+                        .ThenInclude(d => d.Variant)
+                            .ThenInclude(v => v.Product)
+                    .Include(i => i.InvoiceDetails)
+                        .ThenInclude(d => d.Bundle)
+                    .Where(i => !i.IsDeleted && (
+                        (i.InvoiceCode != null && i.InvoiceCode.ToLower() == codeLower) ||
+                        (i.TrackingCode != null && i.TrackingCode.ToLower() == codeLower) ||
+                        i.InvoiceID.ToString() == codeLower
+                    ));
+
+                var invoice = await invoiceQuery.AsNoTracking().FirstOrDefaultAsync();
+
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy đơn hàng với mã này" });
+
+                var response = new InvoiceDtos.PublicTrackingResponse
+                {
+                    InvoiceID = invoice.InvoiceID,
+                    InvoiceCode = invoice.InvoiceCode,
+                    TrackingCode = invoice.TrackingCode,
+                    Status = invoice.Status.GetDisplayName(),
+                    StatusCode = (int)invoice.Status,
+                    TotalPrice = invoice.TotalPrice,
+                    CreatedAt = invoice.CreatedAt,
+                    Items = invoice.InvoiceDetails.Select(d => new InvoiceDtos.PublicTrackingItemDto
+                    {
+                        ProductName = d.Variant != null ? (d.Variant.Product?.ProductName ?? "Sản phẩm") : (d.Bundle?.Name ?? "Combo không xác định"),
+                        VariantName = d.Variant?.VariantName,
+                        Quantity = d.Quantity,
+                        Price = d.UnitPrice,
+                        ImageUrl = d.Variant != null ? (d.Variant.ImageUrl ?? d.Variant.Product?.Images?.FirstOrDefault()?.ImageUrl) : d.Bundle?.ImageUrl
+                    }).ToList()
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting public tracking for code {Code}", code);
+                return StatusCode(500, new { message = "Lỗi khi tra cứu đơn hàng", error = ex.Message });
+            }
+        }
+
         // ======================== ADDRESS ENDPOINTS ============================
 
         /// <summary>
@@ -545,11 +605,12 @@ namespace PolyBabyAPI.Controllers
  
                 try
                 {
+                    var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                     var notifDto = new CreateNotificationDto
                     {
                         Title = "Đơn hàng mới",
-                        ShortDescription = $"Khách hàng {user.FullName} vừa đặt đơn hàng #{invoice.InvoiceCode}",
-                        Content = $"<p>Đơn hàng mới <strong>#{invoice.InvoiceCode}</strong> đã được đặt thành công bởi khách hàng <strong>{user.FullName}</strong> ({user.Email}).</p><p>Tổng giá trị: {invoice.TotalPrice:N0} đ.</p>",
+                        ShortDescription = $"Khách hàng {user.FullName} vừa đặt đơn hàng #{displayCode}",
+                        Content = $"<p>Đơn hàng mới <strong>#{displayCode}</strong> đã được đặt thành công bởi khách hàng <strong>{user.FullName}</strong> ({user.Email}).</p><p>Tổng giá trị: {invoice.TotalPrice:N0} đ.</p>",
                         Type = NotificationType.Order,
                         Priority = NotificationPriority.High,
                         ActionType = ActionType.CustomUrl,
@@ -658,11 +719,12 @@ namespace PolyBabyAPI.Controllers
                     var invoice = await _invoiceService.GetByIdAsync(id);
                     if (invoice != null)
                     {
+                        var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Đơn hàng đã được xác nhận",
-                            ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã được xác nhận.",
-                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                            ShortDescription = $"Đơn hàng #{displayCode} đã được xác nhận.",
+                            Content = $"<p>Đơn hàng <strong>#{displayCode}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -707,11 +769,12 @@ namespace PolyBabyAPI.Controllers
                     var invoice = await _invoiceService.GetByIdAsync(id);
                     if (invoice != null)
                     {
+                        var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Đơn hàng đang được vận chuyển",
-                            ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã bắt đầu được vận chuyển.",
-                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                            ShortDescription = $"Đơn hàng #{displayCode} đã bắt đầu được vận chuyển.",
+                            Content = $"<p>Đơn hàng <strong>#{displayCode}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -857,11 +920,12 @@ namespace PolyBabyAPI.Controllers
                             var invoice = await _invoiceService.GetByIdAsync(id);
                             if (invoice != null)
                             {
+                                var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                                 var notifDto = new CreateNotificationDto
                                 {
                                     Title = "Đơn hàng đã được xác nhận",
-                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã được xác nhận.",
-                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
+                                    ShortDescription = $"Đơn hàng #{displayCode} đã được xác nhận.",
+                                    Content = $"<p>Đơn hàng <strong>#{displayCode}</strong> của bạn đã được xác nhận thành công và đang chuẩn bị giao hàng.</p>",
                                     Type = NotificationType.Order,
                                     Priority = NotificationPriority.Medium,
                                     ActionType = ActionType.CustomUrl,
@@ -926,11 +990,12 @@ namespace PolyBabyAPI.Controllers
                             var invoice = await _invoiceService.GetByIdAsync(id);
                             if (invoice != null)
                             {
+                                var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                                 var notifDto = new CreateNotificationDto
                                 {
                                     Title = "Đơn hàng đang được vận chuyển",
-                                    ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} đã bắt đầu được vận chuyển.",
-                                    Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
+                                    ShortDescription = $"Đơn hàng #{displayCode} đã bắt đầu được vận chuyển.",
+                                    Content = $"<p>Đơn hàng <strong>#{displayCode}</strong> của bạn đã được bàn giao cho đối tác vận chuyển và đang được giao đến bạn.</p>",
                                     Type = NotificationType.Order,
                                     Priority = NotificationPriority.Medium,
                                     ActionType = ActionType.CustomUrl,
@@ -1028,11 +1093,12 @@ namespace PolyBabyAPI.Controllers
                 {
                     try
                     {
+                        var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Đơn hàng đã bị hủy",
-                            ShortDescription = $"Đơn hàng #{invoice.InvoiceCode} của bạn đã bị hủy.",
-                            Content = $"<p>Đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã bị hủy bởi quản trị viên.</p><p>Lý do: {request?.Reason ?? "Không có lý do cụ thể"}</p>",
+                            ShortDescription = $"Đơn hàng #{displayCode} của bạn đã bị hủy.",
+                            Content = $"<p>Đơn hàng <strong>#{displayCode}</strong> của bạn đã bị hủy bởi quản trị viên.</p><p>Lý do: {request?.Reason ?? "Không có lý do cụ thể"}</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.High,
                             ActionType = ActionType.CustomUrl,
@@ -1078,11 +1144,12 @@ namespace PolyBabyAPI.Controllers
                 {
                     try
                     {
+                        var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Yêu cầu hủy đơn được chấp nhận",
-                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceCode} đã được phê duyệt.",
-                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã được phê duyệt thành công. Tiền, hàng và voucher (nếu có) đã được xử lý hoàn trả.</p>",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{displayCode} đã được phê duyệt.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{displayCode}</strong> của bạn đã được phê duyệt thành công. Tiền, hàng và voucher (nếu có) đã được xử lý hoàn trả.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,
@@ -1128,11 +1195,12 @@ namespace PolyBabyAPI.Controllers
                 {
                     try
                     {
+                        var displayCode = !string.IsNullOrEmpty(invoice.InvoiceCode) ? invoice.InvoiceCode : invoice.InvoiceID.ToString();
                         var notifDto = new CreateNotificationDto
                         {
                             Title = "Yêu cầu hủy đơn bị từ chối",
-                            ShortDescription = $"Yêu cầu hủy đơn hàng #{invoice.InvoiceCode} đã bị từ chối.",
-                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{invoice.InvoiceCode}</strong> của bạn đã bị từ chối. Đơn hàng của bạn sẽ tiếp tục được xử lý và giao đến bạn.</p>",
+                            ShortDescription = $"Yêu cầu hủy đơn hàng #{displayCode} đã bị từ chối.",
+                            Content = $"<p>Yêu cầu hủy đơn hàng <strong>#{displayCode}</strong> của bạn đã bị từ chối. Đơn hàng của bạn sẽ tiếp tục được xử lý và giao đến bạn.</p>",
                             Type = NotificationType.Order,
                             Priority = NotificationPriority.Medium,
                             ActionType = ActionType.CustomUrl,

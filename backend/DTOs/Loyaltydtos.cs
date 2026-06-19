@@ -74,5 +74,22 @@ namespace PolyBabyAPI.DTOs
             public LoyaltyEarnPolicySummary EarnPolicy { get; set; } = new LoyaltyEarnPolicySummary();
             public LoyaltyRedeemPolicySummary RedeemPolicy { get; set; } = new LoyaltyRedeemPolicySummary();
         }
+
+        public class DailyCheckInStatusResponse
+        {
+            public bool HasCheckedInToday { get; set; }
+            public int CurrentStreak { get; set; }
+            public int PointsForNextCheckIn { get; set; }
+            public int[] RewardSequence { get; set; } = new int[7];
+        }
+
+        public class DailyCheckInResultResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public int PointsEarned { get; set; }
+            public int NewStreak { get; set; }
+            public int TotalPoints { get; set; }
+        }
     }
 }

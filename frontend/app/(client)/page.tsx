@@ -5,15 +5,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import SidebarMenuV2 from '@/components/client/layout/SidebarMenuV2';
-import { Heart, Phone, Info, ShieldCheck, Pill, Gift, Video, FileText, RotateCcw, Flame, Sparkles, Tag, LayoutGrid, Package } from 'lucide-react';
+import { Heart, Phone, Info, ShieldCheck, Pill, Gift, Video, FileText, RotateCcw, Flame, Sparkles, Tag, LayoutGrid, Package, Search, Ticket, Calendar } from 'lucide-react';
 import ProductCard from '@/components/client/common/ProductCard';
 import ProductCarousel from '@/components/client/products/ProductCarousel';
-import { getProducts, getCurrentFlashSales, getRecommendations, getBundlesAsProducts } from '@/lib/api';
-import { Product, FlashSaleCampaign } from '@/types';
+import { getProducts, getCurrentFlashSales, getRecommendations, getBundlesAsProducts, getPublicVouchers, collectVoucher } from '@/lib/api';
+import { Product, FlashSaleCampaign, Voucher } from '@/types';
+import { toast } from 'sonner';
 
 export default function HomePageV2() {
   const [bestSellerProducts, setBestSellerProducts] = useState<Product[]>([]);
   const [flashSaleCampaigns, setFlashSaleCampaigns] = useState<FlashSaleCampaign[]>([]);
+  const [publicVouchers, setPublicVouchers] = useState<Voucher[]>([]);
 
   // Banner Slider State
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -69,6 +71,11 @@ export default function HomePageV2() {
           setFlashSaleCampaigns(sortedCampaigns);
         }
 
+        const vouchersList = await getPublicVouchers();
+        if (isMounted && vouchersList) {
+          setPublicVouchers(vouchersList.filter(v => !v.isCollected));
+        }
+
         // Fetch Best Sellers
         const bestSellerData = await getProducts(1, 10, "", undefined, "RatingCount", "desc");
         if (isMounted && bestSellerData?.items) {
@@ -90,8 +97,8 @@ export default function HomePageV2() {
         if (initialTab === 'foryou') {
           dataItems = await getRecommendations(10);
           if (!dataItems || dataItems.length === 0) {
-             const fallbackData = await getProducts(1, 10, "", undefined, "CreatedAt", "asc");
-             dataItems = fallbackData?.items || [];
+            const fallbackData = await getProducts(1, 10, "", undefined, "CreatedAt", "asc");
+            dataItems = fallbackData?.items || [];
           }
         } else if (initialTab === 'combo') {
           dataItems = await getBundlesAsProducts();
@@ -99,7 +106,7 @@ export default function HomePageV2() {
           let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
           if (initialTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
           if (initialTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
-          if (initialTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; } 
+          if (initialTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
           if (initialTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
 
           const data = await getProducts(1, 30, "", undefined, sortBy, sortDir, hasDiscount);
@@ -107,7 +114,7 @@ export default function HomePageV2() {
         }
 
         if (isMounted && dataItems.length > 0) {
-           setTabData(prev => ({
+          setTabData(prev => ({
             ...prev,
             [initialTab]: {
               ...prev[initialTab],
@@ -147,8 +154,8 @@ export default function HomePageV2() {
       if (tab === 'foryou') {
         dataItems = await getRecommendations(10);
         if (!dataItems || dataItems.length === 0) {
-           const fallbackData = await getProducts(1, 10, "", undefined, "CreatedAt", "asc");
-           dataItems = fallbackData?.items || [];
+          const fallbackData = await getProducts(1, 10, "", undefined, "CreatedAt", "asc");
+          dataItems = fallbackData?.items || [];
         }
       } else if (tab === 'combo') {
         dataItems = await getBundlesAsProducts();
@@ -156,7 +163,7 @@ export default function HomePageV2() {
         let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
         if (tab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
         if (tab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
-        if (tab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; } 
+        if (tab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
         if (tab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
 
         const data = await getProducts(1, 30, "", undefined, sortBy, sortDir, hasDiscount);
@@ -197,7 +204,7 @@ export default function HomePageV2() {
         let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
         if (activeTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
         if (activeTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
-        if (activeTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; } 
+        if (activeTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
         if (activeTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
 
         const data = await getProducts(nextPage, 30, "", undefined, sortBy, sortDir, hasDiscount);
@@ -246,9 +253,8 @@ export default function HomePageV2() {
           {bannerImages.map((src, index) => (
             <div
               key={index}
-              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                index === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
             >
               {/* Fallback to simple img tag for local development without configuration constraints */}
               <img
@@ -275,22 +281,21 @@ export default function HomePageV2() {
               <button
                 key={index}
                 onClick={(e) => { e.stopPropagation(); setCurrentBanner(index); }}
-                className={`h-2.5 rounded-full transition-all ${
-                  index === currentBanner ? 'bg-white w-6 opacity-100' : 'bg-white/50 hover:bg-white/80 w-2.5'
-                }`}
+                className={`h-2.5 rounded-full transition-all ${index === currentBanner ? 'bg-white w-6 opacity-100' : 'bg-white/50 hover:bg-white/80 w-2.5'
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
           </div>
 
           {/* Arrows */}
-          <button 
+          <button
             onClick={(e) => { e.stopPropagation(); setCurrentBanner(prev => (prev - 1 + bannerImages.length) % bannerImages.length); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <ChevronLeft size={24} />
           </button>
-          <button 
+          <button
             onClick={(e) => { e.stopPropagation(); setCurrentBanner(prev => (prev + 1) % bannerImages.length); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
@@ -299,145 +304,150 @@ export default function HomePageV2() {
         </div>
 
         {/* Tiện Ích */}
-        <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6">
-          <h3 className="font-bold text-xl mb-6 text-slate-800">Tiện Ích</h3>
-          <div className="flex flex-nowrap overflow-x-auto lg:overflow-hidden pb-4 -mx-1 px-1 scrollbar-hide gap-4 sm:gap-6 lg:gap-2 xl:gap-4 lg:justify-between overscroll-x-contain touch-pan-x w-full">
+        <div className="bg-white rounded-[10px] shadow-sm px-5 py-3 md:px-6 md:py-4 mb-2">
+          <h3 className="font-bold text-xl mb-3 text-slate-800">Tiện Ích</h3>
+          <div className="flex flex-nowrap overflow-x-auto lg:overflow-hidden pb-2 -mx-1 px-1 scrollbar-hide gap-4 sm:gap-6 lg:gap-2 xl:gap-4 lg:justify-between overscroll-x-contain touch-pan-x w-full">
+            <UtilityIcon href="/rewards" icon={<Calendar size={28} className="text-white" />} color="bg-red-500" label="Điểm Danh" />
+            <UtilityIcon href="/order-tracking" icon={<Search size={28} className="text-white" />} color="bg-indigo-500" label="Tra Cứu Đơn" />
             <UtilityIcon href="/profile?tab=orders" icon={<Package size={28} className="text-white" />} color="bg-cyan-500" label="Đơn Hàng Của Tôi" />
             <UtilityIcon href="/wishlist" icon={<Heart size={28} className="text-white" />} color="bg-rose-500" label="SP Yêu Thích" />
-            <UtilityIcon href="/profile?tab=vouchers" icon={<Gift size={28} className="text-white" />} color="bg-pink-500" label="Kho Voucher" />
+            <UtilityIcon href="/vouchers" icon={<Ticket size={28} className="text-white" />} color="bg-orange-500" label="Kho Voucher" />
             <UtilityIcon href="/profile?tab=loyalty" icon={<Sparkles size={28} className="text-white" />} color="bg-amber-400" label="Thành Viên" />
             <UtilityIcon href="/products?sort=sale" icon={<Tag size={28} className="text-white" />} color="bg-yellow-500" label="Khuyến Mãi" />
-            <UtilityIcon href="tel:19001000" icon={<Phone size={28} className="text-white" />} color="bg-rose-400" label="Gọi CSKH" />
-            <UtilityIcon href="/about-us" icon={<Info size={28} className="text-white" />} color="bg-blue-500" label="Về Chúng Tôi" />
-            <UtilityIcon href="/privacy" icon={<ShieldCheck size={28} className="text-white" />} color="bg-green-500" label="Chính Sách" />
-            <UtilityIcon href="/terms" icon={<FileText size={28} className="text-white" />} color="bg-purple-500" label="Điều Khoản" />
           </div>
         </div>
 
+        {/* Ưu Đãi Mới */}
+        {publicVouchers.length > 0 && (
+          <HomeVoucherBlock 
+            vouchers={publicVouchers} 
+            onCollectSuccess={(id) => setPublicVouchers(prev => prev.filter(v => v.voucherID !== id))} 
+          />
+        )}
         {/* Các Chương Trình Flash Sale Thực Tế */}
         {loadingFlash ? (
-          <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 mb-6">
+          <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 mb-2">
             <p className="text-slate-500 text-sm">Đang tải chương trình Flash Sale...</p>
           </div>
-        ) : flashSaleCampaigns.length > 0 ? (
+        ) : (flashSaleCampaigns.length > 0 || publicVouchers.length > 0) ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              {flashSaleCampaigns.slice(0, visibleCampaignsCount).map((campaign, index) => (
-                <div key={campaign.campaignId || `campaign-${index}`} className={campaign.flashSaleItems.length <= 2 ? "col-span-1" : "col-span-1 lg:col-span-2"}>
-                  <FlashSaleCampaignBlock campaign={campaign} />
-                </div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2 items-stretch">
+          {flashSaleCampaigns.slice(0, visibleCampaignsCount).map((campaign, index) => (
+            <div key={campaign.campaignId || `campaign-${index}`} className={campaign.flashSaleItems.length <= 2 ? "col-span-1" : "col-span-1 lg:col-span-2"}>
+              <FlashSaleCampaignBlock campaign={campaign} />
             </div>
-            {visibleCampaignsCount < flashSaleCampaigns.length && (
-              <div className="flex justify-center mb-6 -mt-4">
-                <button
-                  onClick={() => setVisibleCampaignsCount(prev => prev + 1)}
-                  className="bg-white border-2 border-orange-500 text-orange-500 font-bold py-1.5 px-10 rounded-full hover:bg-orange-50 transition-colors shadow-sm text-sm"
-                >
-                  Xem thêm chương trình khác
-                </button>
-              </div>
-            )}
-          </>
+          ))}
+        </div>
+        {visibleCampaignsCount < flashSaleCampaigns.length && (
+          <div className="flex justify-center mb-6 -mt-4">
+            <button
+              onClick={() => setVisibleCampaignsCount(prev => prev + 1)}
+              className="bg-white border-2 border-orange-500 text-orange-500 font-bold py-1.5 px-10 rounded-full hover:bg-orange-50 transition-colors shadow-sm text-sm"
+            >
+              Xem thêm chương trình khác
+            </button>
+          </div>
+        )}
+      </>
         ) : null}
 
-        {/* Sản phẩm Bán Chạy */}
-        <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-xl text-slate-800">🔥 Top 10 Bán Chạy Nhất</h3>
-          </div>
-          {loadingBest ? (
-            <p className="text-slate-500 text-sm">Đang tải sản phẩm...</p>
-          ) : bestSellerProducts.length > 0 ? (
-            <ProductCarousel products={bestSellerProducts} />
+      {/* Sản phẩm Bán Chạy */}
+      <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-xl text-slate-800">🔥 Top 10 Bán Chạy Nhất</h3>
+        </div>
+        {loadingBest ? (
+          <p className="text-slate-500 text-sm">Đang tải sản phẩm...</p>
+        ) : bestSellerProducts.length > 0 ? (
+          <ProductCarousel products={bestSellerProducts} />
+        ) : (
+          <p className="text-slate-500 text-sm">Chưa có sản phẩm nào.</p>
+        )}
+      </div>
+
+
+
+      {/* Tab Sản Phẩm */}
+      <div className="bg-white rounded-[10px] shadow-sm mb-6">
+        {/* Tabs Navigation */}
+        <div className="flex border-b overflow-x-auto hide-scrollbar sticky top-16 bg-white z-40 rounded-t-[10px] shadow-sm">
+          <button
+            onClick={() => handleTabChange('all')}
+            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'all' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+          >
+            <LayoutGrid size={18} className={activeTab === 'all' ? 'text-primary' : 'text-slate-400'} />
+            <span className="font-bold text-xs whitespace-nowrap">Tất Cả</span>
+          </button>
+          <button
+            onClick={() => handleTabChange('foryou')}
+            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'foryou' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+          >
+            <Heart size={18} className={activeTab === 'foryou' ? 'text-primary' : 'text-slate-400'} />
+            <span className="font-bold text-xs whitespace-nowrap">Dành Cho Bạn</span>
+          </button>
+          <button
+            onClick={() => handleTabChange('bestseller')}
+            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'bestseller' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+          >
+            <Flame size={18} className={activeTab === 'bestseller' ? 'text-primary' : 'text-slate-400'} />
+            <span className="font-bold text-xs whitespace-nowrap">Bán Chạy</span>
+          </button>
+          <button
+            onClick={() => handleTabChange('newest')}
+            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'newest' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+          >
+            <Sparkles size={18} className={activeTab === 'newest' ? 'text-primary' : 'text-slate-400'} />
+            <span className="font-bold text-xs whitespace-nowrap">Mới Ra Mắt</span>
+          </button>
+          <button
+            onClick={() => handleTabChange('discount')}
+            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'discount' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+          >
+            <Tag size={18} className={activeTab === 'discount' ? 'text-primary' : 'text-slate-400'} />
+            <span className="font-bold text-xs whitespace-nowrap">Ưu Đãi</span>
+          </button>
+          <button
+            onClick={() => handleTabChange('combo')}
+            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'combo' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+          >
+            <Package size={18} className={activeTab === 'combo' ? 'text-primary' : 'text-slate-400'} />
+            <span className="font-bold text-xs whitespace-nowrap">Combo Tiết Kiệm</span>
+          </button>
+        </div>
+
+        <div className="p-5 md:p-6 min-h-[400px]">
+          {loadingTab ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
           ) : (
-            <p className="text-slate-500 text-sm">Chưa có sản phẩm nào.</p>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
+                {tabData[activeTab].products.slice(0, tabData[activeTab].displayedCount).map((p, index) => (
+                  <ProductCard key={`${p.id}-${index}`} product={p} />
+                ))}
+              </div>
+
+              {(tabData[activeTab].hasMore || tabData[activeTab].displayedCount < tabData[activeTab].products.length) ? (
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="border-2 border-primary text-primary font-bold py-2 px-12 rounded-full hover:bg-primary/5 transition-colors disabled:opacity-50"
+                  >
+                    {loadingMore ? 'Đang tải...' : 'Xem thêm'}
+                  </button>
+                </div>
+              ) : tabData[activeTab].products.length === 0 ? (
+                <p className="text-center text-slate-500 py-10">Chưa có sản phẩm nào.</p>
+              ) : null}
+            </>
           )}
         </div>
-
-
-
-        {/* Tab Sản Phẩm */}
-        <div className="bg-white rounded-[10px] shadow-sm mb-6">
-          {/* Tabs Navigation */}
-          <div className="flex border-b overflow-x-auto hide-scrollbar sticky top-16 bg-white z-40 rounded-t-[10px] shadow-sm">
-            <button
-              onClick={() => handleTabChange('all')}
-              className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'all' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
-            >
-              <LayoutGrid size={18} className={activeTab === 'all' ? 'text-primary' : 'text-slate-400'} />
-              <span className="font-bold text-xs whitespace-nowrap">Tất Cả</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('foryou')}
-              className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'foryou' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Heart size={18} className={activeTab === 'foryou' ? 'text-primary' : 'text-slate-400'} />
-              <span className="font-bold text-xs whitespace-nowrap">Dành Cho Bạn</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('bestseller')}
-              className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'bestseller' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Flame size={18} className={activeTab === 'bestseller' ? 'text-primary' : 'text-slate-400'} />
-              <span className="font-bold text-xs whitespace-nowrap">Bán Chạy</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('newest')}
-              className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'newest' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Sparkles size={18} className={activeTab === 'newest' ? 'text-primary' : 'text-slate-400'} />
-              <span className="font-bold text-xs whitespace-nowrap">Mới Ra Mắt</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('discount')}
-              className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'discount' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Tag size={18} className={activeTab === 'discount' ? 'text-primary' : 'text-slate-400'} />
-              <span className="font-bold text-xs whitespace-nowrap">Ưu Đãi</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('combo')}
-              className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'combo' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Package size={18} className={activeTab === 'combo' ? 'text-primary' : 'text-slate-400'} />
-              <span className="font-bold text-xs whitespace-nowrap">Combo Tiết Kiệm</span>
-            </button>
-          </div>
-
-          <div className="p-5 md:p-6 min-h-[400px]">
-            {loadingTab ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
-                  {tabData[activeTab].products.slice(0, tabData[activeTab].displayedCount).map((p, index) => (
-                    <ProductCard key={`${p.id}-${index}`} product={p} />
-                  ))}
-                </div>
-
-                {(tabData[activeTab].hasMore || tabData[activeTab].displayedCount < tabData[activeTab].products.length) ? (
-                  <div className="flex justify-center">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                      className="border-2 border-primary text-primary font-bold py-2 px-12 rounded-full hover:bg-primary/5 transition-colors disabled:opacity-50"
-                    >
-                      {loadingMore ? 'Đang tải...' : 'Xem thêm'}
-                    </button>
-                  </div>
-                ) : tabData[activeTab].products.length === 0 ? (
-                  <p className="text-center text-slate-500 py-10">Chưa có sản phẩm nào.</p>
-                ) : null}
-              </>
-            )}
-          </div>
-        </div>
-
       </div>
+
     </div>
+    </div >
   );
 }
 
@@ -600,6 +610,88 @@ function BrandPromoCard({ brand, desc, color }: any) {
         <span className="text-orange-500 mr-1">🔥</span>
         {desc}
       </p>
+    </div>
+  );
+}
+
+function HomeVoucherBlock({ vouchers, onCollectSuccess }: { vouchers: Voucher[], onCollectSuccess: (id: number) => void }) {
+  const displayVouchers = vouchers.slice(0, 3);
+
+  const handleCollect = async (id: number) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để lưu voucher!');
+      return;
+    }
+    const res = await collectVoucher(id);
+    if (res.success) {
+      toast.success(res.message);
+      onCollectSuccess(id);
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN').format(val);
+  const formatDate = (dateString: string) => {
+    const d = new Date(dateString);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
+  return (
+    <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 mb-2">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2">
+          <Gift className="text-orange-500 animate-bounce" size={24} /> Ưu Đãi Mới Cho Bạn
+        </h3>
+        <Link href="/vouchers" className="text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors flex items-center gap-1">
+          Xem tất cả <ChevronRight size={16} />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {displayVouchers.map(voucher => (
+          <div key={voucher.voucherID} className="relative flex bg-white rounded-[10px] shadow-sm border border-slate-200 overflow-hidden group hover:border-orange-300 hover:shadow-md transition-all">
+            <div className="w-[100px] shrink-0 bg-gradient-to-br from-orange-500 to-rose-500 text-white p-2 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-slate-100 relative">
+              <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-slate-50 rounded-full border-r border-slate-200"></div>
+              <Ticket size={24} className="mb-1 opacity-90" />
+              <div className="font-black text-lg tracking-tight leading-none mb-1 break-all">
+                {voucher.discountType === 1 ? `${voucher.discountValue}%` : formatCurrency(voucher.discountValue).replace('₫', 'đ')}
+              </div>
+              <div className="text-[10px] text-orange-100 font-bold uppercase tracking-wide">
+                {voucher.voucherType === 1 ? 'Giảm SP' : 'Freeship'}
+              </div>
+            </div>
+
+            <div className="flex-1 p-3 flex flex-col justify-between relative bg-white">
+              <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-slate-50 rounded-full border-l border-slate-200"></div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm line-clamp-1 pr-2 leading-tight">{voucher.name}</h3>
+                <p className="text-xs text-slate-500 mt-1">Đơn từ {formatCurrency(voucher.minOrderValue)}</p>
+                <p className="text-[11px] text-slate-400 mt-1">HSD: {formatDate(voucher.endDate)}</p>
+              </div>
+              
+              <div className="mt-2 flex justify-between items-end gap-2 pr-2">
+                <div className="flex-1 max-w-[80px]">
+                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-orange-500 rounded-full" style={{ width: `${Math.min(100, (voucher.usedQuantity / voucher.totalQuantity) * 100)}%` }} />
+                   </div>
+                   <p className="text-[10px] text-slate-400 mt-1 whitespace-nowrap">Đã dùng {Math.round((voucher.usedQuantity / voucher.totalQuantity) * 100)}%</p>
+                </div>
+                <button 
+                  onClick={() => handleCollect(voucher.voucherID)}
+                  disabled={voucher.isCollected}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    voucher.isCollected ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-orange-500 text-white hover:bg-orange-600 hover:shadow-md hover:-translate-y-0.5'
+                  }`}
+                >
+                  {voucher.isCollected ? 'Đã lưu' : 'Lưu Ngay'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

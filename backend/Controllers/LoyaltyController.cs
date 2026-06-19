@@ -534,6 +534,61 @@ namespace PolyBabyAPI.Controllers
             _context.LoyaltyAuditLogs.Add(log);
         }
 
+        /// <summary>
+        /// Lấy trạng thái điểm danh hôm nay của user
+        /// </summary>
+        [HttpGet("checkin/status")]
+        public async Task<IActionResult> GetCheckInStatus()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var status = await _loyaltyService.GetCheckInStatusAsync(userId);
+                return Ok(new { success = true, data = status });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy trạng thái điểm danh");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống" });
+            }
+        }
+
+        /// <summary>
+        /// Thực hiện điểm danh nhận xu
+        /// </summary>
+        [HttpPost("checkin")]
+        public async Task<IActionResult> PerformCheckIn()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var result = await _loyaltyService.PerformDailyCheckInAsync(userId);
+                if (result.Success)
+                {
+                    return Ok(new { success = true, data = result });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi thực hiện điểm danh");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống" });
+            }
+        }
+
         private string GetCurrentUserId()
         {
             return User.FindFirst("UserId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";

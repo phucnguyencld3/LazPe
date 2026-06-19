@@ -432,5 +432,98 @@ namespace PolyBabyAPI.Services
                 throw;
             }
         }
+
+        private readonly int[] _checkInRewards = new int[] { 100, 100, 200, 200, 250, 250, 300 };
+
+        public async Task<PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInStatusResponse> GetCheckInStatusAsync(string userId)
+        {
+            var profile = await GetProfileAsync(userId);
+            if (profile == null) return new PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInStatusResponse();
+
+            var today = DateTime.Now.Date;
+            bool hasCheckedInToday = profile.LastCheckInDate.HasValue && profile.LastCheckInDate.Value.Date == today;
+            
+            int currentStreak = profile.CurrentCheckInStreak;
+            if (!hasCheckedInToday && (!profile.LastCheckInDate.HasValue || profile.LastCheckInDate.Value.Date < today.AddDays(-1)))
+            {
+                currentStreak = 0;
+            }
+
+            int pointsForNextCheckIn = currentStreak >= 6 ? 300 : _checkInRewards[currentStreak];
+
+            return new PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInStatusResponse
+            {
+                HasCheckedInToday = hasCheckedInToday,
+                CurrentStreak = currentStreak,
+                PointsForNextCheckIn = pointsForNextCheckIn,
+                RewardSequence = _checkInRewards
+            };
+        }
+
+        public async Task<PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInResultResponse> PerformDailyCheckInAsync(string userId)
+        {
+            var currentTransaction = _context.Database.CurrentTransaction;
+            var transaction = currentTransaction == null 
+                ? await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted) 
+                : null;
+
+            try
+            {
+                var profile = await _context.LoyaltyProfiles
+                        .FromSqlRaw("SELECT * FROM dbo.LoyaltyProfiles WITH (UPDLOCK, ROWLOCK) WHERE UserID = {0}", userId)
+                        .FirstOrDefaultAsync();
+
+                if (profile == null) 
+                {
+                    await AddPointsAsync(userId, 0, "INIT", "Khởi tạo Loyalty", null);
+                    profile = await _context.LoyaltyProfiles.FirstOrDefaultAsync(p => p.UserID == userId);
+                    if (profile == null) return new PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInResultResponse { Success = false, Message = "Lỗi khởi tạo hồ sơ." };
+                }
+
+                var today = DateTime.Now.Date;
+                if (profile.LastCheckInDate.HasValue && profile.LastCheckInDate.Value.Date == today)
+                {
+                    if (transaction != null) await transaction.RollbackAsync();
+                    return new PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInResultResponse { Success = false, Message = "Bạn đã điểm danh hôm nay rồi!" };
+                }
+
+                if (!profile.LastCheckInDate.HasValue || profile.LastCheckInDate.Value.Date < today.AddDays(-1))
+                {
+                    profile.CurrentCheckInStreak = 0;
+                }
+
+                int pointsEarned = profile.CurrentCheckInStreak >= 6 ? 300 : _checkInRewards[profile.CurrentCheckInStreak];
+                
+                profile.CurrentCheckInStreak += 1;
+                profile.LastCheckInDate = DateTime.Now;
+
+                _context.LoyaltyProfiles.Update(profile);
+                await _context.SaveChangesAsync();
+
+                if (transaction != null)
+                {
+                    await transaction.CommitAsync(); // Commit profile update before AddPointsAsync
+                }
+
+                // Add points (creates history record)
+                await AddPointsAsync(userId, pointsEarned, "DAILY_CHECKIN", $"Điểm danh hàng ngày (Chuỗi {profile.CurrentCheckInStreak} ngày)", null);
+
+                var updatedProfile = await GetProfileAsync(userId);
+
+                return new PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInResultResponse
+                {
+                    Success = true,
+                    Message = $"Điểm danh thành công! Nhận {pointsEarned} xu.",
+                    PointsEarned = pointsEarned,
+                    NewStreak = profile.CurrentCheckInStreak,
+                    TotalPoints = updatedProfile?.TotalPoints ?? 0
+                };
+            }
+            catch (Exception)
+            {
+                if (transaction != null) await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }

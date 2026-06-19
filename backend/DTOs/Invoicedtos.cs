@@ -62,5 +62,29 @@ namespace PolyBabyAPI.DTOs
             public int ItemCount { get; set; }
             public string? PrintTicketUrl { get; set; }
         }
+
+        /// <summary>
+        /// Response tra cứu đơn hàng công khai (Không bao gồm thông tin cá nhân khách hàng)
+        /// </summary>
+        public class PublicTrackingResponse
+        {
+            public int InvoiceID { get; set; }
+            public string? InvoiceCode { get; set; }
+            public string? TrackingCode { get; set; }
+            public string? Status { get; set; }
+            public int StatusCode { get; set; }
+            public decimal TotalPrice { get; set; }
+            public DateTime? CreatedAt { get; set; }
+            public List<PublicTrackingItemDto> Items { get; set; } = new List<PublicTrackingItemDto>();
+        }
+
+        public class PublicTrackingItemDto
+        {
+            public string ProductName { get; set; } = string.Empty;
+            public string? VariantName { get; set; }
+            public int Quantity { get; set; }
+            public decimal Price { get; set; }
+            public string? ImageUrl { get; set; }
+        }
     }
 }
