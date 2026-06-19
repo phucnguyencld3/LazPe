@@ -610,14 +610,14 @@ export default function ProfilePage() {
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
         {/* Left Sidebar Menu */}
-        <aside className="lg:col-span-1 lg:sticky lg:top-[120px] z-10">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] overflow-hidden">
+        <aside className="w-full lg:w-[240px] flex-shrink-0 lg:sticky lg:top-[90px] z-10">
+          <div className="bg-white rounded-[10px] border border-slate-100/60 shadow-sm pb-3 max-h-[calc(100vh-140px)] overflow-y-auto scrollbar-none">
             {/* Quick User Section */}
-              <div className="p-5 border-b border-slate-100 flex lg:flex-col items-center lg:items-start gap-4">
+              <div className="p-5 flex flex-col items-center text-center gap-2">
                 <div
-                  className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container relative bg-slate-100 flex-shrink-0 flex items-center justify-center cursor-pointer group"
+                  className="w-16 h-16 rounded-full overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center cursor-pointer group transition-transform hover:scale-105"
                   onClick={() => handleTabChange("profile")}
                   title="Quản lý thông tin tài khoản"
                 >
@@ -628,28 +628,22 @@ export default function ProfilePage() {
                       src={userProfile.avatar}
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-slate-400 text-3xl">person</span>
+                    <span className="material-symbols-outlined text-slate-300 text-3xl">person</span>
                   )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="material-symbols-outlined text-white text-xs">edit</span>
+                    <span className="material-symbols-outlined text-white text-[10px]">edit</span>
                   </div>
                 </div>
-                <div className="text-left space-y-0.5 min-w-0">
-                  <h3 className="font-bold text-slate-800 text-base line-clamp-1 leading-snug">{userProfile.fullName}</h3>
-                  <p className="text-xs text-slate-400 font-semibold truncate">{userProfile.email}</p>
-                  <div className="flex gap-1.5 pt-1.5">
-                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[10px] font-bold border border-rose-100 flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-[10px] font-bold">military_tech</span>
-                      Thành viên {loyaltyProfile?.currentTierName || "Standard"}
-                    </span>
-                  </div>
+                <div className="space-y-1 w-full">
+                  <h3 className="font-bold text-slate-800 text-base line-clamp-1">{userProfile.fullName}</h3>
+                  <p className="text-[11px] text-slate-400 font-medium truncate px-2">{userProfile.email}</p>
                 </div>
               </div>
 
               {/* Menu List Section */}
-              <div className="p-4">
+              <div className="px-2">
                 {/* Desktop view */}
-                <nav className="hidden lg:flex flex-col gap-1.5">
+                <nav className="hidden lg:flex flex-col gap-1">
                   {(
                     [
                       { id: "profile", label: "Thông tin tài khoản", icon: "person" },
@@ -665,12 +659,12 @@ export default function ProfilePage() {
                     <button
                       key={item.id}
                       onClick={() => handleTabChange(item.id)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left transition-all ${activeTab === item.id
-                        ? "bg-primary/5 text-primary border-l-4 border-primary pl-3"
-                        : "text-slate-600 hover:text-primary hover:bg-slate-50 border-l-4 border-transparent"
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[8px] font-bold text-[13px] text-left transition-all ${activeTab === item.id
+                        ? "bg-primary text-white shadow-sm shadow-primary/20 scale-[1.01]"
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
                         }`}
                     >
-                      <span className={`material-symbols-outlined text-lg ${activeTab === item.id ? "text-primary" : "text-slate-400"}`}>
+                      <span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? "text-white" : "text-slate-400"}`}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -679,7 +673,7 @@ export default function ProfilePage() {
                 </nav>
 
                 {/* Mobile view */}
-                <div className="lg:hidden flex overflow-x-auto gap-2 pb-1 scrollbar-none">
+                <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 scrollbar-none px-1">
                   {(
                     [
                       { id: "profile", label: "Tài khoản", icon: "person" },
@@ -695,12 +689,12 @@ export default function ProfilePage() {
                     <button
                       key={item.id}
                       onClick={() => handleTabChange(item.id)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all ${activeTab === item.id
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] whitespace-nowrap transition-all ${activeTab === item.id
                         ? "bg-primary text-white shadow-sm"
                         : "bg-slate-100 text-slate-600 hover:text-primary hover:bg-slate-200"
                         }`}
                     >
-                      <span className="material-symbols-outlined text-sm">
+                      <span className="material-symbols-outlined text-[14px]">
                         {item.icon}
                       </span>
                       {item.label}
@@ -712,9 +706,9 @@ export default function ProfilePage() {
           </aside>
 
           {/* Right Content Area */}
-          <main className="lg:col-span-3 min-w-0">
+          <main className="flex-1 min-w-0 w-full">
             {activeTab === "profile" && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <ProfileHeader
                   userProfile={userProfile}
                   token={token}

@@ -36,6 +36,9 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
   const [activeTab, setActiveTab] = useState<"to_review" | "reviewed">("to_review");
   const [toReviewList, setToReviewList] = useState<any[]>([]);
   const [reviewedList, setReviewedList] = useState<ReviewItem[]>([]);
+  const [toReviewPage, setToReviewPage] = useState(1);
+  const [reviewedPage, setReviewedPage] = useState(1);
+  const itemsPerPage = 10;
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -343,12 +346,44 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
 
   if (loading) {
     return (
-      <section className="bg-white rounded-[10px] p-8 border border-slate-100 min-h-[350px] flex flex-col items-center justify-center">
-        <Loader className="animate-spin text-primary mb-3" size={36} />
-        <p className="text-slate-500 font-bold text-sm">Đang tải danh sách đánh giá...</p>
+      <section className="bg-white rounded-[10px] p-5 border border-slate-100/60 min-h-[300px] flex flex-col items-center justify-center shadow-sm">
+        <Loader className="animate-spin text-primary mb-3" size={32} />
+        <p className="text-slate-500 font-bold text-[12px]">Đang tải danh sách đánh giá...</p>
       </section>
     );
   }
+
+  // Pagination logic
+  const paginatedToReview = toReviewList.slice((toReviewPage - 1) * itemsPerPage, toReviewPage * itemsPerPage);
+  const toReviewTotalPages = Math.ceil(toReviewList.length / itemsPerPage);
+
+  const paginatedReviewed = reviewedList.slice((reviewedPage - 1) * itemsPerPage, reviewedPage * itemsPerPage);
+  const reviewedTotalPages = Math.ceil(reviewedList.length / itemsPerPage);
+
+  const renderPagination = (currentPage: number, totalPages: number, setPage: (val: number) => void) => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex items-center justify-center gap-4 mt-6 mb-2">
+        <button
+          onClick={() => setPage(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+        </button>
+        <span className="text-[12px] font-bold text-slate-600">
+          Trang {currentPage} / {totalPages}
+        </span>
+        <button
+          onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="w-8 h-8 flex items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        </button>
+      </div>
+    );
+  };
 
   // Calculate dynamic points preview
   const charCount = comment.trim().length;
@@ -376,26 +411,26 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
   }
 
   return (
-    <section className="bg-white rounded-[10px] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-100">
-        <h2 className="font-headline text-lg font-bold text-slate-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>rate_review</span>
+    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>rate_review</span>
           Đánh giá sản phẩm
         </h2>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none gap-2">
+      <div className="flex border-b border-slate-100 mb-5 overflow-x-auto scrollbar-none w-full gap-1">
         <button
           onClick={() => {
             setActiveTab("to_review");
             setWritingReviewFor(null);
             setEditingReview(null);
           }}
-          className={`py-3 px-4 text-xs md:text-sm font-bold border-b-2 whitespace-nowrap transition-all duration-200 ${
+          className={`flex-1 py-3 px-2 text-[12px] sm:text-[13px] font-bold border-b-2 whitespace-nowrap text-center transition-all duration-200 ${
             activeTab === "to_review" && !writingReviewFor && !editingReview
               ? "border-primary text-primary"
-              : "border-transparent text-slate-500 hover:text-primary"
+              : "border-transparent text-slate-400 hover:text-slate-600"
           }`}
         >
           Chưa đánh giá ({toReviewList.length})
@@ -406,10 +441,10 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
             setWritingReviewFor(null);
             setEditingReview(null);
           }}
-          className={`py-3 px-4 text-xs md:text-sm font-bold border-b-2 whitespace-nowrap transition-all duration-200 ${
+          className={`flex-1 py-3 px-2 text-[12px] sm:text-[13px] font-bold border-b-2 whitespace-nowrap text-center transition-all duration-200 ${
             activeTab === "reviewed"
               ? "border-primary text-primary"
-              : "border-transparent text-slate-500 hover:text-primary"
+              : "border-transparent text-slate-400 hover:text-slate-600"
           }`}
         >
           Đã đánh giá ({reviewedList.length})
@@ -615,29 +650,30 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
           {activeTab === "to_review" ? (
             /* To Review list */
             toReviewList.length > 0 ? (
-              toReviewList.map((item) => (
-                <div
+              <>
+                {paginatedToReview.map((item) => (
+                  <div
                   key={`${item.invoiceID}-${item.invoiceDetailID}`}
-                  className="border border-slate-100 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white hover:border-slate-200 transition-colors shadow-sm"
+                  className="border border-slate-100/80 rounded-[8px] p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white hover:border-slate-200 hover:shadow-sm transition-all mb-3"
                 >
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
                         alt={item.productName}
-                        className="w-16 h-16 rounded object-cover border border-slate-100 flex-shrink-0"
+                        className="w-12 h-12 rounded-[6px] object-cover border border-slate-100 flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded bg-primary/5 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+                      <div className="w-12 h-12 rounded-[6px] bg-primary/5 flex items-center justify-center text-primary font-bold text-[10px] flex-shrink-0">
                         LazPe
                       </div>
                     )}
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-slate-800 text-sm md:text-base line-clamp-1">
+                    <div className="space-y-0.5">
+                      <h4 className="font-bold text-slate-800 text-[12px] md:text-[13px] line-clamp-1">
                         {item.productName}
                       </h4>
-                      <p className="text-xs text-slate-400 font-semibold">{item.variantName || "Mặc định"}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold">
+                      <p className="text-[11px] text-slate-500 font-semibold">{item.variantName || "Mặc định"}</p>
+                      <p className="text-[9px] text-slate-400 font-bold">
                         Ngày mua: {new Date(item.purchaseDate).toLocaleDateString("vi-VN")}
                       </p>
                     </div>
@@ -645,80 +681,83 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
 
                   <button
                     onClick={() => handleWriteReviewClick(item)}
-                    className="bg-primary hover:bg-primary/95 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs bouncy-hover active:scale-95 transition-all text-center self-stretch sm:self-auto"
+                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-[6px] font-bold text-[11px] active:scale-95 transition-all text-center self-stretch sm:self-auto shadow-sm shadow-primary/20"
                   >
                     Đánh giá ngay
                   </button>
                 </div>
-              ))
+              ))}
+              {renderPagination(toReviewPage, toReviewTotalPages, setToReviewPage)}
+              </>
             ) : (
-              <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">rate_review</span>
-                <p className="text-slate-500 font-bold text-sm">Tuyệt vời! Bạn không còn sản phẩm nào chờ đánh giá.</p>
+              <div className="text-center py-10 bg-slate-50 rounded-[8px] border border-dashed border-slate-200">
+                <span className="material-symbols-outlined text-[32px] text-slate-300 mb-2">rate_review</span>
+                <p className="text-slate-500 font-bold text-[12px]">Tuyệt vời! Bạn không còn sản phẩm nào chờ đánh giá.</p>
               </div>
             )
           ) : (
             /* Reviewed list */
             reviewedList.length > 0 ? (
-              reviewedList.map((item) => (
-                <div
+              <>
+                {paginatedReviewed.map((item) => (
+                  <div
                   key={item.reviewID}
-                  className="border border-slate-100 rounded-xl p-5 space-y-4 bg-white hover:border-slate-200 transition-colors relative"
+                  className="border border-slate-100/80 rounded-[8px] p-4 space-y-3 bg-white hover:border-slate-200 hover:shadow-sm transition-all relative mb-4"
                 >
                   {/* Top product info */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-50 pb-3">
-                    <div className="flex gap-3 items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-50/50 pb-2">
+                    <div className="flex gap-2.5 items-center">
                       {item.imageUrl ? (
                         <img
                           src={item.imageUrl}
                           alt="Product thumbnail"
-                          className="w-10 h-10 rounded object-cover border border-slate-100 flex-shrink-0"
+                          className="w-9 h-9 rounded-[6px] object-cover border border-slate-100 flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-[6px] bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-[9px] flex-shrink-0">
                           LazPe
                         </div>
                       )}
                       <div>
-                        <h4 className="font-bold text-slate-700 text-xs md:text-sm line-clamp-1">
+                        <h4 className="font-bold text-slate-800 text-[12px] md:text-[13px] line-clamp-1">
                           {item.productName || item.bundleName}
                         </h4>
-                        <p className="text-[10px] text-slate-400 font-semibold">{item.variantName || "Mặc định"}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">{item.variantName || "Mặc định"}</p>
                       </div>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
-                      <div className="text-right flex flex-col items-end gap-1">
+                    <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
+                      <div className="text-right flex flex-col items-end gap-0.5">
                         {renderStars(item.rating)}
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-1">
+                        <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
                           {new Date(item.createdAt).toLocaleDateString("vi-VN")}
                         </span>
                       </div>
 
                       {item.isHidden && item.autoModerationStatus === "AutoHidden" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 shadow-sm animate-pulse">
-                          <ShieldAlert size={12} className="text-rose-500" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-100 shadow-sm animate-pulse uppercase">
+                          <ShieldAlert size={10} className="text-rose-500" />
                           Tạm ẩn (Kiểm duyệt)
                         </span>
                       )}
 
                       {item.isHidden && item.autoModerationStatus !== "AutoHidden" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-650 border border-red-100 shadow-sm">
-                          <ShieldAlert size={12} className="text-red-500" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9px] font-bold bg-red-50 text-red-650 border border-red-100 shadow-sm uppercase">
+                          <ShieldAlert size={10} className="text-red-500" />
                           Đã bị ẩn
                         </span>
                       )}
 
                       {!item.isHidden && item.autoModerationStatus === "NeedsReview" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
-                          <ShieldAlert size={12} className="text-amber-500" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-100 shadow-sm uppercase">
+                          <ShieldAlert size={10} className="text-amber-500" />
                           Chờ xem xét
                         </span>
                       )}
                       
                       {item.hasEarnedRewardPoints && (
-                        <span className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
-                          <Award size={12} className="text-emerald-500" />
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-[4px] text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm uppercase">
+                          <Award size={10} className="text-emerald-500" />
                           +{item.loyaltyPointsEarned} điểm
                         </span>
                       )}
@@ -726,9 +765,9 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
                   </div>
 
                   {/* Comment */}
-                  <div className="bg-slate-50/50 p-4 rounded-lg border border-slate-100">
-                    <p className="text-sm font-semibold text-slate-700 leading-relaxed break-words whitespace-pre-line">
-                      {item.content || <em className="text-slate-400 text-xs">Không có nội dung đánh giá bằng chữ</em>}
+                  <div className="bg-slate-50/40 p-2.5 rounded-[6px] border border-slate-100/40 mt-1">
+                    <p className="text-[12px] text-slate-700 leading-relaxed break-words whitespace-pre-line">
+                      {item.content || <em className="text-slate-400 text-[11px]">Không có nội dung đánh giá bằng chữ</em>}
                     </p>
                   </div>
 
@@ -776,39 +815,39 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
 
                   {/* Detailed Moderation Warnings */}
                   {item.isHidden && item.autoModerationStatus === "AutoHidden" && (
-                    <div className="bg-rose-50 border border-rose-100 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-rose-800 font-semibold">
-                      <ShieldAlert size={16} className="text-rose-500 flex-shrink-0 mt-0.5" />
-                      <div>
+                    <div className="bg-rose-50/50 border border-rose-100/50 rounded-[6px] p-3 flex items-start gap-2 text-xs">
+                      <ShieldAlert size={14} className="text-rose-500 flex-shrink-0 mt-0.5" />
+                      <div className="text-[11px] text-rose-800">
                         <span className="font-bold text-rose-900 block mb-0.5">Đánh giá của bạn tạm thời bị ẩn.</span>
-                        Nội dung chứa từ ngữ nhạy cảm hoặc vi phạm nguyên tắc cộng đồng (Hệ thống tự động phát hiện). Ban quản trị đang xem xét đánh giá này.
+                        Nội dung chứa từ khóa nhạy cảm. Ban quản trị đang xem xét đánh giá này.
                         {item.flaggedReason && (
-                          <span className="block mt-1.5 font-bold text-rose-600/95 text-[11px]">Chi tiết từ khóa: {item.flaggedReason}</span>
+                          <span className="block mt-1 font-bold text-rose-600/90 text-[10px]">Từ khóa: {item.flaggedReason}</span>
                         )}
                       </div>
                     </div>
                   )}
 
                   {item.isHidden && item.autoModerationStatus !== "AutoHidden" && (
-                    <div className="bg-red-50 border border-red-100 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-red-800 font-semibold">
-                      <ShieldAlert size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-                      <div>
+                    <div className="bg-red-50/50 border border-red-100/50 rounded-[6px] p-3 flex items-start gap-2 text-xs">
+                      <ShieldAlert size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+                      <div className="text-[11px] text-red-800">
                         <span className="font-bold text-red-900 block mb-0.5">Đánh giá đã bị ẩn bởi Quản trị viên.</span>
-                        Nội dung không tuân thủ quy chuẩn của hệ thống và điểm thưởng Loyalty (nếu có) đã bị thu hồi.
+                        Nội dung không tuân thủ quy chuẩn của hệ thống.
                         {item.censorshipReason && (
-                          <span className="block mt-1.5 font-bold text-red-600/95 text-[11px]">Lý do kiểm duyệt: {item.censorshipReason}</span>
+                          <span className="block mt-1 font-bold text-red-600/90 text-[10px]">Lý do: {item.censorshipReason}</span>
                         )}
                       </div>
                     </div>
                   )}
 
                   {!item.isHidden && item.autoModerationStatus === "NeedsReview" && (
-                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-amber-800 font-semibold">
-                      <ShieldAlert size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-amber-900 block mb-0.5">Đang chờ Quản trị viên duyệt duyệt lại.</span>
-                        Hệ thống phát hiện một số từ khóa cần xem xét lại, tuy nhiên đánh giá vẫn đang được tạm thời hiển thị.
+                    <div className="bg-amber-50/50 border border-amber-100/50 rounded-[6px] p-3 flex items-start gap-2 text-xs">
+                      <ShieldAlert size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div className="text-[11px] text-amber-800">
+                        <span className="font-bold text-amber-900 block mb-0.5">Đang chờ Quản trị viên xem xét lại.</span>
+                        Hệ thống phát hiện một số từ khóa cần xem xét lại.
                         {item.flaggedReason && (
-                          <span className="block mt-1.5 font-bold text-amber-700 text-[11px]">Nghi vấn: {item.flaggedReason}</span>
+                          <span className="block mt-1 font-bold text-amber-700 text-[10px]">Nghi vấn: {item.flaggedReason}</span>
                         )}
                       </div>
                     </div>
@@ -826,7 +865,9 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
                     </div>
                   )}
                 </div>
-              ))
+              ))}
+              {renderPagination(reviewedPage, reviewedTotalPages, setReviewedPage)}
+              </>
             ) : (
               <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                 <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">rate_review</span>

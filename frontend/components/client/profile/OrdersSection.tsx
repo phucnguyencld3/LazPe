@@ -124,43 +124,43 @@ export function OrdersSection({
     switch (statusCode) {
       case 0:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200/60 rounded-[4px]">
             Chờ xác nhận
           </span>
         );
       case 1:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-blue-700 bg-blue-50 border border-blue-200/60 rounded-[4px]">
             Đã xác nhận
           </span>
         );
       case 2:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-sky-700 bg-sky-50 border border-sky-200/60 rounded-[4px]">
             Đang vận chuyển
           </span>
         );
       case 3:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200/60 rounded-[4px]">
             Hoàn thành
           </span>
         );
       case 4:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200/60 rounded-[4px]">
             Chờ duyệt hủy
           </span>
         );
       case 5:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-300 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-rose-800 bg-rose-50 border border-rose-300/60 rounded-[4px]">
             Đã hủy
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-full">
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-slate-700 bg-slate-50 border border-slate-200/60 rounded-[4px]">
             Không rõ
           </span>
         );
@@ -235,9 +235,9 @@ export function OrdersSection({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
-        <Loader className="animate-spin text-primary mb-4" size={36} />
-        <p className="text-slate-500 font-medium">Đang tải danh sách đơn hàng...</p>
+      <div className="flex flex-col items-center justify-center min-h-[300px] bg-white rounded-[10px] border border-slate-100/60 shadow-sm p-5">
+        <Loader className="animate-spin text-primary mb-3" size={32} />
+        <p className="text-slate-500 font-bold text-[12px]">Đang tải danh sách đơn hàng...</p>
       </div>
     );
   }
@@ -256,29 +256,29 @@ export function OrdersSection({
   }
 
   return (
-    <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-md pb-3 border-b border-slate-100">
-        <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">shopping_bag</span> Đơn mua của tôi
+    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base">shopping_bag</span> Đơn mua của tôi
         </h2>
       </div>
 
       {/* Search Input */}
-      <div className="mb-6 relative">
+      <div className="mb-5 relative w-full">
         <input
           type="text"
           placeholder="Tìm kiếm theo mã đơn hàng, tên sản phẩm..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
+          className="w-full min-w-0 pl-10 pr-4 py-2.5 rounded-[8px] border border-slate-200/80 focus:outline-none focus:border-primary text-[13px] font-semibold transition-colors shadow-sm"
         />
-        <span className="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-lg">
+        <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">
           search
         </span>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none gap-2">
+      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none w-full">
         {(
           [
             { id: "all", label: "Tất cả" },
@@ -291,9 +291,9 @@ export function OrdersSection({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`py-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${activeTab === tab.id
+            className={`flex-1 py-3 px-2 text-[12px] sm:text-[13px] font-bold border-b-2 whitespace-nowrap text-center transition-all ${activeTab === tab.id
               ? "border-primary text-primary"
-              : "border-transparent text-slate-500 hover:text-primary"
+              : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
           >
             {tab.label}
@@ -317,22 +317,22 @@ export function OrdersSection({
                   return (
                     <div
                       key={order.invoiceID}
-                      className="border border-slate-100 rounded-[10px] overflow-hidden hover:shadow-md transition-shadow bg-white"
+                      className="border border-slate-100/80 rounded-[8px] overflow-hidden hover:shadow-sm transition-shadow bg-white mb-4"
                     >
                       {/* Card Header */}
-                      <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-slate-600 text-lg">store</span>
-                          <span className="font-bold text-slate-700 text-sm">LazPe Store</span>
+                      <div className="bg-slate-50/50 px-4 py-2.5 border-b border-slate-100/80 flex flex-wrap justify-between items-center gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-slate-500 text-base">store</span>
+                          <span className="font-bold text-slate-700 text-[12px]">LazPe Store</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-semibold text-slate-400">Mã đơn: #{order.invoiceCode || order.invoiceID}</span>
+                          <span className="text-[10px] font-bold text-slate-400">Mã đơn: #{order.invoiceCode || order.invoiceID}</span>
                           {getStatusBadge(order.statusCode)}
                         </div>
                       </div>
 
                       {/* Product list */}
-                      <div className="p-4 divide-y divide-slate-100">
+                      <div className="p-3 divide-y divide-slate-100/60">
                         {(() => {
                           const details = order.invoiceDetails || [];
                           const isExpanded = !!expandedOrders[order.invoiceID];
@@ -343,39 +343,39 @@ export function OrdersSection({
                               {displayedDetails.map((item: any, idx: number) => {
                                 const isGift = item.unitPrice === 0;
                                 return (
-                                <div key={idx} className={`flex gap-3 py-2 px-3 rounded-xl first:mt-0 last:mb-0 transition-colors ${isGift ? 'bg-emerald-50/40 border border-emerald-100' : 'bg-transparent'}`}>
+                                <div key={idx} className={`flex gap-3 py-1.5 px-2 rounded-[6px] first:mt-0 last:mb-0 transition-colors ${isGift ? 'bg-emerald-50/40 border border-emerald-100/50' : 'bg-transparent'}`}>
                                   {/* Product Image */}
                                   {item.imageUrl ? (
                                     <img
                                       src={item.imageUrl}
                                       alt={item.productName}
-                                      className={`w-12 h-12 rounded-lg object-cover shadow-sm flex-shrink-0 border ${isGift ? 'border-emerald-200' : 'border-slate-100'}`}
+                                      className={`w-10 h-10 rounded-[6px] object-cover shadow-sm flex-shrink-0 border ${isGift ? 'border-emerald-200/50' : 'border-slate-100/60'}`}
                                     />
                                   ) : (
-                                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-br flex flex-shrink-0 items-center justify-center font-bold text-xs shadow-sm ${isGift ? 'from-emerald-100 to-emerald-200 text-emerald-600' : 'from-primary/10 to-primary/20 text-primary'}`}>
+                                    <div className={`w-10 h-10 rounded-[6px] bg-gradient-to-br flex flex-shrink-0 items-center justify-center font-bold text-[10px] shadow-sm ${isGift ? 'from-emerald-100 to-emerald-200 text-emerald-600' : 'from-primary/10 to-primary/20 text-primary'}`}>
                                       LazPe
                                     </div>
                                   )}
 
-                                  <div className="flex-1 flex flex-col md:flex-row justify-between gap-1.5">
-                                    <div className="space-y-0.5">
+                                  <div className="flex-1 flex flex-col md:flex-row justify-between gap-1.5 min-w-0">
+                                    <div className="space-y-0.5 min-w-0 flex-1">
                                       <div className="flex items-center gap-1.5 flex-wrap">
-                                        <h4 className={`font-bold text-xs md:text-sm line-clamp-1 ${isGift ? 'text-emerald-800' : 'text-slate-800'}`}>
+                                        <h4 className={`font-bold text-[12px] md:text-[13px] line-clamp-1 min-w-0 ${isGift ? 'text-emerald-800' : 'text-slate-800'}`}>
                                           {item.productName}
                                         </h4>
                                         {isGift && (
-                                          <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-bold rounded-sm tracking-widest leading-none shrink-0 uppercase">
+                                          <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-bold rounded-[4px] tracking-widest leading-none shrink-0 uppercase shadow-sm">
                                             Quà
                                           </span>
                                         )}
                                       </div>
                                       {item.variantName && (
-                                        <p className={`text-[10px] font-semibold ${isGift ? 'text-emerald-600' : 'text-slate-400'}`}>{item.variantName}</p>
+                                        <p className={`text-[10px] font-semibold line-clamp-1 ${isGift ? 'text-emerald-600' : 'text-slate-400'}`}>{item.variantName}</p>
                                       )}
                                       <p className="text-[10px] text-slate-500 font-bold">Số lượng: x{item.quantity}</p>
                                     </div>
-                                    <div className="text-right">
-                                      <span className={`font-bold text-xs md:text-sm ${isGift ? 'text-emerald-500' : 'text-primary'}`}>
+                                    <div className="text-right shrink-0">
+                                      <span className={`font-bold text-[12px] md:text-[13px] ${isGift ? 'text-emerald-500' : 'text-primary'}`}>
                                         {isGift ? '0 đ' : formatPrice(item.unitPrice)}
                                       </span>
                                     </div>
@@ -384,18 +384,18 @@ export function OrdersSection({
                               )})}
 
                               {details.length > 1 && (
-                                <div className="pt-3 flex justify-center border-t border-slate-50">
+                                <div className="pt-2 flex justify-center border-t border-slate-50">
                                   <button
                                     onClick={() => toggleOrderExpand(order.invoiceID)}
-                                    className="text-xs font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-1 py-1 px-3 bg-slate-50 hover:bg-slate-100/80 rounded-full"
+                                    className="text-[10px] font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-1 py-1 px-3 bg-slate-50 hover:bg-slate-100/80 rounded-full"
                                   >
                                     {isExpanded ? (
                                       <>
-                                        Thu gọn <ChevronUp size={14} />
+                                        Thu gọn <ChevronUp size={12} />
                                       </>
                                     ) : (
                                       <>
-                                        Xem thêm {details.length - 1} sản phẩm <ChevronDown size={14} />
+                                        Xem thêm {details.length - 1} sản phẩm <ChevronDown size={12} />
                                       </>
                                     )}
                                   </button>
@@ -407,20 +407,20 @@ export function OrdersSection({
                       </div>
 
                       {/* Order total & CTA */}
-                      <div className="bg-slate-50/20 px-5 py-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div className="text-xs text-slate-400">
+                      <div className="bg-slate-50/20 px-4 py-3 border-t border-slate-100/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="text-[11px] font-semibold text-slate-400">
                           Ngày mua: {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4 w-full sm:w-auto">
-                          <div className="text-sm font-semibold text-slate-700">
-                            Tổng thanh toán:{" "}
-                            <span className="text-lg font-bold text-primary">
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
+                          <div className="text-[12px] font-bold text-slate-600">
+                            Thành tiền:{" "}
+                            <span className="text-[14px] font-black text-primary ml-1">
                               {formatPrice(order.totalPrice + order.shippingFee - (order.shippingDiscountAmount || 0))}
                             </span>
                           </div>
 
-                          <div className="flex gap-2 w-full sm:w-auto justify-end">
+                          <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
                             {order.statusCode === 3 && (
                               <button
                                 onClick={() => {
@@ -430,7 +430,7 @@ export function OrdersSection({
                                     toast.success("Đang mở form đánh giá sản phẩm");
                                   }
                                 }}
-                                className="bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform cursor-pointer"
+                                className="bg-primary hover:bg-primary/90 text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] active:scale-95 transition-all shadow-sm cursor-pointer"
                               >
                                 Đánh giá
                               </button>
@@ -439,7 +439,7 @@ export function OrdersSection({
                               <button
                                 onClick={() => handleConfirmReceived(order.invoiceID)}
                                 disabled={actionLoading}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                               >
                                 Đã nhận hàng
                               </button>
@@ -447,7 +447,7 @@ export function OrdersSection({
                             {canRetry && (
                               <button
                                 onClick={() => handleRetryPayment(order.invoiceID)}
-                                className="bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-lg font-bold text-xs bouncy-hover active:scale-95 transition-transform"
+                                className="bg-primary hover:bg-primary/90 text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] active:scale-95 transition-all shadow-sm"
                                 disabled={actionLoading}
                               >
                                 Thanh toán lại
@@ -456,14 +456,14 @@ export function OrdersSection({
                             {(order.statusCode === 3 || order.statusCode === 5) && (
                               <button
                                 onClick={() => toast.success("Đã thêm sản phẩm vào giỏ hàng")}
-                                className="border border-primary text-primary hover:bg-primary/5 px-4 py-2 rounded-lg font-bold text-xs transition-colors"
+                                className="border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] transition-colors"
                               >
                                 Mua lại
                               </button>
                             )}
                             <button
                               onClick={() => setSelectedOrderId(order.invoiceID)}
-                              className="border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-xs transition-colors"
+                              className="border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] transition-colors"
                             >
                               Chi tiết
                             </button>

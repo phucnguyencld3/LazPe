@@ -63,7 +63,7 @@ export const TopRandomBanner: React.FC<TopRandomBannerProps> = ({ products }) =>
               />
             </div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent"></div>
 
           {/* Content Overlay */}
           <div className="absolute inset-0 p-4 flex flex-col justify-center items-start pointer-events-none w-2/3">

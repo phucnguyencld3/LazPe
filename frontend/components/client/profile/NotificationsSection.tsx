@@ -422,15 +422,15 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
   // List View Rendering
   // ----------------------------------------------------
   return (
-    <section className="bg-white rounded-[10px] p-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
+    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60 w-full overflow-hidden">
       {/* Title & Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-3 border-b border-slate-100">
-        <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">notifications</span> Hộp thư thông báo
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base">notifications</span> Hộp thư thông báo
         </h2>
         <button
           onClick={handleMarkAllRead}
-          className="border border-primary text-primary hover:bg-primary/5 px-4 py-2 rounded-lg font-bold text-xs transition-colors flex items-center gap-1.5 active:scale-95 shadow-sm"
+          className="border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] transition-colors flex items-center gap-1.5 active:scale-95 shadow-sm"
         >
           <Check size={14} />
           Đọc tất cả
@@ -438,21 +438,21 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
       </div>
 
       {/* Search Input */}
-      <div className="mb-6 relative">
+      <div className="mb-5 relative w-full">
         <input
           type="text"
           placeholder="Tìm kiếm tiêu đề hoặc tóm tắt thông báo..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-[10px] border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
+          className="w-full min-w-0 pl-10 pr-4 py-2.5 rounded-[8px] border border-slate-200/80 focus:outline-none focus:border-primary text-[13px] font-semibold transition-colors shadow-sm"
         />
-        <span className="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-lg">
+        <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">
           search
         </span>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none gap-2">
+      <div className="flex border-b border-slate-100 mb-5 overflow-x-auto scrollbar-none w-full">
         {(
           [
             { key: "ALL", label: "Tất cả" },
@@ -466,10 +466,10 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`py-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`flex-1 py-3 px-2 text-[12px] sm:text-[13px] font-bold border-b-2 whitespace-nowrap text-center transition-all ${
               activeTab === tab.key
                 ? "border-primary text-primary"
-                : "border-transparent text-slate-500 hover:text-primary"
+                : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
             {tab.label}
@@ -479,44 +479,44 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
 
       {/* Notifications List */}
       {detailLoading || loading ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[10px] border border-slate-100 shadow-sm">
-          <Loader className="animate-spin text-primary mb-4" size={36} />
-          <p className="text-slate-500 font-medium">Đang tải thông báo...</p>
+        <div className="flex flex-col items-center justify-center min-h-[300px] bg-white rounded-[10px] border border-slate-100/60 shadow-sm p-5">
+          <Loader className="animate-spin text-primary mb-3" size={32} />
+          <p className="text-slate-500 font-bold text-[12px]">Đang tải thông báo...</p>
         </div>
       ) : filteredNotifications.length === 0 ? (
         <div className="text-center py-12 bg-slate-50 rounded-[10px] border border-dashed border-slate-200">
-          <div className="w-14 h-14 bg-slate-100/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-400">
-            <span className="material-symbols-outlined text-3xl">mail_lock</span>
+          <div className="w-12 h-12 bg-slate-100/50 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100 text-slate-400">
+            <span className="material-symbols-outlined text-2xl">mail_lock</span>
           </div>
           <h3 className="text-xs font-bold text-slate-700">Hộp thư trống</h3>
           <p className="text-[10px] text-slate-400 mt-1 max-w-[20rem] mx-auto">Không tìm thấy thông báo nào phù hợp với bộ lọc hiện tại.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredNotifications.map((notif) => (
             <div
               key={notif.id}
               onClick={() => handleRowClick(notif)}
-              className={`bg-white rounded-[10px] p-4 border transition-all duration-200 cursor-pointer hover:shadow-md hover:border-slate-300 relative group flex gap-4 ${
+              className={`bg-white rounded-[8px] p-3 border transition-all duration-200 cursor-pointer hover:shadow-sm hover:border-slate-200 relative group flex gap-3 ${
                 !notif.isRead
-                  ? "border-rose-200 bg-rose-50/10"
-                  : "border-slate-100 shadow-[0_4px_12px_rgba(135,78,88,0.02)]"
-              } ${notif.isPinned ? "ring-1 ring-rose-400" : ""}`}
+                  ? "border-primary/20 bg-primary/5"
+                  : "border-slate-100/80 shadow-sm"
+              } ${notif.isPinned ? "ring-1 ring-primary/40" : ""}`}
             >
               {/* Pin badge */}
               {notif.isPinned && (
-                <span className="absolute top-0 left-6 -translate-y-1/2 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
+                <span className="absolute top-0 left-6 -translate-y-1/2 bg-primary text-white text-[8px] font-bold px-1.5 py-0.5 rounded-[4px] shadow-sm flex items-center gap-0.5">
                   <span className="material-symbols-outlined text-[8px] font-bold">push_pin</span>
                   Ghim
                 </span>
               )}
 
               {/* Icon / Thumbnail */}
-              <div className={`w-10 h-10 rounded-xl border flex-shrink-0 flex items-center justify-center relative overflow-hidden ${getNotifColor(notif.type)}`}>
+              <div className={`w-9 h-9 rounded-[6px] border flex-shrink-0 flex items-center justify-center relative overflow-hidden ${getNotifColor(notif.type)}`}>
                 {notif.thumbnailImage ? (
                   <img src={notif.thumbnailImage} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="material-symbols-outlined text-base">
+                  <span className="material-symbols-outlined text-[18px]">
                     {getNotifIcon(notif.type)}
                   </span>
                 )}
@@ -525,19 +525,19 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
               {/* Text content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className={`text-xs text-slate-800 line-clamp-1 leading-snug ${!notif.isRead ? "font-bold text-slate-900" : "font-semibold"}`}>
+                  <h3 className={`text-[12px] text-slate-800 line-clamp-1 leading-snug ${!notif.isRead ? "font-bold text-slate-900" : "font-semibold"}`}>
                     {notif.title}
                   </h3>
                   {!notif.isRead && (
-                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full flex-shrink-0"></span>
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></span>
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
                   {notif.shortDescription}
                 </p>
 
-                <div className="flex items-center gap-2 mt-2 text-[9px] text-slate-400 font-bold">
+                <div className="flex items-center gap-2 mt-1.5 text-[9px] text-slate-400 font-bold">
                   <span>{formatTime(notif.createdAt)}</span>
                   <span>•</span>
                   <span className="uppercase tracking-wider text-[8px]">{notif.type === "RewardPoints" ? "Điểm thưởng" : notif.type === "Membership" ? "Thành viên" : notif.type}</span>
@@ -550,7 +550,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
                   {!notif.isRead && (
                     <button
                       onClick={(e) => handleMarkRead(e, notif)}
-                      className="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-lg transition-colors"
+                      className="p-1 hover:bg-primary/10 text-slate-400 hover:text-primary rounded-md transition-colors"
                       title="Đánh dấu đã đọc"
                     >
                       <Check size={12} />
@@ -558,14 +558,14 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
                   )}
                   <button
                     onClick={(e) => handleDelete(e, notif.id)}
-                    className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
+                    className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-md transition-colors"
                     title="Xóa thông báo"
                   >
                     <Trash2 size={12} />
                   </button>
                 </div>
 
-                <span className="text-rose-500 text-[10px] font-bold flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                <span className="text-primary text-[10px] font-bold flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
                   Xem <ArrowRight size={10} />
                 </span>
               </div>

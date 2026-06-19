@@ -64,12 +64,12 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
   };
 
   return (
-    <section className="flex flex-col md:flex-row items-center gap-5 bg-white rounded-xl py-5 px-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)]">
+    <section className="flex flex-col md:flex-row items-center gap-4 bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm">
       <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary-container shadow-md relative bg-slate-100 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-full overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center transition-transform hover:scale-105">
           {uploadingAvatar ? (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-              <Loader className="animate-spin text-white" size={20} />
+              <Loader className="animate-spin text-white" size={16} />
             </div>
           ) : null}
           {userProfile.avatar ? (
@@ -79,11 +79,11 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
               src={userProfile.avatar}
             />
           ) : (
-            <User size={36} className="text-slate-400" />
+            <User size={28} className="text-slate-400" />
           )}
         </div>
-        <button className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-md active:scale-90 transition-transform flex items-center justify-center">
-          <span className="material-symbols-outlined text-xs font-bold">edit</span>
+        <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full shadow-md active:scale-90 transition-transform flex items-center justify-center">
+          <span className="material-symbols-outlined text-[10px] font-bold">edit</span>
         </button>
         <input
           type="file"
@@ -93,16 +93,18 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
           accept="image/*"
         />
       </div>
-      <div className="text-center md:text-left space-y-0.5">
-        <h1 className="font-headline-lg text-xl font-bold text-primary tracking-tight">{userProfile.fullName}</h1>
-        <p className="text-sm text-on-surface-variant">{userProfile.email}</p>
+      <div className="text-center md:text-left space-y-1">
+        <h1 className="text-lg font-bold text-slate-800 tracking-tight">{userProfile.fullName}</h1>
+        <p className="text-[13px] text-slate-500 font-medium">{userProfile.email}</p>
 
         {/* Badges / Loyalty Info */}
-        <div className="mt-2.5 flex flex-wrap justify-center md:justify-start gap-2">
-          <span className="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold shadow-sm">
+        <div className="mt-1.5 flex flex-wrap justify-center md:justify-start gap-1.5">
+          <span className="px-2.5 py-0.5 bg-gradient-to-r from-rose-50 to-pink-50 text-rose-600 rounded-full text-[10px] font-bold shadow-sm border border-rose-100/50 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">military_tech</span>
             Thành viên {loyaltyProfile?.currentTierName || "Standard"}
           </span>
-          <span className="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold shadow-sm">
+          <span className="px-2.5 py-0.5 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 rounded-full text-[10px] font-bold shadow-sm border border-emerald-100/50 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">stars</span>
             {loyaltyProfile?.availablePoints != null ? loyaltyProfile.availablePoints.toLocaleString("vi-VN") : "0"} điểm
           </span>
         </div>

@@ -29,12 +29,12 @@ const getTierIcon = (tierName: string) => {
     return <Award className="h-5 w-5 text-slate-400" />;
   }
   if (nameUpper === "GOLD" || nameUpper === "VÀNG") {
-    return <Crown className="h-5 w-5 text-amber-500" />;
+    return <Crown className="h-5 w-5 text-amber-400" />;
   }
   if (nameUpper === "DIAMOND" || nameUpper === "KIM CƯƠNG") {
-    return <Gem className="h-5 w-5 text-indigo-500 animate-pulse" />;
+    return <Gem className="h-5 w-5 text-indigo-400" />;
   }
-  return <Shield className="h-5 w-5 text-slate-500" />;
+  return <Shield className="h-5 w-5 text-slate-400" />;
 };
 
 export function LoyaltySection({ token }: LoyaltySectionProps) {
@@ -133,58 +133,47 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
     const nameUpper = tierName?.toUpperCase();
     if (nameUpper === "SILVER" || nameUpper === "BẠC") {
       return {
-        bg: "bg-gradient-to-br from-[#f1f5f9] via-[#cbd5e1] to-[#94a3b8]", // metallic silver
-        badgeBg: "bg-slate-800/10 text-slate-800 border border-slate-800/10",
-        textColor: "text-slate-900",
-        glow: "shadow-lg shadow-slate-300/60 border border-slate-200",
-        subTextColor: "text-slate-600 font-bold",
-        dividerColor: "border-slate-800/10",
+        bg: "bg-gradient-to-br from-slate-100 to-slate-200",
+        badgeBg: "bg-white text-slate-600 border border-slate-200/60 shadow-sm",
+        textColor: "text-slate-800",
+        glow: "shadow-sm border border-slate-200/50",
+        subTextColor: "text-slate-500 font-bold",
+        dividerColor: "border-slate-300/40",
         style: undefined
       };
     }
     if (nameUpper === "GOLD" || nameUpper === "VÀNG") {
       return {
-        bg: "bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#854d0e]", // metallic gold
-        badgeBg: "bg-amber-950/20 text-amber-950 border border-amber-950/10",
-        textColor: "text-amber-950",
-        glow: "shadow-lg shadow-amber-500/50 border border-amber-400/30",
-        subTextColor: "text-amber-900/80 font-bold",
-        dividerColor: "border-amber-950/10",
+        bg: "bg-gradient-to-br from-zinc-900 to-[#292524]", 
+        badgeBg: "bg-amber-900/40 text-amber-400 border border-amber-500/30",
+        textColor: "text-amber-50",
+        glow: "shadow-lg shadow-amber-900/10 border border-amber-900/30",
+        subTextColor: "text-amber-200/50 font-bold",
+        dividerColor: "border-white/10",
         style: undefined
       };
     }
     if (nameUpper === "DIAMOND" || nameUpper === "KIM CƯƠNG") {
       return {
-        bg: "bg-gradient-to-br from-[#22d3ee] via-[#6366f1] to-[#d946ef]", // metallic holographic diamond
-        badgeBg: "bg-white/20 text-white border border-white/20",
+        bg: "bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a]", 
+        badgeBg: "bg-indigo-900/40 text-indigo-300 border border-indigo-500/30",
         textColor: "text-white",
-        glow: "shadow-lg shadow-indigo-500/50 border border-indigo-400/20",
-        subTextColor: "text-indigo-100/90 font-bold",
+        glow: "shadow-lg shadow-indigo-900/10 border border-indigo-900/30",
+        subTextColor: "text-indigo-200/50 font-bold",
         dividerColor: "border-white/10",
         style: undefined
       };
     }
-    if (nameUpper === "STANDARD" || nameUpper === "THƯỜNG" || nameUpper === "MẶC ĐỊNH") {
-      return {
-        bg: "bg-gradient-to-br from-[#4b5563] via-[#1f2937] to-[#111827]", // metallic dark titanium/steel
-        badgeBg: "bg-white/10 text-zinc-100 border border-white/10",
-        textColor: "text-zinc-100",
-        glow: "shadow-lg shadow-zinc-800/60 border border-zinc-700/30",
-        subTextColor: "text-zinc-400 font-bold",
-        dividerColor: "border-zinc-800",
-        style: undefined
-      };
-    }
-
-    const safeColor = colorHex || "#64748b";
+    
+    // Mặc định
     return {
-      bg: "bg-gradient-to-br from-slate-600 to-slate-800",
-      style: { backgroundColor: safeColor },
-      badgeBg: "bg-white/20 text-white",
-      textColor: "text-white",
-      glow: "shadow-slate-500/20",
-      subTextColor: "text-white/80 font-bold",
-      dividerColor: "border-white/10"
+      bg: "bg-slate-50 border border-slate-100",
+      badgeBg: "bg-white text-slate-500 border border-slate-200/60 shadow-sm",
+      textColor: "text-slate-700",
+      glow: "shadow-sm",
+      subTextColor: "text-slate-400 font-bold",
+      dividerColor: "border-slate-200",
+      style: undefined
     };
   };
 
@@ -242,91 +231,75 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
   if (dynamicProgress > 100) dynamicProgress = 100;
 
   return (
-    <div className="space-y-6">
-      <style>{`
-        @keyframes active-card-pulse {
-          0%, 100% {
-            box-shadow: 0 0 0 2px var(--pulse-color), 0 10px 20px -10px var(--pulse-color);
-            border-color: var(--pulse-color);
-          }
-          50% {
-            box-shadow: 0 0 0 4px var(--pulse-color), 0 15px 25px -5px var(--pulse-color);
-            border-color: transparent;
-          }
-        }
-        .active-card-pulse {
-          animation: active-card-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-      `}</style>
-
+    <div className="space-y-4">
       {/* 1. MEMBERSHIP CARD & POINTS BANNER */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         {/* Virtual Membership Card */}
         <div
-          className={`md:col-span-2 relative ${styles.bg} rounded-[10px] p-6 ${styles.textColor} overflow-hidden shadow-xl ${styles.glow} flex flex-col justify-between min-h-[220px] transition-all hover:scale-[1.01]`}
+          className={`md:col-span-2 relative ${styles.bg} rounded-[10px] p-5 ${styles.textColor} overflow-hidden ${styles.glow} flex flex-col justify-between min-h-[200px] transition-all hover:scale-[1.01]`}
           style={styles.style}
         >
           {/* Card background decoration */}
-          <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-12 translate-y-12 select-none">
-            <span className="material-symbols-outlined text-[260px] font-bold">military_tech</span>
+          <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none transform translate-x-8 translate-y-8 select-none">
+            <span className="material-symbols-outlined text-[200px] font-bold">military_tech</span>
           </div>
-          <div className="absolute top-0 right-0 p-6 flex flex-col items-end">
-            <div className={`flex items-center gap-1.5 ${styles.badgeBg} backdrop-blur-md px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase`}>
+          <div className="absolute top-0 right-0 p-5 flex flex-col items-end">
+            <div className={`flex items-center gap-1.5 ${styles.badgeBg} backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase`}>
               <Sparkles className="h-3 w-3" />
               <span>Hạng {profile?.currentTierName}</span>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <h2 className="text-lg font-bold tracking-wide uppercase opacity-75">LazPe Membership</h2>
-            <p className="text-2xl font-black tracking-widest">{profile?.fullName}</p>
+          <div className="space-y-0.5">
+            <h2 className="text-[11px] font-bold tracking-wide uppercase opacity-60">LazPe Membership</h2>
+            <p className="text-xl font-black tracking-widest">{profile?.fullName}</p>
           </div>
 
-          <div className={`grid grid-cols-2 gap-4 mt-6 pt-4 border-t ${styles.dividerColor || "border-white/10"}`}>
+          <div className={`grid grid-cols-2 gap-4 mt-5 pt-3 border-t ${styles.dividerColor || "border-white/10"}`}>
             <div>
-              <p className={`text-[10px] font-bold uppercase tracking-wider ${styles.subTextColor}`}>Điểm hiện có</p>
-              <p className="text-3xl font-black tracking-tight flex items-baseline gap-1">
+              <p className={`text-[10px] uppercase tracking-wider ${styles.subTextColor}`}>Điểm hiện có</p>
+              <p className="text-2xl font-black tracking-tight flex items-baseline gap-1">
                 {profile?.availablePoints.toLocaleString("vi-VN")}
-                <span className={`text-xs font-bold ${styles.subTextColor}`}>điểm</span>
+                <span className={`text-[10px] font-bold ${styles.subTextColor}`}>điểm</span>
               </p>
             </div>
-            <div className="text-right">
-              <p className={`text-[10px] font-bold uppercase tracking-wider ${styles.subTextColor}`}>Tích lũy xét hạng</p>
-              <p className="text-xl font-bold">
-                {profile?.totalPoints.toLocaleString("vi-VN")} <span className={`text-xs ${styles.subTextColor}`}>điểm</span>
+            <div className="text-right z-10">
+              <p className={`text-[10px] uppercase tracking-wider ${styles.subTextColor}`}>Tích lũy xét hạng</p>
+              <p className="text-lg font-bold">
+                {profile?.totalPoints.toLocaleString("vi-VN")} <span className={`text-[10px] ${styles.subTextColor}`}>điểm</span>
               </p>
             </div>
           </div>
         </div>
 
         {/* Info Box & Rules summary */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] flex flex-col justify-between">
+        <div className="bg-white rounded-[10px] p-4 border border-slate-100/60 shadow-sm flex flex-col justify-between min-h-[200px]">
           <div className="space-y-3">
-            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <Info className="h-4 w-4 text-slate-500" />
+            <h3 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+              <Info className="h-4 w-4 text-slate-400" />
               Quy tắc điểm tích lũy
             </h3>
-            <ul className="text-xs text-slate-500 space-y-2.5 font-medium pl-1">
+            <ul className="text-[11px] text-slate-500 space-y-2 font-medium pl-1 leading-relaxed">
               <li className="flex items-start gap-1.5">
-                <span className="text-rose-500 mt-0.5">•</span>
-                <span>Tích lũy <strong>10 điểm</strong> cho mỗi 1,000đ giá trị đơn hàng khi giao hàng thành công.</span>
+                <span className="text-rose-400 mt-0.5">•</span>
+                <span>Tích lũy <strong>10 điểm</strong> cho mỗi 1,000đ khi giao hàng thành công.</span>
               </li>
               <li className="flex items-start gap-1.5">
-                <span className="text-rose-500 mt-0.5">•</span>
-                <span><strong>Điểm hiện có:</strong> dùng để giảm giá khi mua hàng (1 Điểm = 1 VNĐ).</span>
+                <span className="text-rose-400 mt-0.5">•</span>
+                <span><strong>Điểm hiện có:</strong> dùng để giảm giá (1 Điểm = 1 VNĐ).</span>
               </li>
               <li className="flex items-start gap-1.5">
-                <span className="text-rose-500 mt-0.5">•</span>
-                <span><strong>Điểm tích lũy:</strong> dùng để xét hạng, không giảm khi dùng thanh toán.</span>
+                <span className="text-rose-400 mt-0.5">•</span>
+                <span><strong>Điểm tích lũy:</strong> xét hạng, không dùng thanh toán.</span>
               </li>
             </ul>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-bold">
+          <div className="mt-3 pt-2 border-t border-slate-50 flex items-center text-[10px] text-slate-400 font-bold">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              Reset chu kỳ: 6 tháng/lần (01/01 & 01/07)
+              Reset: 01/01 & 01/07
             </span>
           </div>
         </div>
@@ -335,41 +308,41 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
       {/* 2. PROGRESS TO NEXT TIER */}
       {nextTier && profile && (
-        <section className="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] space-y-3">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
-            <span className="flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-rose-500" />
-              Tiến trình thăng hạng tiếp theo
+        <section className="bg-white rounded-[10px] p-4 border border-slate-100/60 shadow-sm space-y-3">
+          <div className="flex justify-between items-center text-[11px] font-bold text-slate-700">
+            <span className="flex items-center gap-1.5 uppercase tracking-wide text-slate-500">
+              <TrendingUp className="h-3.5 w-3.5 text-rose-500" />
+              Tiến trình thăng hạng
             </span>
             <span>
-              Cần thêm: <strong className="text-rose-500">{(nextTier.minPoints - profile.totalPoints).toLocaleString("vi-VN")} điểm</strong>
+              Cần thêm <strong className="text-rose-500">{(nextTier.minPoints - profile.totalPoints).toLocaleString("vi-VN")} điểm</strong>
             </span>
           </div>
 
           {/* Progress bar */}
-          <div className="relative w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+          <div className="relative w-full h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className={"absolute top-0 left-0 h-full " + styles.bg + " rounded-full transition-all duration-700"}
-              style={styles.style ? { ...styles.style, width: dynamicProgress + "%" } : { width: dynamicProgress + "%" }}
+              className={"absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-700"}
+              style={{ width: dynamicProgress + "%" }}
             />
           </div>
 
-          <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
-            <span>Hạng hiện tại ({profile.currentTierName})</span>
+          <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase">
+            <span>{profile.currentTierName}</span>
             <span>{dynamicProgress}%</span>
-            <span>Hạng tiếp theo ({nextTier.tierName})</span>
+            <span>{nextTier.tierName}</span>
           </div>
         </section>
       )}
 
       {/* 3. TIER PRIVILEGES */}
-      <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] space-y-4">
-        <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 pb-2 border-b border-slate-100">
-          <Gift className="h-5 w-5 text-rose-500" />
+      <section className="bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm space-y-4">
+        <h3 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 pb-3 border-b border-slate-100">
+          <Gift className="h-4 w-4 text-rose-500" />
           Đặc quyền VIP & Hạng thành viên
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {sortedTiers.map((t, index) => {
             const isUserTier = profile?.currentTierID === t.tierID;
             const tierIcon = getTierIcon(t.tierName);
@@ -377,78 +350,67 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             return (
               <div
                 key={t.tierID}
-                className={`flex flex-col justify-between p-5 rounded-[10px] border transition-all duration-300 bg-white group hover:shadow-lg relative ${isUserTier
-                  ? "ring-offset-2 scale-[1.02] z-10 active-card-pulse"
+                className={`flex flex-col justify-between p-4 rounded-[8px] border transition-all duration-300 bg-white group relative ${isUserTier
+                  ? "ring-1 ring-offset-2 shadow-md scale-[1.01] z-10 border-transparent ring-slate-800"
                   : "border-slate-100 hover:border-slate-200"
                   }`}
-                style={
-                  isUserTier
-                    ? {
-                      borderColor: t.colorHex,
-                      // @ts-ignore
-                      "--pulse-color": t.colorHex,
-                    }
-                    : undefined
-                }
               >
                 {isUserTier && (
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+                  <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2 z-20">
                     <span
-                      className="text-[9px] text-white font-extrabold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm"
-                      style={{ backgroundColor: t.colorHex }}
+                      className="text-[9px] bg-slate-800 text-white font-black px-3 py-0.5 rounded-full uppercase tracking-widest shadow-sm"
                     >
                       Hạng của bạn
                     </span>
                   </div>
                 )}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Card Header */}
                   <div className="flex items-start justify-between">
-                    <div className="space-y-1.5 w-full">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-1 w-full text-center">
+                      <div className="flex justify-center items-center mb-2">
                         {tierIcon}
-                        <h4 className="font-extrabold text-slate-800 text-sm tracking-tight">
-                          {t.tierName}
-                        </h4>
                       </div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
+                      <h4 className="font-extrabold text-slate-800 text-[13px] tracking-tight">
+                        {t.tierName}
+                      </h4>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
                         {index === sortedTiers.length - 1
                           ? `Từ ${t.minPoints.toLocaleString("vi-VN")} điểm`
-                          : `${t.minPoints.toLocaleString("vi-VN")} - ${(sortedTiers[index + 1].minPoints - 1).toLocaleString("vi-VN")} điểm`}
+                          : `${t.minPoints.toLocaleString("vi-VN")} - ${(sortedTiers[index + 1].minPoints - 1).toLocaleString("vi-VN")}`}
                       </p>
                     </div>
                   </div>
 
                   {/* Divider */}
-                  <div className="h-[1px] w-full bg-slate-100 group-hover:bg-slate-200/60 transition-colors" />
+                  <div className="h-[1px] w-8 mx-auto bg-slate-100 group-hover:bg-slate-200 transition-colors" />
 
                   {/* Privileges List */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {t.privileges.length === 0 ? (
-                      <div className="py-6 text-center space-y-2">
-                        <span className="material-symbols-outlined text-slate-300 text-3xl block">lock_open</span>
-                        <p className="text-slate-400 italic text-[11px] font-medium leading-relaxed px-2">
-                          Hạng thành viên cơ bản. Tích luỹ thêm điểm để nhận quà và ưu đãi.
+                      <div className="py-4 text-center space-y-1">
+                        <span className="material-symbols-outlined text-slate-300 text-2xl block">lock_open</span>
+                        <p className="text-slate-400 italic text-[10px] font-medium leading-relaxed px-2">
+                          Hạng cơ bản. Tích luỹ thêm để nhận quà.
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-2.5">
+                      <div className="space-y-2">
                         {t.privileges.map((p) => {
                           const lines = formatPrivilegeDetailLines(p.privilegeType, p.value);
                           return (
                             <div
                               key={p.privilegeID}
-                              className="bg-slate-50/50 rounded-[10px] p-3 border border-slate-100 hover:bg-slate-50 transition-colors space-y-1.5"
+                              className="bg-slate-50/80 rounded-md p-2.5 border border-slate-50 hover:bg-slate-50 transition-colors space-y-1"
                             >
-                              <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs">
+                              <div className="flex items-center gap-1.5 text-slate-700 font-bold text-[11px]">
                                 <div
-                                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: t.colorHex }}
+                                  className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-400"
                                 />
                                 <span>{p.name}</span>
                               </div>
                               {lines.length > 0 && (
-                                <ul className="pl-3.5 space-y-1 list-disc text-slate-500/80 text-[10px] font-semibold leading-relaxed">
+                                <ul className="pl-3 space-y-0.5 list-disc text-slate-500/80 text-[9px] font-semibold leading-relaxed">
                                   {lines.map((line, idx) => (
                                     <li key={idx} className="marker:text-slate-300">
                                       {line}
@@ -466,15 +428,15 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
                 {/* Footer status / button hint if not user tier */}
                 {!isUserTier && (
-                  <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                  <div className="mt-3 pt-2 border-t border-slate-50 flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center">
                     {profile && profile.totalPoints >= t.minPoints ? (
                       <span className="text-emerald-500 flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" /> Đã đạt mức điểm
+                        <CheckCircle2 className="h-3 w-3" /> Đã đạt
                       </span>
                     ) : (
                       profile && (
                         <span>
-                          Cần thêm {(t.minPoints - profile.totalPoints).toLocaleString("vi-VN")} điểm
+                          Thiếu {(t.minPoints - profile.totalPoints).toLocaleString("vi-VN")} đ
                         </span>
                       )
                     )}
@@ -487,12 +449,12 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
       </section>
 
       {/* 4. POINT HISTORY TABLE WITH FILTERS */}
-      <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] space-y-4">
+      <section className="bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm space-y-4">
 
         {/* Table Title and Actions */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-            <History className="h-5 w-5 text-slate-600" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+            <History className="h-4 w-4 text-slate-500" />
             Lịch sử biến động điểm
           </h3>
 
@@ -503,7 +465,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             <select
               value={filterPeriod}
               onChange={(e) => handleFilterPeriodChange(e.target.value)}
-              className="bg-slate-50 text-slate-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-rose-300"
+              className="bg-slate-50/50 text-slate-600 text-[11px] font-bold px-2 py-1.5 rounded-[6px] border border-slate-200/60 outline-none focus:border-rose-300"
             >
               <option value="All">Tất cả thời gian</option>
               <option value="Month">Trong tháng này</option>
@@ -512,7 +474,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             </select>
 
             {/* Type Filter Buttons */}
-            <div className="flex items-center bg-slate-50 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-500 overflow-x-auto">
+            <div className="flex items-center bg-slate-50/50 p-0.5 rounded-[6px] border border-slate-200/60 text-[11px] font-bold text-slate-400 overflow-x-auto">
               {(
                 [
                   { id: "ALL", label: "Tất cả" },
@@ -526,10 +488,10 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
                 <button
                   key={type.id}
                   onClick={() => handleFilterTypeChange(type.id)}
-                  className={"px-3 py-1 rounded-md transition-all whitespace-nowrap " + (
+                  className={"px-2.5 py-1 rounded-[4px] transition-all whitespace-nowrap " + (
                     filterType === type.id
-                      ? "bg-white text-slate-800 shadow-sm font-bold"
-                      : "hover:text-slate-800"
+                      ? "bg-white text-slate-700 shadow-sm"
+                      : "hover:text-slate-600"
                   )}
                 >
                   {type.label}
@@ -542,54 +504,54 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
         {/* History content */}
         {loadingHistory ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="animate-spin h-8 w-8 text-rose-500 mb-2" />
-            <p className="text-slate-400 text-xs font-semibold">Đang tải lịch sử điểm...</p>
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="animate-spin h-6 w-6 text-rose-500 mb-2" />
+            <p className="text-slate-400 text-[11px] font-semibold">Đang tải lịch sử điểm...</p>
           </div>
         ) : historyItems.length === 0 ? (
-          <div className="text-center py-12 space-y-2">
-            <span className="material-symbols-outlined text-4xl text-slate-300 block select-none">history</span>
-            <p className="text-slate-400 text-xs font-bold">Không tìm thấy giao dịch điểm nào.</p>
+          <div className="text-center py-8 space-y-2">
+            <span className="material-symbols-outlined text-3xl text-slate-200 block select-none">history</span>
+            <p className="text-slate-400 text-[11px] font-bold">Không tìm thấy giao dịch điểm nào.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
 
             {/* Table layout (desktop) */}
-            <div className="overflow-x-auto rounded-xl border border-slate-100">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="overflow-x-auto rounded-[8px] border border-slate-100/80">
+              <table className="w-full text-left border-collapse text-[11px]">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
-                    <th className="p-3.5">Thời gian</th>
-                    <th className="p-3.5">Loại giao dịch</th>
-                    <th className="p-3.5">Biến động</th>
-                    <th className="p-3.5">Mã đơn hàng</th>
-                    <th className="p-3.5">Nội dung</th>
+                  <tr className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-100/80">
+                    <th className="px-3 py-2">Thời gian</th>
+                    <th className="px-3 py-2">Loại giao dịch</th>
+                    <th className="px-3 py-2">Biến động</th>
+                    <th className="px-3 py-2">Mã đơn hàng</th>
+                    <th className="px-3 py-2">Nội dung</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                <tbody className="divide-y divide-slate-50/60 font-semibold text-slate-700">
                   {historyItems.map((item) => (
-                    <tr key={item.historyID} className="hover:bg-slate-50/40">
-                      <td className="p-3.5 text-slate-400 font-medium">
+                    <tr key={item.historyID} className="hover:bg-slate-50/40 transition-colors">
+                      <td className="px-3 py-2 text-slate-400 font-medium whitespace-nowrap">
                         {formatDate(item.createdAt)}
                       </td>
-                      <td className="p-3.5">
+                      <td className="px-3 py-2">
                         {getTransactionBadge(item.transactionType)}
                       </td>
-                      <td className="p-3.5">
-                        <span className={"text-sm font-black " + (item.amount > 0 ? "text-emerald-500" : "text-rose-500")}>
+                      <td className="px-3 py-2">
+                        <span className={"text-[13px] font-black " + (item.amount > 0 ? "text-emerald-500" : "text-rose-500")}>
                           {item.amount > 0 ? "+" + item.amount.toLocaleString("vi-VN") : item.amount.toLocaleString("vi-VN")}
                         </span>
                       </td>
-                      <td className="p-3.5">
+                      <td className="px-3 py-2">
                         {item.invoiceID ? (
-                          <span className="text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold">
+                          <span className="text-slate-800 bg-slate-100/80 px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold">
                             #{item.invoiceID}
                           </span>
                         ) : (
                           <span className="text-slate-300 font-normal">-</span>
                         )}
                       </td>
-                      <td className="p-3.5 text-slate-600 font-medium max-w-[250px] truncate" title={item.description}>
+                      <td className="px-3 py-2 text-slate-600 font-medium max-w-[200px] truncate" title={item.description}>
                         {item.description}
                       </td>
                     </tr>
@@ -600,28 +562,28 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-between items-center pt-2 text-xs font-bold text-slate-500">
+              <div className="flex justify-between items-center pt-1 text-[10px] font-bold text-slate-400">
                 <span>
                   Hiển thị {historyItems.length} trên tổng số {totalItems} giao dịch
                 </span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+                    className="p-1 rounded-[6px] border border-slate-200/80 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5 text-slate-500" />
                   </button>
-                  <span className="text-slate-800">
+                  <span className="text-slate-600 px-1">
                     Trang {currentPage} / {totalPages}
                   </span>
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+                    className="p-1 rounded-[6px] border border-slate-200/80 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
                   </button>
                 </div>
               </div>

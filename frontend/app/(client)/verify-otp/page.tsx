@@ -157,76 +157,91 @@ function VerifyOtpContent() {
   };
 
   return (
-    <div className="w-full max-w-[540px] bg-white rounded-xl p-6 md:p-12 joyful-shadow relative z-10 hover:scale-[1.01] transition-transform duration-300">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-container/30 text-primary rounded-full mb-6">
-          <span className="material-symbols-outlined text-[40px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-            mark_email_read
+    <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-3xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="p-8 md:p-10">
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mb-5">
+            <span className="material-symbols-outlined text-primary text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+              mark_email_read
+            </span>
+          </div>
+          <h1 className="font-headline-lg text-2xl font-bold text-primary mb-2">Xác thực mã OTP</h1>
+          <p className="font-body-md text-[13px] text-on-surface-variant px-2">
+            Vui lòng nhập mã OTP đã được gửi đến email <span className="font-semibold text-primary">{email}</span>.
+          </p>
+        </div>
+
+        <form className="space-y-6" onSubmit={handleVerify}>
+          {error && (
+            <div className="p-2.5 bg-red-100 text-red-700 text-xs font-medium rounded-xl border border-red-200 text-center">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-between gap-2 md:gap-3 px-2">
+            {otp.map((digit, idx) => (
+              <input
+                key={idx}
+                id={`otp-${idx}`}
+                className="w-10 h-12 md:w-12 md:h-14 text-center text-xl font-bold bg-surface-container-low border-2 border-transparent rounded-xl focus:border-primary/50 focus:bg-white outline-none transition-all duration-200 shadow-inner"
+                maxLength={1}
+                type="text"
+                pattern="[0-9]*"
+                inputMode="numeric"
+                value={digit}
+                onChange={(e) => handleChange(e, idx)}
+                onKeyDown={(e) => handleKeyDown(e, idx)}
+                onPaste={handlePaste}
+                autoFocus={idx === 0}
+              />
+            ))}
+          </div>
+
+          <div className="text-center space-y-2 pt-2">
+            {!canResend ? (
+              <p className="font-label-md text-xs text-on-surface-variant flex items-center justify-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                Gửi lại mã sau <span className="font-bold text-primary tabular-nums">{formatTime(timeLeft)}</span>
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResend}
+                className="font-label-md text-[13px] text-primary hover:underline cursor-pointer font-bold flex items-center justify-center gap-1.5 mx-auto"
+              >
+                <span className="material-symbols-outlined text-[16px]">sync</span>
+                Gửi lại mã OTP
+              </button>
+            )}
+          </div>
+
+          <div className="pt-2">
+            <button
+              className="w-full h-12 bg-primary text-on-primary rounded-xl font-headline-md text-[13px] flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 disabled:opacity-75 disabled:hover:translate-y-0"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  Xác thực
+                  <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-8 pt-5 border-t border-outline-variant/30 flex items-center justify-center gap-1.5">
+          <span className="material-symbols-outlined text-outline text-[16px]">help</span>
+          <span className="font-label-sm text-[11px] text-on-surface-variant">
+            Không nhận được mã? Hãy kiểm tra hộp thư rác.
           </span>
         </div>
-        <h1 className="font-headline-lg text-3xl font-bold text-on-surface mb-2">Xác thực mã OTP</h1>
-        <p className="font-body-md text-sm text-on-surface-variant px-4">
-          Vui lòng nhập mã OTP đã được gửi đến email <span className="font-semibold text-primary">{email}</span>.
-        </p>
-      </div>
-
-      <form className="space-y-8" onSubmit={handleVerify}>
-        {error && (
-          <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
-            {error}
-          </div>
-        )}
-
-        <div className="flex justify-between gap-2 md:gap-4">
-          {otp.map((digit, idx) => (
-            <input
-              key={idx}
-              id={`otp-${idx}`}
-              className="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-low border-2 border-transparent rounded-lg focus:border-primary focus:bg-white outline-none transition-all duration-200"
-              maxLength={1}
-              type="text"
-              pattern="[0-9]*"
-              inputMode="numeric"
-              value={digit}
-              onChange={(e) => handleChange(e, idx)}
-              onKeyDown={(e) => handleKeyDown(e, idx)}
-              onPaste={handlePaste}
-              autoFocus={idx === 0}
-            />
-          ))}
-        </div>
-
-        <div className="text-center space-y-2">
-          {!canResend ? (
-            <p className="font-label-md text-sm text-on-surface-variant flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              Gửi lại mã sau <span className="font-bold text-primary tabular-nums">{formatTime(timeLeft)}</span>
-            </p>
-          ) : (
-            <button
-              type="button"
-              onClick={handleResend}
-              className="font-label-md text-sm text-primary hover:underline cursor-pointer font-bold"
-            >
-              Gửi lại mã OTP
-            </button>
-          )}
-        </div>
-
-        <button
-          className="w-full bg-primary text-on-primary py-4 rounded-full font-headline-md font-semibold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all duration-150 disabled:opacity-75"
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? "Đang xử lý..." : "Xác thực"}
-        </button>
-      </form>
-
-      <div className="mt-8 pt-6 border-t border-surface-variant flex items-center justify-center gap-2">
-        <span className="material-symbols-outlined text-secondary text-base">help</span>
-        <span className="font-label-sm text-xs text-on-surface-variant">
-          Không nhận được mã? Hãy kiểm tra hộp thư rác.
-        </span>
       </div>
     </div>
   );
@@ -234,20 +249,18 @@ function VerifyOtpContent() {
 
 export default function VerifyOtpPage() {
   return (
-    <div className="min-h-[calc(100vh-80px)] flex flex-col justify-between selection:bg-primary-container selection:text-on-primary-container relative overflow-hidden bg-gradient-to-br from-[#ffd9de] via-[#f8f9fa] to-white">
-      {/* Decorative Orbs */}
-      <div className="absolute rounded-full filter blur-[60px] opacity-40 bg-primary-container w-[300px] h-[300px] top-[-10%] left-[-5%] -z-10"></div>
-      <div className="absolute rounded-full filter blur-[60px] opacity-40 bg-secondary-container w-[400px] h-[400px] bottom-[-10%] right-[-5%] -z-10"></div>
+    <div className="w-full flex-grow flex items-center justify-center px-4 py-8 relative overflow-hidden bg-primary-container min-h-screen">
+      {/* Background Decorations for full page */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white opacity-30 rounded-full -translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
 
-      <main className="flex-grow flex items-center justify-center px-4 py-12 md:py-24 w-full">
-        <Suspense fallback={
-          <div className="w-full max-w-[540px] bg-white rounded-xl p-12 flex justify-center items-center">
-            <span className="material-symbols-outlined animate-spin text-primary text-4xl">sync</span>
-          </div>
-        }>
-          <VerifyOtpContent />
-        </Suspense>
-      </main>
+      <Suspense fallback={
+        <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-3xl p-12 flex justify-center items-center shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)]">
+          <span className="material-symbols-outlined animate-spin text-primary text-[40px]">sync</span>
+        </div>
+      }>
+        <VerifyOtpContent />
+      </Suspense>
     </div>
   );
 }

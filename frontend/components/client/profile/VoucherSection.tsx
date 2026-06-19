@@ -180,11 +180,11 @@ export function VoucherSection({ token }: VoucherSectionProps) {
   const getVoucherIcon = (type: Voucher["type"]) => {
     switch (type) {
       case "shipping":
-        return <span className="material-symbols-outlined text-3xl text-secondary">local_shipping</span>;
+        return <span className="material-symbols-outlined text-2xl text-secondary">local_shipping</span>;
       case "cashback":
-        return <span className="material-symbols-outlined text-3xl text-amber-500">monetization_on</span>;
+        return <span className="material-symbols-outlined text-2xl text-amber-500">monetization_on</span>;
       default:
-        return <span className="material-symbols-outlined text-3xl text-primary">sell</span>;
+        return <span className="material-symbols-outlined text-2xl text-primary">sell</span>;
     }
   };
 
@@ -200,40 +200,40 @@ export function VoucherSection({ token }: VoucherSectionProps) {
 
   if (loading) {
     return (
-      <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100 min-h-[300px] flex flex-col items-center justify-center">
-        <Loader className="animate-spin text-primary mb-3" size={40} />
-        <p className="text-slate-500 font-bold text-sm">Đang tải danh sách voucher...</p>
+      <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60 min-h-[300px] flex flex-col items-center justify-center">
+        <Loader className="animate-spin text-primary mb-3" size={32} />
+        <p className="text-slate-500 font-bold text-[12px]">Đang tải danh sách voucher...</p>
       </section>
     );
   }
 
   return (
-    <section className="bg-white rounded-[10px] p-4 sm:p-6 shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100 w-full overflow-hidden">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-3 border-b border-slate-100">
-        <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">confirmation_number</span> Voucher của tôi
+    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base">confirmation_number</span> Voucher của tôi
         </h2>
       </div>
 
       {/* Search Bar */}
-      <form onSubmit={handleSearchSubmit} className="mb-6 flex gap-2 sm:gap-3 w-full max-w-[32rem]">
+      <form onSubmit={handleSearchSubmit} className="mb-5 flex gap-3 w-full max-w-md">
         <input
           type="text"
           placeholder="Nhập mã voucher tại đây..."
           value={searchCode}
           onChange={(e) => setSearchCode(e.target.value)}
-          className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-[10px] border border-slate-200 focus:outline-none focus:border-primary text-sm font-semibold"
+          className="flex-1 w-full min-w-[200px] px-3.5 py-2.5 rounded-[8px] border border-slate-200 focus:outline-none focus:border-primary text-[13px] font-semibold transition-colors shadow-sm"
         />
         <button
           type="submit"
-          className="bg-primary hover:bg-primary/95 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-[10px] font-bold text-sm bouncy-hover active:scale-95 transition-transform shrink-0 whitespace-nowrap"
+          className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-[8px] font-bold text-[13px] active:scale-95 transition-all shrink-0 whitespace-nowrap shadow-sm"
         >
           Áp dụng
         </button>
       </form>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none gap-2">
+      <div className="flex border-b border-slate-100 mb-4 overflow-x-auto scrollbar-none gap-1">
         {(
           [
             { id: "unused", label: "Chưa sử dụng" },
@@ -245,10 +245,10 @@ export function VoucherSection({ token }: VoucherSectionProps) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`py-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+            className={`py-2 px-3 text-[12px] font-bold border-b-2 whitespace-nowrap transition-all ${
               activeTab === tab.id
                 ? "border-primary text-primary"
-                : "border-transparent text-slate-500 hover:text-primary"
+                : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
             {tab.label} ({vouchers.filter(v => tab.id === "all" ? true : v.status === tab.id).length})
@@ -257,20 +257,20 @@ export function VoucherSection({ token }: VoucherSectionProps) {
       </div>
 
       {/* Voucher List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredVouchers.length > 0 ? (
           filteredVouchers.map((voucher) => (
             <div
               key={voucher.id}
-              className={`flex border rounded-[10px] overflow-hidden relative group transition-all duration-200 ${
+              className={`flex border rounded-[8px] overflow-hidden relative group transition-all duration-200 ${
                 voucher.status === "unused"
-                  ? "border-slate-200 hover:border-primary/50 hover:shadow-md"
+                  ? "border-slate-200/80 hover:border-primary/40 hover:shadow-sm"
                   : "border-slate-100 bg-slate-50/50 opacity-60"
               }`}
             >
               {/* Left Wing (Coupon Head) */}
               <div
-                className={`w-24 flex flex-col items-center justify-center border-r border-dashed border-slate-200 relative flex-shrink-0 ${
+                className={`w-[76px] flex flex-col items-center justify-center border-r border-dashed border-slate-200 relative flex-shrink-0 ${
                   voucher.status === "unused"
                     ? voucher.type === "shipping"
                       ? "bg-secondary/5"
@@ -281,7 +281,7 @@ export function VoucherSection({ token }: VoucherSectionProps) {
                 }`}
               >
                 {getVoucherIcon(voucher.type)}
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-2">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mt-1.5">
                   {voucher.type === "shipping" ? "Vận chuyển" : voucher.type === "cashback" ? "Hoàn xu" : "Giảm giá"}
                 </span>
 
@@ -291,30 +291,30 @@ export function VoucherSection({ token }: VoucherSectionProps) {
               </div>
 
               {/* Right Wing (Coupon Body) */}
-              <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+              <div className="flex-1 p-3.5 flex flex-col justify-between min-w-0">
                 <div>
                   <div className="flex justify-between items-start gap-2">
-                    <span className="font-bold text-slate-800 text-sm md:text-base pr-2 line-clamp-1 flex-1 min-w-0" title={voucher.title}>
+                    <span className="font-extrabold text-slate-800 text-[13px] pr-2 line-clamp-1 flex-1 min-w-0" title={voucher.title}>
                       {voucher.title}
                     </span>
                     <span
                       onClick={() => voucher.status === "unused" && handleCopyCode(voucher.code)}
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer select-none transition-colors border shrink-0 max-w-[120px] sm:max-w-[180px] truncate ${
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] cursor-pointer select-none transition-colors border shrink-0 max-w-[120px] truncate ${
                         voucher.status === "unused"
-                          ? "bg-primary-container text-on-primary-container border-primary-container hover:bg-primary hover:text-white"
-                          : "bg-slate-200 text-slate-500 border-slate-200"
+                          ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white"
+                          : "bg-slate-100 text-slate-400 border-slate-200"
                       }`}
                       title={voucher.code}
                     >
                       {voucher.code}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed min-h-[36px]">
+                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed min-h-[32px]">
                     {voucher.description}
                   </p>
                 </div>
 
-                <div className="mt-4 flex justify-between items-end gap-2">
+                <div className="mt-3 flex justify-between items-end gap-2">
                   <div className="text-[10px] text-slate-400 space-y-0.5 flex-1 min-w-0">
                     <p className="truncate">
                       Đơn tối thiểu:{" "}
@@ -328,12 +328,12 @@ export function VoucherSection({ token }: VoucherSectionProps) {
                   {voucher.status === "unused" ? (
                     <button
                       onClick={() => handleCopyCode(voucher.code)}
-                      className="text-xs font-bold text-primary border border-primary px-3.5 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-colors flex-shrink-0"
+                      className="text-[10px] font-bold text-primary border border-primary/30 bg-primary/5 px-2.5 py-1 rounded-[6px] hover:bg-primary hover:text-white hover:border-primary transition-colors flex-shrink-0"
                     >
                       Dùng Ngay
                     </button>
                   ) : (
-                    <span className="text-xs font-bold text-slate-400 uppercase flex-shrink-0">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase flex-shrink-0">
                       {voucher.status === "used" ? "Đã dùng" : "Hết hạn"}
                     </span>
                   )}
@@ -342,9 +342,9 @@ export function VoucherSection({ token }: VoucherSectionProps) {
             </div>
           ))
         ) : (
-          <div className="col-span-2 text-center py-12 bg-slate-50 rounded-[10px] border border-dashed border-slate-200">
-            <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">confirmation_number</span>
-            <p className="text-slate-500 font-semibold text-sm">Không tìm thấy voucher phù hợp.</p>
+          <div className="col-span-1 md:col-span-2 text-center py-10 bg-slate-50/50 rounded-[8px] border border-dashed border-slate-200">
+            <span className="material-symbols-outlined text-3xl text-slate-300 mb-1">confirmation_number</span>
+            <p className="text-slate-500 font-bold text-[12px]">Không tìm thấy voucher phù hợp.</p>
           </div>
         )}
       </div>

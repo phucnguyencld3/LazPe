@@ -255,340 +255,288 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex flex-col justify-between selection:bg-primary-container selection:text-on-primary-container relative">
-      {/* Decorative floating elements for boutique vibe */}
-      <div className="fixed top-[20%] left-[5%] opacity-20 hidden lg:block -z-10">
-        <span className="material-symbols-outlined text-6xl text-primary animate-bounce" style={{ animationDuration: "3s" }}>
-          child_care
-        </span>
-      </div>
-      <div className="fixed bottom-[20%] right-[5%] opacity-20 hidden lg:block -z-10">
-        <span className="material-symbols-outlined text-6xl text-secondary animate-pulse" style={{ animationDuration: "4s" }}>
-          toys
-        </span>
-      </div>
+    <div className="w-full flex-grow flex flex-col md:flex-row items-center justify-center pt-[100px] pb-6 px-4 bg-primary-container relative overflow-hidden">
+      {/* Background Decorations for full page (đồng bộ với Login) */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white opacity-30 rounded-full -translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
 
-      <main className="flex-grow flex items-center justify-center px-4 py-12 md:py-24 bg-gradient-to-br from-[#f8f9fa] to-[#ffd9de]">
-        <div className="w-full max-w-4xl bg-white rounded-xl soft-shadow overflow-hidden flex flex-col md:flex-row">
-          
-          {/* Left Side: Visual/Branding */}
-          <div className="hidden md:flex flex-col justify-between w-1/3 bg-primary-container p-6 text-on-primary-container relative overflow-hidden">
-            <div className="z-10">
-              <h2 className="font-headline-lg text-2xl font-bold mb-3 leading-tight">Gia nhập ngôi nhà nhỏ</h2>
-              <p className="font-body-md text-sm opacity-90">Khám phá thế giới đồ chơi gỗ và quần áo hữu cơ cho bé yêu.</p>
-            </div>
-            
-            {/* Decorative Icon Illustration */}
-            <div className="z-10 mt-auto flex justify-center py-6">
-              <span 
-                className="material-symbols-outlined text-[80px] text-on-primary-container opacity-80 fill-current" 
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                toys
-              </span>
-            </div>
-            
-            {/* Abstract background shapes for "Luminous Play" vibe */}
-            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-secondary-container rounded-full opacity-40"></div>
-            <div className="absolute top-20 -left-10 w-24 h-24 bg-white rounded-full opacity-20"></div>
+      {/* Register Card */}
+      <div className="w-full max-w-[900px] bg-surface-container-lowest rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        {/* Left Side: Visual/Branding */}
+        <div className="hidden md:flex md:w-1/2 relative flex-col justify-end items-center p-8 lg:p-12 text-center pb-24 overflow-hidden rounded-l-3xl bg-primary-container">
+          <div className="absolute inset-0 z-0 bg-primary-container">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover object-top"
+              src="/login-page-img/Login-video-001.mp4"
+            />
           </div>
 
-          {/* Right Side: Registration Form */}
-          <div className="flex-1 p-6 md:p-12">
-            <div className="mb-8 text-center md:text-left">
-              <h1 className="font-headline-lg text-3xl font-bold text-primary mb-1">
-                {!isOtpSent ? "Trang Đăng Ký" : "Xác Thực OTP"}
-              </h1>
-              <p className="font-body-md text-sm text-on-surface-variant">
-                {!isOtpSent ? (
-                  "Tạo tài khoản để nhận ưu đãi dành riêng cho bé."
-                ) : (
-                  <>
-                    Mã xác thực đã được gửi tới email <span className="font-bold text-primary">{email}</span>.
-                  </>
-                )}
-              </p>
-            </div>
+          <div className="relative z-10 space-y-3 mt-auto w-full px-2">
+            <h1 className="font-headline-md text-[28px] lg:text-[32px] font-extrabold text-gray-800 leading-tight tracking-tight drop-shadow-md whitespace-nowrap">
+              Tạo tài khoản mới
+            </h1>
+            <p className="font-body-md text-[13px] lg:text-sm text-gray-800 font-semibold px-2 drop-shadow-sm">
+              Bắt đầu hành trình mua sắm tuyệt vời dành cho bé yêu của bạn.
+            </p>
+          </div>
 
-            {!isOtpSent ? (
-              <form className="space-y-6" onSubmit={handleRegister}>
+        </div>
+
+        {/* Right Side: Registration Form */}
+        <div className="w-full md:w-2/3 lg:w-3/5 p-6 sm:p-8 flex flex-col justify-center relative bg-surface-container-lowest">
+          <div className="mb-5 text-center">
+            <h1 className="font-headline-lg text-2xl md:text-3xl font-bold text-primary mb-1">
+              {!isOtpSent ? "Tạo tài khoản" : "Xác Thực OTP"}
+            </h1>
+            <p className="font-body-md text-[13px] text-on-surface-variant">
+              {!isOtpSent ? (
+                "Đăng ký thành viên để nhận ưu đãi cho bé."
+              ) : (
+                <>Mã xác thực đã gửi tới <span className="font-bold text-primary">{email}</span></>
+              )}
+            </p>
+          </div>
+
+          {!isOtpSent ? (
+            <div className="flex flex-col h-full justify-center">
+              {/* Google Login đưa lên đầu */}
+              <div className="mb-5 flex justify-center w-full">
+                <div className="w-full flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError("Đăng nhập Google thất bại")}
+                    theme="outline"
+                    size="large"
+                    shape="pill"
+                    width="320"
+                    text="signup_with"
+                  />
+                </div>
+              </div>
+
+              <div className="relative flex items-center mb-5">
+                <div className="flex-grow border-t border-outline-variant/60"></div>
+                <span className="flex-shrink mx-4 font-bold text-[10px] text-outline tracking-wider uppercase">Hoặc đăng ký bằng Email</span>
+                <div className="flex-grow border-t border-outline-variant/60"></div>
+              </div>
+
+              <form className="space-y-3" onSubmit={handleRegister}>
                 {error && (
-                  <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                  <div className="p-2 bg-red-100 text-red-700 text-xs rounded-xl border border-red-200 font-medium">
                     {error}
                   </div>
                 )}
                 {success && (
-                  <div className="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
+                  <div className="p-2 bg-green-100 text-green-700 text-xs rounded-xl border border-green-200 font-medium">
                     {success}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Họ và tên */}
                   <div className="flex flex-col gap-1">
-                    <label className="font-label-md text-sm text-primary ml-3" htmlFor="full-name">Họ và tên</label>
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="full-name">Họ và tên</label>
                     <div className="relative">
-                      <span className={getInputIconClass("fullName")}>person</span>
+                      <span className={`text-[18px] ${getInputIconClass("fullName")}`}>person</span>
                       <input 
-                        className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md focus:ring-2 focus:ring-primary-container transition-all" 
-                        id="full-name" 
-                        placeholder="Nguyễn Văn A" 
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        onFocus={() => setFocusedField("fullName")}
-                        onBlur={() => setFocusedField(null)}
-                        required
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        id="full-name" placeholder="Nguyễn Văn A" type="text"
+                        value={fullName} onChange={(e) => setFullName(e.target.value)}
+                        onFocus={() => setFocusedField("fullName")} onBlur={() => setFocusedField(null)} required
                       />
                     </div>
                   </div>
 
                   {/* Số điện thoại */}
                   <div className="flex flex-col gap-1">
-                    <label className="font-label-md text-sm text-primary ml-3" htmlFor="phone">Số điện thoại</label>
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="phone">Số điện thoại</label>
                     <div className="relative">
-                      <span className={getInputIconClass("phone")}>call</span>
+                      <span className={`text-[18px] ${getInputIconClass("phone")}`}>call</span>
                       <input 
-                        className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md focus:ring-2 focus:ring-primary-container transition-all" 
-                        id="phone" 
-                        placeholder="090 123 4567" 
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        onFocus={() => setFocusedField("phone")}
-                        onBlur={() => setFocusedField(null)}
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        id="phone" placeholder="090 123 4567" type="tel"
+                        value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}
+                        onFocus={() => setFocusedField("phone")} onBlur={() => setFocusedField(null)}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Email */}
-                <div className="flex flex-col gap-1">
-                  <label className="font-label-md text-sm text-primary ml-3" htmlFor="email">Email</label>
-                  <div className="relative">
-                    <span className={getInputIconClass("email")}>mail</span>
-                    <input 
-                      className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md focus:ring-2 focus:ring-primary-container transition-all" 
-                      id="email" 
-                      placeholder="example@gmail.com" 
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onFocus={() => setFocusedField("email")}
-                      onBlur={() => setFocusedField(null)}
-                      required
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Email */}
+                  <div className="flex flex-col gap-1">
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="email">Email</label>
+                    <div className="relative">
+                      <span className={`text-[18px] ${getInputIconClass("email")}`}>mail</span>
+                      <input 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        id="email" placeholder="example@gmail.com" type="email"
+                        value={email} onChange={(e) => setEmail(e.target.value)}
+                        onFocus={() => setFocusedField("email")} onBlur={() => setFocusedField(null)} required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Năm sinh */}
+                  <div className="flex flex-col gap-1">
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="dob">Ngày sinh</label>
+                    <div className="relative">
+                      <span className={`text-[18px] ${getInputIconClass("dob")}`}>calendar_today</span>
+                      <input 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        id="dob" type="date"
+                        value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
+                        onFocus={() => setFocusedField("dob")} onBlur={() => setFocusedField(null)}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Năm sinh */}
-                <div className="flex flex-col gap-1">
-                  <label className="font-label-md text-sm text-primary ml-3" htmlFor="dob">Năm sinh</label>
-                  <div className="relative">
-                    <span className={getInputIconClass("dob")}>calendar_today</span>
-                    <input 
-                      className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md focus:ring-2 focus:ring-primary-container transition-all appearance-none" 
-                      id="dob" 
-                      type="date"
-                      value={dateOfBirth}
-                      onChange={(e) => setDateOfBirth(e.target.value)}
-                      onFocus={() => setFocusedField("dob")}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Mật khẩu */}
                   <div className="flex flex-col gap-1">
-                    <label className="font-label-md text-sm text-primary ml-3" htmlFor="password">Mật khẩu</label>
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="password">Mật khẩu</label>
                     <div className="relative">
-                      <span className={getInputIconClass("password")}>lock</span>
+                      <span className={`text-[18px] ${getInputIconClass("password")}`}>lock</span>
                       <input 
-                        className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md focus:ring-2 focus:ring-primary-container transition-all" 
-                        id="password" 
-                        placeholder="••••••••" 
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onFocus={() => setFocusedField("password")}
-                        onBlur={() => setFocusedField(null)}
-                        required
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        id="password" placeholder="••••••••" type="password"
+                        value={password} onChange={(e) => setPassword(e.target.value)}
+                        onFocus={() => setFocusedField("password")} onBlur={() => setFocusedField(null)} required
                       />
                     </div>
                   </div>
 
                   {/* Xác nhận mật khẩu */}
                   <div className="flex flex-col gap-1">
-                    <label className="font-label-md text-sm text-primary ml-3" htmlFor="confirm-password">Xác nhận mật khẩu</label>
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="confirm-password">Xác nhận</label>
                     <div className="relative">
-                      <span className={getInputIconClass("confirmPassword")}>lock_reset</span>
+                      <span className={`text-[18px] ${getInputIconClass("confirmPassword")}`}>lock_reset</span>
                       <input 
-                        className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md focus:ring-2 focus:ring-primary-container transition-all" 
-                        id="confirm-password" 
-                        placeholder="••••••••" 
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        onFocus={() => setFocusedField("confirmPassword")}
-                        onBlur={() => setFocusedField(null)}
-                        required
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        id="confirm-password" placeholder="••••••••" type="password"
+                        value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                        onFocus={() => setFocusedField("confirmPassword")} onBlur={() => setFocusedField(null)} required
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Checkbox */}
-                <div className="flex items-start gap-3 py-1">
-                  <div className="relative flex items-center h-5">
-                    <input 
-                      className="w-5 h-5 rounded-md border-outline-variant text-primary focus:ring-primary-container cursor-pointer accent-primary" 
-                      id="terms" 
-                      type="checkbox"
-                      checked={termsAccepted}
-                      onChange={(e) => setTermsAccepted(e.target.checked)}
-                    />
-                  </div>
-                  <label className="font-label-md text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="terms">
-                    Tôi đồng ý với <a className="text-primary hover:underline font-bold" href="#">điều khoản và chính sách</a> của LazPe.
+                <div className="flex items-center gap-2 pt-1">
+                  <input 
+                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 cursor-pointer accent-primary transition-all" 
+                    id="terms" type="checkbox"
+                    checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)}
+                  />
+                  <label className="font-label-md text-[11px] text-on-surface-variant cursor-pointer select-none" htmlFor="terms">
+                    Tôi đồng ý với <a className="text-primary hover:underline font-bold" href="#">điều khoản và chính sách</a>.
                   </label>
                 </div>
 
                 {/* CTA Button */}
-                <button 
-                  className="w-full h-14 bg-primary text-on-primary font-headline-md rounded-full bouncy-hover soft-shadow flex items-center justify-center gap-3 active:scale-95 transition-transform duration-200 disabled:opacity-75 disabled:hover:scale-100" 
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="material-symbols-outlined animate-spin">sync</span>
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      Đăng Ký
-                      <span className="material-symbols-outlined">arrow_forward</span>
-                    </>
-                  )}
-                </button>
-                
-                <div className="relative flex items-center py-2">
-                  <div className="flex-grow border-t border-outline-variant"></div>
-                  <span className="flex-shrink mx-6 font-bold text-xs text-on-surface-variant">Hoặc</span>
-                  <div className="flex-grow border-t border-outline-variant"></div>
-                </div>
-
-                <div className="flex justify-center mt-2">
-                  <div className="w-full flex justify-center items-center">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={() => setError("Đăng nhập Google thất bại")}
-                      theme="outline"
-                      size="large"
-                      shape="pill"
-                      width="320"
-                      text="signup_with"
-                    />
-                  </div>
-                </div>
-              </form>
-            ) : (
-              <form className="space-y-6" onSubmit={handleVerifyOtp}>
-                {error && (
-                  <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
-                    {success}
-                  </div>
-                )}
-
-                {/* OTP Code input */}
-                <div className="flex flex-col gap-1">
-                  <label className="font-label-md text-sm text-primary ml-3" htmlFor="otp">Mã xác thực OTP (6 chữ số)</label>
-                  <div className="relative">
-                    <span className={getInputIconClass("otp")}>lock</span>
-                    <input 
-                      className="w-full h-14 pl-12 pr-4 bg-surface-container-low border-none rounded-lg font-body-md tracking-[0.25em] text-center text-lg font-bold focus:ring-2 focus:ring-primary-container transition-all" 
-                      id="otp" 
-                      placeholder="• • • • • •" 
-                      type="text"
-                      inputMode="numeric"
-                      pattern="\d{6}"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                      onFocus={() => setFocusedField("otp")}
-                      onBlur={() => setFocusedField(null)}
-                      required
-                    />
-                  </div>
-                  <span className="text-xs text-on-surface-variant ml-3 mt-1">Vui lòng nhập 6 chữ số được gửi trong hộp thư của bạn.</span>
-                </div>
-
-                {/* Resend and timer section */}
-                <div className="flex items-center justify-between px-3 py-1">
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={countdown > 0 || loading}
-                    className="text-primary font-bold text-sm hover:underline disabled:text-outline-variant disabled:no-underline transition-all flex items-center gap-1"
+                <div className="pt-2">
+                  <button 
+                    className="w-full h-11 bg-primary text-on-primary font-headline-md text-[13px] rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75 disabled:hover:translate-y-0" 
+                    type="submit" disabled={loading}
                   >
-                    <span className="material-symbols-outlined text-base">sync</span>
-                    {countdown > 0 ? `Gửi lại mã (${countdown}s)` : "Gửi lại mã"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsOtpSent(false);
-                      setError("");
-                      setSuccess("");
-                    }}
-                    className="text-on-surface-variant hover:text-primary font-bold text-sm hover:underline transition-all flex items-center gap-1"
-                  >
-                    <span className="material-symbols-outlined text-base font-bold">arrow_back</span>
-                    Quay lại sửa thông tin
+                    {loading ? (
+                      <>
+                        <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                        Đang xử lý...
+                      </>
+                    ) : (
+                      <>
+                        Đăng Ký Tài Khoản
+                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      </>
+                    )}
                   </button>
                 </div>
-
-                {/* CTA Button */}
-                <button 
-                  className="w-full h-14 bg-primary text-on-primary font-headline-md rounded-full bouncy-hover soft-shadow flex items-center justify-center gap-3 active:scale-95 transition-transform duration-200 disabled:opacity-75 disabled:hover:scale-100" 
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="material-symbols-outlined animate-spin">sync</span>
-                      Đang xác thực...
-                    </>
-                  ) : (
-                    <>
-                      Xác Nhận Đăng Ký
-                      <span className="material-symbols-outlined">verified_user</span>
-                    </>
-                  )}
-                </button>
               </form>
-            )}
-
-            {/* Footer link */}
-            <div className="mt-8 text-center">
-              <p className="font-body-md text-sm text-on-surface-variant">
-                Đã có tài khoản?{" "}
-                <Link className="text-primary font-bold hover:underline ml-1" href="/login">
-                  Đăng nhập ngay
-                </Link>
-              </p>
             </div>
-          </div>
+          ) : (
+            <form className="space-y-5" onSubmit={handleVerifyOtp}>
+              {error && (
+                <div className="p-3 bg-red-100 text-red-700 text-[13px] rounded-xl border border-red-200 font-medium">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-3 bg-green-100 text-green-700 text-[13px] rounded-xl border border-green-200 font-medium">
+                  {success}
+                </div>
+              )}
 
+              {/* OTP Code input */}
+              <div className="flex flex-col gap-1">
+                <label className="font-label-md text-[13px] font-semibold text-on-surface-variant ml-1" htmlFor="otp">Mã OTP (6 số)</label>
+                <div className="relative">
+                  <span className={`text-[20px] ${getInputIconClass("otp")}`}>lock</span>
+                  <input 
+                    className="w-full h-12 pl-11 pr-4 bg-surface-container-low border-none rounded-xl tracking-[0.25em] text-center text-lg font-bold focus:ring-2 focus:ring-primary/50 transition-all" 
+                    id="otp" placeholder="• • • • • •" type="text" inputMode="numeric" pattern="\d{6}" maxLength={6}
+                    value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                    onFocus={() => setFocusedField("otp")} onBlur={() => setFocusedField(null)} required
+                  />
+                </div>
+                <span className="text-[11px] text-on-surface-variant ml-1 mt-0.5">Kiểm tra hộp thư email của bạn.</span>
+              </div>
+
+              {/* Resend and timer section */}
+              <div className="flex items-center justify-between px-1">
+                <button
+                  type="button" onClick={handleResendOtp} disabled={countdown > 0 || loading}
+                  className="text-primary font-bold text-[12px] hover:underline disabled:text-outline disabled:no-underline transition-all flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[14px]">sync</span>
+                  {countdown > 0 ? `Gửi lại (${countdown}s)` : "Gửi lại mã"}
+                </button>
+
+                <button
+                  type="button" onClick={() => { setIsOtpSent(false); setError(""); setSuccess(""); }}
+                  className="text-on-surface-variant hover:text-primary font-bold text-[12px] hover:underline transition-all flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+                  Quay lại
+                </button>
+              </div>
+
+              {/* CTA Button */}
+              <button 
+                className="w-full h-12 bg-primary text-on-primary font-headline-md text-sm rounded-xl shadow-md shadow-primary/20 hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75" 
+                type="submit" disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                    Đang xác thực...
+                  </>
+                ) : (
+                  <>
+                    Xác Nhận Đăng Ký
+                    <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Footer link */}
+          <div className="mt-6 text-center pt-2 border-t border-outline-variant/30">
+            <p className="font-body-md text-[12px] text-on-surface-variant">
+              Đã có tài khoản?{" "}
+              <Link className="text-primary font-bold hover:underline ml-1 transition-colors" href="/login">
+                Đăng nhập ngay
+              </Link>
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

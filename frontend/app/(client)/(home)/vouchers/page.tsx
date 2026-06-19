@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { getPublicVouchers, getWalletVouchers, collectVoucher, activateExclusiveVoucher, UserWalletVoucher } from '@/lib/api';
 import { Voucher } from '@/types';
 import { toast } from 'sonner';
-import { Ticket, Gift, Sparkles, Clock, CheckCircle } from 'lucide-react';
+import { Ticket, Gift, Sparkles, Clock, CheckCircle, ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function VoucherHubPage() {
   const [activeTab, setActiveTab] = useState<'public' | 'wallet'>('public');
@@ -14,6 +15,12 @@ export default function VoucherHubPage() {
   const [activatingCode, setActivatingCode] = useState('');
   const [isActivating, setIsActivating] = useState(false);
   const [token, setToken] = useState<string>("");
+
+  const activeWalletVouchers = walletVouchers.filter(item => {
+    const isExpired = item.status === 'Expired' || new Date(item.endDate) < new Date();
+    const isUsed = item.status === 'Used';
+    return !isUsed && !isExpired;
+  });
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
@@ -124,7 +131,7 @@ export default function VoucherHubPage() {
             <button 
               onClick={() => handleCollect(voucher.voucherID)}
               disabled={voucher.isCollected}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`shrink-0 px-3 py-1.5 rounded-[6px] text-xs font-bold transition-all ${
                 voucher.isCollected 
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
                   : 'bg-orange-500 text-white hover:bg-orange-600 hover:shadow-md hover:-translate-y-0.5'
@@ -192,68 +199,63 @@ export default function VoucherHubPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-rose-500 rounded-2xl p-6 md:p-10 text-white mb-8 shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <h1 className="text-3xl md:text-4xl font-black mb-2 flex items-center gap-3">
-            <Gift size={36} /> Kho Voucher LazPe
-          </h1>
-          <p className="text-orange-100 max-w-[600px] text-base mt-2">
-            Sưu tầm ngay hàng ngàn mã giảm giá và ưu đãi miễn phí vận chuyển để mua sắm tiết kiệm hơn mỗi ngày!
-          </p>
-        </div>
-        <div className="absolute top-0 right-0 w-64 h-full opacity-20 pointer-events-none translate-x-1/4 -translate-y-1/4">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#FFFFFF" d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,81.3,-46.3C90.8,-33.5,96.8,-18,97.1,-2.4C97.4,13.2,92,29,82.4,41.9C72.8,54.8,59,64.8,44.4,72.6C29.8,80.4,14.9,86,-0.6,87.1C-16.1,88.2,-32.2,84.8,-46.8,76.9C-61.4,69,-74.5,56.6,-82.9,41.8C-91.3,27,-95,9.8,-92.3,-6.4C-89.6,-22.6,-80.5,-37.8,-68.9,-49.8C-57.3,-61.8,-43.2,-70.6,-28.9,-77.2C-14.6,-83.8,0,-88.2,14.9,-85C29.8,-81.8,44.7,-76.4,44.7,-76.4Z" transform="translate(100 100)" />
-          </svg>
-        </div>
-      </div>
+    <div className="w-full pb-6">
+      <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-500 hover:text-orange-500 transition-colors">
+        <ChevronLeft size={16} /> Quay lại trang chủ
+      </Link>
 
-      {/* Tabs & Code Activation */}
-      <div className="flex flex-col gap-4 mb-8">
-        <div className="bg-white rounded-[10px] p-1.5 flex shadow-sm border border-slate-100 w-full">
-          <button
-            onClick={() => setActiveTab('public')}
-            className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all whitespace-nowrap text-center ${
-              activeTab === 'public' 
-                ? 'bg-orange-50 text-orange-600 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            Voucher Săn Sale
-          </button>
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all whitespace-nowrap text-center ${
-              activeTab === 'wallet' 
-                ? 'bg-orange-50 text-orange-600 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            Ví Của Tôi ({walletVouchers.length})
-          </button>
+      {/* Header & Tabs */}
+      <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 overflow-hidden relative mb-6">
+        <div className="bg-orange-50/50 py-4 px-6 md:py-5 md:px-8 relative flex flex-col items-center text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-orange-200 bg-white shadow-sm mb-2 text-orange-500">
+              <Gift className="w-4 h-4" />
+          </div>
+          <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 mb-0">Kho Voucher LazPe</h2>
         </div>
 
-        {/* Code Input */}
-        {activeTab === 'wallet' && (
-          <form onSubmit={handleActivateCode} className="w-full flex gap-2">
+        {/* Tabs & Code Activation */}
+        <div className="p-4 md:px-8 md:pb-6 flex flex-col gap-4 bg-white border-t border-slate-100">
+          <div className="bg-slate-50 rounded-[8px] p-1 flex w-full max-w-[400px] mx-auto border border-slate-100/50">
+            <button
+              onClick={() => setActiveTab('public')}
+              className={`flex-1 py-2 rounded-[6px] font-bold text-[13px] transition-all whitespace-nowrap text-center ${
+                activeTab === 'public' 
+                  ? 'bg-white text-orange-600 shadow-sm border border-slate-100/50' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Voucher Săn Sale
+            </button>
+            <button
+              onClick={() => setActiveTab('wallet')}
+              className={`flex-1 py-2 rounded-[6px] font-bold text-[13px] transition-all whitespace-nowrap text-center ${
+                activeTab === 'wallet' 
+                  ? 'bg-white text-orange-600 shadow-sm border border-slate-100/50' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Ví Của Tôi ({activeWalletVouchers.length})
+            </button>
+          </div>
+
+          {/* Code Input */}
+          <form onSubmit={handleActivateCode} className="w-full max-w-[400px] mx-auto flex gap-2">
             <input
               type="text"
               placeholder="Nhập mã ưu đãi đặc quyền..."
               value={activatingCode}
               onChange={(e) => setActivatingCode(e.target.value.toUpperCase())}
-              className="flex-1 px-4 py-2.5 rounded-[10px] border border-slate-200 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-medium uppercase placeholder:normal-case"
+              className="flex-1 px-4 py-2.5 rounded-[8px] border border-slate-200 text-[13px] focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-medium uppercase placeholder:normal-case"
             />
             <button
               type="submit"
               disabled={isActivating || !activatingCode}
-              className="shrink-0 bg-orange-500 text-white px-6 py-2.5 rounded-[10px] font-bold text-sm hover:bg-orange-600 transition-colors disabled:bg-orange-300 whitespace-nowrap"
+              className="shrink-0 bg-orange-500 text-white px-5 py-2.5 rounded-[8px] font-bold text-[13px] hover:bg-orange-600 transition-colors disabled:bg-orange-300 whitespace-nowrap"
             >
               {isActivating ? 'Kích hoạt...' : 'Áp Dụng'}
             </button>
           </form>
-        )}
+        </div>
       </div>
 
       {/* Content */}
@@ -292,9 +294,9 @@ export default function VoucherHubPage() {
                     Đăng Nhập Ngay
                   </a>
                 </div>
-              ) : walletVouchers.length > 0 ? (
+              ) : activeWalletVouchers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {walletVouchers.map(renderWalletVoucher)}
+                  {activeWalletVouchers.map(renderWalletVoucher)}
                 </div>
               ) : (
                 <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">

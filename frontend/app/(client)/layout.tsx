@@ -16,20 +16,27 @@ export default function ClientLayout({
 }>) {
   const pathname = usePathname();
 
+  const isAuthPage = [
+    '/login', 
+    '/register', 
+    '/forgot-password', 
+    '/reset-password',
+    '/verify-otp'
+  ].includes(pathname);
+
   return (
     <WishlistProvider>
       <CartProvider>
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
           <HeaderV2 />
-          <main className="w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-[110px] sm:mt-20 mb-12">
+          <main className={`flex-grow ${isAuthPage ? "w-full flex flex-col h-screen overflow-hidden" : "w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-[110px] sm:mt-20 mb-12"}`}>
             {children}
           </main>
-          <CustomerChatWidget />
-          <ScrollToTopButton />
-          <Footer />
+          {!isAuthPage && <CustomerChatWidget />}
+          {!isAuthPage && <ScrollToTopButton />}
+          {!isAuthPage && <Footer />}
         </div>
       </CartProvider>
-
     </WishlistProvider>
   );
 }

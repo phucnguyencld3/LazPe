@@ -100,10 +100,9 @@ export default function RewardsPage() {
     if (!status) return null;
     
     return (
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-3 mb-8">
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-3 mb-6">
         {status.rewardSequence.map((reward, index) => {
           const dayNumber = index + 1;
-          // Logic for UI representation
           let visualStreak = status.currentStreak;
           let activeIndex = status.hasCheckedInToday ? -1 : visualStreak;
 
@@ -119,29 +118,30 @@ export default function RewardsPage() {
 
           const isCompleted = index < visualStreak;
           const isToday = index === activeIndex;
-          const isFuture = index > activeIndex && index >= visualStreak;
           
-          let stateClass = "bg-white border-slate-200 text-slate-400";
-          let icon = <Gift size={24} className="text-slate-300 mb-1" />;
+          let stateClass = "bg-white border-slate-100 text-slate-400";
+          let icon = <Gift size={20} className="text-slate-300 mb-1" />;
+          let textClass = "text-[11px]";
           
           if (isCompleted) {
-            stateClass = "bg-orange-50 border-orange-200 text-orange-600";
-            icon = <CheckCircle size={24} className="text-orange-500 mb-1" />;
+            stateClass = "bg-orange-50/50 border-orange-100 text-orange-600";
+            icon = <CheckCircle size={20} className="text-orange-500 mb-1" />;
           } else if (isToday) {
             stateClass = status.hasCheckedInToday 
-              ? "bg-orange-50 border-orange-200 text-orange-600" 
-              : "bg-gradient-to-br from-orange-100 to-amber-100 border-orange-300 text-orange-600 shadow-md ring-2 ring-orange-400 ring-offset-1 transform scale-105";
+              ? "bg-orange-50/50 border-orange-100 text-orange-600" 
+              : "bg-white border-orange-300 text-orange-600 shadow-sm";
             icon = status.hasCheckedInToday 
-              ? <CheckCircle size={24} className="text-orange-500 mb-1" />
-              : <Gift size={28} className="text-orange-500 mb-1 animate-bounce" />;
+              ? <CheckCircle size={20} className="text-orange-500 mb-1" />
+              : <Gift size={22} className="text-orange-500 mb-1" />;
+            textClass = status.hasCheckedInToday ? "text-[11px]" : "text-[13px] font-extrabold text-orange-500";
           }
 
           return (
-            <div key={index} className={`flex flex-col items-center justify-center p-3 rounded-[10px] border-2 transition-all duration-300 ${stateClass} ${dayNumber === 7 ? "col-span-4 md:col-span-1" : ""}`}>
-              <span className="text-xs font-medium mb-2 uppercase opacity-80">Ngày {dayNumber}</span>
+            <div key={index} className={`flex flex-col items-center justify-center py-3 px-1 rounded-[8px] border transition-all duration-300 ${stateClass} ${dayNumber === 7 ? "col-span-4 md:col-span-1" : ""}`}>
+              <span className="text-[10px] font-semibold mb-1.5 uppercase tracking-wider opacity-70">Ngày {dayNumber}</span>
               {icon}
-              <div className="mt-2 flex items-center font-bold">
-                <span className={isToday && !status.hasCheckedInToday ? "text-lg text-orange-600" : "text-sm"}>+{reward}</span>
+              <div className="mt-1.5 flex items-center font-bold">
+                <span className={textClass}>+{reward}</span>
               </div>
             </div>
           );
@@ -151,62 +151,52 @@ export default function RewardsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 pt-6">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="mb-6 flex items-center gap-4">
-          <Link href="/" className="p-2 bg-white rounded-full shadow-sm hover:bg-slate-100 text-slate-600 transition-colors">
-            <ChevronLeft size={24} />
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Calendar className="text-orange-500" /> Điểm Danh Hàng Ngày
-          </h1>
-        </div>
-
+    <div className="w-full mb-6">
+        <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-500 hover:text-orange-500 transition-colors">
+          <ChevronLeft size={16} /> Quay lại trang chủ
+        </Link>
         <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 overflow-hidden relative">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-8 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 opacity-20 transform translate-x-1/4 -translate-y-1/4">
-              <Sparkles size={180} />
+          {/* Header Banner Nhẹ Nhàng */}
+          <div className="bg-orange-50/50 py-4 px-6 md:py-5 md:px-8 border-b border-orange-100/50 relative overflow-hidden flex flex-col items-center text-center">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-orange-200 bg-white shadow-sm mb-2 text-orange-500">
+                <Calendar className="w-4 h-4" />
             </div>
-            <div className="relative z-10 w-full md:w-3/4 lg:w-2/3">
-              <h2 className="text-3xl font-extrabold mb-2 text-white whitespace-normal">Nhận Xu Mỗi Ngày!</h2>
-              <p className="text-orange-50 text-lg">
-                Chuỗi điểm danh của bạn đang là <strong className="bg-white text-orange-500 px-2 py-0.5 rounded-md text-xl mx-1">{status?.currentStreak || 0}</strong> ngày liên tiếp.
-              </p>
-              <p className="text-orange-100 text-sm mt-2 flex items-center gap-1">
-                <AlertCircle size={16} /> Đừng bỏ lỡ ngày nào để nhận tối đa 100 xu vào ngày thứ 7 nhé!
-              </p>
-            </div>
+            <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 mb-1">Điểm Danh Hàng Ngày</h2>
+            <p className="text-[13px] text-slate-500">
+                Chuỗi điểm danh của bạn đang là <strong className="text-orange-500 text-sm mx-0.5">{status?.currentStreak || 0}</strong> ngày liên tiếp.
+            </p>
+            <p className="text-[11px] text-slate-400 mt-2 flex items-center justify-center gap-1 font-medium">
+                <AlertCircle size={13} /> Đừng bỏ lỡ ngày nào để nhận tối đa 100 xu vào ngày thứ 7 nhé!
+            </p>
           </div>
 
-          <div className="p-6 md:p-8">
+          <div className="p-5 md:p-6">
             {/* Days Grid */}
             {renderDays()}
 
             {/* Action Button */}
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-2">
               <button
                 onClick={handleCheckIn}
                 disabled={status?.hasCheckedInToday || checkingIn}
                 className={`
-                  relative overflow-hidden group font-bold text-lg rounded-full px-12 py-4 shadow-lg transition-all duration-300 w-full sm:w-auto
+                  relative overflow-hidden group font-bold text-[13px] rounded-[8px] px-8 py-2.5 transition-all duration-300 w-full sm:w-auto
                   ${status?.hasCheckedInToday 
-                    ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed border border-slate-200" 
-                    : "bg-gradient-to-r from-orange-500 to-red-500 text-white hover:shadow-orange-500/30 hover:scale-105 active:scale-95"
+                    ? "bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200" 
+                    : "bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.98] shadow-sm border border-transparent"
                   }
                 `}
               >
-                <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine z-0" />
                 <span className="relative z-10 flex items-center gap-2 justify-center">
                   {checkingIn ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : status?.hasCheckedInToday ? (
                     <>
-                      <CheckCircle size={24} /> Đã Điểm Danh Hôm Nay
+                      <CheckCircle size={16} /> Đã Điểm Danh Hôm Nay
                     </>
                   ) : (
                     <>
-                      <Gift size={24} /> Nhận {status?.pointsForNextCheckIn || 0} Xu Ngay!
+                      <Gift size={16} /> Nhận {status?.pointsForNextCheckIn || 0} Xu Ngay!
                     </>
                   )}
                 </span>
@@ -214,7 +204,6 @@ export default function RewardsPage() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }
