@@ -63,7 +63,7 @@ export default function NotificationSettingsCard({
       </div>
 
       <form onSubmit={handleUpdateNotifications} className="space-y-3">
-        <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-xl transition-all cursor-pointer select-none">
+        <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-[8px] transition-all cursor-pointer select-none">
           <div className="flex flex-col text-left pr-2">
             <span className="text-sm font-bold text-slate-800">Email thông báo</span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 leading-snug">Nhận thông báo qua hòm thư điện tử.</span>
@@ -76,7 +76,7 @@ export default function NotificationSettingsCard({
           />
         </label>
 
-        <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-xl transition-all cursor-pointer select-none">
+        <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-[8px] transition-all cursor-pointer select-none">
           <div className="flex flex-col text-left pr-2">
             <span className="text-sm font-bold text-slate-800">Cập nhật đơn hàng</span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 leading-snug">Nhận tin báo trạng thái đơn hàng mua sắm.</span>
@@ -89,7 +89,7 @@ export default function NotificationSettingsCard({
           />
         </label>
 
-        <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-xl transition-all cursor-pointer select-none">
+        <label className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200/60 rounded-[8px] transition-all cursor-pointer select-none">
           <div className="flex flex-col text-left pr-2">
             <span className="text-sm font-bold text-slate-800">Tin tức & Khuyến mãi</span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 leading-snug">Nhận bản tin khuyến mãi và tin tức mới nhất.</span>
@@ -106,7 +106,7 @@ export default function NotificationSettingsCard({
           <button
             type="submit"
             disabled={updatingNotifications}
-            className="px-5 py-2.5 bg-primary hover:opacity-90 text-on-primary rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-primary hover:opacity-90 text-on-primary rounded-[8px] text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
           >
             {updatingNotifications ? (
               <>

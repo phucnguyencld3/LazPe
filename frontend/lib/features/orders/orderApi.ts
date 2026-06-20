@@ -79,6 +79,38 @@ export const resolveApiUrl = (url: string | null | undefined) => {
   return `${baseDomain}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
+export const fetchOrdersPaginated = async (
+  token: string,
+  page: number = 1,
+  pageSize: number = 10,
+  search?: string,
+  status?: number | null
+): Promise<{ items: OrderInfo[]; totalCount: number }> => {
+  let url = `${API_BASE_URL}/Invoice/search?page=${page}&pageSize=${pageSize}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  if (status !== undefined && status !== null) url += `&status=${status}`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error("Failed to fetch paginated orders");
+  const data = await res.json();
+  return {
+    items: data.items,
+    totalCount: data.totalCount
+  };
+};
+
+export const fetchOrderMetrics = async (token: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/metrics`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error("Failed to fetch order metrics");
+  return res.json();
+};
+
 export const fetchOrders = async (token: string): Promise<OrderInfo[]> => {
   const res = await fetch(`${API_BASE_URL}/Invoice`, {
     headers: { Authorization: `Bearer ${token}` },

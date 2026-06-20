@@ -89,7 +89,7 @@ export default function Email2FaModal({
                 value={emailOtpCode}
                 onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="••••••"
-                className="w-full py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[8px] font-mono text-center"
+                className="w-full py-3.5 bg-slate-50 border border-slate-200 rounded-[8px] text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white text-slate-800 tracking-[8px] font-mono text-center"
                 required
               />
             </div>
@@ -108,14 +108,14 @@ export default function Email2FaModal({
               <button
                 type="button"
                 onClick={() => { setShowEmail2FaModal(false); setEmailOtpCode(""); }}
-                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-all cursor-pointer"
+                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-[8px] text-sm transition-all cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={submittingTwoFactor || emailOtpCode.length < 6}
-                className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm flex items-center gap-1.5 disabled:opacity-60 transition-all cursor-pointer"
+                className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-[8px] text-sm flex items-center gap-1.5 disabled:opacity-60 transition-all cursor-pointer"
               >
                 {submittingTwoFactor && <Loader className="animate-spin" size={12} />}
                 Xác nhận kích hoạt

@@ -10,7 +10,6 @@ import { getUserProfile, get2FaStatus, UserProfile } from "@/lib/api";
 import AdminSummaryCard from "@/components/admin/profile/AdminSummaryCard";
 import PersonalInfoCard from "@/components/admin/profile/PersonalInfoCard";
 import PasswordCard from "@/components/admin/profile/PasswordCard";
-import NotificationSettingsCard from "@/components/admin/profile/NotificationSettingsCard";
 import TwoFactorCard from "@/components/admin/profile/TwoFactorCard";
 import PermissionsCard from "@/components/admin/profile/PermissionsCard";
 
@@ -95,7 +94,7 @@ export default function AdminProfilePage() {
   if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-[8px] border border-slate-100 min-h-[500px]">
-        <Loader className="animate-spin text-rose-500 mb-3" size={36} />
+        <Loader className="animate-spin text-primary mb-3" size={36} />
         <p className="text-sm font-semibold text-slate-500">Đang tải thông tin hồ sơ quản trị...</p>
       </div>
     );
@@ -128,13 +127,7 @@ export default function AdminProfilePage() {
             />
           )}
 
-          {userId && token && (
-            <NotificationSettingsCard
-              userId={userId}
-              token={token}
-              profile={profile}
-            />
-          )}
+
 
           {token && (
             <TwoFactorCard

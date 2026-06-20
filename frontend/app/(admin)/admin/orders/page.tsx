@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
-import { OrderInfo, fetchOrders, bulkConfirmOrders, bulkMarkShippedOrders } from "@/lib/features/orders/orderApi";
+import { OrderInfo, fetchOrdersPaginated, fetchOrderMetrics, bulkConfirmOrders, bulkMarkShippedOrders } from "@/lib/features/orders/orderApi";
 import { OrderSummaryCards } from "@/components/admin/orders/OrderSummaryCards";
 import { OrderFilters } from "@/components/admin/orders/OrderFilters";
 import { OrderTable } from "@/components/admin/orders/OrderTable";
@@ -16,16 +16,44 @@ export default function AdminOrdersPage() {
   // Filters & Pagination State
   const [statusFilter, setStatusFilter] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 10;
+
+  // Metrics State
+  const [metrics, setMetrics] = useState({
+    totalOrders: 0,
+    pending: 0,
+    processing: 0,
+    shipping: 0,
+    completed: 0,
+    cancelled: 0,
+    todayRevenue: 0
+  });
+
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<number[]>([]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Reset page to 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]);
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter, debouncedSearch]);
 
-  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<number[]>([]);
+  const loadMetrics = async (token: string) => {
+    try {
+      const data = await fetchOrderMetrics(token);
+      setMetrics(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const loadOrders = async () => {
     try {
@@ -35,8 +63,9 @@ export default function AdminOrdersPage() {
         return;
       }
       setLoading(true);
-      const data = await fetchOrders(token);
-      setOrders(data);
+      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter);
+      setOrders(data.items);
+      setTotalCount(data.totalCount);
       setSelectedInvoiceIds([]);
     } catch (err) {
       console.error(err);
@@ -46,10 +75,18 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // Fetch initial data
+  // Fetch initial metrics
+  useEffect(() => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (token) {
+      loadMetrics(token);
+    }
+  }, []);
+
+  // Fetch paginated data whenever dependencies change
   useEffect(() => {
     loadOrders();
-  }, [router]);
+  }, [currentPage, statusFilter, debouncedSearch]);
 
   const handleBulkConfirm = async () => {
     if (selectedInvoiceIds.length === 0) return;
@@ -63,6 +100,7 @@ export default function AdminOrdersPage() {
         toast.success(res.message || "Xác nhận hàng loạt thành công!");
       }
       loadOrders();
+      loadMetrics(token);
     } catch (error) {
       console.error(error);
       toast.error("Lỗi khi xác nhận hàng loạt.");
@@ -81,61 +119,25 @@ export default function AdminOrdersPage() {
         toast.success(res.message || "Cập nhật giao hàng hàng loạt thành công!");
       }
       loadOrders();
+      loadMetrics(token);
     } catch (error) {
       console.error(error);
       toast.error("Lỗi khi cập nhật giao hàng hàng loạt.");
     }
   };
 
-  // Derived state: Filtered orders
-  const filteredOrders = useMemo(() => {
-    return orders.filter(o => {
-      const matchStatus = statusFilter === null ? true : o.statusCode === statusFilter;
-      const matchSearch = searchTerm === "" ? true : (
-        o.invoiceID.toString().includes(searchTerm) ||
-        (o.userFullName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (o.userPhone || "").includes(searchTerm)
-      );
-      return matchStatus && matchSearch;
-    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [orders, statusFilter, searchTerm]);
-
-  // Derived state: Pagination
-  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
-  const paginatedOrders = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredOrders, currentPage]);
-
-  // Derived state: Metrics & Calculations
-  const metrics = useMemo(() => {
-    const pending = orders.filter(o => o.statusCode === 0).length;
-    const shipping = orders.filter(o => o.statusCode === 2).length;
-    const completed = orders.filter(o => o.statusCode === 3).length;
-    return { pending, shipping, completed };
-  }, [orders]);
-
-  const todayRevenue = useMemo(() => {
-    const today = new Date().toDateString();
-    return orders
-      .filter(o => new Date(o.createdAt).toDateString() === today && o.statusCode !== 5)
-      .reduce((acc, curr) => acc + curr.totalPrice, 0);
-  }, [orders]);
-
-  const cancelledCount = useMemo(() => {
-    return orders.filter(o => o.statusCode === 5).length;
-  }, [orders]);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const counts = useMemo(() => {
     return {
-      all: orders.length,
-      pending: orders.filter(o => o.statusCode === 0).length,
-      processing: orders.filter(o => o.statusCode === 1).length,
-      shipping: orders.filter(o => o.statusCode === 2).length,
-      completed: orders.filter(o => o.statusCode === 3).length,
-      cancelled: orders.filter(o => o.statusCode === 5).length,
+      all: metrics.totalOrders,
+      pending: metrics.pending,
+      processing: metrics.processing,
+      shipping: metrics.shipping,
+      completed: metrics.completed,
+      cancelled: metrics.cancelled,
     };
-  }, [orders]);
+  }, [metrics]);
 
   return (
     <main className="w-full space-y-md animate-in fade-in duration-300 pb-10">
@@ -155,10 +157,10 @@ export default function AdminOrdersPage() {
       </div>
 
       <OrderSummaryCards 
-        totalOrders={orders.length}
+        totalOrders={metrics.totalOrders}
         pending={metrics.pending}
-        todayRevenue={todayRevenue}
-        cancelledCount={cancelledCount}
+        todayRevenue={metrics.todayRevenue}
+        cancelledCount={metrics.cancelled}
         onViewRequests={() => setStatusFilter(5)}
       />
 
@@ -172,11 +174,11 @@ export default function AdminOrdersPage() {
       />
 
       <OrderTable 
-        orders={paginatedOrders}
+        orders={orders}
         loading={loading}
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={filteredOrders.length}
+        totalItems={totalCount}
         itemsPerPage={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
         statusFilter={statusFilter}
@@ -187,4 +189,4 @@ export default function AdminOrdersPage() {
       />
     </main>
   );
-}
+}

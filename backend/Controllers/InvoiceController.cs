@@ -88,6 +88,41 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Lấy thống kê tổng quan hóa đơn cho trang quản trị
+        /// </summary>
+        [HttpGet("metrics")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetOrderMetrics()
+        {
+            try
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
+                var invoices = await _context.Invoices.AsNoTracking().Where(i => !i.IsDeleted).ToListAsync();
+                
+                var result = new
+                {
+                    totalOrders = invoices.Count,
+                    pending = invoices.Count(i => i.Status == OrderStatus.Pending),
+                    processing = invoices.Count(i => i.Status == OrderStatus.Confirmed),
+                    shipping = invoices.Count(i => i.Status == OrderStatus.Shipped),
+                    completed = invoices.Count(i => i.Status == OrderStatus.Completed),
+                    cancelled = invoices.Count(i => i.Status == OrderStatus.Cancelled),
+                    todayRevenue = invoices
+                        .Where(i => i.CreatedAt.HasValue && TimeZoneInfo.ConvertTimeFromUtc(i.CreatedAt.Value, tz).Date == today && i.Status != OrderStatus.Cancelled)
+                        .Sum(i => i.TotalPrice)
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting order metrics");
+                return StatusCode(500, new { message = "Lỗi khi lấy thống kê hóa đơn", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Lấy danh sách hóa đơn của một người dùng cụ thể (Admin only)
         /// </summary>
         [HttpGet("user/{userId}")]

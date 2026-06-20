@@ -91,7 +91,7 @@ export default function AdminSummaryCard({
   const roles = user?.roles || [];
 
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm flex flex-col items-center text-center animate-in fade-in duration-300">
+    <div className="bg-white rounded-[8px] border border-slate-100 p-6 shadow-sm flex flex-col items-center text-center animate-in fade-in duration-300">
       {/* Avatar Container with Upload Overlay */}
       <div className="relative group w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center">
         {profile?.avatar ? (

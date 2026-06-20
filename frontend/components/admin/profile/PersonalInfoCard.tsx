@@ -84,7 +84,7 @@ export default function PersonalInfoCard({
   };
 
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
+    <div className="bg-white rounded-[8px] border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
       <div>
         <h3 className="font-headline-sm text-headline-sm text-primary font-bold">Thông Tin Cá Nhân</h3>
         <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Cập nhật họ tên và số điện thoại liên lạc của bạn.</p>
@@ -103,7 +103,7 @@ export default function PersonalInfoCard({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Nhập họ và tên..."
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                 required
               />
             </div>
@@ -119,7 +119,7 @@ export default function PersonalInfoCard({
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Nhập số điện thoại..."
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
               />
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function PersonalInfoCard({
                 type="email" 
                 value={profile?.email || ""} 
                 disabled
-                className="w-full pl-11 pr-4 py-3 bg-slate-100 border border-slate-200/60 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed select-none"
+                className="w-full pl-11 pr-4 py-3 bg-slate-100 border border-slate-200/60 rounded-[8px] text-sm font-semibold text-slate-500 cursor-not-allowed select-none"
               />
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function PersonalInfoCard({
           <button
             type="submit"
             disabled={updatingProfile}
-            className="px-6 py-3 bg-primary hover:opacity-90 text-on-primary rounded-xl text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
+            className="px-6 py-3 bg-primary hover:opacity-90 text-on-primary rounded-[8px] text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
           >
             {updatingProfile ? (
               <>

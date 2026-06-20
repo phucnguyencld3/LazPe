@@ -66,7 +66,8 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
   };
 
   return (
-    <div className="bg-surface rounded-3xl border border-outline-variant p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
+    <div className="bg-white rounded-[8px] border border-slate-100 p-6 md:p-8 shadow-sm space-y-6 animate-in fade-in duration-300">
+
       <div>
         <h3 className="font-headline-sm text-headline-sm text-primary font-bold">Bảo Mật</h3>
         <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Đảm bảo tài khoản của bạn đang sử dụng mật khẩu mạnh.</p>
@@ -74,7 +75,7 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
 
       <form onSubmit={handlePasswordSubmit} className="space-y-4">
         {passwordError && (
-          <div className="p-3.5 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2 text-rose-600 text-sm font-bold">
+          <div className="p-3.5 bg-rose-50 border border-rose-100 rounded-[8px] flex items-start gap-2 text-rose-600 text-sm font-bold">
             <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
             <span>{passwordError}</span>
           </div>
@@ -92,7 +93,7 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Mật khẩu cũ..."
-                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                 required
               />
               <button 
@@ -115,7 +116,7 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Ít nhất 6 ký tự..."
-                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                 required
               />
               <button 
@@ -138,7 +139,7 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 placeholder="Xác nhận mật khẩu..."
-                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
+                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-rose-400 focus:bg-white text-slate-800"
                 required
               />
               <button 
@@ -156,7 +157,7 @@ export default function PasswordCard({ userId, token }: PasswordCardProps) {
           <button
             type="submit"
             disabled={changingPassword}
-            className="px-6 py-3 bg-primary hover:opacity-90 text-on-primary rounded-xl text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
+            className="px-6 py-3 bg-primary hover:opacity-90 text-on-primary rounded-[8px] text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-md transition-all cursor-pointer"
           >
             {changingPassword ? (
               <>
