@@ -15,14 +15,16 @@ namespace PolyBabyAPI.Services
         private readonly ILogger<ProductService> _logger;
         private readonly IMemoryCache _cache;
         private readonly ISearchEngineService _searchEngineService;
+        private readonly IAuditLogService _auditLogService;
         private static CancellationTokenSource _resetCacheToken = new CancellationTokenSource();
 
-        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache, ISearchEngineService searchEngineService)
+        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache, ISearchEngineService searchEngineService, IAuditLogService auditLogService)
         {
             _context = context;
             _logger = logger;
             _cache = cache;
             _searchEngineService = searchEngineService;
+            _auditLogService = auditLogService;
         }
 
         public void ClearProductCache()
@@ -806,6 +808,10 @@ namespace PolyBabyAPI.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                var oldValuesStr = System.Text.Json.JsonSerializer.Serialize(new { Price = oldBasePrice, ProductName = product.ProductName, Status = product.Status });
+                var newValuesStr = System.Text.Json.JsonSerializer.Serialize(new { Price = dto.Price, ProductName = dto.ProductName, Status = dto.Status });
+                await _auditLogService.LogAsync("UpdateProduct", "Product", id.ToString(), oldValuesStr, newValuesStr, $"Cập nhật sản phẩm: {dto.ProductName}");
 
                 // Cập nhật ProductImages nếu được truyền lên
                 if (dto.Images != null)

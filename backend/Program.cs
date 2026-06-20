@@ -232,6 +232,10 @@ try
     builder.Services.AddScoped<IProductOptionService, ProductOptionService>();
     builder.Services.AddScoped<IVariantService, VariantService>(); 
 
+    // Audit Log Service
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
     // Address service
     builder.Services.AddHttpClient<AddressApiService>(client =>
     {

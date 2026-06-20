@@ -13,14 +13,16 @@ namespace PolyBabyAPI.Services
         private readonly ILoyaltyService _loyaltyService;
         private readonly IVoucherService _voucherService;
         private readonly IRecommendationService _recommendationService;
+        private readonly IAuditLogService _auditLogService;
 
-        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService, IRecommendationService recommendationService)
+        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService, IRecommendationService recommendationService, IAuditLogService auditLogService)
         {
             _context = context;
             _logger = logger;
             _loyaltyService = loyaltyService;
             _voucherService = voucherService;
             _recommendationService = recommendationService;
+            _auditLogService = auditLogService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -550,6 +552,8 @@ namespace PolyBabyAPI.Services
             invoice.ConfirmedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
+            await _auditLogService.LogAsync("ApproveOrder", "Invoice", invoiceId.ToString(), "Pending", "Confirmed", "Xác nhận đơn hàng");
+
             _logger.LogInformation("Đơn hàng {InvoiceId} đã được xác nhận", invoiceId);
             return true;
         }
@@ -696,6 +700,8 @@ namespace PolyBabyAPI.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                await _auditLogService.LogAsync("CancelOrder", "Invoice", invoiceId.ToString(), null, "Cancelled", $"Admin hủy đơn hàng. Lý do: {reason}");
+
                 _logger.LogInformation("Admin đã hủy đơn hàng {InvoiceId}. Hàng + Voucher đã được hoàn trả. Lý do: {Reason}",
                     invoiceId, reason);
 
@@ -743,6 +749,8 @@ namespace PolyBabyAPI.Services
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _auditLogService.LogAsync("ApproveCancelOrder", "Invoice", invoiceId.ToString(), "CancelRequested", "Cancelled", $"Duyệt yêu cầu hủy đơn. Lý do: {reason}");
 
                 _logger.LogInformation("Đã duyệt hủy đơn {InvoiceId}. Hàng + Voucher đã được hoàn trả. Lý do: {Reason}",
                     invoiceId, reason);

@@ -15,10 +15,12 @@ namespace PolyBabyAPI.Services
     public class StatisticsService : IStatisticsService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IAuditLogService _auditLogService;
 
-        public StatisticsService(ApplicationDbContext context)
+        public StatisticsService(ApplicationDbContext context, IAuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         public async Task<RevenueReportResponseDto> GetRevenueReportAsync(StatisticsFilterDto filter)
@@ -719,6 +721,9 @@ namespace PolyBabyAPI.Services
 
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
+
+            await _auditLogService.LogAsync("ExportStatistics", "Report", null, null, null, "Xuất báo cáo thống kê doanh thu ra file Excel");
+
             return stream.ToArray();
         }
     }

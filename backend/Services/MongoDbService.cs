@@ -21,5 +21,8 @@ namespace PolyBabyAPI.Services
 
         public IMongoCollection<KnowledgeArticle> KnowledgeArticles =>
             _database.GetCollection<KnowledgeArticle>("KnowledgeArticles");
+
+        public IMongoCollection<AuditLog> AuditLogs =>
+            _database.GetCollection<AuditLog>("AuditLogs");
     }
 }
