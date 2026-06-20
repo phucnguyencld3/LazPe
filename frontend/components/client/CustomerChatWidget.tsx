@@ -502,7 +502,7 @@ export default function CustomerChatWidget() {
       {/* FAB Button Premium Style */}
       <button
         onClick={toggleOpen}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-[16px] bg-gradient-to-tr from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white flex items-center justify-center shadow-[0_8px_20px_rgba(225,29,72,0.3)] hover:shadow-[0_12px_25px_rgba(225,29,72,0.4)] cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-[16px] bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
       >
         <span className="material-symbols-outlined text-[28px]">
           {isOpen ? "close" : "forum"}
@@ -512,10 +512,10 @@ export default function CustomerChatWidget() {
       {/* Chat Window Container Premium Style */}
       {isOpen && (
         <div
-          className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[380px] h-[100dvh] sm:h-[600px] sm:max-h-[85vh] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
+          className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[85vh] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
         >
           {/* Premium Gradient Header */}
-          <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
+          <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             <div className="flex items-center gap-3 relative z-10">
               <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-base text-white">
@@ -536,7 +536,7 @@ export default function CustomerChatWidget() {
             <div className="flex items-center gap-1.5 text-white/90 relative z-10">
               <button
                 onClick={() => setIsAiMode(!isAiMode)}
-                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${isAiMode ? "bg-white text-rose-500 border-white shadow-sm" : "bg-white/10 border-white/20 hover:bg-white/20"}`}
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${isAiMode ? "bg-white text-primary border-white shadow-sm" : "bg-white/10 border-white/20 hover:bg-white/20"}`}
                 title="Chuyển đổi chế độ AI / Nhân viên"
               >
                 {isAiMode ? "AI Mode" : "Human"}
@@ -564,8 +564,8 @@ export default function CustomerChatWidget() {
             {!isStarted ? (
               /* Start Chat Form for Guest */
               <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
-                <div className="w-20 h-20 bg-gradient-to-tr from-rose-100 to-pink-50 rounded-full flex items-center justify-center mb-5">
-                  <span className="material-symbols-outlined text-rose-500 text-4xl">forum</span>
+                <div className="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-5">
+                  <span className="material-symbols-outlined text-on-primary-container text-4xl">forum</span>
                 </div>
                 <h4 className="font-extrabold text-slate-800 text-xl mb-2">Chào mừng đến LazPe</h4>
                 <p className="text-sm text-slate-500 mb-6 max-w-[260px] leading-relaxed">
@@ -578,7 +578,7 @@ export default function CustomerChatWidget() {
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
                     placeholder="Nhập tên của bạn..."
-                    className="w-full px-5 py-3.5 border-0 bg-white rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-shadow"
+                    className="w-full px-5 py-3.5 border-0 bg-white rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-shadow"
                   />
                   <button
                     type="submit"
@@ -621,7 +621,7 @@ export default function CustomerChatWidget() {
                         <div
                           className={`max-w-[85%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed shadow-sm ${msg.isFromAdmin
                             ? "bg-white text-slate-700 rounded-tl-sm border border-slate-100/50"
-                            : "bg-rose-500 text-white rounded-tr-sm"
+                            : "bg-primary text-white rounded-tr-sm"
                             } ${msg.id < 0 ? "opacity-70" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                         >
                           {isMediaUrl(msg.messageText) ? (
@@ -656,7 +656,7 @@ export default function CustomerChatWidget() {
                           )}
                         </div>
                         {msg.id < 0 && (
-                          <span className="text-[10px] text-rose-500 italic mt-1 px-2 animate-pulse font-medium">
+                          <span className="text-[10px] text-primary italic mt-1 px-2 animate-pulse font-medium">
                             Đang gửi...
                           </span>
                         )}
@@ -694,83 +694,7 @@ export default function CustomerChatWidget() {
               </div>
             ) : (
               <div className="bg-white/95 backdrop-blur-md border-t border-slate-100 flex flex-col shrink-0 relative pb-safe">
-                {/* Emoji/Sticker Picker Popup */}
-                {showPicker && (
-                  <div className="absolute bottom-full right-4 mb-2 w-80 h-72 bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    {/* Picker Tabs */}
-                    <div className="flex border-b border-slate-100 text-xs shrink-0 select-none">
-                      <button
-                        type="button"
-                        onClick={() => setPickerTab("emoji")}
-                        className={`flex-1 py-3 font-bold cursor-pointer transition-colors ${pickerTab === "emoji" ? "text-rose-500 border-b-2 border-rose-500 bg-rose-50/30" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                          }`}
-                      >
-                        Biểu cảm
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPickerTab("sticker")}
-                        className={`flex-1 py-3 font-bold cursor-pointer transition-colors ${pickerTab === "sticker" ? "text-rose-500 border-b-2 border-rose-500 bg-rose-50/30" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                          }`}
-                      >
-                        Sticker
-                      </button>
-                    </div>
 
-                    {/* Picker Body */}
-                    <div className="flex-1 overflow-y-auto p-3" style={{ scrollbarWidth: "thin" }}>
-                      {pickerTab === "emoji" ? (
-                        <div className="grid grid-cols-8 gap-2 text-xl select-none">
-                          {EMOJIS.map((emoji, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => {
-                                setInputText((prev) => prev + emoji);
-                              }}
-                              className="hover:bg-slate-100 rounded p-1 flex items-center justify-center cursor-pointer transition-colors active:scale-90"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-3">
-                          {STICKERS.map((sticker, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => sendSticker(sticker.url)}
-                              className="hover:bg-slate-50 p-1 rounded-lg border border-slate-100 flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 group"
-                            >
-                              <img
-                                src={sticker.url}
-                                alt={sticker.name}
-                                className="w-14 h-14 object-contain rounded-md"
-                              />
-                              <span className="text-[10px] text-slate-500 mt-1.5 font-medium truncate max-w-full group-hover:text-rose-500 transition-colors">
-                                {sticker.name}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Options Toolbar Premium */}
-                <div className="flex items-center gap-3 px-4 py-2 text-slate-400">
-                  <button
-                    type="button"
-                    onClick={() => setShowPicker(!showPicker)}
-                    className={`hover:text-rose-500 p-1.5 rounded-full transition-all material-symbols-outlined text-xl cursor-pointer ${showPicker ? "text-rose-500 bg-rose-50" : "hover:bg-slate-50"
-                      }`}
-                    title="Cảm xúc & Sticker"
-                  >
-                    mood
-                  </button>
-                </div>
 
                 {/* Text input form */}
                 <form onSubmit={handleSend} className="px-4 pb-4 pt-1 flex items-end gap-2">
@@ -781,12 +705,12 @@ export default function CustomerChatWidget() {
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Gửi tin nhắn..."
-                    className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
+                    className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
                   />
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="text-[#0068ff] hover:text-[#0056d6] disabled:text-slate-300 disabled:opacity-50 p-2 flex items-center justify-center cursor-pointer transition-colors"
+                    className="text-primary hover:text-primary/80 disabled:text-slate-300 disabled:opacity-50 p-2 flex items-center justify-center cursor-pointer transition-colors"
                   >
                     <span className="material-symbols-outlined text-2xl font-bold">send</span>
                   </button>
