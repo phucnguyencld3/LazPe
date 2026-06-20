@@ -15,11 +15,13 @@ namespace PolyBabyAPI.Controllers
     public class StatisticsController : ControllerBase
     {
         private readonly IStatisticsService _statisticsService;
+        private readonly ITrendForecastingService _trendService;
         private readonly ILogger<StatisticsController> _logger;
 
-        public StatisticsController(IStatisticsService statisticsService, ILogger<StatisticsController> logger)
+        public StatisticsController(IStatisticsService statisticsService, ITrendForecastingService trendService, ILogger<StatisticsController> logger)
         {
             _statisticsService = statisticsService;
+            _trendService = trendService;
             _logger = logger;
         }
 
@@ -143,6 +145,63 @@ namespace PolyBabyAPI.Controllers
                 {
                     success = false,
                     message = "Có lỗi xảy ra khi xuất báo cáo Excel."
+                });
+            }
+        }
+
+        /// <summary>
+        /// Lấy dữ liệu dự đoán AI Trend (Thực tế + Forecast)
+        /// </summary>
+        [HttpGet("ai-trends")]
+        [Permission("Report.Read")]
+        public async Task<IActionResult> GetAITrends([FromQuery] StatisticsFilterDto filter)
+        {
+            try
+            {
+                _logger.LogInformation("Getting AI trend forecast data...");
+                var report = await _trendService.GetTrendForecastAsync(filter);
+                return Ok(new
+                {
+                    success = true,
+                    data = report,
+                    message = "Lấy dữ liệu dự đoán AI thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error getting AI trends");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi tính toán AI."
+                });
+            }
+        }
+
+        /// <summary>
+        /// Huấn luyện lại mô hình AI Trend bằng tay
+        /// </summary>
+        [HttpPost("train-ai")]
+        [Permission("Report.Read")]
+        public async Task<IActionResult> TrainAITrendModel()
+        {
+            try
+            {
+                _logger.LogInformation("Manually triggering AI trend model training...");
+                await _trendService.TrainTrendModelAsync();
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đã huấn luyện lại mô hình AI thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi huấn luyện AI trend model.");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi huấn luyện AI."
                 });
             }
         }

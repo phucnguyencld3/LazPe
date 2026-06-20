@@ -46,17 +46,17 @@ export const Pagination: React.FC<PaginationProps> = ({
   const isSm = size === "sm";
 
   return (
-    <div className={`flex items-center justify-between bg-surface-container-low border-t border-outline-variant ${
+    <div className={`flex items-center justify-between bg-white border-t border-slate-100 ${
       isSm ? "px-4 py-2" : "px-6 py-4"
     }`}>
-      <p className={`text-on-surface-variant ${isSm ? "text-[11px] font-bold" : "text-label-sm"}`}>
+      <p className={`text-slate-500 ${isSm ? "text-[11px] font-semibold" : "text-sm font-semibold"}`}>
         Hiển thị {startItem} - {endItem} trong tổng số {totalItems} mục
       </p>
       <div className={`flex items-center ${isSm ? "gap-1.5" : "gap-2"}`}>
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className={`rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer ${
+          className={`rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all disabled:opacity-30 cursor-pointer ${
             isSm ? "w-8 h-8" : "w-10 h-10"
           }`}
         >
@@ -66,7 +66,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           {getPageNumbers().map((page, index) => {
             if (page === "...") {
               return (
-                <span key={`dots-${index}`} className={`text-outline-variant ${isSm ? "px-1 text-xs" : "px-2"}`}>
+                <span key={`dots-${index}`} className={`text-slate-400 ${isSm ? "px-1 text-xs" : "px-2"}`}>
                   ...
                 </span>
               );
@@ -80,8 +80,8 @@ export const Pagination: React.FC<PaginationProps> = ({
                   isSm ? "w-8 h-8 text-xs font-bold" : "w-10 h-10 text-sm font-bold"
                 } ${
                   isPageActive
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : `hover:bg-primary-container/20 text-on-surface-variant ${isSm ? "font-bold" : "font-label-md"}`
+                    ? "bg-slate-800 text-white shadow-md"
+                    : `hover:bg-slate-100 text-slate-600`
                 }`}
               >
                 {page}
@@ -92,7 +92,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className={`rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all disabled:opacity-30 cursor-pointer ${
+          className={`rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all disabled:opacity-30 cursor-pointer ${
             isSm ? "w-8 h-8" : "w-10 h-10"
           }`}
         >

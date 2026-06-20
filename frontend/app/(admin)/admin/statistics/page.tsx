@@ -1,79 +1,23 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
 import { toast } from "@/lib/toast";
-import { Pagination } from "@/components/admin/shared/Pagination";
-import { formatCurrency } from "@/lib/utils/formatters";
+import { RevenueReportResponse, ProductStat } from "@/types/statistics";
 
-// Dynamically import ApexCharts to prevent SSR Hydration Errors in Next.js
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+import { OverviewTab } from "@/components/admin/statistics/OverviewTab";
+import { RevenueTab } from "@/components/admin/statistics/RevenueTab";
+import { ProductsTab } from "@/components/admin/statistics/ProductsTab";
+import { TrendsTab } from "@/components/admin/statistics/TrendsTab";
+import { SearchableSelect } from "@/components/admin/shared/SearchableSelect";
+import { AITrendResponse } from "@/types/statistics";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
-interface DashboardSummary {
-  totalRevenue: number;
-  totalOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
-  totalProductsSold: number;
-  totalCustomers: number;
-  averageOrderValue: number;
-  revenueGrowthRate: number;
-}
-
-interface ProductStat {
-  productID: number;
-  productCode: string;
-  productName: string;
-  categoryName: string;
-  supplierName: string;
-  stock: number;
-  quantitySold: number;
-  totalRevenue: number;
-}
-
-interface CategoryStat {
-  categoryID: number;
-  categoryName: string;
-  totalProducts: number;
-  quantitySold: number;
-  totalRevenue: number;
-  revenueSharePercentage: number;
-}
-
-interface BrandStat {
-  supplierID: number;
-  supplierName: string;
-  quantitySold: number;
-  totalRevenue: number;
-  revenueSharePercentage: number;
-  rank: number;
-}
-
-interface TimeSeriesStat {
-  timeLabel: string;
-  revenue: number;
-  ordersCount: number;
-  productsSoldCount: number;
-}
-
-interface TopProducts {
-  bestSellers: ProductStat[];
-  topRevenue: ProductStat[];
-  highestStock: ProductStat[];
-  lowestStock: ProductStat[];
-}
-
-interface RevenueReportResponse {
-  summary: DashboardSummary;
-  topProducts: TopProducts;
-  categoryStats: CategoryStat[];
-  brandStats: BrandStat[];
-  timeSeriesData: TimeSeriesStat[];
-}
+type TabType = "overview" | "revenue" | "products" | "trends";
 
 export default function AdminStatisticsPage() {
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
+
   // Date states default to last 30 days
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
@@ -99,6 +43,10 @@ export default function AdminStatisticsPage() {
   const [data, setData] = useState<RevenueReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // AI Trend state
+  const [trendData, setTrendData] = useState<AITrendResponse | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+
   // Paginated Product Breakdown states
   const [productBreakdown, setProductBreakdown] = useState<ProductStat[]>([]);
   const [productPage, setProductPage] = useState(1);
@@ -111,7 +59,7 @@ export default function AdminStatisticsPage() {
 
   // Helper for auth headers
   const getHeaders = useCallback(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -231,6 +179,40 @@ export default function AdminStatisticsPage() {
     }
   }, [fromDate, toDate, selectedProduct, selectedCategory, selectedBrand, productPage, productPageSize, productSearch, getHeaders]);
 
+  // Fetch AI Trends Data
+  const fetchTrendData = useCallback(async () => {
+    // Validate range is <= 6 months
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 186) return;
+
+    setLoadingAI(true);
+    try {
+      const params = new URLSearchParams({
+        fromDate,
+        toDate,
+      });
+      if (selectedProduct) params.append("productID", selectedProduct);
+      if (selectedCategory) params.append("categoryID", selectedCategory);
+      if (selectedBrand) params.append("supplierID", selectedBrand);
+
+      const res = await fetch(`${API_BASE_URL}/Statistics/ai-trends?${params.toString()}`, {
+        headers: getHeaders(),
+      });
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setTrendData(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching AI trend data:", error);
+    } finally {
+      setLoadingAI(false);
+    }
+  }, [fromDate, toDate, selectedProduct, selectedCategory, selectedBrand, getHeaders]);
+
   // Export to Excel
   const handleExportExcel = async () => {
     try {
@@ -289,6 +271,12 @@ export default function AdminStatisticsPage() {
     fetchProductBreakdown();
   }, [fetchProductBreakdown]);
 
+  useEffect(() => {
+    if (activeTab === "trends") {
+      fetchTrendData();
+    }
+  }, [activeTab, fetchTrendData]);
+
   // Patch all prototype methods of ApexCharts globally on client mount to prevent any lifecycle/unmount crashes
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -302,7 +290,6 @@ export default function AdminStatisticsPage() {
               const originalMethod = Apex.prototype[key];
               if (typeof originalMethod === "function" && key !== "constructor") {
                 Apex.prototype[key] = function (this: any, ...args: any[]) {
-                  // Safety check: if there is no element reference, return safely
                   if (!this.el) {
                     if (key === "render" || key === "updateOptions" || key === "updateSeries") {
                       return Promise.resolve();
@@ -321,7 +308,6 @@ export default function AdminStatisticsPage() {
                 };
               }
             } catch (err) {
-              // Ignore any properties that we can't patch
             }
           }
         }
@@ -347,12 +333,10 @@ export default function AdminStatisticsPage() {
   const handleRefresh = () => {
     fetchReportData();
     fetchProductBreakdown();
+    if (activeTab === "trends") {
+      fetchTrendData();
+    }
     toast.success("Đã làm mới dữ liệu thống kê!");
-  };
-
-  // Format percent formatting
-  const formatPercent = (val: number) => {
-    return `${val > 0 ? "+" : ""}${val}%`;
   };
 
   // Check date limit for UI validation styling
@@ -363,222 +347,6 @@ export default function AdminStatisticsPage() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 186;
   };
-
-  // Mixed Time Series Chart Config
-  const getTimeSeriesChartConfig = () => {
-    if (!data || !data.timeSeriesData) return null;
-
-    const categories = data.timeSeriesData.map((d) => d.timeLabel);
-    const revenueSeries = data.timeSeriesData.map((d) => d.revenue);
-    const ordersSeries = data.timeSeriesData.map((d) => d.ordersCount);
-
-    return {
-      series: [
-        {
-          name: "Doanh thu (₫)",
-          type: "area" as const,
-          data: revenueSeries,
-        },
-        {
-          name: "Số đơn hàng",
-          type: "column" as const,
-          data: ordersSeries,
-        },
-      ],
-      options: {
-        chart: {
-          height: 350,
-          type: "line" as const,
-          toolbar: {
-            show: false,
-          },
-          fontFamily: "inherit",
-        },
-        stroke: {
-          width: [3, 0],
-          curve: "smooth" as const,
-        },
-        fill: {
-          opacity: [0.25, 0.85],
-          gradient: {
-            inverseColors: false,
-            shade: "light",
-            type: "vertical",
-            opacityFrom: 0.5,
-            opacityTo: 0.1,
-            stops: [0, 100],
-          },
-        },
-        colors: ["#6366f1", "#fb923c"],
-        labels: categories,
-        markers: {
-          size: 5,
-          hover: {
-            size: 7,
-          }
-        },
-        xaxis: {
-          type: "category" as const,
-        },
-        yaxis: [
-          {
-            title: {
-              text: "Doanh thu (₫)",
-              style: { color: "#6366f1", fontWeight: 600 },
-            },
-            labels: {
-              formatter: (val: number) => formatCurrency(val),
-              style: { colors: "#6366f1" },
-            },
-          },
-          {
-            opposite: true,
-            title: {
-              text: "Số đơn hàng",
-              style: { color: "#fb923c", fontWeight: 600 },
-            },
-            labels: {
-              formatter: (val: number) => Math.round(val).toString(),
-              style: { colors: "#fb923c" },
-            },
-          },
-        ],
-        tooltip: {
-          shared: false,
-          intersect: true,
-          followCursor: true,
-          y: {
-            formatter: function (y: number, { seriesIndex }: any) {
-              if (typeof y !== "undefined") {
-                return seriesIndex === 0 ? formatCurrency(y) : `${y} đơn hàng`;
-              }
-              return y;
-            },
-          },
-        },
-      },
-    };
-  };
-
-  // Top Products Bar Chart Config
-  const getProductChartConfig = () => {
-    if (!data || !data.topProducts || !data.topProducts.bestSellers) return null;
-
-    const names = data.topProducts.bestSellers.map((p) => p.productName);
-    const sold = data.topProducts.bestSellers.map((p) => p.quantitySold);
-
-    return {
-      series: [
-        {
-          name: "Số lượng đã bán",
-          data: sold,
-        },
-      ],
-      options: {
-        chart: {
-          type: "bar" as const,
-          height: 350,
-          toolbar: { show: false },
-          fontFamily: "inherit",
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 6,
-            horizontal: true,
-            barHeight: "50%",
-          },
-        },
-        colors: ["#3b82f6"],
-        dataLabels: {
-          enabled: true,
-          formatter: (val: number) => `${val} SP`,
-        },
-        xaxis: {
-          categories: names,
-        },
-        grid: {
-          xaxis: { lines: { show: true } },
-        },
-      },
-    };
-  };
-
-  // Category Pie Chart Config
-  const getCategoryChartConfig = () => {
-    if (!data || !data.categoryStats) return null;
-
-    // Filter categories with revenue > 0
-    const activeCats = data.categoryStats.filter((c) => c.totalRevenue > 0);
-    const labels = activeCats.map((c) => c.categoryName);
-    const series = activeCats.map((c) => c.totalRevenue);
-
-    return {
-      series: series,
-      options: {
-        chart: {
-          type: "donut" as const,
-          fontFamily: "inherit",
-        },
-        labels: labels,
-        colors: ["#2563eb", "#ec4899", "#8b5cf6", "#f59e0b", "#10b981", "#64748b"],
-        responsive: [
-          {
-            breakpoint: 480,
-            options: {
-              chart: {
-                width: 200,
-              },
-              legend: {
-                position: "bottom" as const,
-              },
-            },
-          },
-        ],
-        tooltip: {
-          y: {
-            formatter: (val: number) => formatCurrency(val),
-          },
-        },
-        legend: {
-          position: "bottom" as const,
-        },
-      },
-    };
-  };
-
-  // Supplier Pie Chart Config
-  const getSupplierChartConfig = () => {
-    if (!data || !data.brandStats) return null;
-
-    const activeBrands = data.brandStats.filter((b) => b.totalRevenue > 0);
-    const labels = activeBrands.map((b) => b.supplierName);
-    const series = activeBrands.map((b) => b.totalRevenue);
-
-    return {
-      series: series,
-      options: {
-        chart: {
-          type: "donut" as const,
-          fontFamily: "inherit",
-        },
-        labels: labels,
-        colors: ["#ec4899", "#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#64748b"],
-        tooltip: {
-          y: {
-            formatter: (val: number) => formatCurrency(val),
-          },
-        },
-        legend: {
-          position: "bottom" as const,
-        },
-      },
-    };
-  };
-
-  const mixedChart = getTimeSeriesChartConfig();
-  const productChart = getProductChartConfig();
-  const categoryChart = getCategoryChartConfig();
-  const supplierChart = getSupplierChartConfig();
 
   return (
     <div className="space-y-6 min-h-screen pb-12">
@@ -634,6 +402,54 @@ export default function AdminStatisticsPage() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 mb-6 no-print overflow-x-auto hide-scrollbar">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`px-6 py-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${
+            activeTab === "overview" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">dashboard</span>
+            Tổng quan
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab("revenue")}
+          className={`px-6 py-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${
+            activeTab === "revenue" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">pie_chart</span>
+            Cơ cấu doanh thu
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab("products")}
+          className={`px-6 py-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${
+            activeTab === "products" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">inventory_2</span>
+            Sản phẩm & Tồn kho
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab("trends")}
+          className={`px-6 py-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${
+            activeTab === "trends" ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">auto_graph</span>
+            Xu hướng & Dự báo AI
+          </div>
+        </button>
+      </div>
+
       {/* Filter Section */}
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 mb-8 no-print">
         <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-100">
@@ -642,7 +458,6 @@ export default function AdminStatisticsPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {/* Date range inputs */}
           <div>
             <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Từ ngày</label>
             <input
@@ -667,75 +482,66 @@ export default function AdminStatisticsPage() {
             />
           </div>
 
-          {/* Category drop down */}
           <div>
             <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Danh mục</label>
-            <select
+            <SearchableSelect
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-            >
-              <option value="">Tất cả danh mục</option>
-              {categoriesList.map((c) => (
-                <option key={c.categoryID} value={c.categoryID}>
-                  {c.categoryName}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedCategory}
+              options={[
+                { value: "", label: "Tất cả danh mục" },
+                ...categoriesList.map((c) => ({ value: c.categoryID, label: c.categoryName })),
+              ]}
+              placeholder="Chọn danh mục..."
+              searchPlaceholder="Tìm danh mục..."
+            />
           </div>
 
-          {/* Supplier drop down */}
           <div>
             <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Thương hiệu</label>
-            <select
+            <SearchableSelect
               value={selectedBrand}
-              onChange={(e) => setSelectedBrand(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-            >
-              <option value="">Tất cả thương hiệu</option>
-              {brandsList.map((b) => (
-                <option key={b.supplierID} value={b.supplierID}>
-                  {b.supplierName}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedBrand}
+              options={[
+                { value: "", label: "Tất cả thương hiệu" },
+                ...brandsList.map((b) => ({ value: b.supplierID, label: b.supplierName })),
+              ]}
+              placeholder="Chọn thương hiệu..."
+              searchPlaceholder="Tìm thương hiệu..."
+            />
           </div>
 
-          {/* Product drop down */}
           <div>
             <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Sản phẩm</label>
-            <select
+            <SearchableSelect
               value={selectedProduct}
-              onChange={(e) => setSelectedProduct(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-            >
-              <option value="">Tất cả sản phẩm</option>
-              {productsList.map((p) => (
-                <option key={p.productID} value={p.productID}>
-                  [{p.code}] {p.productName}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedProduct}
+              options={[
+                { value: "", label: "Tất cả sản phẩm" },
+                ...productsList.map((p) => ({ value: p.productID, label: `[${p.code}] ${p.productName}` })),
+              ]}
+              placeholder="Chọn sản phẩm..."
+              searchPlaceholder="Tìm mã hoặc tên SP..."
+            />
           </div>
 
-          {/* Time Series Grouping drop down */}
           <div>
             <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Nhóm theo</label>
-            <select
+            <SearchableSelect
               value={groupType}
-              onChange={(e) => setGroupType(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-            >
-              <option value="">Tự động (Ngày/Tháng)</option>
-              <option value="Day">Theo ngày</option>
-              <option value="Month">Theo tháng</option>
-              <option value="Quarter">Theo quý</option>
-              <option value="Year">Theo năm</option>
-            </select>
+              onChange={setGroupType}
+              options={[
+                { value: "", label: "Tự động (Ngày/Tháng)" },
+                { value: "Day", label: "Theo ngày" },
+                { value: "Month", label: "Theo tháng" },
+                { value: "Quarter", label: "Theo quý" },
+                { value: "Year", label: "Theo năm" },
+              ]}
+              placeholder="Nhóm theo..."
+              searchPlaceholder="Tìm cách nhóm..."
+            />
           </div>
         </div>
 
-        {/* Date warning message */}
         {isDateLimitExceeded() && (
           <div className="mt-4 p-4 bg-rose-50 border border-rose-100 text-rose-700 text-xs font-semibold rounded-2xl flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">warning</span>
@@ -745,7 +551,6 @@ export default function AdminStatisticsPage() {
       </div>
 
       {loading ? (
-        // Loading skeletons matching dashboard grids
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {[...Array(5)].map((_, i) => (
@@ -759,444 +564,45 @@ export default function AdminStatisticsPage() {
         </div>
       ) : data ? (
         <>
-          {/* KPI Dashboard Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 kpi-print">
-            {/* Revenue card */}
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
-              <div className="flex justify-between items-start w-full">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    payments
-                  </span>
-                </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
-                  data.summary.revenueGrowthRate >= 0 ? "text-green-600 bg-green-50" : "text-rose-600 bg-rose-50"
-                }`}>
-                  <span className="material-symbols-outlined text-[9px] font-bold">
-                    {data.summary.revenueGrowthRate >= 0 ? "arrow_upward" : "arrow_downward"}
-                  </span>
-                  {formatPercent(data.summary.revenueGrowthRate)}
-                </span>
-              </div>
-              <div className="mt-4">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Doanh thu thuần</span>
-                <span className="text-xl font-extrabold text-slate-850 mt-1 block truncate" title={formatCurrency(data.summary.totalRevenue)}>
-                  {formatCurrency(data.summary.totalRevenue)}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-0.5 block">So với kỳ trước</span>
-              </div>
-            </div>
+          {activeTab === "overview" && (
+            <OverviewTab 
+              summary={data.summary} 
+              timeSeriesData={data.timeSeriesData} 
+              isChartReady={isChartReady} 
+            />
+          )}
 
-            {/* Orders count card */}
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
-              <div className="flex justify-between items-start w-full">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    shopping_bag
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-[9px] font-bold">
-                  <span className="text-green-600">{data.summary.completedOrders} HT</span>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-rose-600">{data.summary.cancelledOrders} Hủy</span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Đơn hàng</span>
-                <span className="text-xl font-extrabold text-slate-850 mt-1 block">
-                  {data.summary.totalOrders}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-0.5 block">Tổng số đơn hàng</span>
-              </div>
-            </div>
+          {activeTab === "revenue" && (
+            <RevenueTab 
+              categoryStats={data.categoryStats} 
+              brandStats={data.brandStats} 
+              isChartReady={isChartReady} 
+            />
+          )}
 
-            {/* Products sold card */}
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
-              <div className="flex justify-between items-start w-full">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    inventory
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Sản phẩm đã bán</span>
-                <span className="text-xl font-extrabold text-slate-850 mt-1 block">
-                  {data.summary.totalProductsSold.toLocaleString()}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-0.5 block">Khối lượng xuất kho</span>
-              </div>
-            </div>
+          {activeTab === "products" && (
+            <ProductsTab 
+              topProducts={data.topProducts}
+              isChartReady={isChartReady}
+              productBreakdown={productBreakdown}
+              productPage={productPage}
+              productPageSize={productPageSize}
+              productTotalPages={productTotalPages}
+              productTotalItems={productTotalItems}
+              productSearch={productSearch}
+              setProductPage={setProductPage}
+              setProductSearch={setProductSearch}
+              loadingTable={loadingTable}
+            />
+          )}
 
-            {/* Total customers card */}
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
-              <div className="flex justify-between items-start w-full">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    group
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Số khách hàng</span>
-                <span className="text-xl font-extrabold text-slate-850 mt-1 block">
-                  {data.summary.totalCustomers}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-0.5 block">Đã thanh toán</span>
-              </div>
-            </div>
-
-            {/* Average order value card */}
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
-              <div className="flex justify-between items-start w-full">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    price_check
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Đơn hàng TB</span>
-                <span className="text-xl font-extrabold text-slate-850 mt-1 block truncate" title={formatCurrency(data.summary.averageOrderValue)}>
-                  {formatCurrency(data.summary.averageOrderValue)}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-0.5 block">Bình quân đơn hàng</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Time Series Trend & Top Sellers charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Mixed Trend Chart */}
-            <div className="lg:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6">Xu hướng Doanh thu & Đơn hàng</h3>
-              {isChartReady && mixedChart ? (
-                <Chart
-                  options={mixedChart.options}
-                  series={mixedChart.series}
-                  type="line"
-                  height={320}
-                />
-              ) : (
-                <div className="h-[320px] flex items-center justify-center text-slate-400 text-sm font-semibold">
-                  Đang tải biểu đồ...
-                </div>
-              )}
-            </div>
-
-            {/* Product bar chart */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6">Top 5 Sản phẩm Bán chạy</h3>
-              {isChartReady && productChart ? (
-                <Chart
-                  options={productChart.options}
-                  series={productChart.series}
-                  type="bar"
-                  height={320}
-                />
-              ) : (
-                <div className="h-[320px] flex items-center justify-center text-slate-400 text-sm font-semibold">
-                  {isChartReady ? "Không có dữ liệu" : "Đang tải biểu đồ..."}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Category & Supplier share distributions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Category Pie Chart */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6">Doanh thu theo Danh mục</h3>
-              {isChartReady && categoryChart && categoryChart.series.length > 0 ? (
-                <Chart
-                  options={categoryChart.options}
-                  series={categoryChart.series}
-                  type="donut"
-                  height={320}
-                />
-              ) : (
-                <div className="h-[320px] flex items-center justify-center text-slate-400 text-sm font-semibold">
-                  {isChartReady ? "Không có dữ liệu doanh thu" : "Đang tải biểu đồ..."}
-                </div>
-              )}
-            </div>
-
-            {/* Brand Pie Chart */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6">Doanh thu theo Thương hiệu</h3>
-              {isChartReady && supplierChart && supplierChart.series.length > 0 ? (
-                <Chart
-                  options={supplierChart.options}
-                  series={supplierChart.series}
-                  type="donut"
-                  height={320}
-                />
-              ) : (
-                <div className="h-[320px] flex items-center justify-center text-slate-400 text-sm font-semibold">
-                  {isChartReady ? "Không có dữ liệu doanh thu" : "Đang tải biểu đồ..."}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Category list table & Supplier ranking table */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {/* Categories list */}
-            <div className="lg:col-span-3 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6">Chi tiết Danh mục</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                      <th className="px-4 py-3 text-center w-12">STT</th>
-                      <th className="px-4 py-3">TÊN DANH MỤC</th>
-                      <th className="px-4 py-3 text-center">SỐ SẢN PHẨM</th>
-                      <th className="px-4 py-3 text-center">ĐÃ BÁN</th>
-                      <th className="px-4 py-3 text-right">TỔNG DOANH THU</th>
-                      <th className="px-4 py-3 text-right">TỶ TRỌNG</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {data.categoryStats.map((cat, idx) => (
-                      <tr key={cat.categoryID} className="hover:bg-slate-100/70 transition-colors group">
-                        <td className="px-4 py-3 text-center text-xs font-semibold text-slate-400">{idx + 1}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">{cat.categoryName}</td>
-                        <td className="px-4 py-3 text-center text-slate-600 font-medium">{cat.totalProducts}</td>
-                        <td className="px-4 py-3 text-center font-bold text-slate-700">{cat.quantitySold}</td>
-                        <td className="px-4 py-3 text-right font-bold text-green-600">
-                          {formatCurrency(cat.totalRevenue)}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-slate-500">
-                          {cat.revenueSharePercentage}%
-                        </td>
-                      </tr>
-                    ))}
-                    {data.categoryStats.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="text-center py-8 text-slate-400 font-medium">
-                          Không tìm thấy danh mục nào.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Supplier list */}
-            <div className="lg:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6">Bảng xếp hạng Thương hiệu</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                      <th className="px-3 py-3 text-center w-12">STT</th>
-                      <th className="px-3 py-3">THƯƠNG HIỆU</th>
-                      <th className="px-3 py-3 text-center">ĐÃ BÁN</th>
-                      <th className="px-3 py-3 text-right">DOANH THU</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {data.brandStats.map((brand, idx) => (
-                      <tr key={brand.supplierID} className="hover:bg-slate-100/70 transition-colors group">
-                        <td className="px-3 py-3 text-center font-bold text-slate-700">
-                          {idx === 0 ? (
-                            <span className="text-yellow-500 flex items-center justify-center text-base">🏆</span>
-                          ) : idx === 1 ? (
-                            <span className="text-slate-400 flex items-center justify-center text-base">🥈</span>
-                          ) : idx === 2 ? (
-                            <span className="text-amber-600 flex items-center justify-center text-base">🥉</span>
-                          ) : (
-                            idx + 1
-                          )}
-                        </td>
-                        <td className="px-3 py-3 font-semibold text-slate-700">{brand.supplierName}</td>
-                        <td className="px-3 py-3 text-center font-bold text-slate-700">{brand.quantitySold}</td>
-                        <td className="px-3 py-3 text-right font-bold text-green-600">
-                          {formatCurrency(brand.totalRevenue)}
-                        </td>
-                      </tr>
-                    ))}
-                    {data.brandStats.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="text-center py-8 text-slate-400 font-medium">
-                          Không tìm thấy thương hiệu nào.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Inventory Tops: Low vs High Stocks */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Highest Stock products */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-slate-800 text-base mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-indigo-500">warehouse</span>
-                Sản phẩm Tồn kho cao nhất
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                      <th className="px-6 py-4 text-center w-[80px]">STT</th>
-                      <th className="px-6 py-4">MÃ SP</th>
-                      <th className="px-6 py-4">TÊN SẢN PHẨM</th>
-                      <th className="px-6 py-4 text-right">TỒN KHO HỆ THỐNG</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {data.topProducts.highestStock.map((prod, idx) => (
-                      <tr key={prod.productID} className="hover:bg-slate-100/70 transition-colors group">
-                        <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">{idx + 1}</td>
-                        <td className="px-6 py-4 font-mono text-primary font-bold text-xs">{prod.productCode}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-700 truncate max-w-[200px]" title={prod.productName}>
-                          {prod.productName}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-indigo-600">{prod.stock}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Lowest Stock products */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-              <h3 className="font-bold text-rose-700 text-base mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-rose-500">warning</span>
-                Sản phẩm Cảnh báo hết hàng
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                      <th className="px-6 py-4 text-center w-[80px]">STT</th>
-                      <th className="px-6 py-4">MÃ SP</th>
-                      <th className="px-6 py-4">TÊN SẢN PHẨM</th>
-                      <th className="px-6 py-4 text-right">TỒN KHO HỆ THỐNG</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {data.topProducts.lowestStock.map((prod, idx) => (
-                      <tr key={prod.productID} className="hover:bg-slate-100/70 transition-colors group">
-                        <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">{idx + 1}</td>
-                        <td className="px-6 py-4 font-mono text-primary font-bold text-xs">{prod.productCode}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-700 truncate max-w-[200px]" title={prod.productName}>
-                          {prod.productName}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold">
-                          {prod.stock <= 5 ? (
-                            <span className="bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                              {prod.stock} (Cực thấp)
-                            </span>
-                          ) : (
-                            <span className="text-rose-600">{prod.stock}</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Paginated Product Sales breakdown Table */}
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-              <div>
-                <h3 className="font-bold text-slate-800 text-base">Báo cáo Sản phẩm Bán ra Chi tiết</h3>
-                <p className="text-slate-400 text-xs font-semibold mt-1">Bao gồm tất cả sản phẩm đang kinh doanh và hiệu suất trong khoảng lọc.</p>
-              </div>
-              <div className="relative w-full md:w-80 no-print">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Tìm theo mã hoặc tên sản phẩm..."
-                  value={productSearch}
-                  onChange={(e) => {
-                    setProductSearch(e.target.value);
-                    setProductPage(1);
-                  }}
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                    <th className="px-6 py-4 text-center w-[80px]">STT</th>
-                    <th className="px-6 py-4">MÃ SẢN PHẨM</th>
-                    <th className="px-6 py-4">TÊN SẢN PHẨM</th>
-                    <th className="px-6 py-4">DANH MỤC</th>
-                    <th className="px-6 py-4">THƯƠNG HIỆU</th>
-                    <th className="px-6 py-4 text-center">TỒN KHO HIỆN TẠI</th>
-                    <th className="px-6 py-4 text-center">LƯỢNG ĐÃ BÁN</th>
-                    <th className="px-6 py-4 text-right">TỔNG DOANH THU</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {loadingTable ? (
-                    [...Array(5)].map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td colSpan={8} className="py-4 px-6">
-                          <div className="h-4 bg-slate-100 rounded w-full"></div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : productBreakdown.map((prod, idx) => (
-                    <tr key={prod.productID} className="hover:bg-slate-100/70 transition-colors group">
-                      <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
-                        {(productPage - 1) * productPageSize + idx + 1}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-primary font-bold text-xs">{prod.productCode}</td>
-                      <td className="px-6 py-4 font-semibold text-slate-700 truncate max-w-xs" title={prod.productName}>
-                        {prod.productName}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">{prod.categoryName}</td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">{prod.supplierName}</td>
-                      <td className="px-6 py-4 text-center text-slate-700 font-medium">{prod.stock}</td>
-                      <td className="px-6 py-4 text-center font-bold text-indigo-600">{prod.quantitySold}</td>
-                      <td className="px-6 py-4 text-right font-bold text-green-600">
-                        {formatCurrency(prod.totalRevenue)}
-                      </td>
-                    </tr>
-                  ))}
-                  {productBreakdown.length === 0 && !loadingTable && (
-                    <tr>
-                      <td colSpan={8} className="text-center py-8 text-slate-400 font-medium">
-                        Không tìm thấy sản phẩm nào khớp với tìm kiếm.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {productTotalPages > 1 && (
-              <div className="mt-6 flex justify-between items-center no-print">
-                <p className="text-xs text-slate-400 font-semibold">
-                  Hiển thị {(productPage - 1) * productPageSize + 1} - {Math.min(productPage * productPageSize, productTotalItems)} của {productTotalItems} sản phẩm
-                </p>
-                <Pagination
-                  currentPage={productPage}
-                  totalPages={productTotalPages}
-                  totalItems={productTotalItems}
-                  itemsPerPage={productPageSize}
-                  onPageChange={(page) => setProductPage(page)}
-                />
-              </div>
-            )}
-          </div>
+          {activeTab === "trends" && (
+            <TrendsTab 
+              trendData={trendData}
+              isChartReady={isChartReady}
+              loadingAI={loadingAI}
+            />
+          )}
         </>
       ) : (
         <div className="bg-white p-12 rounded-[2rem] border border-slate-100 shadow-sm text-center text-slate-400">

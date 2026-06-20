@@ -223,6 +223,7 @@ try
     builder.Services.AddScoped<IVoucherService, VoucherService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
     builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+    builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 
     // Product services
@@ -287,6 +288,7 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
     builder.Services.AddScoped<LoyaltyCycleResetJob>();
     builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
     builder.Services.AddScoped<PolyBabyAPI.Jobs.ModelTrainingJob>();
+    builder.Services.AddScoped<TrendModelTrainingJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -408,7 +410,15 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.ModelTrainingJob>(
             "ai-model-training",
             job => job.ExecuteAsync(),
-            "0 2,14 * * *", // Chạy lúc 2:00 AM và 2:00 PM mỗi ngày
+            "*/15 * * * *", // Chạy mỗi 15 phút
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 5. Job huấn luyện AI Trend Model (Chạy mỗi 15 phút)
+        recurringJobManager.AddOrUpdate<TrendModelTrainingJob>(
+            "ai-trend-model-training",
+            job => job.ExecuteAsync(),
+            "*/15 * * * *", // Chạy mỗi 15 phút
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

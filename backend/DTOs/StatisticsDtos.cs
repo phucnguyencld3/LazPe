@@ -90,4 +90,45 @@ namespace PolyBabyAPI.DTOs
         public int PageSize { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
     }
+
+    public class TrendData
+    {
+        public float Quantity { get; set; }
+    }
+
+    public class TrendPrediction
+    {
+        public float[] ForecastedQuantities { get; set; } = Array.Empty<float>();
+        public float[] LowerBoundQuantities { get; set; } = Array.Empty<float>();
+        public float[] UpperBoundQuantities { get; set; } = Array.Empty<float>();
+    }
+
+    public class AITimeSeriesStatDto
+    {
+        public string TimeLabel { get; set; } = string.Empty;
+        public decimal Revenue { get; set; }
+        public int OrdersCount { get; set; }
+        public int ProductsSoldCount { get; set; }
+        public bool IsForecast { get; set; }
+        public int? LowerBoundProducts { get; set; }
+        public int? UpperBoundProducts { get; set; }
+    }
+
+    public class TrendingProductDto
+    {
+        public int ProductID { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductCode { get; set; } = string.Empty;
+        public int CurrentPeriodSales { get; set; } // L7
+        public int PreviousPeriodSales { get; set; } // P7
+        public decimal GrowthRate { get; set; }
+        public decimal TrendScore { get; set; }
+    }
+
+    public class AITrendResponseDto
+    {
+        public List<AITimeSeriesStatDto> HistoricalData { get; set; } = new();
+        public List<AITimeSeriesStatDto> ForecastData { get; set; } = new();
+        public List<TrendingProductDto> TrendingProducts { get; set; } = new();
+    }
 }
