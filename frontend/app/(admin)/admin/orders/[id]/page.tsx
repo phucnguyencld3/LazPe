@@ -99,7 +99,7 @@ export default function OrderDetailsPage() {
     return (
       <div className="text-center py-20">
         <p className="text-error font-bold text-lg">Không tìm thấy đơn hàng</p>
-        <button onClick={() => router.push("/admin/orders")} className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer">
+        <button onClick={() => router.push("/admin/orders")} className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-[8px] font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer">
           Quay lại danh sách
         </button>
       </div>

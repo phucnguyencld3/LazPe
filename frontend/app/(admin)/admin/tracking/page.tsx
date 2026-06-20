@@ -153,7 +153,7 @@ export default function AdminTrackingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* CỘT TRÁI: TÌM KIẾM & QUÉT MÃ */}
         <div className="lg:col-span-5 sticky top-6">
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+          <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-8">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-2xl">barcode_scanner</span>
@@ -162,7 +162,7 @@ export default function AdminTrackingPage() {
               <button
                 type="button"
                 onClick={() => setIsScanningCamera(!isScanningCamera)}
-                className={`px-3 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${
+                className={`px-3 py-2 rounded-[8px] font-bold text-sm flex items-center gap-2 transition-all ${
                   isScanningCamera 
                     ? "bg-rose-100 text-rose-600 hover:bg-rose-200" 
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -174,8 +174,8 @@ export default function AdminTrackingPage() {
             </div>
             
             {isScanningCamera ? (
-              <div className="mb-6 p-4 border-2 border-dashed border-primary/50 rounded-2xl bg-slate-50">
-                <div id="reader" className="w-full overflow-hidden rounded-xl bg-slate-900 min-h-[300px] flex items-center justify-center relative">
+              <div className="mb-6 p-4 border-2 border-dashed border-primary/50 rounded-[8px] bg-slate-50">
+                <div id="reader" className="w-full overflow-hidden rounded-[8px] bg-slate-900 min-h-[300px] flex items-center justify-center relative">
                   <div className="absolute inset-0 flex items-center justify-center text-slate-400 z-0">
                     <span className="material-symbols-outlined animate-spin text-3xl mr-2">sync</span>
                     Đang khởi động camera...
@@ -198,14 +198,14 @@ export default function AdminTrackingPage() {
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
                       placeholder="Nhập mã đơn hàng..."
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none focus:border-primary focus:bg-white text-base font-semibold transition-all"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-[8px] focus:outline-none focus:border-primary focus:bg-white text-base font-semibold transition-all"
                       disabled={loading}
                     />
                   </div>
                   <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
+                    className="w-full py-4 bg-primary text-white font-bold rounded-[8px] hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
                   >
                     {loading ? (
                       <span className="material-symbols-outlined animate-spin">sync</span>
@@ -215,7 +215,7 @@ export default function AdminTrackingPage() {
                     Bắt đầu Tra cứu
                   </button>
                 </form>
-                <div className="p-4 bg-amber-50 text-amber-700 rounded-2xl border border-amber-100 flex gap-3 mt-2">
+                <div className="p-4 bg-amber-50 text-amber-700 rounded-[8px] border border-amber-100 flex gap-3 mt-2">
                   <span className="material-symbols-outlined shrink-0 text-amber-500">lightbulb</span>
                   <p className="text-xs leading-relaxed">
                     <strong>Mẹo:</strong> Cắm súng quét mã vạch vào máy, click chuột vào ô nhập và dùng súng quét mã vạch trên phiếu giao hàng để tự động điền.
@@ -229,14 +229,14 @@ export default function AdminTrackingPage() {
         {/* CỘT PHẢI: KẾT QUẢ ĐƠN HÀNG */}
         <div className="lg:col-span-7">
           {loading && (
-            <div className="bg-white rounded-3xl border border-slate-100 p-12 flex flex-col items-center justify-center min-h-[400px]">
+            <div className="bg-white rounded-[8px] border border-slate-100 p-12 flex flex-col items-center justify-center min-h-[400px]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
               <p className="text-slate-500 font-medium">Đang tải thông tin đơn hàng...</p>
             </div>
           )}
 
           {!loading && !order && (
-            <div className="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-12 flex flex-col items-center justify-center min-h-[400px] text-slate-400 w-full">
+            <div className="bg-slate-50 rounded-[8px] border-2 border-dashed border-slate-200 p-12 flex flex-col items-center justify-center min-h-[400px] text-slate-400 w-full">
               <span className="material-symbols-outlined text-6xl mb-4 opacity-50">receipt_long</span>
               <p className="text-lg font-medium text-slate-500 text-center">Chưa có thông tin hiển thị</p>
               <p className="text-sm mt-2 text-center" style={{ maxWidth: '400px' }}>
@@ -246,13 +246,13 @@ export default function AdminTrackingPage() {
           )}
 
           {order && !loading && (
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex justify-between items-start mb-6 pb-6 border-b border-slate-100">
                 <div>
                   <h2 className="text-2xl font-black text-slate-800 mb-1">Đơn hàng #{order.invoiceCode || order.invoiceID}</h2>
                   <p className="text-sm text-slate-500">Đặt lúc: {formatDateTime(order.createdAt)}</p>
                 </div>
-                <div className={`px-4 py-2 rounded-xl text-sm font-bold ${getStatusBadgeColor(order.statusCode)}`}>
+                <div className={`px-4 py-2 rounded-[8px] text-sm font-bold ${getStatusBadgeColor(order.statusCode)}`}>
                   {getStatusLabel(order.statusCode)}
                 </div>
               </div>
@@ -260,7 +260,7 @@ export default function AdminTrackingPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Thông tin Khách hàng</h3>
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 h-full">
+                  <div className="bg-slate-50 p-5 rounded-[8px] border border-slate-100 h-full">
                     <p className="font-bold text-slate-800 text-lg">{order.userFullName || order.userName}</p>
                     <p className="text-slate-600 mt-2 flex items-center gap-2">
                       <span className="material-symbols-outlined text-slate-400 text-[18px]">call</span>
@@ -275,7 +275,7 @@ export default function AdminTrackingPage() {
 
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Thông tin Thanh toán</h3>
-                  <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex flex-col justify-center h-full">
+                  <div className="bg-rose-50 border border-rose-100 p-5 rounded-[8px] flex flex-col justify-center h-full">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-slate-600">Phương thức:</span>
                       <span className="font-bold text-slate-800 px-3 py-1 bg-white rounded-lg border border-slate-200">{order.payMethod || "COD"}</span>
@@ -292,12 +292,12 @@ export default function AdminTrackingPage() {
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Danh sách Sản phẩm ({order.itemCount})</h3>
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {order.invoiceDetails?.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-center p-4 border border-slate-100 rounded-2xl bg-white hover:shadow-md transition-all group cursor-default">
+                    <div key={idx} className="flex justify-between items-center p-4 border border-slate-100 rounded-[8px] bg-white hover:shadow-md transition-all group cursor-default">
                       <div className="flex items-center gap-4">
                         <img 
                           src={item.imageUrl || "/images/placeholder.jpg"} 
                           alt={item.productName} 
-                          className="w-16 h-16 object-cover rounded-xl border border-slate-100 bg-slate-50"
+                          className="w-16 h-16 object-cover rounded-[8px] border border-slate-100 bg-slate-50"
                         />
                         <div>
                           <h4 className="font-bold text-slate-800 text-sm max-w-[250px] sm:max-w-[300px] line-clamp-2 leading-tight group-hover:text-primary transition-colors" title={item.productName}>

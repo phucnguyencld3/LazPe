@@ -665,7 +665,7 @@ export default function AdminFlashSalesPage() {
                 handleResetForm();
                 setView("create");
               }}
-              className="px-5 py-3 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+              className="px-5 py-3 rounded-[8px] bg-primary text-on-primary font-bold text-xs flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">add</span>
               Tạo Flash Sale Mới
@@ -675,9 +675,9 @@ export default function AdminFlashSalesPage() {
           {/* Stats Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {/* Total */}
-            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+                <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined text-[20px]">calendar_today</span>
                 </div>
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng chiến dịch</span>
@@ -686,9 +686,9 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Active */}
-            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                <div className="w-10 h-10 rounded-[8px] bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
                   <span className="material-symbols-outlined text-[20px] animate-pulse">bolt</span>
                 </div>
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang diễn ra</span>
@@ -699,9 +699,9 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Upcoming */}
-            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                   <span className="material-symbols-outlined text-[20px]">schedule</span>
                 </div>
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sắp diễn ra</span>
@@ -712,9 +712,9 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Total Sold */}
-            <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                   <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
                 </div>
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm đã bán</span>
@@ -726,7 +726,7 @@ export default function AdminFlashSalesPage() {
           </div>
 
           {/* Main List Section */}
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+          <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
             {/* Search, filters block */}
             <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
               {/* Search box */}
@@ -739,7 +739,7 @@ export default function AdminFlashSalesPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm kiếm chiến dịch theo tên..."
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
 
@@ -747,7 +747,7 @@ export default function AdminFlashSalesPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[165px] cursor-pointer"
+                className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[165px] cursor-pointer"
               >
                 <option value="all">Tất cả trạng thái</option>
                 <option value="active">Đang diễn ra</option>
@@ -759,7 +759,7 @@ export default function AdminFlashSalesPage() {
               {(searchTerm || statusFilter !== "all") && (
                 <button
                   onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
-                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px]">clear</span>
                   Xóa bộ lọc
@@ -909,7 +909,7 @@ export default function AdminFlashSalesPage() {
 
           <form onSubmit={handleSaveForm} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {/* Left Column: Basic configuration */}
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-5 lg:col-span-1">
+            <div className="bg-white p-6 rounded-[8px] border border-slate-100 shadow-sm space-y-5 lg:col-span-1">
               <h3 className="font-bold text-slate-700 text-base border-b border-slate-50 pb-2">Thông tin chiến dịch</h3>
 
               <div className="space-y-1.5">
@@ -920,7 +920,7 @@ export default function AdminFlashSalesPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="Ví dụ: Siêu Sale Giữa Tháng 06..."
-                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-[8px] text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
@@ -929,7 +929,7 @@ export default function AdminFlashSalesPage() {
                 <select
                   value={formType}
                   onChange={(e) => setFormType(Number(e.target.value) as CampaignType)}
-                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-[8px] text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
                 >
                   <option value={CampaignType.FlashSale}>Flash Sale (Giảm giá chớp nhoáng)</option>
                   <option value={CampaignType.BuyXGetY}>Mua X Tặng Y (Quà tặng)</option>
@@ -944,7 +944,7 @@ export default function AdminFlashSalesPage() {
                   required
                   value={formStartTime}
                   onChange={(e) => setFormStartTime(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-[8px] text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
@@ -955,7 +955,7 @@ export default function AdminFlashSalesPage() {
                   required
                   value={formEndTime}
                   onChange={(e) => setFormEndTime(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-[8px] text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
@@ -966,7 +966,7 @@ export default function AdminFlashSalesPage() {
                   value={formBannerUrl}
                   onChange={(e) => setFormBannerUrl(e.target.value)}
                   placeholder="Nhập URL ảnh banner..."
-                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-[8px] text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
 
@@ -977,7 +977,7 @@ export default function AdminFlashSalesPage() {
                   onChange={(e) => setFormDescription(e.target.value)}
                   rows={3}
                   placeholder="Mô tả chi tiết chiến dịch..."
-                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-xl text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
+                  className="w-full px-4 py-3 bg-slate-55/30 border border-slate-100 rounded-[8px] text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
                 />
               </div>
 
@@ -1020,7 +1020,7 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Right Column: Flash sale items configuration */}
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm lg:col-span-2 space-y-4">
+            <div className="bg-white p-6 rounded-[8px] border border-slate-100 shadow-sm lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-50 pb-3">
                 <div>
                   <h3 className="font-bold text-slate-700 text-base">Danh sách mặt hàng giảm giá</h3>
@@ -1036,7 +1036,7 @@ export default function AdminFlashSalesPage() {
                     setSelectorSearch("");
                     setSelectorTab("product");
                   }}
-                  className="px-5 py-2.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold text-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-[8px] bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold text-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-base">add</span>
                   <span>Thêm mặt hàng</span>
@@ -1044,7 +1044,7 @@ export default function AdminFlashSalesPage() {
               </div>
 
               {formItems.length === 0 ? (
-                <div className="py-20 text-center text-slate-450 flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-3xl">
+                <div className="py-20 text-center text-slate-450 flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-[8px]">
                   <span className="material-symbols-outlined text-5xl mb-2 text-slate-300">shopping_cart_checkout</span>
                   <p className="text-base font-bold">Chưa có mặt hàng nào được chọn</p>
                   <p className="text-sm text-slate-400 mt-1.5">Bấm nút "Thêm mặt hàng" phía trên để bắt đầu thêm sản phẩm</p>
@@ -1079,12 +1079,12 @@ export default function AdminFlashSalesPage() {
                       return (
                         <div
                           key={groupIdx}
-                          className="flex flex-col p-4 border border-slate-100 rounded-2xl gap-4 hover:border-slate-200 transition-all group/card bg-white"
+                          className="flex flex-col p-4 border border-slate-100 rounded-[8px] gap-4 hover:border-slate-200 transition-all group/card bg-white"
                         >
                           {/* Header: Thumbnail & Title & Add Tier button */}
                           <div className="flex items-center justify-between border-b border-slate-50 pb-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                              <div className="w-16 h-16 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
                                 {group.baseItem.imageUrl ? (
                                   <img src={group.baseItem.imageUrl} alt={group.baseItem.name} className="w-full h-full object-cover" />
                                 ) : (
@@ -1111,10 +1111,10 @@ export default function AdminFlashSalesPage() {
                             {group.tiers.map(({ index, item }, i) => (
                               <Fragment key={index}>
                                 {/* Tier Card: Main Config */}
-                                <div className="flex-shrink-0 w-[240px] bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
+                                <div className="flex-shrink-0 w-[240px] bg-slate-50 border border-slate-200 rounded-[8px] p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
                                   {/* Header */}
                                   <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200/80">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-full shadow-sm">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-[8px] shadow-sm">
                                       {formType === CampaignType.ComboDiscount ? `Mốc ${i + 1}` : "Cấu hình"}
                                     </span>
                                     <button
@@ -1214,9 +1214,9 @@ export default function AdminFlashSalesPage() {
                                       <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-300"></div>
                                     </div>
 
-                                    <div className="flex-shrink-0 w-[260px] bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
+                                    <div className="flex-shrink-0 w-[260px] bg-slate-50 border border-slate-200 rounded-[8px] p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
                                       <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200/80">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-full shadow-sm text-primary">
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-[8px] shadow-sm text-primary">
                                           Danh sách quà tặng
                                         </span>
                                       </div>
@@ -1312,7 +1312,7 @@ export default function AdminFlashSalesPage() {
       {/* DELETE CONFIRMATION MODAL */}
       {saleToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 w-[380px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[8px] p-8 w-[380px] max-w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-rose-100">
                 <span className="material-symbols-outlined text-3xl">warning</span>
@@ -1354,7 +1354,7 @@ export default function AdminFlashSalesPage() {
       {purchaserModalSale && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
-            className="bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-[8px] shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             style={{ width: "1000px", maxWidth: "100%", height: "600px", maxHeight: "90vh" }}
           >
             {/* Header */}
@@ -1391,7 +1391,7 @@ export default function AdminFlashSalesPage() {
                   <p className="text-xs text-slate-400 mt-1">Giao dịch của khách hàng sẽ tự động ghi nhận tại đây khi đặt hàng.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                <div className="overflow-x-auto border border-slate-100 rounded-[8px]">
                   <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-55 border-b border-slate-100 text-[10px] font-bold text-slate-550 tracking-wider uppercase">
@@ -1422,7 +1422,7 @@ export default function AdminFlashSalesPage() {
                             {formatCurrency(p.totalPrice)}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full border ${p.status === "Completed"
+                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded-[8px] border ${p.status === "Completed"
                                 ? "bg-green-50 text-green-600 border-green-100"
                                 : p.status === "Cancelled"
                                   ? "bg-rose-50 text-rose-600 border-rose-100"
@@ -1447,7 +1447,7 @@ export default function AdminFlashSalesPage() {
               <button
                 type="button"
                 onClick={() => setPurchaserModalSale(null)}
-                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-350 text-slate-655 font-bold rounded-full text-xs transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-350 text-slate-655 font-bold rounded-[8px] text-xs transition-colors cursor-pointer"
               >
                 Đóng
               </button>
@@ -1460,7 +1460,7 @@ export default function AdminFlashSalesPage() {
       {isSelectorOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
-            className="bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-[8px] shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
             style={{ width: "1000px", maxWidth: "95vw", height: "780px", maxHeight: "90vh" }}
           >
             {/* Header */}
@@ -1529,7 +1529,7 @@ export default function AdminFlashSalesPage() {
                     value={selectorSearch}
                     onChange={(e) => setSelectorSearch(e.target.value)}
                     placeholder={selectorTab === "product" || selectorTab === "variant" ? "Tìm sản phẩm theo tên, mã..." : "Tìm Combo theo tên..."}
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder-slate-400"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-[8px] text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder-slate-400"
                     autoFocus
                   />
                 </div>
@@ -1584,10 +1584,10 @@ export default function AdminFlashSalesPage() {
                           <div
                             key={variant.variantID}
                             onClick={() => addVariantToSale(variant, selectedProductForVariants.productName)}
-                            className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5"}`}
+                            className={`flex items-center justify-between p-3.5 border rounded-[8px] cursor-pointer transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5"}`}
                           >
                             {isSelectedGift && (
-                              <div className="absolute top-0 right-0 w-8 h-8 bg-primary rounded-bl-xl flex items-center justify-center shadow-sm z-10">
+                              <div className="absolute top-0 right-0 w-8 h-8 bg-primary rounded-bl-[8px] flex items-center justify-center shadow-sm z-10">
                                 <span className="material-symbols-outlined text-white text-[16px] font-bold">check</span>
                               </div>
                             )}
@@ -1652,10 +1652,10 @@ export default function AdminFlashSalesPage() {
                     <div
                       key={product.productID}
                       onClick={() => addProductToSale(product)}
-                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-[8px] hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                        <div className="w-20 h-20 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                           {product.imageUrl ? (
                             <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
                           ) : (
@@ -1707,10 +1707,10 @@ export default function AdminFlashSalesPage() {
                     <div
                       key={product.productID}
                       onClick={() => handleProductSelectForVariants(product)}
-                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-[8px] hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
                           {product.imageUrl ? (
                             <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
                           ) : (
@@ -1765,10 +1765,10 @@ export default function AdminFlashSalesPage() {
                     <div
                       key={bundle.bundleID}
                       onClick={() => addBundleToSale(bundle)}
-                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
+                      className="flex items-center justify-between p-3.5 border border-slate-100 rounded-[8px] hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
                           {bundle.imageUrl ? (
                             <img src={bundle.imageUrl} alt={bundle.name} className="w-full h-full object-cover" />
                           ) : (

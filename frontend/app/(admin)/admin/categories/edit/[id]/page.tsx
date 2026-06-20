@@ -180,7 +180,7 @@ function EditCategoryForm() {
       </header>
 
       {/* Form Container */}
-      <div className="w-full bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+      <div className="w-full bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -193,7 +193,7 @@ function EditCategoryForm() {
                 value={categoryName}
                 onChange={e => setCategoryName(e.target.value)}
                 placeholder="Nhập tên danh mục..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
               />
             </div>
 
@@ -206,7 +206,7 @@ function EditCategoryForm() {
                 readOnly
                 disabled
                 value={parentName}
-                className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-[8px] text-sm font-semibold text-slate-500 cursor-not-allowed"
               />
             </div>
           </div>
@@ -221,11 +221,11 @@ function EditCategoryForm() {
                 value={sortOrder}
                 onChange={e => setSortOrder(e.target.value)}
                 placeholder="Ví dụ: 1, 2, A, B..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+            <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-[8px]">
               <div>
                 <p className="text-xs font-bold text-slate-800">Trạng thái hiển thị</p>
                 <p className="text-[9px] text-slate-400 mt-0.5">Cho phép hiển thị trên cửa hàng và thanh lọc</p>
@@ -252,7 +252,7 @@ function EditCategoryForm() {
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Nhập mô tả tóm tắt cho danh mục..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
             />
           </div>
 

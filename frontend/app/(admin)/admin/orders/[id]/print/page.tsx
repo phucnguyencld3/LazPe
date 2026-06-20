@@ -76,7 +76,7 @@ export default function PrintOrderPage() {
       <div className="mt-8 text-center print:hidden">
         <button 
           onClick={() => window.print()} 
-          className="px-8 py-3 bg-slate-900 text-white font-bold rounded-full hover:bg-slate-800 transition-colors cursor-pointer"
+          className="px-8 py-3 bg-slate-900 text-white font-bold rounded-[8px] hover:bg-slate-800 transition-colors cursor-pointer"
         >
           In lại phiếu này
         </button>

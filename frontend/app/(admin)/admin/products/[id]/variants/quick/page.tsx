@@ -236,7 +236,7 @@ export default function QuickCreateVariantsPage() {
         </div>
         <button
           onClick={() => router.push(`/admin/products/${id}/variants`)}
-          className="px-6 py-2.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all font-bold text-xs cursor-pointer active:scale-95 shadow-sm"
+          className="px-6 py-2.5 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all font-bold text-xs cursor-pointer active:scale-95 shadow-sm"
         >
           Quay lại
         </button>
@@ -248,8 +248,8 @@ export default function QuickCreateVariantsPage() {
         <div className="lg:col-span-4 flex flex-col gap-8">
           {/* Product Summary Card */}
           {product && (
-            <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
+            <section className="bg-white rounded-[8px] p-6 border border-slate-100 shadow-sm flex items-center gap-4">
+              <div className="w-16 h-16 rounded-[8px] bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                 {mainImageUrl ? (
                   <img src={mainImageUrl} alt={product.productName} className="w-full h-full object-cover" />
                 ) : (
@@ -266,7 +266,7 @@ export default function QuickCreateVariantsPage() {
           )}
 
           {/* Bulk Action Tool */}
-          <section className="bg-rose-50/50 rounded-2xl p-6 border border-primary-container/20 shadow-sm">
+          <section className="bg-rose-50/50 rounded-[8px] p-6 border border-primary-container/20 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <span className="material-symbols-outlined text-primary font-bold">bolt</span>
               <h3 className="font-bold text-slate-800 text-base">Cập nhật nhanh</h3>
@@ -280,7 +280,7 @@ export default function QuickCreateVariantsPage() {
                   value={bulkStock}
                   onChange={(e) => setBulkStock(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="Ví dụ: 100"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 shadow-inner"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 shadow-inner"
                 />
               </div>
               <button
@@ -296,7 +296,7 @@ export default function QuickCreateVariantsPage() {
 
         {/* Right Column: Attribute list combinations */}
         <div className="lg:col-span-8">
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
             {/* Header section with search */}
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/20">
               <h3 className="font-bold text-slate-800 text-lg">Danh sách tổ hợp thuộc tính</h3>
@@ -309,7 +309,7 @@ export default function QuickCreateVariantsPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm kiếm thuộc tính..."
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800"
                 />
               </div>
             </div>
@@ -412,7 +412,7 @@ export default function QuickCreateVariantsPage() {
                           {/* Status Badge */}
                           <td className="px-6 py-4.5">
                             <span
-                              className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                              className={`px-3 py-1 rounded-[8px] text-[10px] font-bold ${
                                 c.alreadyExists
                                   ? "bg-slate-100 text-slate-400"
                                   : isSelected
@@ -450,7 +450,7 @@ export default function QuickCreateVariantsPage() {
           <button
             onClick={handleCreateVariants}
             disabled={selectedKeys.size === 0 || saving}
-            className="px-12 py-3.5 bg-primary text-on-primary rounded-full font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/95 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+            className="px-12 py-3.5 bg-primary text-on-primary rounded-[8px] font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/95 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
             style={{ width: "auto", minWidth: "240px", display: "flex" }}
           >
             {saving ? (

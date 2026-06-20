@@ -191,7 +191,7 @@ export default function AdminBrandsPage() {
         </div>
         <button
           onClick={() => router.push("/admin/brands/new")}
-          className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+          className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[16px]">add</span>
           Thêm thương hiệu mới
@@ -201,9 +201,9 @@ export default function AdminBrandsPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Card 1: Total */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">verified</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng thương hiệu</span>
@@ -212,9 +212,9 @@ export default function AdminBrandsPage() {
         </div>
 
         {/* Card 2: Active */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
@@ -223,9 +223,9 @@ export default function AdminBrandsPage() {
         </div>
 
         {/* Card 3: Inactive */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
               <span className="material-symbols-outlined text-[20px]">unpublished</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Ngừng hoạt động</span>
@@ -234,9 +234,9 @@ export default function AdminBrandsPage() {
         </div>
 
         {/* Card 4: Linked Products */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">inventory</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm liên kết</span>
@@ -247,7 +247,7 @@ export default function AdminBrandsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-12 flex flex-col gap-6 transition-all duration-300">
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden">
             {/* Search and Filters */}
             <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
               {/* Search box */}
@@ -260,7 +260,7 @@ export default function AdminBrandsPage() {
                   placeholder="Tìm kiếm thương hiệu..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
 
@@ -268,7 +268,7 @@ export default function AdminBrandsPage() {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+                className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
               >
                 <option value="all">Tất cả trạng thái</option>
                 <option value="active">Hoạt động</option>
@@ -282,7 +282,7 @@ export default function AdminBrandsPage() {
                     setSearchTerm("");
                     setStatusFilter("all");
                   }}
-                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px]">clear</span>
                   Xóa bộ lọc
@@ -324,7 +324,7 @@ export default function AdminBrandsPage() {
                         </td>
 
                         <td className="px-6 py-4">
-                          <div className="w-24 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                          <div className="w-24 h-12 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                             {brand.logo ? (
                               <img
                                 src={brand.logo}
@@ -411,7 +411,7 @@ export default function AdminBrandsPage() {
       {/* Deletion Confirmation Modal */}
       {brandToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 w-[400px] max-w-full border border-slate-100 shadow-xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[8px] p-8 w-[400px] max-w-full border border-slate-100 shadow-xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-rose-100">
                 <span className="material-symbols-outlined text-3xl">warning</span>

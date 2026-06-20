@@ -271,7 +271,7 @@ export default function UserDetailsPage() {
       </button>
 
       {/* Header Section / Hero Profile */}
-      <section className="relative bg-surface-container-lowest rounded-xl p-lg shadow-xl shadow-primary/5 border border-primary-fixed/30 overflow-hidden mb-md">
+      <section className="relative bg-surface-container-lowest rounded-[8px] p-lg shadow-xl shadow-primary/5 border border-primary-fixed/30 overflow-hidden mb-md">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         <div className="flex flex-col md:flex-row items-center gap-md relative z-10">
           <div className="relative">
@@ -302,14 +302,14 @@ export default function UserDetailsPage() {
           <div className="flex flex-wrap gap-sm justify-center">
             <button
               onClick={() => router.push(`/admin/users/${id}/permissions`)}
-              className="bg-secondary text-on-secondary px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md"
+              className="bg-secondary text-on-secondary px-6 py-3 rounded-[8px] font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform shadow-md"
             >
               <span className="material-symbols-outlined text-sm">security</span>
               Quản lý phân quyền
             </button>
             <button
               onClick={handleLockUnlock}
-              className={`${user.isLocked ? "bg-primary text-on-primary" : "bg-error-container text-on-error-container"} px-6 py-3 rounded-full font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform`}
+              className={`${user.isLocked ? "bg-primary text-on-primary" : "bg-error-container text-on-error-container"} px-6 py-3 rounded-[8px] font-label-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform`}
             >
               <span className="material-symbols-outlined text-sm">{user.isLocked ? "lock_open" : "lock"}</span>
               {user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
@@ -321,7 +321,7 @@ export default function UserDetailsPage() {
       {/* Information Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
         {/* Basic Info Card */}
-        <div className="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant/20">
+        <div className="bg-surface-container-lowest p-md rounded-[8px] shadow-sm border border-outline-variant/20">
           <h3 className="font-headline-md text-headline-md text-primary mb-md flex items-center gap-2">
             <span className="material-symbols-outlined">badge</span>
             Thông tin cơ bản
@@ -347,7 +347,7 @@ export default function UserDetailsPage() {
         </div>
 
         {/* Account Status Card */}
-        <div className="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant/20">
+        <div className="bg-surface-container-lowest p-md rounded-[8px] shadow-sm border border-outline-variant/20">
           <h3 className="font-headline-md text-headline-md text-primary mb-md flex items-center gap-2">
             <span className="material-symbols-outlined">account_box</span>
             Trạng thái hệ thống
@@ -396,7 +396,7 @@ export default function UserDetailsPage() {
         </div>
 
         {/* Role/Permissions Section */}
-        <div className="md:col-span-2 bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant/20">
+        <div className="md:col-span-2 bg-surface-container-lowest p-md rounded-[8px] shadow-sm border border-outline-variant/20">
           <div className="flex items-center justify-between mb-md border-b border-outline-variant/20 pb-sm">
             <h3 className="font-headline-md text-headline-md text-primary flex items-center gap-2">
               <span className="material-symbols-outlined">key</span>
@@ -420,13 +420,13 @@ export default function UserDetailsPage() {
                 user.roles.map((role: string, idx: number) => (
                   <span
                     key={idx}
-                    className="px-4 py-2 bg-primary-container/20 text-on-primary-container font-label-md rounded-full border border-primary-container/40 font-bold"
+                    className="px-4 py-2 bg-primary-container/20 text-on-primary-container font-label-md rounded-[8px] border border-primary-container/40 font-bold"
                   >
                     {role}
                   </span>
                 ))
               ) : (
-                <span className="px-4 py-2 bg-surface-variant text-on-surface-variant font-label-md rounded-full border border-outline-variant/40">
+                <span className="px-4 py-2 bg-surface-variant text-on-surface-variant font-label-md rounded-[8px] border border-outline-variant/40">
                   Người dùng cơ bản (User)
                 </span>
               )}
@@ -472,7 +472,7 @@ export default function UserDetailsPage() {
       {isLockModalOpen && isMounted && createPortal(
         <div className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div 
-            className="bg-white rounded-3xl border border-slate-100 shadow-2xl p-6 w-[448px] max-w-[calc(100vw-32px)] shrink-0 animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-[8px] border border-slate-100 shadow-2xl p-6 w-[448px] max-w-[calc(100vw-32px)] shrink-0 animate-in fade-in zoom-in-95 duration-200"
           >
             <div className="flex items-center gap-2.5 text-rose-600 mb-2">
               <span className="material-symbols-outlined text-[24px]">lock</span>
@@ -488,7 +488,7 @@ export default function UserDetailsPage() {
                   value={reasonType} 
                   onChange={(e) => handleReasonTypeChange(e.target.value)}
                   disabled={isLocking}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700"
                 >
                   <option value="policy">Vi phạm điều khoản dịch vụ</option>
                   <option value="spam">Spam quảng cáo, tin nhắn rác</option>
@@ -501,7 +501,7 @@ export default function UserDetailsPage() {
                   <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Nhập lý do chi tiết <span className="text-rose-500">*</span></label>
                     <textarea 
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 min-h-[70px]" 
+                      className="w-full px-4 py-2.5 rounded-[8px] border border-slate-200 bg-white font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 min-h-[70px]" 
                       rows={2} 
                       placeholder="Nhập lý do khóa cụ thể..."
                       value={lockReason} 
@@ -538,7 +538,7 @@ export default function UserDetailsPage() {
                             setLockDays(prev => prev === 0 || [1,3,7,30].includes(prev) ? 5 : prev);
                           }
                         }}
-                        className={`py-2 px-1 text-xs font-bold rounded-xl border text-center transition-all cursor-pointer ${
+                        className={`py-2 px-1 text-xs font-bold rounded-[8px] border text-center transition-all cursor-pointer ${
                           isActive
                             ? "bg-rose-600 text-white border-rose-600 shadow-sm"
                             : "bg-white text-slate-650 border-slate-200 hover:bg-slate-50"
@@ -556,7 +556,7 @@ export default function UserDetailsPage() {
                     <div className="relative flex items-center">
                       <input 
                         type="number" 
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
                         value={lockDays} 
                         onChange={(e) => setLockDays(Math.max(1, Number(e.target.value)))}
                         min={1}
@@ -573,14 +573,14 @@ export default function UserDetailsPage() {
               <button 
                 onClick={() => setIsLockModalOpen(false)} 
                 disabled={isLocking}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 transition-all cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-[8px] text-xs font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 transition-all cursor-pointer disabled:opacity-50"
               >
                 Hủy
               </button>
               <button 
                 onClick={confirmLock} 
                 disabled={isLocking}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all cursor-pointer disabled:opacity-70 flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-[8px] text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all cursor-pointer disabled:opacity-70 flex items-center gap-1.5"
               >
                 {isLocking ? (
                   <>
@@ -604,7 +604,7 @@ export default function UserDetailsPage() {
       {isPermModalOpen && isMounted && createPortal(
         <div className="fixed inset-0 w-full h-full bg-black/50 flex items-center justify-center z-[9999] p-4">
           <div 
-            className="bg-surface-container-lowest rounded-xl shadow-2xl border border-outline-variant/20 flex flex-col"
+            className="bg-surface-container-lowest rounded-[8px] shadow-2xl border border-outline-variant/20 flex flex-col"
             style={{ width: "640px", height: "80vh", maxHeight: "800px", maxWidth: "calc(100vw - 32px)" }}
           >
             {/* Modal Header */}
@@ -658,7 +658,7 @@ export default function UserDetailsPage() {
                 if (filteredGroupPerms.length === 0) return null;
 
                 return (
-                  <div key={resource} className="bg-surface-container-low rounded-xl p-md border border-outline-variant/10">
+                  <div key={resource} className="bg-surface-container-low rounded-[8px] p-md border border-outline-variant/10">
                     <h4 className="font-label-sm text-sm text-secondary font-bold border-b border-outline-variant/20 pb-xs mb-sm uppercase">
                       {getResourceTitle(resource)}
                     </h4>

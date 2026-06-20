@@ -202,7 +202,7 @@ function BatchPrintExecuteContent() {
         <button 
           onClick={handleSavePdfAndPrint}
           disabled={savingPdf}
-          className={`px-8 py-3 text-white font-bold rounded-full transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50 ${allSaved ? 'bg-primary hover:bg-primary/90' : 'bg-slate-900 hover:bg-slate-800'}`}
+          className={`px-8 py-3 text-white font-bold rounded-[8px] transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50 ${allSaved ? 'bg-primary hover:bg-primary/90' : 'bg-slate-900 hover:bg-slate-800'}`}
         >
           <span className="material-symbols-outlined">print</span>
           {savingPdf ? "Đang xử lý..." : (allSaved ? `In lại ${orders.length} phiếu` : `In và lưu ${orders.length} phiếu`)}

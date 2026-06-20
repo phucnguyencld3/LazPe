@@ -312,7 +312,7 @@ export default function AdminLayout({
             <input 
               type="text" 
               placeholder="Tìm kiếm nhanh mã đơn hàng, sản phẩm, email khách hàng..." 
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm outline-none text-slate-700 font-medium" 
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-[8px] focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm outline-none text-slate-700 font-medium" 
             />
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function AdminLayout({
 
             {/* Dropdown Panel */}
             {isNotifDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 text-slate-800">
+              <div className="absolute right-0 mt-3 w-80 bg-white rounded-[8px] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 text-slate-800">
                 <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
                   <span className="font-bold text-slate-800 text-sm">Thông báo mới</span>
                   {unreadCount > 0 && (
@@ -391,7 +391,7 @@ export default function AdminLayout({
                 <div className="px-3 pt-2 mt-2 border-t border-slate-100">
                   <Link
                     href="/admin/notifications"
-                    className="block text-center w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 transition-colors"
+                    className="block text-center w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-[8px] text-xs font-bold text-slate-700 transition-colors"
                     onClick={() => setIsNotifDropdownOpen(false)}
                   >
                     Xem tất cả thông báo
@@ -476,7 +476,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Bảng điều khiển" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">dashboard</span>
@@ -484,7 +484,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/statistics"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Thống kê doanh thu" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">bar_chart</span>
@@ -505,7 +505,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin/orders"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/orders", ["/admin/orders/batch-print"]) ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/orders", ["/admin/orders/batch-print"]) ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Xử lý Đơn hàng" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">shopping_cart</span>
@@ -513,7 +513,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/tracking"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/tracking") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/tracking") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Tra cứu Đơn hàng" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">barcode_scanner</span>
@@ -521,7 +521,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/orders/batch-print"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/orders/batch-print") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/orders/batch-print") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "In Đơn Hàng Loạt" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">print</span>
@@ -529,7 +529,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/reviews"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Kiểm duyệt Đánh giá" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">gavel</span>
@@ -550,7 +550,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin/products"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Kho Sản phẩm" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">inventory_2</span>
@@ -558,7 +558,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/combo"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Gói Combo" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">inventory</span>
@@ -566,7 +566,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/categories"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Phân loại Danh mục" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">category</span>
@@ -574,7 +574,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/brands"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Thương hiệu" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">verified</span>
@@ -595,7 +595,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin/vouchers"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Mã giảm giá (Voucher)" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">confirmation_number</span>
@@ -603,7 +603,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/flash-sales"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Chiến dịch Flash Sale" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">bolt</span>
@@ -611,7 +611,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/loyalty"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Chương trình Loyalty" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">loyalty</span>
@@ -632,7 +632,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin/users"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Tài khoản Hệ thống" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">group</span>
@@ -640,7 +640,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/permissions"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Phân quyền Truy cập" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">person</span>
@@ -648,7 +648,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/profile"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Hồ sơ của tôi" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">account_circle</span>
@@ -669,7 +669,7 @@ export default function AdminLayout({
             )}
               <Link
                 href="/admin/chats"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Tin nhắn Hỗ trợ" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">chat</span>
@@ -677,7 +677,7 @@ export default function AdminLayout({
               </Link>
               <Link
                 href="/admin/notifications"
-                className={`flex items-center py-3.5 mx-3 rounded-xl transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Thông báo nội bộ" : undefined}
               >
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">notifications</span>
@@ -688,7 +688,7 @@ export default function AdminLayout({
           
           <div className={`mt-auto pb-md pt-md space-y-2 ${isSidebarExpanded ? "px-4" : "px-0 flex flex-col items-center"}`}>
             <button 
-              className={`flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md rounded-xl hover:bg-secondary/90 shadow-sm transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-full"}`}
+              className={`flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md rounded-[8px] hover:bg-secondary/90 shadow-sm transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-[8px]"}`}
               title={!isSidebarExpanded ? "Trung tâm hỗ trợ" : undefined}
             >
               <span className="material-symbols-outlined text-[20px] flex-shrink-0">help</span>
@@ -696,7 +696,7 @@ export default function AdminLayout({
             </button>
             <button 
               onClick={handleLogout}
-              className={`flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-xl transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-full mt-2"}`}
+              className={`flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-[8px] transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-[8px] mt-2"}`}
               title={!isSidebarExpanded ? "Đăng xuất" : undefined}
             >
               <span className="material-symbols-outlined text-[20px] flex-shrink-0">logout</span>
@@ -726,7 +726,7 @@ export default function AdminLayout({
       {/* Custom Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-[420px] max-w-full p-8 border border-slate-100 shadow-2xl space-y-7 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[8px] w-[420px] max-w-full p-8 border border-slate-100 shadow-2xl space-y-7 animate-in fade-in zoom-in-95 duration-200">
             <div className="text-center space-y-3">
               <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
                 <span className="material-symbols-outlined text-3xl">logout</span>
@@ -741,7 +741,7 @@ export default function AdminLayout({
               <button
                 type="button"
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors cursor-pointer"
+                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-[8px] text-sm transition-colors cursor-pointer"
               >
                 Hủy bỏ
               </button>
@@ -751,7 +751,7 @@ export default function AdminLayout({
                   clearAuth();
                   window.location.replace("/login");
                 }}
-                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer"
+                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-[8px] text-sm transition-colors cursor-pointer"
               >
                 Đăng xuất
               </button>

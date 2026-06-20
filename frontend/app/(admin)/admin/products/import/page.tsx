@@ -193,14 +193,14 @@ export default function ImportPage() {
                 <div className="flex items-center gap-sm shrink-0">
                     <button
                         onClick={() => router.back()}
-                        className="border border-secondary text-secondary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+                        className="border border-secondary text-secondary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                         Quay lại
                     </button>
                     <button
                         onClick={downloadTemplate}
-                        className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+                        className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[18px]">download</span>
                         Tải File Excel Mẫu
@@ -209,7 +209,7 @@ export default function ImportPage() {
             </header>
 
             {!previewData && (
-                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center">
+                <div className="bg-white p-8 rounded-[8px] shadow-sm border border-slate-100 flex flex-col items-center">
                     <p className="mb-4 text-center text-slate-600">
                         Tải file Excel mẫu để điền dữ liệu:
                         <button onClick={downloadTemplate} className="ml-2 text-primary font-bold hover:underline">Download Template</button>
@@ -219,7 +219,7 @@ export default function ImportPage() {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
-                        className={`w-full max-w-2xl h-64 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${isDragging ? "border-primary bg-primary-container/10" : "border-slate-300 bg-slate-50"} cursor-pointer`}
+                        className={`w-full max-w-2xl h-64 border-2 border-dashed rounded-[8px] flex flex-col items-center justify-center transition-all ${isDragging ? "border-primary bg-primary-container/10" : "border-slate-300 bg-slate-50"} cursor-pointer`}
                         onClick={() => fileInputRef.current?.click()}
                     >
                         <span className="material-symbols-outlined text-6xl text-slate-400 mb-4">upload_file</span>
@@ -249,7 +249,7 @@ export default function ImportPage() {
             )}
 
             {previewData && (
-                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden mt-6">
+                <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mt-6">
                     <div className="flex border-b border-slate-200">
                         <button
                             className={`flex-1 py-4 font-bold text-lg transition-colors ${activeTab === "products" ? "border-b-4 border-primary text-primary" : "text-slate-500 hover:bg-slate-50"}`}
@@ -322,7 +322,7 @@ export default function ImportPage() {
                                                 </>
                                             )}
                                             <td className="p-4">
-                                                <span className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(item.isValid, hasDuplicate, hasWarning)}`}>
+                                                <span className={`whitespace-nowrap px-3 py-1 rounded-[8px] text-xs font-bold ${getStatusStyle(item.isValid, hasDuplicate, hasWarning)}`}>
                                                     {getStatusLabel(item.isValid, hasDuplicate, hasWarning)}
                                                 </span>
                                             </td>
@@ -337,13 +337,13 @@ export default function ImportPage() {
                     <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-4">
                         <button
                             onClick={() => setPreviewData(null)}
-                            className="px-6 py-2 rounded-full font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                            className="px-6 py-2 rounded-[8px] font-bold text-slate-600 hover:bg-slate-200 transition-colors"
                         >
                             Hủy bỏ
                         </button>
                         <button
                             onClick={proceedToCommit}
-                            className={`px-8 py-2 rounded-full font-bold text-white shadow-md transition-transform hover:scale-105 ${
+                            className={`px-8 py-2 rounded-[8px] font-bold text-white shadow-md transition-transform hover:scale-105 ${
                                 (previewData.errors?.filter((e: any) => !e.isWarning).length > 0 || previewData.duplicates?.length > 0)
                                     ? "bg-amber-500 hover:bg-amber-600"
                                     : "bg-primary hover:bg-primary/90"

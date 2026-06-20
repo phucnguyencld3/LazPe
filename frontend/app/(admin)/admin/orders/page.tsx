@@ -147,7 +147,7 @@ export default function AdminOrdersPage() {
         </div>
         <button
           onClick={() => toast.info("Tính năng xuất Excel chưa khả dụng")}
-          className="flex items-center gap-2 px-6 py-3 bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-bold rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          className="flex items-center gap-2 px-6 py-3 bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-bold rounded-[8px] shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
         >
           <span className="material-symbols-outlined">ios_share</span>
           Xuất file Excel

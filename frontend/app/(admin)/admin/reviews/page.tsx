@@ -84,9 +84,9 @@ export default function AdminReviewsPage() {
       {/* Stats Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {/* Total Reviews */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
               <span className="material-symbols-outlined text-[20px]">rate_review</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đánh giá</span>
@@ -95,9 +95,9 @@ export default function AdminReviewsPage() {
         </div>
 
         {/* Visible Reviews */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center text-secondary shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-secondary-container/20 flex items-center justify-center text-secondary shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đánh giá hiển thị</span>
@@ -106,13 +106,13 @@ export default function AdminReviewsPage() {
         </div>
 
         {/* Hidden Reviews */}
-        <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+        <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
           (stats?.hiddenReviews ?? 0) > 0 
             ? 'bg-rose-50/50 border-rose-100' 
             : 'bg-white border-slate-100'
         }`}>
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 ${
               (stats?.hiddenReviews ?? 0) > 0 
                 ? 'bg-rose-100 text-error' 
                 : 'bg-slate-100 text-slate-500'
@@ -125,7 +125,7 @@ export default function AdminReviewsPage() {
           </div>
           <div className="flex items-center gap-2">
             {(stats?.hiddenReviews ?? 0) > 0 && (
-              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-full">
+              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-[8px]">
                 Lưu ý
               </span>
             )}
@@ -136,9 +136,9 @@ export default function AdminReviewsPage() {
         </div>
 
         {/* Average Rating */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm trung bình</span>

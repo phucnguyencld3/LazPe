@@ -729,7 +729,7 @@ return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-8">
           {/* Left Column: Dynamic Options Configuration */}
           <div className="lg:col-span-5 space-y-4">
-            <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
+            <section className="bg-white rounded-[8px] p-5 border border-slate-100 shadow-sm">
               <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">tune</span>
@@ -738,7 +738,7 @@ return (
                 <button
                   type="button"
                   onClick={handleAddOption}
-                  className="bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-1.5 rounded-xl text-sm font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  className="bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-1.5 rounded-[8px] text-sm font-bold transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm font-bold">add</span>
                   Thêm
@@ -746,7 +746,7 @@ return (
               </div>
 
               {options.length === 0 ? (
-                <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <div className="text-center py-8 bg-slate-50 rounded-[8px] border border-dashed border-slate-200">
                   <span className="material-symbols-outlined text-slate-300 text-2xl mb-1.5">pageview</span>
                   <p className="text-slate-400 text-sm font-bold">Chưa có thuộc tính nào</p>
                   <p className="text-slate-400 text-xs mt-0.5">Vui lòng nhấp nút "Thêm" để định cấu hình thuộc tính sản phẩm.</p>
@@ -756,7 +756,7 @@ return (
                   {options.map((opt) => {
                     const isOptDup = isOptionNameDuplicate(opt.name);
                     return (
-                      <div key={opt.id} className="p-3 bg-slate-50/50 rounded-2xl border border-slate-100 relative">
+                      <div key={opt.id} className="p-3 bg-slate-50/50 rounded-[8px] border border-slate-100 relative">
                         {/* Option Header: Name and Order */}
                         <div className="flex items-center gap-2 mb-3 pr-8 relative">
                           <div className="flex-1">
@@ -765,7 +765,7 @@ return (
                               value={opt.name}
                               onChange={(e) => handleUpdateOptionName(opt.id, e.target.value)}
                               placeholder="Tên thuộc tính (Màu sắc, Size...)"
-                              className={`w-full px-3 py-1.5 bg-white border rounded-xl focus:outline-none text-sm font-semibold text-slate-800 transition-all
+                              className={`w-full px-3 py-1.5 bg-white border rounded-[8px] focus:outline-none text-sm font-semibold text-slate-800 transition-all
                                 ${isOptDup
                                   ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 bg-rose-50/5"
                                   : "border-slate-200 focus:ring-primary/20 focus:border-primary"
@@ -785,7 +785,7 @@ return (
                               value={opt.displayOrder}
                               onChange={(e) => handleUpdateOptionOrder(opt.id, Number(e.target.value))}
                               placeholder="Thứ tự"
-                              className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none text-sm font-semibold text-slate-800 text-center"
+                              className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-[8px] focus:outline-none text-sm font-semibold text-slate-800 text-center"
                             />
                           </div>
                           <button
@@ -804,7 +804,7 @@ return (
                             {opt.values.map((val) => {
                               const isValDup = isValueDuplicate(opt.id, val.value);
                               return (
-                                <div key={val.id} className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-100 shadow-sm relative pr-7">
+                                <div key={val.id} className="flex items-center gap-1.5 bg-white p-1.5 rounded-[8px] border border-slate-100 shadow-sm relative pr-7">
                                   {/* Micro Image Uploader Thumbnail */}
                                   <div className="relative w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-inner group/valimg">
                                     {val.isUploadingImage ? (
@@ -912,13 +912,13 @@ return (
           {/* Right Column: Variants combination dynamic list */}
           <div className="lg:col-span-7">
             {variants.length > 0 ? (
-              <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm overflow-hidden">
+              <section className="bg-white rounded-[8px] p-5 border border-slate-100 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">diversity_3</span>
                     <h3 className="text-base font-bold text-slate-800">Biến thể tự động sinh ({variants.length})</h3>
                   </div>
-                  <span className="text-xs px-2.5 py-0.5 bg-primary/10 rounded-full text-primary font-bold">
+                  <span className="text-xs px-2.5 py-0.5 bg-primary/10 rounded-[8px] text-primary font-bold">
                     Tổ hợp tự động
                   </span>
                 </div>
@@ -1068,7 +1068,7 @@ return (
                 </div>
               </section>
             ) : (
-              <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm h-full flex flex-col justify-center items-center text-slate-400 font-semibold italic text-sm min-h-[250px]">
+              <div className="bg-white rounded-[8px] p-12 text-center border border-slate-100 shadow-sm h-full flex flex-col justify-center items-center text-slate-400 font-semibold italic text-sm min-h-[250px]">
                 <span className="material-symbols-outlined text-3xl mb-1.5 text-slate-300">diversity_3</span>
                 Chưa có biến thể nào được sinh ra.
                 <p className="text-slate-400 text-xs mt-0.5 leading-normal">Định cấu hình ít nhất một thuộc tính và giá trị ở cột bên trái để sinh tổ hợp tự động.</p>

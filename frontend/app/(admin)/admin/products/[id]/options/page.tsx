@@ -261,7 +261,7 @@ export default function ProductOptionsPage() {
         <p className="text-error font-bold text-lg">Không tìm thấy sản phẩm</p>
         <button
           onClick={() => router.push("/admin/products")}
-          className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+          className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-[8px] font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer"
         >
           Quay lại danh sách
         </button>
@@ -286,14 +286,14 @@ export default function ProductOptionsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/admin/products/${product.productID}`)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm font-bold text-xs cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-[8px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm font-bold text-xs cursor-pointer active:scale-95"
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Quay lại chi tiết
           </button>
           <button
             onClick={() => router.push(`/admin/products/${product.productID}/variants`)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 transition-all shadow-md font-bold text-xs cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-[8px] bg-primary text-on-primary hover:bg-primary/95 transition-all shadow-md font-bold text-xs cursor-pointer active:scale-95"
           >
             <span className="material-symbols-outlined text-base">arrow_forward</span>
             Tiếp tục tạo biến thể
@@ -302,15 +302,15 @@ export default function ProductOptionsPage() {
       </div>
 
       {/* Product Banner Info */}
-      <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+      <div className="bg-white rounded-[8px] p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-5">
-          <div className="w-14 h-14 bg-primary-container/20 rounded-2xl flex items-center justify-center text-primary">
+          <div className="w-14 h-14 bg-primary-container/20 rounded-[8px] flex items-center justify-center text-primary">
             <span className="material-symbols-outlined text-3xl">inventory_2</span>
           </div>
           <div>
             <h3 className="text-xl font-bold text-slate-800">{product.productName}</h3>
             <div className="flex items-center gap-3 mt-1.5">
-              <span className="bg-secondary-container text-on-secondary-container px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              <span className="bg-secondary-container text-on-secondary-container px-3 py-0.5 rounded-[8px] text-[10px] font-bold uppercase tracking-wider">
                 #{product.code || product.productID.toString().padStart(6, '0')}
               </span>
               <span className="text-slate-400 text-xs font-semibold flex items-center gap-1">
@@ -324,7 +324,7 @@ export default function ProductOptionsPage() {
         </div>
         <button
           onClick={() => handleOpenOptionModal("create")}
-          className="bg-primary text-on-primary font-bold text-sm px-8 py-3 rounded-full flex items-center gap-2 shadow-md hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+          className="bg-primary text-on-primary font-bold text-sm px-8 py-3 rounded-[8px] flex items-center gap-2 shadow-md hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined">add</span>
           Thêm thuộc tính
@@ -334,12 +334,12 @@ export default function ProductOptionsPage() {
       {/* Options List Grid */}
       <div className="space-y-8">
         {options.length === 0 ? (
-          <div className="bg-white rounded-[2rem] p-16 text-center border border-slate-100 shadow-sm">
+          <div className="bg-white rounded-[8px] p-16 text-center border border-slate-100 shadow-sm">
             <span className="material-symbols-outlined text-slate-300 text-6xl mb-3">list_alt</span>
             <p className="text-slate-400 font-bold">Sản phẩm này chưa được cấu hình thuộc tính nào.</p>
             <button
               onClick={() => handleOpenOptionModal("create")}
-              className="mt-4 px-6 py-2 bg-primary text-on-primary font-bold rounded-full text-xs shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="mt-4 px-6 py-2 bg-primary text-on-primary font-bold rounded-[8px] text-xs shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               Thêm thuộc tính đầu tiên
             </button>
@@ -348,12 +348,12 @@ export default function ProductOptionsPage() {
           options.map((option) => (
             <div 
               key={option.productOptionID}
-              className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm"
+              className="bg-white rounded-[8px] overflow-hidden border border-slate-100 shadow-sm"
             >
               {/* Option Card Header */}
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
-                  <div className="p-2.5 bg-secondary-container/30 text-secondary rounded-xl">
+                  <div className="p-2.5 bg-secondary-container/30 text-secondary rounded-[8px]">
                     <span className="material-symbols-outlined">palette</span>
                   </div>
                   <div>
@@ -371,14 +371,14 @@ export default function ProductOptionsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleOpenOptionModal("edit", option)}
-                    className="p-2 text-slate-500 hover:text-primary hover:bg-primary-container/10 border border-slate-200 rounded-xl transition-all cursor-pointer"
+                    className="p-2 text-slate-500 hover:text-primary hover:bg-primary-container/10 border border-slate-200 rounded-[8px] transition-all cursor-pointer"
                     title="Sửa thuộc tính"
                   >
                     <span className="material-symbols-outlined text-[20px]">edit</span>
                   </button>
                   <button
                     onClick={() => handleDeleteOptionClick(option.productOptionID, option.name)}
-                    className="p-2 text-error hover:bg-rose-50 border border-rose-100 rounded-xl transition-all cursor-pointer"
+                    className="p-2 text-error hover:bg-rose-50 border border-rose-100 rounded-[8px] transition-all cursor-pointer"
                     title="Xóa thuộc tính"
                   >
                     <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -455,7 +455,7 @@ export default function ProductOptionsPage() {
               <div className="p-4 px-8 border-t border-slate-100 bg-slate-50/20">
                 <button
                   onClick={() => handleOpenValueModal("create", option.productOptionID)}
-                  className="flex items-center gap-2 px-4 py-2 border border-secondary text-secondary font-bold text-xs rounded-xl hover:bg-secondary/5 transition-all cursor-pointer active:scale-95 shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 border border-secondary text-secondary font-bold text-xs rounded-[8px] hover:bg-secondary/5 transition-all cursor-pointer active:scale-95 shadow-sm"
                 >
                   <span className="material-symbols-outlined text-lg">add</span>
                   Thêm giá trị thuộc tính
@@ -468,8 +468,8 @@ export default function ProductOptionsPage() {
 
       {/* Bento-style Info Area */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div className="md:col-span-2 bg-[#f0faf7] rounded-[2rem] p-8 flex items-center gap-6 border border-secondary/10">
-          <div className="bg-white p-4 rounded-2xl shadow-lg shadow-secondary/5 text-secondary shrink-0">
+        <div className="md:col-span-2 bg-[#f0faf7] rounded-[8px] p-8 flex items-center gap-6 border border-secondary/10">
+          <div className="bg-white p-4 rounded-[8px] shadow-lg shadow-secondary/5 text-secondary shrink-0">
             <span className="material-symbols-outlined text-4xl">auto_awesome</span>
           </div>
           <div>
@@ -479,7 +479,7 @@ export default function ProductOptionsPage() {
             </p>
           </div>
         </div>
-        <div className="bg-rose-50/50 rounded-[2rem] p-8 flex flex-col justify-center items-center text-center border border-primary/10">
+        <div className="bg-rose-50/50 rounded-[8px] p-8 flex flex-col justify-center items-center text-center border border-primary/10">
           <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Tổng số biến thể có thể tạo</p>
           <span className="text-5xl font-bold text-primary">{totalCombinations}</span>
           <p className="text-xs text-primary/70 mt-2 font-medium">Tổ hợp thuộc tính đã cấu hình</p>
@@ -489,7 +489,7 @@ export default function ProductOptionsPage() {
       {/* 1. Create/Edit Option Modal */}
       {optionModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-800">
                 {optionModal.type === "create" ? "Thêm thuộc tính mới" : "Sửa thuộc tính"}
@@ -511,7 +511,7 @@ export default function ProductOptionsPage() {
                     type="text"
                     value={optionName}
                     onChange={(e) => setOptionName(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     placeholder="Vd: Màu sắc, Kích thước, Chất liệu..."
                     required
                   />
@@ -523,7 +523,7 @@ export default function ProductOptionsPage() {
                     min="1"
                     value={optionDisplayOrder}
                     onChange={(e) => setOptionDisplayOrder(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     required
                   />
                 </div>
@@ -533,14 +533,14 @@ export default function ProductOptionsPage() {
                 <button
                   type="button"
                   onClick={() => setOptionModal({ isOpen: false, type: "create" })}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer"
                   disabled={saving}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-2 rounded-[8px] bg-primary text-on-primary hover:bg-primary/95 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
                   disabled={saving}
                 >
                   {saving ? (
@@ -561,7 +561,7 @@ export default function ProductOptionsPage() {
       {/* 2. Create/Edit Option Value Modal */}
       {valueModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-800">
                 {valueModal.type === "create" ? "Thêm giá trị thuộc tính" : "Sửa giá trị thuộc tính"}
@@ -583,7 +583,7 @@ export default function ProductOptionsPage() {
                     type="text"
                     value={valueText}
                     onChange={(e) => setValueText(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     placeholder="Vd: Đỏ, Xanh, XL, L, Cotton..."
                     required
                   />
@@ -596,7 +596,7 @@ export default function ProductOptionsPage() {
                     step="1000"
                     value={valuePrice}
                     onChange={(e) => setValuePrice(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     required
                   />
                   <p className="text-[10px] text-slate-400 mt-1">
@@ -610,7 +610,7 @@ export default function ProductOptionsPage() {
                     min="1"
                     value={valueDisplayOrder}
                     onChange={(e) => setValueDisplayOrder(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     required
                   />
                 </div>
@@ -620,14 +620,14 @@ export default function ProductOptionsPage() {
                 <button
                   type="button"
                   onClick={() => setValueModal({ isOpen: false, type: "create", optionId: 0 })}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer"
                   disabled={saving}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-2 rounded-[8px] bg-primary text-on-primary hover:bg-primary/95 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
                   disabled={saving}
                 >
                   {saving ? (
@@ -648,7 +648,7 @@ export default function ProductOptionsPage() {
       {/* 3. Custom Delete Confirmation Modal */}
       {deleteModal?.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -678,14 +678,14 @@ export default function ProductOptionsPage() {
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setDeleteModal(null)}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
                   disabled={deleting}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={confirmDeletion}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  className="px-5 py-2 rounded-[8px] bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
                   disabled={deleting}
                 >
                   {deleting ? (

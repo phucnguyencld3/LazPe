@@ -55,13 +55,13 @@ export default function IssuedVouchersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Unused":
-        return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold tracking-wider uppercase">Chưa dùng</span>;
+        return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-[8px] text-[10px] font-bold tracking-wider uppercase">Chưa dùng</span>;
       case "Used":
-        return <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-bold tracking-wider uppercase">Đã dùng</span>;
+        return <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-[8px] text-[10px] font-bold tracking-wider uppercase">Đã dùng</span>;
       case "Expired":
-        return <span className="px-2.5 py-1 bg-rose-50 text-rose-500 rounded-full text-[10px] font-bold tracking-wider uppercase">Đã hết hạn</span>;
+        return <span className="px-2.5 py-1 bg-rose-50 text-rose-500 rounded-[8px] text-[10px] font-bold tracking-wider uppercase">Đã hết hạn</span>;
       default:
-        return <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-bold tracking-wider uppercase">{status}</span>;
+        return <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-[8px] text-[10px] font-bold tracking-wider uppercase">{status}</span>;
     }
   };
 
@@ -74,21 +74,21 @@ export default function IssuedVouchersPage() {
         </div>
         <Link 
           href="/admin/vouchers"
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[8px] font-bold text-sm transition-colors flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-lg">arrow_back</span>
           Quay lại danh sách
         </Link>
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden p-6">
+      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden p-6">
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
           <>
-            <div className="mb-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="mb-6 p-4 bg-indigo-50/50 rounded-[8px] border border-indigo-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Chi tiết Voucher Gốc</h3>
                 <div className="flex items-center gap-3">
@@ -103,7 +103,7 @@ export default function IssuedVouchersPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-100">
+            <div className="overflow-x-auto rounded-[8px] border border-slate-100">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">

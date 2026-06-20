@@ -249,14 +249,14 @@ export default function AdminProductsPage() {
         <div className="flex items-center gap-sm shrink-0">
           <button
             onClick={() => router.push("/admin/products/import")}
-            className="border border-secondary text-secondary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+            className="border border-secondary text-secondary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">upload_file</span>
             Import Excel
           </button>
           <button
             onClick={handleExport}
-            className="border border-primary text-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+            className="border border-primary text-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">file_export</span>
             Xuất dữ liệu
@@ -266,7 +266,7 @@ export default function AdminProductsPage() {
               toast.info("Điều hướng sang trang tạo sản phẩm mới");
               router.push("/admin/products/new");
             }}
-            className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
             Thêm sản phẩm mới
@@ -277,9 +277,9 @@ export default function AdminProductsPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Card 1: Total */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">inventory</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng sản phẩm</span>
@@ -288,9 +288,9 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Card 2: Active */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang kinh doanh</span>
@@ -299,13 +299,13 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Card 3: Out of stock */}
-        <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+        <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
           (stats?.outOfStockProducts ?? 0) > 0
             ? "bg-rose-50/50 border-rose-100"
             : "bg-white border-slate-100"
         }`}>
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 ${
               (stats?.outOfStockProducts ?? 0) > 0
                 ? "bg-rose-100 text-error"
                 : "bg-slate-100 text-slate-500"
@@ -318,7 +318,7 @@ export default function AdminProductsPage() {
           </div>
           <div className="flex items-center gap-2">
             {(stats?.outOfStockProducts ?? 0) > 0 && (
-              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-full">
+              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-[8px]">
                 Cảnh báo
               </span>
             )}
@@ -329,9 +329,9 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Card 4: New products */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">new_releases</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm mới</span>
@@ -341,7 +341,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Filters & Product Table Area */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
@@ -357,7 +357,7 @@ export default function AdminProductsPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               placeholder="Tìm theo tên hoặc mã sản phẩm..."
             />
           </div>
@@ -370,7 +370,7 @@ export default function AdminProductsPage() {
               setSelectedCategory(val ? Number(val) : null);
               setCurrentPage(1);
             }}
-            className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+            className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
           >
             <option value="">Tất cả danh mục</option>
             {categories.map((cat) => (
@@ -387,7 +387,7 @@ export default function AdminProductsPage() {
               setSelectedStatus(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+            className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
           >
             <option value="all">Trạng thái</option>
             <option value="active">Đang bán</option>
@@ -404,7 +404,7 @@ export default function AdminProductsPage() {
                 setSelectedStatus("all");
                 setCurrentPage(1);
               }}
-              className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">clear</span>
               Xóa bộ lọc
@@ -451,7 +451,7 @@ export default function AdminProductsPage() {
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">
                             {product.imageUrl && product.imageUrl.trim() !== "" ? (
                               <img
                                 src={product.imageUrl}
@@ -581,7 +581,7 @@ export default function AdminProductsPage() {
       {/* Custom Delete Confirmation Modal */}
       {productToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -614,21 +614,21 @@ export default function AdminProductsPage() {
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
                   placeholder="tôi đồng ý xóa"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
                 />
               </div>
               
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setProductToDelete(null)}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
                   disabled={deletingId !== null}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2 rounded-[8px] bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={deletingId !== null || deleteConfirmText.trim().toLowerCase() !== "tôi đồng ý xóa"}
                 >
                   {deletingId !== null ? (

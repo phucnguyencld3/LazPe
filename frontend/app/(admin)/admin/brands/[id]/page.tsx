@@ -225,7 +225,7 @@ export default function BrandDetailPage() {
               onClick={() => {
                 router.push(`/admin/brands?edit=${brand.supplierID}`);
               }}
-              className="px-6 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
+              className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
             >
               <span className="material-symbols-outlined text-lg">edit</span>
               Chỉnh sửa thương hiệu
@@ -239,11 +239,11 @@ export default function BrandDetailPage() {
           
           {/* Left Side: Brand Profile Card */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm space-y-6">
+            <div className="bg-white rounded-[8px] border border-slate-100 p-8 shadow-sm space-y-6">
               
               {/* Header profile info */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-28 h-28 rounded-3xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-2 mb-4 shadow-inner">
+                <div className="w-28 h-28 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-2 mb-4 shadow-inner">
                   {brand.logo ? (
                     <img
                       src={brand.logo}
@@ -260,12 +260,12 @@ export default function BrandDetailPage() {
                 <h2 className="text-xl font-bold text-slate-900 tracking-tight">{brand.supplierName}</h2>
                 <div className="mt-2.5">
                   {brand.status ? (
-                    <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                    <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-[8px] text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       Đang hoạt động
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
+                    <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-[8px] text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-100">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                       Ngừng hoạt động
                     </span>
@@ -311,7 +311,7 @@ export default function BrandDetailPage() {
 
           {/* Right Side: Linked Products list */}
           <div className="lg:col-span-8 flex flex-col gap-6">
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden">
               
               {/* Product header & filters */}
               <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -335,7 +335,7 @@ export default function BrandDetailPage() {
                         setSearchTerm(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-semibold text-slate-700 placeholder:text-slate-400"
+                      className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-semibold text-slate-700 placeholder:text-slate-400"
                     />
                   </div>
 
@@ -346,7 +346,7 @@ export default function BrandDetailPage() {
                       setSelectedStatus(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="px-3.5 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-slate-50 border border-slate-100 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary text-xs font-bold text-slate-700 cursor-pointer"
                   >
                     <option value="all">Trạng thái</option>
                     <option value="active">Đang bán</option>
@@ -390,7 +390,7 @@ export default function BrandDetailPage() {
                           <tr key={product.productID} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                                <div className="w-12 h-12 rounded-[8px] overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                                   {product.imageUrl ? (
                                     <img
                                       src={product.imageUrl}
@@ -436,7 +436,7 @@ export default function BrandDetailPage() {
                             <td className="px-6 py-4 text-center">
                               <button
                                 onClick={() => handleToggleProductStatus(product.productID)}
-                                className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold inline-block cursor-pointer transition-all border ${
+                                className={`px-2.5 py-0.5 rounded-[8px] text-[9px] font-bold inline-block cursor-pointer transition-all border ${
                                   product.status
                                     ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                                     : "bg-slate-50 text-slate-400 border-slate-100"
@@ -500,7 +500,7 @@ export default function BrandDetailPage() {
       {/* Delete Product Confirmation Modal */}
       {productToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[400px] max-w-full rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[400px] max-w-full rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -527,14 +527,14 @@ export default function BrandDetailPage() {
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setProductToDelete(null)}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
                   disabled={deletingId !== null}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-rose-500 text-white hover:bg-rose-600 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  className="px-5 py-2 rounded-[8px] bg-rose-500 text-white hover:bg-rose-600 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
                   disabled={deletingId !== null}
                 >
                   {deletingId !== null ? (

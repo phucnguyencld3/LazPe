@@ -201,7 +201,7 @@ namespace PolyBabyAPI.Services
                 stockProductQuery = stockProductQuery.Where(p => p.ProductID == filter.ProductID.Value);
 
             topProducts.HighestStock = await stockProductQuery
-                .OrderByDescending(p => p.Stock)
+                .OrderByDescending(p => p.Variants.Any() ? p.Variants.Sum(v => v.Stock) : p.Stock)
                 .Take(5)
                 .Select(p => new ProductStatDto
                 {
@@ -210,14 +210,14 @@ namespace PolyBabyAPI.Services
                     ProductName = p.ProductName,
                     CategoryName = p.Category != null ? p.Category.CategoryName : "N/A",
                     SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "N/A",
-                    Stock = p.Stock,
+                    Stock = p.Variants.Any() ? p.Variants.Sum(v => v.Stock) : p.Stock,
                     QuantitySold = 0,
                     TotalRevenue = 0
                 })
                 .ToListAsync();
 
             topProducts.LowestStock = await stockProductQuery
-                .OrderBy(p => p.Stock)
+                .OrderBy(p => p.Variants.Any() ? p.Variants.Sum(v => v.Stock) : p.Stock)
                 .Take(5)
                 .Select(p => new ProductStatDto
                 {
@@ -226,7 +226,7 @@ namespace PolyBabyAPI.Services
                     ProductName = p.ProductName,
                     CategoryName = p.Category != null ? p.Category.CategoryName : "N/A",
                     SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "N/A",
-                    Stock = p.Stock,
+                    Stock = p.Variants.Any() ? p.Variants.Sum(v => v.Stock) : p.Stock,
                     QuantitySold = 0,
                     TotalRevenue = 0
                 })
@@ -513,7 +513,7 @@ namespace PolyBabyAPI.Services
                 ProductName = p.ProductName,
                 CategoryName = p.Category != null ? p.Category.CategoryName : "N/A",
                 SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "N/A",
-                Stock = p.Stock,
+                Stock = p.Variants.Any() ? p.Variants.Sum(v => v.Stock) : p.Stock,
                 QuantitySold = detailsQuery
                     .Where(id => id.Variant.ProductID == p.ProductID)
                     .Select(id => (int?)id.Quantity)

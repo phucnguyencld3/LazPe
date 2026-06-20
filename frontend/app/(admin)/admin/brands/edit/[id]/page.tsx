@@ -192,7 +192,7 @@ function EditBrandForm() {
       </header>
 
       {/* Form Container */}
-      <div className="w-full bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+      <div className="w-full bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
@@ -206,7 +206,7 @@ function EditBrandForm() {
                   value={brandName}
                   onChange={e => setBrandName(e.target.value)}
                   placeholder="Nhập tên thương hiệu..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800"
                 />
               </div>
 
@@ -219,11 +219,11 @@ function EditBrandForm() {
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Mô tả tóm tắt về thương hiệu..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-[8px]">
                 <div>
                   <p className="text-xs font-bold text-slate-800">Trạng thái hoạt động</p>
                   <p className="text-[9px] text-slate-400 mt-0.5">Cho phép hiển thị & lọc thương hiệu khi mua hàng</p>
@@ -248,7 +248,7 @@ function EditBrandForm() {
                 </label>
 
                 {logo ? (
-                  <div className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 h-40 flex items-center justify-center">
+                  <div className="relative group rounded-[8px] overflow-hidden border border-slate-200 bg-slate-50 h-40 flex items-center justify-center">
                     <img
                       src={logo}
                       alt="Brand logo preview"
@@ -276,7 +276,7 @@ function EditBrandForm() {
                 ) : (
                   <div
                     onClick={() => !uploadingLogo && fileInputRef.current?.click()}
-                    className={`border-2 border-dashed border-slate-200 rounded-2xl hover:border-primary/50 bg-slate-50/50 hover:bg-slate-50 transition-all p-6 flex flex-col items-center justify-center gap-2 cursor-pointer h-40 ${uploadingLogo ? "opacity-60 cursor-not-allowed" : ""
+                    className={`border-2 border-dashed border-slate-200 rounded-[8px] hover:border-primary/50 bg-slate-50/50 hover:bg-slate-50 transition-all p-6 flex flex-col items-center justify-center gap-2 cursor-pointer h-40 ${uploadingLogo ? "opacity-60 cursor-not-allowed" : ""
                       }`}
                   >
                     {uploadingLogo ? (

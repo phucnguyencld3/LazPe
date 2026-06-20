@@ -417,7 +417,7 @@ export default function AdminChatsPage() {
   const isChatInputDisabled = !!(selectedSession?.isClosed || isDifferentAdminSupporting);
 
   return (
-    <div className="flex w-full flex-1 bg-white rounded-2xl overflow-hidden border border-slate-200 min-h-0">
+    <div className="flex w-full flex-1 bg-white rounded-[8px] overflow-hidden border border-slate-200 min-h-0">
       {/* Left panel: Sessions list */}
       <div className="w-80 border-r border-slate-200 flex flex-col bg-slate-50 shrink-0">
         {/* Search & Filter */}
@@ -472,7 +472,7 @@ export default function AdminChatsPage() {
               <div
                 key={session.id}
                 onClick={() => selectRoom(session)}
-                className={`p-4 mx-2 mt-2 rounded-xl flex items-start gap-3 cursor-pointer transition-all duration-200 ${
+                className={`p-4 mx-2 mt-2 rounded-[8px] flex items-start gap-3 cursor-pointer transition-all duration-200 ${
                   selectedSession?.id === session.id
                     ? "bg-primary/10 border border-primary/20 shadow-sm"
                     : "hover:bg-slate-100/80 bg-white border border-transparent"
@@ -536,13 +536,13 @@ export default function AdminChatsPage() {
                 {!selectedSession.isClosed ? (
                   <button
                     onClick={closeRoom}
-                    className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold px-3 py-2 rounded-full cursor-pointer transition-colors"
+                    className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold px-3 py-2 rounded-[8px] cursor-pointer transition-colors"
                   >
                     <span className="material-symbols-outlined text-sm">cancel</span>
                     Đóng cuộc chat
                   </button>
                 ) : (
-                  <span className="text-xs bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-full">
+                  <span className="text-xs bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-[8px]">
                     Cuộc trò chuyện đã đóng
                   </span>
                 )}
@@ -553,25 +553,25 @@ export default function AdminChatsPage() {
             {!selectedSession.isClosed && (
               <div className="px-4 py-3 bg-white border-b border-slate-100 text-xs flex justify-between items-center shrink-0">
                 {!selectedSession.adminId ? (
-                  <div className="bg-warning-container border border-warning/20 text-on-warning-container p-3 rounded-xl w-full flex items-center justify-between shadow-sm">
+                  <div className="bg-warning-container border border-warning/20 text-on-warning-container p-3 rounded-[8px] w-full flex items-center justify-between shadow-sm">
                     <span className="flex items-center gap-2 font-semibold">
                       <span className="material-symbols-outlined text-warning">warning</span>
                       Chưa có nhân viên nhận hỗ trợ cuộc chat này.
                     </span>
                     <button
                       onClick={claimRoom}
-                      className="bg-warning hover:bg-warning/90 text-on-warning font-bold py-1.5 px-4 rounded-full text-xs transition-colors cursor-pointer shadow-sm bouncy-hover"
+                      className="bg-warning hover:bg-warning/90 text-on-warning font-bold py-1.5 px-4 rounded-[8px] text-xs transition-colors cursor-pointer shadow-sm bouncy-hover"
                     >
                       Nhận hỗ trợ
                     </button>
                   </div>
                 ) : selectedSession.adminId === currentAdmin?.id ? (
-                  <div className="bg-success-container border border-success/20 text-on-success-container p-3 rounded-xl w-full flex items-center gap-2 font-medium">
+                  <div className="bg-success-container border border-success/20 text-on-success-container p-3 rounded-[8px] w-full flex items-center gap-2 font-medium">
                     <span className="material-symbols-outlined text-success">check_circle</span>
                     Bạn đang hỗ trợ khách hàng này.
                   </div>
                 ) : (
-                  <div className="bg-error-container border border-error/20 text-on-error-container p-3 rounded-xl w-full flex items-center gap-2 font-medium">
+                  <div className="bg-error-container border border-error/20 text-on-error-container p-3 rounded-[8px] w-full flex items-center gap-2 font-medium">
                     <span className="material-symbols-outlined text-error">lock</span>
                     Cuộc chat này đang được nhận hỗ trợ bởi nhân viên: <strong className="underline">{selectedSession.adminName}</strong>
                   </div>
@@ -582,7 +582,7 @@ export default function AdminChatsPage() {
             {/* Messages area Zalo Style Background */}
             <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-surface-container-lowest" style={{ scrollbarWidth: "thin" }}>
               {messages.length === 0 ? (
-                <div className="text-center text-slate-500 py-10 text-xs bg-white/40 rounded-xl p-4">
+                <div className="text-center text-slate-500 py-10 text-xs bg-white/40 rounded-[8px] p-4">
                   Không có tin nhắn nào trong phòng này.
                 </div>
               ) : (
@@ -592,7 +592,7 @@ export default function AdminChatsPage() {
                   if (isSystem) {
                     return (
                       <div key={msg.id} className="w-full flex justify-center my-2 select-none">
-                        <span className="bg-slate-200/90 text-slate-600 text-[11px] px-3 py-1 rounded-full shadow-sm">
+                        <span className="bg-slate-200/90 text-slate-600 text-[11px] px-3 py-1 rounded-[8px] shadow-sm">
                           {msg.messageText}
                         </span>
                       </div>
@@ -608,7 +608,7 @@ export default function AdminChatsPage() {
                         {msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       <div
-                        className={`max-w-[70%] rounded-2xl p-3 text-sm shadow-sm ${
+                        className={`max-w-[70%] rounded-[8px] p-3 text-sm shadow-sm ${
                           msg.isFromAdmin
                             ? "bg-primary-container text-on-primary-container rounded-tr-none"
                             : "bg-surface text-on-surface rounded-tl-none border border-slate-100"
@@ -643,7 +643,7 @@ export default function AdminChatsPage() {
             <div className="bg-white border-t border-slate-200 flex flex-col shrink-0 relative">
               {/* Emoji/Sticker Picker Popup */}
               {showPicker && (
-                <div className="absolute bottom-full left-4 mb-2 w-80 h-72 bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="absolute bottom-full left-4 mb-2 w-80 h-72 bg-white rounded-[8px] shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
                   {/* Picker Tabs */}
                   <div className="flex border-b border-slate-100 text-xs shrink-0 select-none">
                     <button
@@ -752,7 +752,7 @@ export default function AdminChatsPage() {
                       ? `Nhân viên khác (${selectedSession.adminName}) đang nhận hỗ trợ`
                       : "Nhập tin nhắn..."
                   }
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"

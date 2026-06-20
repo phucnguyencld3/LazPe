@@ -94,7 +94,7 @@ export default function AdminProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-3xl border border-slate-100 min-h-[500px]">
+      <div className="flex-1 flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-[8px] border border-slate-100 min-h-[500px]">
         <Loader className="animate-spin text-rose-500 mb-3" size={36} />
         <p className="text-sm font-semibold text-slate-500">Đang tải thông tin hồ sơ quản trị...</p>
       </div>

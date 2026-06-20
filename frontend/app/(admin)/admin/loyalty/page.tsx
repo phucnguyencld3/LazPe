@@ -1284,7 +1284,7 @@ export default function AdminLoyaltyPage() {
               fetchTiers();
               setShowRevocationModal(true);
             }}
-            className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+            className="border border-error/30 text-error bg-error/5 hover:bg-error/10 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">remove_circle</span> Thu hồi Đặc quyền / Điểm
           </button>
@@ -1349,7 +1349,7 @@ export default function AdminLoyaltyPage() {
       {activeTab === "dashboard" && (
         <section className="space-y-md">
           {loadingStats ? (
-            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
+            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-[8px] border border-outline-variant/20 shadow-sm">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
             </div>
           ) : stats ? (
@@ -1357,9 +1357,9 @@ export default function AdminLoyaltyPage() {
               {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {/* Issued */}
-                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">military_tech</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng điểm phát hành</span>
@@ -1368,9 +1368,9 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Spent */}
-                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm đã sử dụng</span>
@@ -1379,9 +1379,9 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Remaining */}
-                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm tồn trong ví</span>
@@ -1390,9 +1390,9 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Upgrade Rate */}
-                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">trending_up</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tỷ lệ thăng hạng</span>
@@ -1401,9 +1401,9 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Voucher Usage Rate */}
-                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">local_activity</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tỷ lệ sử dụng voucher</span>
@@ -1412,9 +1412,9 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Revenue */}
-                <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                    <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">monetization_on</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu Loyalty</span>
@@ -1426,7 +1426,7 @@ export default function AdminLoyaltyPage() {
               {/* Members distributions & Leaderboard */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Member Distribution */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-fit">
+                <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm flex flex-col h-fit">
                   <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="text-base font-bold text-slate-800">Phân bố thành viên</h3>
                     <span className="material-symbols-outlined text-slate-400 text-[20px]">pie_chart</span>
@@ -1450,7 +1450,7 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Leaderboard */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-fit">
+                <div className="lg:col-span-2 bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-fit">
                   <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <h3 className="text-base font-bold text-slate-800">Bảng xếp hạng tích điểm cao nhất</h3>
                     <span className="material-symbols-outlined text-slate-400 text-[20px]">emoji_events</span>
@@ -1470,7 +1470,7 @@ export default function AdminLoyaltyPage() {
                           <tr key={c.userID} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-6 py-4">
                               <span
-                                className="px-3 py-1 rounded-full text-[10px] font-bold text-white shadow-sm inline-block text-center min-w-[60px]"
+                                className="px-3 py-1 rounded-[8px] text-[10px] font-bold text-white shadow-sm inline-block text-center min-w-[60px]"
                                 style={{ backgroundColor: stats.membersPerTier.find(m => m.tierName === c.tierName)?.colorHex || "#64748b" }}
                               >
                                 {c.tierName}
@@ -1502,7 +1502,7 @@ export default function AdminLoyaltyPage() {
               </div>
             </>
           ) : (
-            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm text-on-surface-variant text-sm font-semibold">
+            <div className="h-64 flex items-center justify-center bg-surface-container-lowest rounded-[8px] border border-outline-variant/20 shadow-sm text-on-surface-variant text-sm font-semibold">
               Không tìm thấy dữ liệu thống kê.
             </div>
           )}
@@ -1513,13 +1513,13 @@ export default function AdminLoyaltyPage() {
       {activeTab === "policies" && (
         <section className="space-y-6">
           {loadingPolicies ? (
-            <div className="h-64 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <div className="h-64 flex items-center justify-center bg-white rounded-[8px] border border-slate-100 shadow-sm">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Accumulation Policies */}
-              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
                     <h3 className="text-lg text-slate-800 font-bold">Cơ chế tích điểm</h3>
@@ -1530,7 +1530,7 @@ export default function AdminLoyaltyPage() {
                       setEditingEarnPolicy(null);
                       setShowEarnModal(true);
                     }}
-                    className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm quy tắc
@@ -1539,7 +1539,7 @@ export default function AdminLoyaltyPage() {
 
                 <div className="p-6 space-y-4">
                   {earnPolicies.map((p) => (
-                    <div key={p.policyID} className="p-5 border border-slate-100 rounded-2xl flex items-center justify-between hover:border-slate-300 transition-all relative bg-white shadow-sm">
+                    <div key={p.policyID} className="p-5 border border-slate-100 rounded-[8px] flex items-center justify-between hover:border-slate-300 transition-all relative bg-white shadow-sm">
                       {p.isCampaign && (
                         <span className="absolute top-0 right-16 bg-rose-100 text-rose-700 text-[9px] font-bold px-3 py-1 rounded-b-lg uppercase tracking-wider">Campaign</span>
                       )}
@@ -1570,7 +1570,7 @@ export default function AdminLoyaltyPage() {
                             setEditingEarnPolicy(p);
                             setShowEarnModal(true);
                           }}
-                          className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                          className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
@@ -1580,7 +1580,7 @@ export default function AdminLoyaltyPage() {
                               "Bạn có chắc chắn muốn xóa chính sách này?",
                               () => handleDeleteEarn(p.policyID)
                             )}
-                            className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-[8px] flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
@@ -1592,7 +1592,7 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Redemption Policies */}
-              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
                     <h3 className="text-lg text-slate-800 font-bold">Cơ chế đổi điểm</h3>
@@ -1603,7 +1603,7 @@ export default function AdminLoyaltyPage() {
                       setEditingRedeemPolicy(null);
                       setShowRedeemModal(true);
                     }}
-                    className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm quy tắc
@@ -1614,7 +1614,7 @@ export default function AdminLoyaltyPage() {
                   {redeemPolicies.map((p) => {
                     const isDefaultRedeem = p.tierID === null || p.tierID === 0 || p.name.includes("mặc định") || p.name.toLowerCase().includes("default");
                     return (
-                      <div key={p.policyID} className="p-5 border border-slate-100 rounded-2xl flex items-center justify-between hover:border-slate-300 transition-all relative bg-white shadow-sm">
+                      <div key={p.policyID} className="p-5 border border-slate-100 rounded-[8px] flex items-center justify-between hover:border-slate-300 transition-all relative bg-white shadow-sm">
                         {p.tierID && (
                           <span className="absolute top-0 right-16 bg-blue-100 text-blue-700 text-[9px] font-bold px-3 py-1 rounded-b-lg uppercase tracking-wider">Hạng: {p.tier?.tierName}</span>
                         )}
@@ -1644,7 +1644,7 @@ export default function AdminLoyaltyPage() {
                               setEditingRedeemPolicy(p);
                               setShowRedeemModal(true);
                             }}
-                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
@@ -1654,7 +1654,7 @@ export default function AdminLoyaltyPage() {
                                 "Bạn có chắc chắn muốn xóa chính sách này?",
                                 () => handleDeleteRedeem(p.policyID)
                               )}
-                              className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="w-8 h-8 rounded-[8px] flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
@@ -1674,7 +1674,7 @@ export default function AdminLoyaltyPage() {
       {activeTab === "tiers" && (
         <section className="space-y-6">
           {loadingTiers ? (
-            <div className="h-64 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <div className="h-64 flex items-center justify-center bg-white rounded-[8px] border border-slate-100 shadow-sm">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
@@ -1688,7 +1688,7 @@ export default function AdminLoyaltyPage() {
                       setEditingTier(null);
                       setShowTierModal(true);
                     }}
-                    className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">add_circle</span>
                     Thêm mới
@@ -1700,7 +1700,7 @@ export default function AdminLoyaltyPage() {
                     <div
                       key={t.tierID}
                       onClick={() => setSelectedTierForPrivileges(t.tierID)}
-                      className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 relative overflow-hidden group shadow-sm hover:shadow-md ${selectedTierForPrivileges === t.tierID ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 bg-white hover:border-primary/30"}`}
+                      className={`p-3 rounded-[8px] border cursor-pointer transition-all flex items-center gap-3 relative overflow-hidden group shadow-sm hover:shadow-md ${selectedTierForPrivileges === t.tierID ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-slate-200 bg-white hover:border-primary/30"}`}
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: t.colorHex }} />
                       <div className="pl-3 flex items-center gap-3 w-full min-w-0">
@@ -1718,7 +1718,7 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Detail Tier Panel */}
-              <div className="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in duration-300">
+              <div className="lg:col-span-2 bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in duration-300">
                 {(() => {
                   const activeTier = tiers.find(t => t.tierID === selectedTierForPrivileges);
                   return (
@@ -1744,7 +1744,7 @@ export default function AdminLoyaltyPage() {
                                 setEditingTier(activeTier);
                                 setShowTierModal(true);
                               }}
-                              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 bg-white border border-slate-200 shadow-sm cursor-pointer transition-colors"
+                              className="w-10 h-10 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 bg-white border border-slate-200 shadow-sm cursor-pointer transition-colors"
                               title="Chỉnh sửa thông tin hạng"
                             >
                               <span className="material-symbols-outlined text-[20px]">edit</span>
@@ -1756,7 +1756,7 @@ export default function AdminLoyaltyPage() {
                       {selectedTierForPrivileges ? (
                         <>
                           {/* Sub-tabs Navigation */}
-                          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 m-6 rounded-xl shadow-sm">
+                          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 m-6 rounded-[8px] shadow-sm">
                             <button
                               onClick={() => setSubTab("privileges")}
                               className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${subTab === "privileges"
@@ -1791,7 +1791,7 @@ export default function AdminLoyaltyPage() {
                                       setPrivilegeType("VOUCHER");
                                       setShowPrivilegeModal(true);
                                     }}
-                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm"
+                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-[8px] font-bold text-xs transition-all cursor-pointer shadow-sm"
                                   >
                                     + Thêm đặc quyền
                                   </button>
@@ -1804,7 +1804,7 @@ export default function AdminLoyaltyPage() {
                                     </div>
                                   ) : (
                                     privileges.map((p) => (
-                                      <div key={p.privilegeID} className="p-4 border border-slate-100 rounded-2xl flex items-center justify-between bg-white shadow-sm hover:border-slate-300 transition-all">
+                                      <div key={p.privilegeID} className="p-4 border border-slate-100 rounded-[8px] flex items-center justify-between bg-white shadow-sm hover:border-slate-300 transition-all">
                                         <div>
                                           <h5 className="text-sm text-slate-800 font-bold">{p.name}</h5>
                                           <div className="flex gap-1.5 mt-1.5 items-center">
@@ -1826,7 +1826,7 @@ export default function AdminLoyaltyPage() {
                                               setPrivilegeType(p.privilegeType);
                                               setShowPrivilegeModal(true);
                                             }}
-                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                            className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                                           >
                                             <span className="material-symbols-outlined text-[16px]">edit</span>
                                           </button>
@@ -1835,7 +1835,7 @@ export default function AdminLoyaltyPage() {
                                               "Bạn có chắc chắn muốn xóa đặc quyền này?",
                                               () => handleDeletePrivilege(p.privilegeID)
                                             )}
-                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                                            className="w-8 h-8 rounded-[8px] flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                                           >
                                             <span className="material-symbols-outlined text-[16px]">delete</span>
                                           </button>
@@ -1857,7 +1857,7 @@ export default function AdminLoyaltyPage() {
                                       setEditingRedeemPolicy(null);
                                       setShowRedeemModal(true);
                                     }}
-                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm"
+                                    className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 px-4 py-2 rounded-[8px] font-bold text-xs transition-all cursor-pointer shadow-sm"
                                   >
                                     + Thêm quy tắc riêng
                                   </button>
@@ -1872,7 +1872,7 @@ export default function AdminLoyaltyPage() {
                                     redeemPolicies
                                       .filter(p => p.tierID === selectedTierForPrivileges)
                                       .map((p) => (
-                                        <div key={p.policyID} className="p-4 border border-slate-100 rounded-2xl flex items-center justify-between bg-white shadow-sm hover:border-slate-300 transition-all">
+                                        <div key={p.policyID} className="p-4 border border-slate-100 rounded-[8px] flex items-center justify-between bg-white shadow-sm hover:border-slate-300 transition-all">
                                           <div>
                                             <h5 className="text-sm text-slate-800 font-bold">{p.name}</h5>
                                             <p className="text-xs text-slate-600 mt-1.5 font-medium">
@@ -1891,7 +1891,7 @@ export default function AdminLoyaltyPage() {
                                                 setEditingRedeemPolicy(p);
                                                 setShowRedeemModal(true);
                                               }}
-                                              className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                              className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                                             >
                                               <span className="material-symbols-outlined text-[16px]">edit</span>
                                             </button>
@@ -1900,7 +1900,7 @@ export default function AdminLoyaltyPage() {
                                                 "Bạn có chắc chắn muốn xóa chính sách này?",
                                                 () => handleDeleteRedeem(p.policyID)
                                               )}
-                                              className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                                              className="w-8 h-8 rounded-[8px] flex items-center justify-center text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                                             >
                                               <span className="material-symbols-outlined text-[16px]">delete</span>
                                             </button>
@@ -1931,7 +1931,7 @@ export default function AdminLoyaltyPage() {
       {activeTab === "history" && (
         <section className="space-y-md">
           {/* Sub-tabs Navigation inside History tab */}
-          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 rounded-xl mb-6 shadow-sm">
+          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 rounded-[8px] mb-6 shadow-sm">
             <button
               onClick={() => setHistorySubTab("points")}
               className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${historySubTab === "points"
@@ -1963,7 +1963,7 @@ export default function AdminLoyaltyPage() {
 
           {/* Sub-tab 1: Points Transaction Log */}
           {historySubTab === "points" && (
-            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-slate-800">Lịch sử tích/đổi điểm của khách hàng</h3>
               </div>
@@ -1977,14 +1977,14 @@ export default function AdminLoyaltyPage() {
                     placeholder="Tìm theo tên hoặc email khách hàng..."
                     value={filterSearch}
                     onChange={(e) => setFilterSearch(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
 
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+                  className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
                 >
                   <option value="ALL">Tất cả giao dịch</option>
                   <option value="EARN">Tích điểm (EARN)</option>
@@ -1998,7 +1998,7 @@ export default function AdminLoyaltyPage() {
                 <select
                   value={filterTier}
                   onChange={(e) => setFilterTier(e.target.value)}
-                  className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+                  className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
                 >
                   <option value="">Hạng hiện tại</option>
                   {tiers.map(t => (
@@ -2048,7 +2048,7 @@ export default function AdminLoyaltyPage() {
                                 {h.amount > 0 ? `+${h.amount.toLocaleString()}` : h.amount.toLocaleString()}
                               </td>
                               <td className="px-6 py-4 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${h.transactionType === "EARN" ? "bg-emerald-100 text-emerald-700" :
+                                <span className={`px-2 py-0.5 rounded-[8px] text-[9px] font-bold ${h.transactionType === "EARN" ? "bg-emerald-100 text-emerald-700" :
                                   h.transactionType === "SPEND" ? "bg-amber-100 text-amber-700" :
                                     h.transactionType === "REVOKE" ? "bg-error/10 text-error" :
                                       "bg-slate-100 text-slate-600"
@@ -2076,7 +2076,7 @@ export default function AdminLoyaltyPage() {
                             {isExpanded && (
                               <tr className="bg-slate-50/30">
                                 <td colSpan={5} className="px-8 pb-4">
-                                  <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm mt-2">
+                                  <div className="p-4 rounded-[8px] border border-slate-100 bg-white shadow-sm mt-2">
                                     <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-semibold">
                                       <span>Thời gian: {new Date(h.createdAt).toLocaleString("vi-VN")}</span>
                                       {h.invoiceID && <span>Hóa đơn: #{h.invoiceID}</span>}
@@ -2108,7 +2108,7 @@ export default function AdminLoyaltyPage() {
 
           {/* Sub-tab 2: Birthday Gift Logs */}
           {historySubTab === "birthday" && (
-            <div className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
+            <div className="glass-card rounded-[8px] shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
               <div className="p-md border-b border-outline-variant/20 bg-primary-container/5 flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <h3 className="font-headline-md text-on-surface font-bold">Lịch sử nhận quà sinh nhật</h3>
@@ -2118,14 +2118,14 @@ export default function AdminLoyaltyPage() {
                   <button
                     onClick={handleTriggerBirthdayJob}
                     disabled={triggeringBirthdayJob}
-                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">calendar_today</span>
                     {triggeringBirthdayJob ? "Đang chạy Job..." : "Chạy Job sinh nhật hôm nay"}
                   </button>
                   <button
                     onClick={() => setShowManualBirthdayModal(true)}
-                    className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+                    className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">card_giftcard</span>
                     Phát quà thủ công
@@ -2183,7 +2183,7 @@ export default function AdminLoyaltyPage() {
                             {l.year}
                           </td>
                           <td className="px-lg py-md">
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-secondary-container/20 text-on-secondary-container uppercase">
+                            <span className="px-2 py-0.5 rounded-[8px] text-[9px] font-bold bg-secondary-container/20 text-on-secondary-container uppercase">
                               {l.giftType}
                             </span>
                           </td>
@@ -2215,7 +2215,7 @@ export default function AdminLoyaltyPage() {
 
           {/* Sub-tab 3: System Audit Logs */}
           {historySubTab === "audit" && (
-            <div className="glass-card rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col h-full">
+            <div className="glass-card rounded-[8px] shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col h-full">
               <div className="p-md border-b border-outline-variant/20 bg-primary-container/5">
                 <h3 className="font-headline-md text-on-surface font-bold">Logs thay đổi hệ thống</h3>
               </div>
@@ -2231,7 +2231,7 @@ export default function AdminLoyaltyPage() {
                   </div>
                 ) : (
                   auditLogs.map((l) => (
-                    <div key={l.logID} className="p-md border border-outline-variant/30 rounded-xl bg-surface-container-low/30 flex flex-col gap-2">
+                    <div key={l.logID} className="p-md border border-outline-variant/30 rounded-[8px] bg-surface-container-low/30 flex flex-col gap-2">
                       <div className="flex justify-between items-center text-sm font-bold text-primary">
                         <span>{getAuditActionLabel(l.action)}</span>
                         <span className="text-on-surface-variant/60 font-semibold text-xs">{new Date(l.timestamp).toLocaleDateString("vi-VN")}</span>
@@ -2261,15 +2261,15 @@ export default function AdminLoyaltyPage() {
       {activeTab === "settings" && (
         <section className="space-y-md animate-in fade-in duration-200">
           {loadingSettings ? (
-            <div className="p-8 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-slate-100 shadow-sm max-w-3xl">
+            <div className="p-8 flex flex-col items-center justify-center bg-white rounded-[8px] border border-slate-100 shadow-sm max-w-3xl">
               <Loader className="animate-spin text-primary mb-2" size={24} />
               <span className="text-slate-400 font-bold text-xs">Đang tải cấu hình...</span>
             </div>
           ) : (
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 max-w-3xl animate-in fade-in duration-200">
+            <div className="bg-white p-8 rounded-[8px] shadow-sm border border-slate-100 max-w-3xl animate-in fade-in duration-200">
               <form onSubmit={handleSaveSettings} className="space-y-6">
                 {/* Reward Point Enable Toggle */}
-                <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-[8px] border border-slate-100">
                   <div className="space-y-0.5">
                     <span className="text-xs font-bold text-slate-700 block">Kích hoạt tặng điểm thưởng Loyalty</span>
                     <span className="text-[10px] text-slate-400 font-semibold block">Tự động tặng điểm khi người dùng viết đánh giá chất lượng sản phẩm</span>
@@ -2297,7 +2297,7 @@ export default function AdminLoyaltyPage() {
                             type="number"
                             value={loyaltySettings.reviewRewardPoints}
                             onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewRewardPoints: parseInt(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           />
                           <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">điểm</span>
                         </div>
@@ -2311,7 +2311,7 @@ export default function AdminLoyaltyPage() {
                             type="number"
                             value={loyaltySettings.reviewWithImageRewardPoints}
                             onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewWithImageRewardPoints: parseInt(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           />
                           <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">điểm</span>
                         </div>
@@ -2325,7 +2325,7 @@ export default function AdminLoyaltyPage() {
                             type="number"
                             value={loyaltySettings.reviewWithVideoRewardPoints}
                             onChange={(e) => setLoyaltySettings({ ...loyaltySettings, reviewWithVideoRewardPoints: parseInt(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           />
                           <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">điểm</span>
                         </div>
@@ -2339,7 +2339,7 @@ export default function AdminLoyaltyPage() {
                             type="number"
                             value={loyaltySettings.minimumReviewChars}
                             onChange={(e) => setLoyaltySettings({ ...loyaltySettings, minimumReviewChars: parseInt(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           />
                           <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">ký tự</span>
                         </div>
@@ -2351,7 +2351,7 @@ export default function AdminLoyaltyPage() {
                         <select
                           value={loyaltySettings.requiredRatingForReward}
                           onChange={(e) => setLoyaltySettings({ ...loyaltySettings, requiredRatingForReward: parseInt(e.target.value) })}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
                         >
                           <option value="5">⭐ 5 Sao</option>
                           <option value="4">⭐ 4 Sao</option>
@@ -2369,7 +2369,7 @@ export default function AdminLoyaltyPage() {
                             type="number"
                             value={loyaltySettings.allowEditReviewTimeLimitMinutes}
                             onChange={(e) => setLoyaltySettings({ ...loyaltySettings, allowEditReviewTimeLimitMinutes: parseInt(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           />
                           <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">phút</span>
                         </div>
@@ -2383,7 +2383,7 @@ export default function AdminLoyaltyPage() {
                             type="number"
                             value={loyaltySettings.maxReviewDaysAfterReceipt}
                             onChange={(e) => setLoyaltySettings({ ...loyaltySettings, maxReviewDaysAfterReceipt: parseInt(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           />
                           <span className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold text-slate-400 uppercase">ngày</span>
                         </div>
@@ -2391,7 +2391,7 @@ export default function AdminLoyaltyPage() {
 
                       {/* Require Delivery Verification */}
                       <div className="space-y-2 flex flex-col justify-end">
-                        <label className="flex items-center gap-2 select-none cursor-pointer border border-slate-200 p-3.5 rounded-2xl bg-white hover:bg-slate-50 transition-colors">
+                        <label className="flex items-center gap-2 select-none cursor-pointer border border-slate-200 p-3.5 rounded-[8px] bg-white hover:bg-slate-50 transition-colors">
                           <input
                             type="checkbox"
                             checked={loyaltySettings.requireDeliveryToReview}
@@ -2423,7 +2423,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: CONFIRM ACTION -------------------- */}
       {confirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[520px] lg:w-[620px] shrink-0 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[520px] lg:w-[620px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5">
               <h3 className="text-lg font-headline-md text-on-surface font-bold">{confirmDialog.title || "Xác nhận thao tác"}</h3>
               <button
@@ -2461,7 +2461,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: MANUAL REVOCATION (Points & Voucher Revocation) -------------------- */}
       {showRevocationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[550px] max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[550px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
@@ -2703,7 +2703,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: EARN POLICY FORM -------------------- */}
       {showEarnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingEarnPolicy ? "Cập nhật cơ chế tích điểm" : "Thêm cơ chế tích điểm mới"}
@@ -2729,7 +2729,7 @@ export default function AdminLoyaltyPage() {
                     required
                     defaultValue={editingEarnPolicy?.name || ""}
                     placeholder="Ví dụ: Tích điểm mặc định, Tích điểm lễ Tết..."
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -2742,7 +2742,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={1}
                       defaultValue={editingEarnPolicy?.vndAmount ?? 1000}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2753,7 +2753,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={1}
                       defaultValue={editingEarnPolicy?.pointsEarned ?? 10}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2764,7 +2764,7 @@ export default function AdminLoyaltyPage() {
                     <select
                       name="isCampaign"
                       defaultValue={editingEarnPolicy?.isCampaign ? "true" : "false"}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="false">Mặc định hệ thống</option>
                       <option value="true">Chiến dịch tạm thời</option>
@@ -2779,7 +2779,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min="0.1"
                       defaultValue={editingEarnPolicy?.multiplier ?? 1.0}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2791,7 +2791,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="startDate"
                       defaultValue={editingEarnPolicy?.startDate ? editingEarnPolicy.startDate.split("T")[0] : ""}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2800,7 +2800,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="endDate"
                       defaultValue={editingEarnPolicy?.endDate ? editingEarnPolicy.endDate.split("T")[0] : ""}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2810,7 +2810,7 @@ export default function AdminLoyaltyPage() {
                   <select
                     name="isActive"
                     defaultValue={editingEarnPolicy?.isActive === false ? "false" : "true"}
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Đang kích hoạt</option>
                     <option value="false">Tạm khóa</option>
@@ -2826,13 +2826,13 @@ export default function AdminLoyaltyPage() {
                     setShowEarnModal(false);
                     setEditingEarnPolicy(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
+                  className="px-6 py-2.5 rounded-[8px] bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu chính sách
                 </button>
@@ -2845,7 +2845,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: REDEEM POLICY FORM -------------------- */}
       {showRedeemModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingRedeemPolicy ? "Cập nhật quy tắc đổi điểm" : "Thêm quy tắc đổi điểm mới"}
@@ -2871,7 +2871,7 @@ export default function AdminLoyaltyPage() {
                     required
                     defaultValue={editingRedeemPolicy?.name || ""}
                     placeholder="Ví dụ: Đổi điểm mặc định, Tỷ lệ ưu đãi hạng Vàng..."
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -2884,7 +2884,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={1}
                       defaultValue={editingRedeemPolicy?.pointsToRedeem ?? 1}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2896,7 +2896,7 @@ export default function AdminLoyaltyPage() {
                       required
                       min={0.1}
                       defaultValue={editingRedeemPolicy?.discountVnd ?? 1}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2907,7 +2907,7 @@ export default function AdminLoyaltyPage() {
                     name="tierID"
                     defaultValue={editingRedeemPolicy ? (editingRedeemPolicy.tierID || "") : (selectedTierForPrivileges || "")}
                     disabled={selectedTierForPrivileges !== null}
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                   >
                     <option value="">Áp dụng chung toàn hệ thống</option>
                     {tiers.map(t => (
@@ -2930,7 +2930,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="startDate"
                       defaultValue={editingRedeemPolicy?.startDate ? editingRedeemPolicy.startDate.split("T")[0] : ""}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2939,7 +2939,7 @@ export default function AdminLoyaltyPage() {
                       type="date"
                       name="endDate"
                       defaultValue={editingRedeemPolicy?.endDate ? editingRedeemPolicy.endDate.split("T")[0] : ""}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -2949,7 +2949,7 @@ export default function AdminLoyaltyPage() {
                   <select
                     name="isActive"
                     defaultValue={editingRedeemPolicy?.isActive === false ? "false" : "true"}
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Đang hoạt động</option>
                     <option value="false">Tạm khóa</option>
@@ -2965,13 +2965,13 @@ export default function AdminLoyaltyPage() {
                     setShowRedeemModal(false);
                     setEditingRedeemPolicy(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
+                  className="px-6 py-2.5 rounded-[8px] bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu quy tắc
                 </button>
@@ -2984,7 +2984,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: TIER CONFIG FORM -------------------- */}
       {showTierModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[480px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[480px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingTier ? "Chỉnh sửa hạng thành viên" : "Tạo hạng thành viên mới"}
@@ -3010,7 +3010,7 @@ export default function AdminLoyaltyPage() {
                     required
                     defaultValue={editingTier?.tierName || ""}
                     placeholder="Ví dụ: Bạc, Vàng, Kim Cương..."
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -3022,7 +3022,7 @@ export default function AdminLoyaltyPage() {
                     required
                     min={0}
                     defaultValue={editingTier?.minPoints ?? 0}
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -3034,14 +3034,14 @@ export default function AdminLoyaltyPage() {
                         type="color"
                         name="colorHex"
                         defaultValue={editingTier?.colorHex || "#64748b"}
-                        className="w-12 h-12 border border-slate-200 rounded-xl bg-slate-50 cursor-pointer p-1 shrink-0"
+                        className="w-12 h-12 border border-slate-200 rounded-[8px] bg-slate-50 cursor-pointer p-1 shrink-0"
                       />
                       <input
                         type="text"
                         placeholder="#64748b"
                         name="colorHexText"
                         defaultValue={editingTier?.colorHex || "#64748b"}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] font-mono text-center text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10"
                       />
                     </div>
                   </div>
@@ -3053,7 +3053,7 @@ export default function AdminLoyaltyPage() {
                       required
                       defaultValue={editingTier ? cleanIconName(editingTier.badgeIcon) : "workspace_premium"}
                       placeholder="award_star, star, v.v."
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -3063,7 +3063,7 @@ export default function AdminLoyaltyPage() {
                   <select
                     name="isActive"
                     defaultValue={editingTier?.isActive === false ? "false" : "true"}
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                   >
                     <option value="true">Cho phép thăng hạng</option>
                     <option value="false">Tạm ẩn/Khóa hạng</option>
@@ -3079,13 +3079,13 @@ export default function AdminLoyaltyPage() {
                     setShowTierModal(false);
                     setEditingTier(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
+                  className="px-6 py-2.5 rounded-[8px] bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu hạng thành viên
                 </button>
@@ -3096,7 +3096,7 @@ export default function AdminLoyaltyPage() {
       )}      {/* -------------------- MODAL: PRIVILEGE FORM -------------------- */}
       {showPrivilegeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[650px] max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[650px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingPrivilege ? "Chỉnh sửa đặc quyền" : "Thêm đặc quyền mới"}
@@ -3123,7 +3123,7 @@ export default function AdminLoyaltyPage() {
                     value={privilegeName}
                     onChange={(e) => setPrivilegeName(e.target.value)}
                     placeholder="Ví dụ: Voucher hàng tháng Gold, Tặng xu sinh nhật..."
-                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
 
@@ -3145,7 +3145,7 @@ export default function AdminLoyaltyPage() {
                         };
                         setPrivilegeName(defaultNames[val] || "");
                       }}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="VOUCHER">Voucher hàng tháng</option>
                       <option value="FREESHIP">Miễn phí vận chuyển</option>
@@ -3160,7 +3160,7 @@ export default function AdminLoyaltyPage() {
                     <select
                       name="isActive"
                       defaultValue={editingPrivilege?.isActive === false ? "false" : "true"}
-                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                      className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                     >
                       <option value="true">Đang kích hoạt</option>
                       <option value="false">Tạm ẩn</option>
@@ -3215,7 +3215,7 @@ export default function AdminLoyaltyPage() {
                             value={voucherCode}
                             onChange={(e) => setVoucherCode(e.target.value)}
                             required
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="">-- Chọn Voucher --</option>
                             {vouchers.map(v => (
@@ -3232,7 +3232,7 @@ export default function AdminLoyaltyPage() {
                             placeholder="Ví dụ: VCGOLD"
                             value={voucherCode}
                             onChange={(e) => setVoucherCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                           <span className="text-xs text-slate-500 font-medium block mt-0.5">
                             Hệ thống sẽ thêm đuôi tháng năm. Ví dụ: VCGOLD_M0626
@@ -3248,7 +3248,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={quantity}
                           onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
 
@@ -3260,7 +3260,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={validityDays}
                           onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
-                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                         <span className="text-xs text-slate-500 font-medium block mt-0.5">
                           Số ngày voucher có hiệu lực kể từ lúc phát
@@ -3269,13 +3269,13 @@ export default function AdminLoyaltyPage() {
                     </div>
 
                     {voucherMode === "CUSTOM" && (
-                      <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
+                      <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-[8px] border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-1.5">
                           <label className="text-sm font-bold text-slate-700 block mb-2">Loại giảm giá</label>
                           <select
                             value={discountType}
                             onChange={(e) => setDiscountType(e.target.value)}
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                           >
                             <option value="PERCENT">Phần trăm (%)</option>
                             <option value="FIXED">Số tiền cố định (đ)</option>
@@ -3290,7 +3290,7 @@ export default function AdminLoyaltyPage() {
                             min={1}
                             value={discountValue}
                             onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
 
@@ -3302,7 +3302,7 @@ export default function AdminLoyaltyPage() {
                             disabled={discountType !== "PERCENT"}
                             value={maxDiscount}
                             onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
 
@@ -3314,7 +3314,7 @@ export default function AdminLoyaltyPage() {
                             min={0}
                             value={minOrderValue}
                             onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>
@@ -3333,7 +3333,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={quantity}
                         onChange={(e) => setQuantity(parseInt(e.target.value || "1"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3344,7 +3344,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={maxSupport}
                         onChange={(e) => setMaxSupport(parseInt(e.target.value || "0"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3355,7 +3355,7 @@ export default function AdminLoyaltyPage() {
                         min={0}
                         value={minOrderValue}
                         onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -3369,7 +3369,7 @@ export default function AdminLoyaltyPage() {
                       <select
                         value={discountType}
                         onChange={(e) => setDiscountType(e.target.value)}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                       >
                         <option value="PERCENT">Phần trăm (%)</option>
                         <option value="FIXED">Số tiền cố định (đ)</option>
@@ -3383,7 +3383,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={discountValue}
                         onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3394,7 +3394,7 @@ export default function AdminLoyaltyPage() {
                         disabled={discountType !== "PERCENT"}
                         value={maxDiscount}
                         onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -3412,7 +3412,7 @@ export default function AdminLoyaltyPage() {
                         max={100}
                         value={cashbackRate}
                         onChange={(e) => setCashbackRate(parseInt(e.target.value || "0"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -3423,7 +3423,7 @@ export default function AdminLoyaltyPage() {
                         min={1}
                         value={maxCashback}
                         onChange={(e) => setMaxCashback(parseInt(e.target.value || "0"))}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -3444,7 +3444,7 @@ export default function AdminLoyaltyPage() {
                       <select
                         value={birthdayGiftType}
                         onChange={(e) => setBirthdayGiftType(e.target.value)}
-                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                        className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                       >
                         <option value="VOUCHER">Voucher giảm giá</option>
                         <option value="POINTS">Điểm thưởng Loyalty</option>
@@ -3499,7 +3499,7 @@ export default function AdminLoyaltyPage() {
                                 value={birthdayVoucherCode}
                                 onChange={(e) => setBirthdayVoucherCode(e.target.value)}
                                 required
-                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                               >
                                 <option value="">-- Chọn Voucher --</option>
                                 {vouchers.map(v => (
@@ -3510,7 +3510,7 @@ export default function AdminLoyaltyPage() {
                           ) : (
                             <div className="space-y-1.5">
                               <label className="text-sm font-bold text-slate-700 block mb-2">Tiền tố Mã Voucher</label>
-                              <div className="w-full px-5 py-3.5 bg-slate-100 border border-slate-200 rounded-[2rem] text-sm font-semibold text-slate-600 flex items-center select-none">
+                              <div className="w-full px-5 py-3.5 bg-slate-100 border border-slate-200 rounded-[8px] text-sm font-semibold text-slate-600 flex items-center select-none">
                                 BDAY
                               </div>
                               <span className="text-xs text-slate-500 font-medium block mt-0.5">
@@ -3527,7 +3527,7 @@ export default function AdminLoyaltyPage() {
                               min={1}
                               value={birthdayQuantity}
                               onChange={(e) => setBirthdayQuantity(parseInt(e.target.value || "1"))}
-                              className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                              className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                             />
                           </div>
 
@@ -3539,7 +3539,7 @@ export default function AdminLoyaltyPage() {
                               min={1}
                               value={validityDays}
                               onChange={(e) => setValidityDays(parseInt(e.target.value || "30"))}
-                              className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                              className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                             />
                             <span className="text-xs text-slate-500 font-medium block mt-0.5">
                               {voucherMode === "CUSTOM" ? "Hạn sử dụng tính từ lúc nhận quà." : "Áp dụng nếu voucher chọn chưa có ngày hết hạn cố định."}
@@ -3548,13 +3548,13 @@ export default function AdminLoyaltyPage() {
                         </div>
 
                         {voucherMode === "CUSTOM" && (
-                          <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-xl border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
+                          <div className="grid grid-cols-2 gap-4 bg-surface-container-low/40 p-md rounded-[8px] border border-outline-variant/10 animate-in slide-in-from-top-2 duration-200">
                             <div className="space-y-1.5">
                               <label className="text-sm font-bold text-slate-700 block mb-2">Loại giảm giá</label>
                               <select
                                 value={discountType}
                                 onChange={(e) => setDiscountType(e.target.value)}
-                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 cursor-pointer"
                               >
                                 <option value="PERCENT">Phần trăm (%)</option>
                                 <option value="FIXED">Số tiền cố định (đ)</option>
@@ -3569,7 +3569,7 @@ export default function AdminLoyaltyPage() {
                                 min={1}
                                 value={discountValue}
                                 onChange={(e) => setDiscountValue(parseInt(e.target.value || "0"))}
-                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                               />
                             </div>
 
@@ -3581,7 +3581,7 @@ export default function AdminLoyaltyPage() {
                                 disabled={discountType !== "PERCENT"}
                                 value={maxDiscount}
                                 onChange={(e) => setMaxDiscount(parseInt(e.target.value || "0"))}
-                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
                               />
                             </div>
 
@@ -3593,7 +3593,7 @@ export default function AdminLoyaltyPage() {
                                 min={0}
                                 value={minOrderValue}
                                 onChange={(e) => setMinOrderValue(parseInt(e.target.value || "0"))}
-                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                                className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                               />
                             </div>
                           </div>
@@ -3610,7 +3610,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={birthdayPoints}
                           onChange={(e) => setBirthdayPoints(parseInt(e.target.value || "1"))}
-                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
                     )}
@@ -3624,7 +3624,7 @@ export default function AdminLoyaltyPage() {
                           min={1}
                           value={birthdayCoins}
                           onChange={(e) => setBirthdayCoins(parseInt(e.target.value || "1"))}
-                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                          className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                         />
                       </div>
                     )}
@@ -3639,7 +3639,7 @@ export default function AdminLoyaltyPage() {
                             value={birthdayGiftName}
                             onChange={(e) => setBirthdayGiftName(e.target.value)}
                             placeholder="Ví dụ: Bình nước giữ nhiệt"
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -3649,7 +3649,7 @@ export default function AdminLoyaltyPage() {
                             value={birthdayGiftDesc}
                             onChange={(e) => setBirthdayGiftDesc(e.target.value)}
                             placeholder="Mô tả quà tặng sinh nhật..."
-                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[2rem] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
+                            className="w-full px-5 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-400/10 outline-none transition-all text-sm font-semibold text-slate-800 placeholder-slate-400"
                           />
                         </div>
                       </div>
@@ -3666,13 +3666,13 @@ export default function AdminLoyaltyPage() {
                     setShowPrivilegeModal(false);
                     setEditingPrivilege(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
+                  className="px-6 py-2.5 rounded-[8px] bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Lưu đặc quyền
                 </button>
@@ -3685,7 +3685,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: MANUAL BIRTHDAY GIFT ISSUANCE -------------------- */}
       {showManualBirthdayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
@@ -3731,7 +3731,7 @@ export default function AdminLoyaltyPage() {
                         setUserSuggestions([]);
                       }
                     }}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800"
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-semibold text-slate-800"
                   />
                 </div>
 
@@ -3770,7 +3770,7 @@ export default function AdminLoyaltyPage() {
                     setManualBirthdayUserID("");
                     setManualBirthdayUserSearchTerm("");
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
+                  className="px-6 py-2.5 rounded-[8px] bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-bold text-sm transition-colors cursor-pointer border-none"
                   disabled={submittingManualBirthday}
                 >
                   Hủy bỏ
@@ -3778,7 +3778,7 @@ export default function AdminLoyaltyPage() {
                 <button
                   type="submit"
                   disabled={submittingManualBirthday || !manualBirthdayUserID}
-                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 disabled:scale-100"
+                  className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 disabled:scale-100"
                 >
                   {submittingManualBirthday ? "Đang xử lý..." : "Cấp phát quà"}
                 </button>

@@ -99,10 +99,10 @@ export default function PermissionCenterPage() {
       />
 
       {/* Tabs Menu */}
-      <div className="flex bg-slate-50 p-1.5 rounded-2xl w-fit mb-6 shadow-inner border border-slate-100">
+      <div className="flex bg-slate-50 p-1.5 rounded-[8px] w-fit mb-6 shadow-inner border border-slate-100">
         <button
           onClick={() => setActiveTab("users")}
-          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-xl transition-all cursor-pointer ${activeTab === "users"
+          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-[8px] transition-all cursor-pointer ${activeTab === "users"
               ? "bg-white text-primary shadow-sm"
               : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
             }`}
@@ -112,7 +112,7 @@ export default function PermissionCenterPage() {
         </button>
         <button
           onClick={() => setActiveTab("templates")}
-          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-xl transition-all cursor-pointer ${activeTab === "templates"
+          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-[8px] transition-all cursor-pointer ${activeTab === "templates"
               ? "bg-white text-primary shadow-sm"
               : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
             }`}

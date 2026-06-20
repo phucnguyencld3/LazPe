@@ -364,13 +364,13 @@ export default function EditProductPage() {
               />
 
               {/* Visibility Status Card */}
-              <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+              <section className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
                   <span className="material-symbols-outlined text-primary">visibility</span>
                   <h3 className="text-lg font-bold text-slate-800">Trạng thái hiển thị</h3>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-[8px]">
                   <div>
                     <p className="text-sm font-bold text-slate-800">{status ? "Đang bán" : "Đã ẩn"}</p>
                     <p className="text-[10px] text-slate-400 mt-1">Cho phép hiển thị sản phẩm trên ứng dụng</p>
@@ -398,7 +398,7 @@ export default function EditProductPage() {
               <button
                 type="button"
                 onClick={() => router.push(`/admin/products/${id}?page=${fromPage}`)}
-                className="px-6 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                className="px-6 py-2.5 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer active:scale-95"
                 disabled={saving}
               >
                 Hủy bỏ
@@ -406,7 +406,7 @@ export default function EditProductPage() {
               <button
                 type="submit"
                 disabled={saving || !productName.trim() || !selectedCategoryId || !supplierId || hasDuplicates}
-                className="px-8 py-2.5 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
+                className="px-8 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
               >
                 {saving ? (
                   <>

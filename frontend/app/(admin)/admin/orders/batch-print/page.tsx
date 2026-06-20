@@ -94,7 +94,7 @@ export default function BatchPrintPage() {
           <button
             onClick={handleBatchPrint}
             disabled={selectedIds.length === 0}
-            className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-primary text-white font-bold rounded-[8px] hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined">print</span>
             In {selectedIds.length > 0 ? `(${selectedIds.length}) đơn` : "hàng loạt"}
@@ -125,7 +125,7 @@ export default function BatchPrintPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center items-center">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -210,7 +210,7 @@ export default function BatchPrintPage() {
                             <Link
                               href={resolveApiUrl(order.printTicketUrl)}
                               target="_blank"
-                              className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors inline-flex items-center justify-center gap-1 font-bold text-xs"
+                              className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-[8px] transition-colors inline-flex items-center justify-center gap-1 font-bold text-xs"
                               title="Tải xuống / Xem PDF"
                             >
                               <span className="material-symbols-outlined text-[16px]">download</span>
@@ -218,7 +218,7 @@ export default function BatchPrintPage() {
                             </Link>
                             <Link
                               href={`/admin/orders/batch-print/execute?ids=${order.invoiceID}`}
-                              className="p-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl transition-colors inline-flex items-center justify-center gap-1 font-bold text-xs"
+                              className="p-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-[8px] transition-colors inline-flex items-center justify-center gap-1 font-bold text-xs"
                               title="In lại phiếu này"
                             >
                               <span className="material-symbols-outlined text-[16px]">print</span>

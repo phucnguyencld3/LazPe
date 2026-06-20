@@ -9,12 +9,12 @@ async function getAdminDashboardStats() {
   try {
     const p = await getProducts(1, 1);
     if (p) productsCount = p.totalItems;
-  } catch(e) {}
+  } catch (e) { }
 
   let totalUsers = 11;
   let activeUsers = 11;
   let newUsers = 1;
-  
+
   try {
     const res = await fetch(`${API_BASE_URL}/Users/statistics`, { cache: 'no-store' });
     if (res.ok) {
@@ -25,7 +25,7 @@ async function getAdminDashboardStats() {
         newUsers = data.newUsersThisMonth;
       }
     }
-  } catch(e) {}
+  } catch (e) { }
 
   let totalOrders = 47;
   let completedOrders = 9;
@@ -43,7 +43,7 @@ async function getAdminDashboardStats() {
       if (data.items) recentOrders = data.items;
       else if (data.Items) recentOrders = data.Items;
     }
-  } catch(e) {}
+  } catch (e) { }
 
   return {
     revenue: totalRevenue,
@@ -61,17 +61,17 @@ async function getAdminDashboardStats() {
 
 export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
-  
+
   return (
     <main className="w-full pb-20 animate-in fade-in duration-300">
       {/* Welcome Banner */}
-      <section 
-        className="relative rounded-[2rem] overflow-hidden mb-8 shadow-sm min-h-[320px] flex items-center bg-cover bg-center border border-slate-100"
+      <section
+        className="relative rounded-[8px] overflow-hidden mb-8 shadow-sm min-h-[320px] flex items-center bg-cover bg-center border border-slate-100"
         style={{ backgroundImage: `url('/Dashboard-page-img/Dashboard-page-banner.png')` }}
       >
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/50 to-transparent"></div>
-        
+
         <div className="relative px-10 z-10 text-white max-w-2xl p-8 h-full flex flex-col justify-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg flex items-center gap-2">
             Chào mừng quay lại! <span className="material-symbols-outlined md:text-[40px] text-amber-400">waving_hand</span>
@@ -80,7 +80,7 @@ export default async function AdminDashboardPage() {
             Tổng quan hoạt động kinh doanh LazPe. Hôm nay có <span className="font-bold text-amber-400">{stats.pendingOrders}</span> đơn hàng đang chờ xử lý.
           </p>
           <Link href="/admin/orders">
-            <button className="bg-white text-primary px-8 py-3 rounded-full font-bold shadow-md hover:scale-105 transition-transform active:scale-95 self-start">
+            <button className="bg-white text-primary px-8 py-3 rounded-[8px] font-bold shadow-md hover:scale-105 transition-transform active:scale-95 self-start">
               Xử lý đơn hàng
             </button>
           </Link>
@@ -90,15 +90,15 @@ export default async function AdminDashboardPage() {
       {/* Stats Grid */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Doanh thu */}
-        <div className="bg-white px-5 py-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <div className="w-10 h-10 rounded-[8px] bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                 <span className="material-symbols-outlined text-[20px]">trending_up</span>
               </div>
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu</span>
             </div>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-[8px] flex items-center gap-0.5">
               <span className="material-symbols-outlined text-[12px]">arrow_upward</span> 12%
             </span>
           </div>
@@ -111,10 +111,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Tổng đơn hàng */}
-        <div className="bg-white px-5 py-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
+              <div className="w-10 h-10 rounded-[8px] bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
                 <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
               </div>
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đơn hàng</span>
@@ -129,10 +129,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Khách hàng */}
-        <div className="bg-white px-5 py-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0">
+              <div className="w-10 h-10 rounded-[8px] bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0">
                 <span className="material-symbols-outlined text-[20px]">group</span>
               </div>
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Khách hàng</span>
@@ -147,10 +147,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Sản phẩm */}
-        <div className="bg-white px-5 py-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+              <div className="w-10 h-10 rounded-[8px] bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
                 <span className="material-symbols-outlined text-[20px]">inventory</span>
               </div>
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm</span>
@@ -167,14 +167,14 @@ export default async function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders Table */}
-        <section className="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+        <section className="lg:col-span-2 bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
           <div className="flex justify-between items-center p-6 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-slate-800 text-lg">Đơn hàng gần đây</h3>
               <p className="text-slate-400 font-semibold text-sm">5 đơn mới nhất</p>
             </div>
             <Link href="/admin/orders">
-              <button className="text-primary hover:bg-primary/5 px-4 py-2 rounded-full font-bold text-sm transition-colors border border-primary/20">
+              <button className="text-primary hover:bg-primary/5 px-4 py-2 rounded-[8px] font-bold text-sm transition-colors border border-primary/20">
                 Xem tất cả
               </button>
             </Link>
@@ -231,34 +231,38 @@ export default async function AdminDashboardPage() {
         {/* Quick Actions & User Stats */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <section className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6">
+          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6">
             <h3 className="font-bold text-slate-800 text-lg mb-4">Hành động nhanh</h3>
-            <div className="space-y-3">
-              <Link href="/admin/products/new">
-                <button className="w-full bg-primary/10 text-primary py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/20 transition-all cursor-pointer">
-                  <span className="material-symbols-outlined text-[20px]">add_circle</span> Thêm sản phẩm
-                </button>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/admin/products/new" className="bg-primary/5 hover:bg-primary/10 text-primary p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-primary/10 hover:border-primary/20 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">add_circle</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Thêm sản phẩm</span>
               </Link>
-              <Link href="/admin/orders">
-                <button className="w-full bg-emerald-50 text-emerald-600 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all cursor-pointer">
-                  <span className="material-symbols-outlined text-[20px]">check_circle</span> Xử lý đơn hàng
-                </button>
+              <Link href="/admin/orders" className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-emerald-100 hover:border-emerald-200 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-500">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">check_circle</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Xử lý đơn hàng</span>
               </Link>
-              <Link href="/admin/users">
-                <button className="w-full bg-blue-50 text-blue-600 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-100 transition-all cursor-pointer">
-                  <span className="material-symbols-outlined text-[20px]">person_search</span> Quản lý khách hàng
-                </button>
+              <Link href="/admin/users" className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-blue-100 hover:border-blue-200 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-500">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">person_search</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Khách hàng</span>
               </Link>
-              <Link href="/admin/statistics">
-                <button className="w-full bg-purple-50 text-purple-600 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-100 transition-all cursor-pointer">
-                  <span className="material-symbols-outlined text-[20px]">bar_chart</span> Báo cáo thống kê
-                </button>
+              <Link href="/admin/statistics" className="bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-purple-100 hover:border-purple-200 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-purple-500">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">bar_chart</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Báo cáo thống kê</span>
               </Link>
             </div>
           </section>
 
           {/* User Stats */}
-          <section className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6">
+          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6">
             <div className="flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-secondary">group</span>
               <h3 className="font-bold text-slate-800 text-lg">Thống kê người dùng</h3>
@@ -266,7 +270,7 @@ export default async function AdminDashboardPage() {
             <div className="space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-xl text-indigo-500">
+                  <div className="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-[8px] text-indigo-500">
                     <span className="material-symbols-outlined text-xl">person</span>
                   </div>
                   <div>
@@ -278,7 +282,7 @@ export default async function AdminDashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 flex items-center justify-center bg-emerald-50 rounded-xl text-emerald-500">
+                  <div className="w-10 h-10 flex items-center justify-center bg-emerald-50 rounded-[8px] text-emerald-500">
                     <span className="material-symbols-outlined text-xl">verified_user</span>
                   </div>
                   <div>
@@ -290,7 +294,7 @@ export default async function AdminDashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-xl text-blue-500">
+                  <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-[8px] text-blue-500">
                     <span className="material-symbols-outlined text-xl">person_add</span>
                   </div>
                   <div>

@@ -231,7 +231,7 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center gap-sm shrink-0">
           <button
             onClick={() => router.push("/admin/categories/new")}
-            className="bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
             Thêm danh mục mới
@@ -247,7 +247,7 @@ export default function AdminCategoriesPage() {
       />
 
       {/* Table grid area */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Search & Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
@@ -261,7 +261,7 @@ export default function AdminCategoriesPage() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Tìm kiếm danh mục theo tên hoặc mô tả..."
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
 
@@ -269,7 +269,7 @@ export default function AdminCategoriesPage() {
           <select
             value={selectedStatus}
             onChange={e => setSelectedStatus(e.target.value as any)}
-            className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+            className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Đang hoạt động</option>
@@ -282,7 +282,7 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={handleExpandAll}
-                className="border border-slate-200 bg-white text-slate-700 px-4 py-3 rounded-2xl font-bold text-xs flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
+                className="border border-slate-200 bg-white text-slate-700 px-4 py-3 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
                 title="Mở rộng tất cả danh mục"
               >
                 <span className="material-symbols-outlined text-[18px]">unfold_more</span>
@@ -291,7 +291,7 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={handleCollapseAll}
-                className="border border-slate-200 bg-white text-slate-700 px-4 py-3 rounded-2xl font-bold text-xs flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
+                className="border border-slate-200 bg-white text-slate-700 px-4 py-3 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
                 title="Thu gọn tất cả danh mục"
               >
                 <span className="material-symbols-outlined text-[18px]">unfold_less</span>
@@ -307,7 +307,7 @@ export default function AdminCategoriesPage() {
                 setSearchTerm("");
                 setSelectedStatus("all");
               }}
-              className="px-5 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">clear</span>
               Xóa bộ lọc
@@ -391,7 +391,7 @@ export default function AdminCategoriesPage() {
                             <span className="font-bold text-slate-800 text-sm flex items-center gap-2">
                               {cat.categoryName}
                               {!cat.status && (
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-[8px] bg-slate-100 text-slate-400">
                                   Đã ẩn
                                 </span>
                               )}

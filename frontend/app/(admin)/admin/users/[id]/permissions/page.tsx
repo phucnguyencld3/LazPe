@@ -243,7 +243,7 @@ export default function UserPermissionsPage() {
         <p className="text-error font-bold text-lg">Không tìm thấy người dùng</p>
         <button
           onClick={() => router.push("/admin/users")}
-          className="mt-4 px-6 py-2 bg-primary text-white rounded-xl font-bold"
+          className="mt-4 px-6 py-2 bg-primary text-white rounded-[8px] font-bold"
         >
           Quay lại danh sách
         </button>
@@ -262,17 +262,17 @@ export default function UserPermissionsPage() {
   return (
     <main className="w-full pb-lg animate-fadeIn space-y-8">
       {/* Header Section: User Profile Card */}
-      <header className="bg-white p-6 rounded-2xl border border-slate-100 soft-shadow flex flex-col md:flex-row items-center justify-between gap-6">
+      <header className="bg-white p-6 rounded-[8px] border border-slate-100 soft-shadow flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-5 w-full md:w-auto">
           <div className="relative shrink-0">
             {user.avatar ? (
               <img
                 alt={user.fullName || user.userName}
-                className="w-20 h-20 rounded-2xl object-cover border border-slate-100 shadow-inner"
+                className="w-20 h-20 rounded-[8px] object-cover border border-slate-100 shadow-inner"
                 src={user.avatar}
               />
             ) : (
-              <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-200 shadow-inner">
+              <div className="w-20 h-20 bg-slate-100 rounded-[8px] flex items-center justify-center border border-slate-200 shadow-inner">
                 <span className="material-symbols-outlined text-slate-400 text-[40px]">person</span>
               </div>
             )}
@@ -285,11 +285,11 @@ export default function UserPermissionsPage() {
               {user.email || "Chưa cập nhật email"}
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <span className="bg-primary/10 text-primary border border-primary/20 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+              <span className="bg-primary/10 text-primary border border-primary/20 text-[10px] px-3 py-1 rounded-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">person</span>
                 ID: {user.id}
               </span>
-              <span className="bg-secondary/10 text-secondary text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 border border-secondary/20">
+              <span className="bg-secondary/10 text-secondary text-[10px] px-3 py-1 rounded-[8px] font-bold uppercase tracking-wider flex items-center gap-1 border border-secondary/20">
                 <span className="material-symbols-outlined text-[14px]">shield</span>
                 {totalSelectedCount} QUYỀN ĐANG CHỌN
               </span>
@@ -298,7 +298,7 @@ export default function UserPermissionsPage() {
         </div>
         <button
           onClick={() => router.push(`/admin/users/${id}`)}
-          className="flex items-center gap-2 px-6 py-2.5 border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-primary/5 active:scale-98 transition-all shrink-0 w-full md:w-auto justify-center"
+          className="flex items-center gap-2 px-6 py-2.5 border border-primary/20 text-primary rounded-[8px] font-bold text-sm hover:bg-primary/5 active:scale-98 transition-all shrink-0 w-full md:w-auto justify-center"
         >
           <span className="material-symbols-outlined text-lg">person</span>
           Xem chi tiết
@@ -306,12 +306,12 @@ export default function UserPermissionsPage() {
       </header>
 
       {/* Role Template Selection */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-100 soft-shadow">
+      <div className="bg-white p-6 rounded-[8px] border border-slate-100 soft-shadow">
         <label className="block text-sm font-bold text-slate-700 mb-2">Gói quyền mặc định (Role Template)</label>
         <select 
           value={selectedTemplateId || ""} 
           onChange={(e) => handleTemplateChange(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-medium"
+          className="w-full md:w-1/2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] focus:ring-2 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-medium"
         >
           <option value="">-- Không sử dụng gói (Chỉ cấu hình quyền thủ công) --</option>
           {templates.map(t => (
@@ -329,7 +329,7 @@ export default function UserPermissionsPage() {
       {/* Section Tabs */}
       <div className="flex gap-4">
         <button
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-[8px] font-bold text-sm transition-all cursor-pointer ${
             activeTab === "existing"
               ? "bg-rose-500 text-white shadow-md"
               : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-100"
@@ -350,7 +350,7 @@ export default function UserPermissionsPage() {
           </span>
         </button>
         <button
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-[8px] font-bold text-sm transition-all cursor-pointer ${
             activeTab === "all"
               ? "bg-rose-500 text-white shadow-md"
               : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-100"
@@ -366,7 +366,7 @@ export default function UserPermissionsPage() {
       </div>
 
       {/* Permissions Container */}
-      <div className="bg-white rounded-2xl border border-slate-100 soft-shadow overflow-hidden">
+      <div className="bg-white rounded-[8px] border border-slate-100 soft-shadow overflow-hidden">
         {/* Container Header */}
         <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -396,7 +396,7 @@ export default function UserPermissionsPage() {
               placeholder="Tìm kiếm nhanh mã quyền hoặc mô tả..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all text-sm text-slate-800"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-[8px] focus:ring-2 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all text-sm text-slate-800"
             />
             {searchTerm && (
               <button
@@ -410,7 +410,7 @@ export default function UserPermissionsPage() {
 
           {/* Select All Row */}
           {filteredPermissions.length > 0 && (
-            <div className="flex items-center gap-3 text-primary font-bold text-sm bg-primary/5 p-4 rounded-xl border border-primary/20">
+            <div className="flex items-center gap-3 text-primary font-bold text-sm bg-primary/5 p-4 rounded-[8px] border border-primary/20">
               <input
                 className="w-5 h-5 rounded border-primary/30 text-primary focus:ring-primary transition-all accent-primary cursor-pointer"
                 id="select-all"
@@ -425,7 +425,7 @@ export default function UserPermissionsPage() {
           )}
 
           {filteredPermissions.length === 0 ? (
-            <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+            <div className="text-center py-16 bg-slate-50/50 rounded-[8px] border border-dashed border-slate-200">
               <span className="material-symbols-outlined text-slate-300 text-[48px] mb-2">search_off</span>
               <p className="text-slate-500 font-medium text-sm">
                 Không tìm thấy quyền hạn nào khớp với bộ lọc hiện tại.
@@ -445,7 +445,7 @@ export default function UserPermissionsPage() {
                   return (
                     <div
                       key={resource}
-                      className="bg-slate-50/30 hover:bg-slate-50/70 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between transition-all hover:shadow-md"
+                      className="bg-slate-50/30 hover:bg-slate-50/70 rounded-[8px] border border-slate-100 p-5 flex flex-col justify-between transition-all hover:shadow-md"
                     >
                       <div>
                         {/* Group Header */}
@@ -545,14 +545,14 @@ export default function UserPermissionsPage() {
         <button
           onClick={() => router.push(`/admin/users/${id}`)}
           disabled={saving}
-          className="px-8 py-3.5 border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-50"
+          className="px-8 py-3.5 border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-sm rounded-[8px] transition-all cursor-pointer disabled:opacity-50"
         >
           Hủy bỏ
         </button>
         <button
           onClick={handleSaveChange}
           disabled={saving}
-          className="px-10 py-3.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:scale-105 active:scale-95 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-2 disabled:opacity-70"
+          className="px-10 py-3.5 bg-primary text-on-primary font-bold text-sm rounded-[8px] hover:scale-105 active:scale-95 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-2 disabled:opacity-70"
         >
           {saving ? (
             <>

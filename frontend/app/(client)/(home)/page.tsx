@@ -249,7 +249,7 @@ export default function HomePageV2() {
           <div className="flex justify-center mb-6 -mt-4">
             <button
               onClick={() => setVisibleCampaignsCount(prev => prev + 3)}
-              className="bg-white border-2 border-orange-500 text-orange-500 font-bold py-1.5 px-10 rounded-full hover:bg-orange-50 transition-colors shadow-sm text-sm"
+              className="bg-white border-2 border-orange-500 text-orange-500 font-bold py-1.5 px-10 rounded-[8px] hover:bg-orange-50 transition-colors shadow-sm text-sm"
             >
               Xem thêm chương trình khác
             </button>
@@ -340,7 +340,7 @@ export default function HomePageV2() {
                   <button
                     onClick={handleLoadMore}
                     disabled={loadingMore}
-                    className="border-2 border-primary text-primary font-bold py-2 px-12 rounded-full hover:bg-primary/5 transition-colors disabled:opacity-50"
+                    className="border-2 border-primary text-primary font-bold py-2 px-12 rounded-[8px] hover:bg-primary/5 transition-colors disabled:opacity-50"
                   >
                     {loadingMore ? 'Đang tải...' : 'Xem thêm'}
                   </button>
@@ -453,7 +453,7 @@ function FlashSaleCampaignBlock({ campaign }: { campaign: FlashSaleCampaign }) {
         <div className="flex justify-center mt-2 mb-2">
           <button
             onClick={() => setDisplayedCount(prev => prev + (products.length <= 2 ? 2 : 4))}
-            className="border border-rose-500 text-rose-500 font-bold py-1 px-6 rounded-full hover:bg-rose-50 transition-colors shadow-sm text-xs"
+            className="border border-rose-500 text-rose-500 font-bold py-1 px-6 rounded-[8px] hover:bg-rose-50 transition-colors shadow-sm text-xs"
           >
             Xem thêm
           </button>
