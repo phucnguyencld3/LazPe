@@ -1398,6 +1398,193 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Lấy dữ liệu thống kê chi tiêu cá nhân của khách hàng hiện tại
+        /// </summary>
+        [HttpGet("spending-dashboard")]
+        //[Authorize]
+        public async Task<IActionResult> GetSpendingDashboard()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+                var userId = user.Id;
+
+                // Lấy tất cả hóa đơn hoàn thành và không bị xóa mềm
+                var invoices = await _context.Invoices
+                    .Where(i => i.UserID == userId && !i.IsDeleted && i.Status == OrderStatus.Completed)
+                    .Include(i => i.InvoiceDetails)
+                        .ThenInclude(d => d.Variant)
+                            .ThenInclude(v => v.Product)
+                                .ThenInclude(p => p.Category)
+                    .Include(i => i.InvoiceDetails)
+                        .ThenInclude(d => d.Bundle)
+                    .ToListAsync();
+
+                // Tính toán KPI cơ bản
+                var totalSpent = invoices.Sum(i => i.TotalPrice);
+                var totalOrders = invoices.Count;
+                var totalSaved = invoices.Sum(i => i.DiscountAmount + i.TierDiscountAmount);
+
+                // Lấy thông tin Loyalty
+                var loyaltyProfile = await _context.LoyaltyProfiles
+                    .Include(lp => lp.Tier)
+                    .FirstOrDefaultAsync(lp => lp.UserID == userId);
+
+                var availablePoints = loyaltyProfile?.AvailablePoints ?? 0;
+                var vipTier = loyaltyProfile?.Tier?.TierName ?? "Thành viên mới";
+                var vipColor = loyaltyProfile?.Tier?.ColorHex ?? "#64748b";
+
+                // Thống kê chi tiêu theo tháng trong năm hiện tại
+                var currentYear = DateTime.Now.Year;
+                var monthlySpending = invoices
+                    .Where(i => i.CreatedAt.HasValue && i.CreatedAt.Value.Year == currentYear)
+                    .GroupBy(i => i.CreatedAt.Value.Month)
+                    .Select(g => new InvoiceDtos.MonthlySpendingDto
+                    {
+                        Month = g.Key,
+                        Year = currentYear,
+                        Amount = g.Sum(i => i.TotalPrice)
+                    })
+                    .OrderBy(x => x.Month)
+                    .ToList();
+
+                // Đảm bảo trả về đủ 12 tháng, tháng nào không có chi tiêu thì đặt Amount = 0
+                for (int m = 1; m <= 12; m++)
+                {
+                    if (!monthlySpending.Any(x => x.Month == m))
+                    {
+                        monthlySpending.Add(new InvoiceDtos.MonthlySpendingDto
+                        {
+                            Month = m,
+                            Year = currentYear,
+                            Amount = 0
+                        });
+                    }
+                }
+                monthlySpending = monthlySpending.OrderBy(x => x.Month).ToList();
+
+                // Thống kê chi tiêu theo danh mục sản phẩm
+                var categorySpendingList = new List<InvoiceDtos.CategorySpendingDto>();
+                
+                // Trích xuất các chi tiết hóa đơn
+                var details = invoices.SelectMany(i => i.InvoiceDetails).ToList();
+
+                // Group theo danh mục cho các sản phẩm đơn lẻ (có Variant)
+                var productDetails = details.Where(d => d.Variant != null && d.Variant.Product != null && d.Variant.Product.Category != null).ToList();
+                var groupedByCat = productDetails
+                    .GroupBy(d => new { 
+                        CategoryID = d.Variant.Product.CategoryID, 
+                        CategoryName = d.Variant.Product.Category.CategoryName 
+                    })
+                    .Select(g => new InvoiceDtos.CategorySpendingDto
+                    {
+                        CategoryID = g.Key.CategoryID,
+                        CategoryName = g.Key.CategoryName,
+                        Amount = g.Sum(d => d.TotalPrice),
+                        Percentage = 0
+                    })
+                    .ToList();
+
+                // Xử lý các Combo/Bundle
+                var bundleDetails = details.Where(d => d.BundleID.HasValue).ToList();
+                if (bundleDetails.Any())
+                {
+                    groupedByCat.Add(new InvoiceDtos.CategorySpendingDto
+                    {
+                        CategoryID = -1,
+                        CategoryName = "Combo Khuyến Mãi",
+                        Amount = bundleDetails.Sum(d => d.TotalPrice),
+                        Percentage = 0
+                    });
+                }
+
+                var totalCategoryAmount = groupedByCat.Sum(c => c.Amount);
+                if (totalCategoryAmount > 0)
+                {
+                    foreach (var cat in groupedByCat)
+                    {
+                        cat.Percentage = Math.Round((double)(cat.Amount / totalCategoryAmount) * 100, 1);
+                    }
+                }
+                categorySpendingList = groupedByCat.OrderByDescending(c => c.Amount).ToList();
+
+                // Top 5 sản phẩm mua nhiều nhất
+                var topProducts = new List<InvoiceDtos.TopProductDto>();
+
+                var productGroup = productDetails
+                    .GroupBy(d => new
+                    {
+                        ProductID = d.Variant.ProductID,
+                        ProductName = d.Variant.Product.ProductName
+                    })
+                    .Select(g => new InvoiceDtos.TopProductDto
+                    {
+                        ProductID = g.Key.ProductID,
+                        ProductName = g.Key.ProductName,
+                        Quantity = g.Sum(d => d.Quantity),
+                        TotalPrice = g.Sum(d => d.TotalPrice),
+                        ImageUrl = productDetails.FirstOrDefault(d => d.Variant.ProductID == g.Key.ProductID)?.Variant?.ImageUrl 
+                                   ?? productDetails.FirstOrDefault(d => d.Variant.ProductID == g.Key.ProductID)?.Variant?.Product?.Images?.FirstOrDefault()?.ImageUrl
+                    })
+                    .ToList();
+
+                if (bundleDetails.Any())
+                {
+                    var bundleGroup = bundleDetails
+                        .GroupBy(d => new
+                        {
+                            BundleID = d.BundleID.Value,
+                            BundleName = d.Bundle?.Name ?? "Combo khuyến mãi"
+                        })
+                        .Select(g => new InvoiceDtos.TopProductDto
+                        {
+                            ProductID = -g.Key.BundleID,
+                            ProductName = g.Key.BundleName,
+                            Quantity = g.Sum(d => d.Quantity),
+                            TotalPrice = g.Sum(d => d.TotalPrice),
+                            ImageUrl = bundleDetails.FirstOrDefault(d => d.BundleID == g.Key.BundleID)?.Bundle?.ImageUrl
+                        })
+                        .ToList();
+
+                    productGroup.AddRange(bundleGroup);
+                }
+
+                topProducts = productGroup
+                    .OrderByDescending(p => p.Quantity)
+                    .Take(5)
+                    .ToList();
+
+                var dashboardData = new InvoiceDtos.UserSpendingDashboardDto
+                {
+                    TotalSpent = totalSpent,
+                    TotalOrders = totalOrders,
+                    TotalSaved = totalSaved,
+                    AvailablePoints = availablePoints,
+                    VipTier = vipTier,
+                    VipColor = vipColor,
+                    MonthlySpending = monthlySpending,
+                    CategorySpending = categorySpendingList,
+                    TopProducts = topProducts
+                };
+
+                return Ok(new
+                {
+                    success = true,
+                    data = dashboardData,
+                    message = "Lấy dữ liệu phân tích chi tiêu cá nhân thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user spending dashboard data");
+                return StatusCode(500, new { message = "Lỗi khi lấy dữ liệu phân tích chi tiêu", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Map Invoice sang response nhẹ cho danh sách/phân trang
         /// </summary>
         private static object MapInvoiceToSummaryResponse(Invoice invoice, int itemCount)

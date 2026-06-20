@@ -2811,3 +2811,25 @@ export async function performCheckIn(token: string): Promise<DailyCheckInResult>
     return { success: false, message: "Lỗi mạng", pointsEarned: 0, newStreak: 0, totalPoints: 0 };
   }
 }
+
+export async function getSpendingDashboard(token: string): Promise<ApiResponse<any> | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/spending-dashboard`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch spending dashboard:", response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching spending dashboard:", error);
+    return null;
+  }
+}

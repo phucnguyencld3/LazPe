@@ -86,5 +86,45 @@ namespace PolyBabyAPI.DTOs
             public decimal Price { get; set; }
             public string? ImageUrl { get; set; }
         }
+
+        /// <summary>
+        /// DTO cho Dashboard Chi tiêu Cá nhân
+        /// </summary>
+        public class UserSpendingDashboardDto
+        {
+            public decimal TotalSpent { get; set; }
+            public int TotalOrders { get; set; }
+            public decimal TotalSaved { get; set; }
+            public int AvailablePoints { get; set; }
+            public string VipTier { get; set; } = "Thành viên";
+            public string VipColor { get; set; } = "#64748b";
+            public List<MonthlySpendingDto> MonthlySpending { get; set; } = new List<MonthlySpendingDto>();
+            public List<CategorySpendingDto> CategorySpending { get; set; } = new List<CategorySpendingDto>();
+            public List<TopProductDto> TopProducts { get; set; } = new List<TopProductDto>();
+        }
+
+        public class MonthlySpendingDto
+        {
+            public int Month { get; set; }
+            public int Year { get; set; }
+            public decimal Amount { get; set; }
+        }
+
+        public class CategorySpendingDto
+        {
+            public int CategoryID { get; set; }
+            public string CategoryName { get; set; } = string.Empty;
+            public decimal Amount { get; set; }
+            public double Percentage { get; set; }
+        }
+
+        public class TopProductDto
+        {
+            public int ProductID { get; set; }
+            public string ProductName { get; set; } = string.Empty;
+            public int Quantity { get; set; }
+            public decimal TotalPrice { get; set; }
+            public string? ImageUrl { get; set; }
+        }
     }
 }

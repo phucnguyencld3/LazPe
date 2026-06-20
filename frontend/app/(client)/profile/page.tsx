@@ -40,6 +40,7 @@ import { ReviewsSection } from "@/components/client/profile/ReviewsSection";
 import { PrivacySection } from "@/components/client/profile/PrivacySection";
 import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
 import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
+import { SpendingSection } from "@/components/client/profile/SpendingSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -616,24 +617,6 @@ export default function ProfilePage() {
           <div className="bg-white rounded-[10px] border border-slate-100/60 shadow-sm pb-3 max-h-[calc(100vh-140px)] overflow-y-auto scrollbar-none">
             {/* Quick User Section */}
               <div className="p-5 flex flex-col items-center text-center gap-2">
-                <div
-                  className="w-16 h-16 rounded-full overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center cursor-pointer group transition-transform hover:scale-105"
-                  onClick={() => handleTabChange("profile")}
-                  title="Quản lý thông tin tài khoản"
-                >
-                  {userProfile.avatar ? (
-                    <img
-                      className="w-full h-full object-cover"
-                      alt="Avatar"
-                      src={userProfile.avatar}
-                    />
-                  ) : (
-                    <span className="material-symbols-outlined text-slate-300 text-3xl">person</span>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="material-symbols-outlined text-white text-[10px]">edit</span>
-                  </div>
-                </div>
                 <div className="space-y-1 w-full">
                   <h3 className="font-bold text-slate-800 text-base line-clamp-1">{userProfile.fullName}</h3>
                   <p className="text-[11px] text-slate-400 font-medium truncate px-2">{userProfile.email}</p>
@@ -648,6 +631,7 @@ export default function ProfilePage() {
                     [
                       { id: "profile", label: "Thông tin tài khoản", icon: "person" },
                       { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
+                      { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
                       { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                       { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
@@ -678,6 +662,7 @@ export default function ProfilePage() {
                     [
                       { id: "profile", label: "Tài khoản", icon: "person" },
                       { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
+                      { id: "spending", label: "Chi tiêu", icon: "monitoring" },
                       { id: "address", label: "Địa chỉ", icon: "location_on" },
                       { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
@@ -746,6 +731,10 @@ export default function ProfilePage() {
 
             {activeTab === "loyalty" && (
               <LoyaltySection token={token} />
+            )}
+
+            {activeTab === "spending" && (
+              <SpendingSection token={token} />
             )}
 
             {activeTab === "orders" && (
