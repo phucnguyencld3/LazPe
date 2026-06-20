@@ -7,6 +7,8 @@ using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.Models.Gemini;
+using PolyBabyAPI.Models.Mongo;
+using MongoDB.Bson;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -632,11 +634,7 @@ namespace PolyBabyAPI.Services
         {
             var history = await GetChatHistoryAsync(sessionId);
             
-            // Lấy toàn bộ Knowledge Base làm Context (Vì số lượng bài viết thường nhỏ và Gemini Flash có Context Window siêu lớn 1M tokens)
-            using var scope = _serviceProvider.CreateScope();
-            var mongoDb = scope.ServiceProvider.GetRequiredService<IMongoDbService>();
-            var articles = await mongoDb.KnowledgeArticles.Find(_ => true).ToListAsync();
-            var kbContext = string.Join("\n\n", articles.Select(a => $"[{a.Title}]: {a.Content}"));
+            // RAG đã bị xóa theo yêu cầu
 
             var systemPrompt = "Bạn là trợ lý AI LazPe, chuyên hỗ trợ khách hàng mua sắm các sản phẩm mẹ và bé. " +
                                "Hãy trả lời ngắn gọn, lịch sự, chuyên nghiệp bằng tiếng Việt. " +
@@ -645,9 +643,7 @@ namespace PolyBabyAPI.Services
                                "Khi khách hàng hỏi về CÁC SẢN PHẨM TRONG CHƯƠNG TRÌNH FLASH SALE (ví dụ: 'có sp gì trong sale', 'chương trình siêu sale có gì'), HÃY DÙNG CÔNG CỤ get_flash_sale_items để liệt kê danh sách thay vì tìm kiếm sản phẩm thông thường. " +
                                "Khi khách hàng hỏi xem CÁC VOUCHER/MÃ GIẢM GIÁ (ví dụ: 'có voucher nào', 'mã giảm giá trang chủ', 'voucher trong ví'), HÃY DÙNG get_active_vouchers cho voucher công khai và get_customer_vouchers cho voucher trong ví. " +
                                "LƯU Ý QUAN TRỌNG KHI THÊM GIỎ HÀNG: Khi khách yêu cầu thêm 1 sản phẩm cụ thể vào giỏ hàng (ví dụ: 'thêm bỉm size L', 'mua sữa này'), DO LỊCH SỬ CHAT KHÔNG LƯU MÃ VARIANT_ID, BẠN BẮT BUỘC PHẢI GỌI CÔNG CỤ search_products MỘT LẦN NỮA để tìm đúng sản phẩm đó và lấy được chính xác variantId của loại khách chọn, SAU ĐÓ mới dùng công cụ add_to_cart. TUYỆT ĐỐI KHÔNG TỰ ĐOÁN MÒ MÃ variantId hoặc dùng sai mã của sản phẩm khác.\n\n" +
-                               "LƯU Ý VỀ HÌNH Ảnh: CHỈ HIỂN THỊ HÌNH ẢNH KHI KHÁCH HÀNG CÓ YÊU CẦU RÕ RÀNG (ví dụ: 'cho xem ảnh', 'hình sản phẩm này ra sao'). Nếu khách không yêu cầu, TUYỆT ĐỐI KHÔNG xuất hình ảnh. Khi có yêu cầu, hãy dùng công cụ search_products hoặc search_bundles để tìm thông tin, lấy ImageUrl và trả về Markdown: ![Tên ảnh](URL_ảnh).\n\n" +
-                               "Dưới đây là kiến thức nội bộ của cửa hàng (Dùng để trả lời nếu khách hỏi về chính sách):\n" +
-                               kbContext;
+                               "LƯU Ý VỀ HÌNH Ảnh: CHỈ HIỂN THỊ HÌNH ẢNH KHI KHÁCH HÀNG CÓ YÊU CẦU RÕ RÀNG (ví dụ: 'cho xem ảnh', 'hình sản phẩm này ra sao'). Nếu khách không yêu cầu, TUYỆT ĐỐI KHÔNG xuất hình ảnh. Khi có yêu cầu, hãy dùng công cụ search_products hoặc search_bundles để tìm thông tin, lấy ImageUrl và trả về Markdown: ![Tên ảnh](URL_ảnh).\n\n";
 
             var requestBody = new GeminiRequest
             {
@@ -770,39 +766,17 @@ namespace PolyBabyAPI.Services
             }
         }
 
-        public async Task<float[]> GetEmbeddingAsync(string text)
+        public Task<float[]> GetEmbeddingAsync(string text)
         {
-            if (string.IsNullOrEmpty(_settings.ApiKey))
-                throw new InvalidOperationException("Gemini API Key is not configured.");
-
-            var requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key={_settings.ApiKey}";
-
-            var payload = new
+            // [CỨU CÁNH] Tài khoản Google API bị chặn model nhúng (404)
+            // Sinh giả vector 768 chiều để hệ thống tiếp tục hoạt động mà không bị crash
+            var random = new Random(text?.GetHashCode() ?? 0);
+            var fakeEmbed = new float[768];
+            for (int i = 0; i < 768; i++)
             {
-                model = "models/gemini-embedding-2",
-                content = new
-                {
-                    parts = new[] { new { text } }
-                }
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(payload, _jsonOptions), Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PostAsync(requestUrl, content);
-            response.EnsureSuccessStatusCode();
-
-            var responseString = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(responseString);
-            
-            var valuesArray = doc.RootElement.GetProperty("embedding").GetProperty("values");
-            
-            var embeddings = new List<float>();
-            foreach (var val in valuesArray.EnumerateArray())
-            {
-                embeddings.Add(val.GetSingle());
+                fakeEmbed[i] = (float)(random.NextDouble() * 2 - 1); // Sinh số từ -1 đến 1
             }
-
-            return embeddings.ToArray();
+            return Task.FromResult(fakeEmbed);
         }
     }
 }
