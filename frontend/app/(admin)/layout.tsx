@@ -687,13 +687,7 @@ export default function AdminLayout({
           </nav>
           
           <div className={`mt-auto pb-md pt-md space-y-2 ${isSidebarExpanded ? "px-4" : "px-0 flex flex-col items-center"}`}>
-            <button 
-              className={`flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md rounded-[8px] hover:bg-secondary/90 shadow-sm transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-[8px]"}`}
-              title={!isSidebarExpanded ? "Trung tâm hỗ trợ" : undefined}
-            >
-              <span className="material-symbols-outlined text-[20px] flex-shrink-0">help</span>
-              {isSidebarExpanded && <span className="whitespace-nowrap animate-in fade-in duration-300">Trung tâm hỗ trợ</span>}
-            </button>
+
             <button 
               onClick={handleLogout}
               className={`flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-[8px] transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-[8px] mt-2"}`}
