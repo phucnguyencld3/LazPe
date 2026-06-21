@@ -129,3 +129,61 @@ export const deleteBrand = async (token: string, id: number): Promise<any> => {
   }
   return res.json();
 };
+
+export const exportBrandsExcel = async (
+  token: string,
+  searchTerm: string = "",
+  status: boolean | null = null
+): Promise<Blob> => {
+  const params = new URLSearchParams({
+    searchTerm: searchTerm
+  });
+  if (status !== null) {
+    params.append("status", status.toString());
+  }
+
+  const res = await fetch(`${API_BASE_URL}/Suppliers/export-excel?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to export brands Excel");
+  return res.blob();
+};
+
+export const downloadSupplierTemplate = async (): Promise<Blob> => {
+  const res = await fetch(`${API_BASE_URL}/SupplierImport/template`);
+  if (!res.ok) throw new Error("Failed to download supplier template");
+  return res.blob();
+};
+
+export const validateSupplierImport = async (token: string, file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE_URL}/SupplierImport/validate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to validate suppliers excel file");
+  }
+  return res.json();
+};
+
+export const commitSupplierImport = async (token: string, payload: any): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/SupplierImport/commit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to commit suppliers import");
+  }
+  return res.json();
+};
+

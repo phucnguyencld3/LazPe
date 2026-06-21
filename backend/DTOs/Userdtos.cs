@@ -20,7 +20,7 @@ namespace PolyBabyAPI.DTOs
         public bool Status { get; set; }
         public bool EmailConfirmed { get; set; }
 
-        /// <summary>true nếu LockoutEnd > DateTime.UtcNow</summary>
+        /// <summary>true nếu LockoutEnd > DateTime.Now</summary>
         public bool IsLocked { get; set; }
 
         /// <summary>null nếu không bị khóa</summary>

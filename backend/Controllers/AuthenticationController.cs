@@ -102,7 +102,7 @@ namespace PolyBabyAPI.Controllers
                 if (isLockedOut)
                 {
                     var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
-                    var timeRemaining = lockoutEnd?.DateTime.Subtract(DateTime.UtcNow);
+                    var timeRemaining = lockoutEnd?.DateTime.Subtract(DateTime.Now);
                     
                     if (timeRemaining?.TotalMinutes > 0)
                     {
@@ -168,7 +168,7 @@ namespace PolyBabyAPI.Controllers
 
                 var refreshToken = GenerateRefreshToken();
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
                 await _userManager.UpdateAsync(user);
 
                 _logger.LogInformation("Đăng nhập thành công cho: {Email} với roles: {Roles} và {PermissionCount} permissions",
@@ -257,7 +257,7 @@ namespace PolyBabyAPI.Controllers
 
                 var refreshToken = GenerateRefreshToken();
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
                 await _userManager.UpdateAsync(user);
 
                 _logger.LogInformation("Admin đăng nhập thành công: {Username}", model.Username);
@@ -306,7 +306,7 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Token không hợp lệ" });
 
                 var user = await _userManager.FindByIdAsync(userId);
-                if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
                     return BadRequest(new { success = false, message = "Refresh token không hợp lệ hoặc đã hết hạn" });
 
                 var userRoles = await _userManager.GetRolesAsync(user);
@@ -315,7 +315,7 @@ namespace PolyBabyAPI.Controllers
                 var newRefreshToken = GenerateRefreshToken();
 
                 user.RefreshToken = newRefreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
                 await _userManager.UpdateAsync(user);
 
                 return Ok(new
@@ -378,7 +378,7 @@ namespace PolyBabyAPI.Controllers
                 // Cooldown check (60 seconds)
                 if (_memoryCache.TryGetValue(cacheKey, out RegisterOtpInfo? existingOtp) && existingOtp != null)
                 {
-                    var remainingSeconds = (existingOtp.ExpiredAtUtc - DateTime.UtcNow).TotalSeconds;
+                    var remainingSeconds = (existingOtp.ExpiredAtUtc - DateTime.Now).TotalSeconds;
                     // Expire time is 180s, if remainingSeconds > 120s, it means it's been less than 60s since generation.
                     if (remainingSeconds > (RegisterOtpExpiredSeconds - 60))
                     {
@@ -388,7 +388,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var otpCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-                var expiredAtUtc = DateTime.UtcNow.AddSeconds(RegisterOtpExpiredSeconds);
+                var expiredAtUtc = DateTime.Now.AddSeconds(RegisterOtpExpiredSeconds);
 
                 var otpInfo = new RegisterOtpInfo
                 {
@@ -467,7 +467,7 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu mã mới." });
                 }
 
-                if (DateTime.UtcNow > otpInfo.ExpiredAtUtc)
+                if (DateTime.Now > otpInfo.ExpiredAtUtc)
                 {
                     _memoryCache.Remove(cacheKey);
                     return BadRequest(new { success = false, message = "Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới." });
@@ -482,7 +482,7 @@ namespace PolyBabyAPI.Controllers
                         return BadRequest(new { success = false, message = "Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới." });
                     }
 
-                    var remainingTtl = otpInfo.ExpiredAtUtc - DateTime.UtcNow;
+                    var remainingTtl = otpInfo.ExpiredAtUtc - DateTime.Now;
                     if (remainingTtl <= TimeSpan.Zero)
                     {
                         _memoryCache.Remove(cacheKey);
@@ -782,7 +782,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var otpCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-                var expiredAtUtc = DateTime.UtcNow.AddSeconds(ResetOtpExpiredSeconds);
+                var expiredAtUtc = DateTime.Now.AddSeconds(ResetOtpExpiredSeconds);
 
                 _memoryCache.Set(
                     $"pwd-reset-otp:{user.Id}",
@@ -844,7 +844,7 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Mã OTP không hợp lệ hoặc đã hết hạn." });
                 }
 
-                if (DateTime.UtcNow > otpInfo.ExpiredAtUtc)
+                if (DateTime.Now > otpInfo.ExpiredAtUtc)
                 {
                     _memoryCache.Remove(cacheKey);
                     return BadRequest(new { success = false, message = "Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới." });
@@ -859,7 +859,7 @@ namespace PolyBabyAPI.Controllers
                         return BadRequest(new { success = false, message = "Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới." });
                     }
 
-                    var remainingTtl = otpInfo.ExpiredAtUtc - DateTime.UtcNow;
+                    var remainingTtl = otpInfo.ExpiredAtUtc - DateTime.Now;
                     if (remainingTtl <= TimeSpan.Zero)
                     {
                         _memoryCache.Remove(cacheKey);
@@ -882,7 +882,7 @@ namespace PolyBabyAPI.Controllers
                     {
                         UserId = user.Id,
                         ResetToken = identityResetToken,
-                        ExpiredAtUtc = DateTime.UtcNow.AddMinutes(ResetPasswordSessionExpiredMinutes)
+                        ExpiredAtUtc = DateTime.Now.AddMinutes(ResetPasswordSessionExpiredMinutes)
                     },
                     TimeSpan.FromMinutes(ResetPasswordSessionExpiredMinutes));
 
@@ -924,7 +924,7 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Phiên đặt lại mật khẩu đã hết hạn. Vui lòng xác thực OTP lại." });
                 }
 
-                if (!string.Equals(sessionInfo.UserId, model.UserId, StringComparison.Ordinal) || DateTime.UtcNow > sessionInfo.ExpiredAtUtc)
+                if (!string.Equals(sessionInfo.UserId, model.UserId, StringComparison.Ordinal) || DateTime.Now > sessionInfo.ExpiredAtUtc)
                 {
                     _memoryCache.Remove(sessionCacheKey);
                     return BadRequest(new { success = false, message = "Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
@@ -1249,7 +1249,7 @@ namespace PolyBabyAPI.Controllers
 
                 var refreshToken = GenerateRefreshToken();
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
                 await _userManager.UpdateAsync(user);
 
                 _logger.LogInformation("Xác thực 2FA thành công cho: {Email}", user.Email ?? user.UserName);
@@ -1322,7 +1322,7 @@ namespace PolyBabyAPI.Controllers
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(24),
+                Expires = DateTime.Now.AddHours(24),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _configuration["JwtSettings:Issuer"],
                 Audience = _configuration["JwtSettings:Audience"]
@@ -1412,7 +1412,7 @@ namespace PolyBabyAPI.Controllers
                         EmailConfirmed = true,
                         IsOnboarded = false,
                         Status = true,
-                        RegisterDate = DateTime.UtcNow
+                        RegisterDate = DateTime.Now
                     };
 
                     var result = await _userManager.CreateAsync(user);
@@ -1442,7 +1442,7 @@ namespace PolyBabyAPI.Controllers
                 var refreshToken = GenerateRefreshToken();
 
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
 
                 await _userManager.UpdateAsync(user);
 

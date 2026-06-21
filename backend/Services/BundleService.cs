@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
+using ClosedXML.Excel;
+using System.IO;
 
 namespace PolyBabyAPI.Services
 {
@@ -322,6 +324,115 @@ namespace PolyBabyAPI.Services
                 Console.WriteLine($"Error updating bundle details: {ex.Message}");
                 return false;
             }
+        }
+
+        public async Task<byte[]> ExportExcelAsync(string searchTerm, bool? status)
+        {
+            var query = _context.Bundles.Include(b => b.BundleItems).ThenInclude(bi => bi.Variant).AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(b => b.Name.Contains(searchTerm) || b.Description.Contains(searchTerm) || b.Code.Contains(searchTerm));
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(b => b.Status == status.Value);
+            }
+
+            var bundles = await query.OrderByDescending(b => b.BundleID).ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Danh sách Combo");
+
+            // Header báo cáo
+            worksheet.Cell("A1").Value = "DANH SÁCH COMBO SẢN PHẨM";
+            worksheet.Cell("A1").Style.Font.Bold = true;
+            worksheet.Cell("A1").Style.Font.FontSize = 16;
+            worksheet.Cell("A1").Style.Font.FontColor = XLColor.DarkMidnightBlue;
+            worksheet.Range("A1:L1").Merge();
+
+            worksheet.Cell("A2").Value = $"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            worksheet.Range("A2:L2").Merge();
+
+            // Header bảng
+            var headers = new string[] { 
+                "STT", "ID Combo", "Mã combo", "Tên combo", "Mô tả", 
+                "Giá gốc", "Giá combo", "% Giảm giá", "Số sản phẩm", "Tồn kho tối đa", "Ngày tạo", "Trạng thái" 
+            };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(4, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.LightSkyBlue;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            }
+
+            int row = 5;
+            int stt = 1;
+            foreach (var b in bundles)
+            {
+                worksheet.Cell(row, 1).Value = stt++;
+                worksheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 2).Value = b.BundleID;
+                worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 3).Value = b.Code ?? "";
+                worksheet.Cell(row, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 4).Value = b.Name;
+                worksheet.Cell(row, 5).Value = b.Description ?? "";
+
+                worksheet.Cell(row, 6).Value = b.OriginalPrice ?? 0;
+                worksheet.Cell(row, 6).Style.NumberFormat.Format = "#,##0\"₫\"";
+
+                worksheet.Cell(row, 7).Value = b.Price ?? 0;
+                worksheet.Cell(row, 7).Style.NumberFormat.Format = "#,##0\"₫\"";
+
+                worksheet.Cell(row, 8).Value = b.DiscountPercent / 100m;
+                worksheet.Cell(row, 8).Style.NumberFormat.Format = "0.0%";
+
+                worksheet.Cell(row, 9).Value = b.BundleItems?.Count ?? 0;
+                worksheet.Cell(row, 9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                // Tồn kho tối đa của Combo là min(Variant.Stock / Quantity)
+                int stock = 0;
+                if (b.BundleItems != null && b.BundleItems.Any())
+                {
+                    stock = b.BundleItems.Min(bi => bi.Variant != null && bi.Quantity > 0 ? (bi.Variant.Stock / bi.Quantity) : 0);
+                }
+                worksheet.Cell(row, 10).Value = stock;
+                worksheet.Cell(row, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 11).Value = b.CreatedDate.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 12).Value = b.Status ? "Đang bán" : "Tạm ẩn";
+                worksheet.Cell(row, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                if (b.Status)
+                {
+                    worksheet.Cell(row, 12).Style.Font.FontColor = XLColor.Green;
+                }
+                else
+                {
+                    worksheet.Cell(row, 12).Style.Font.FontColor = XLColor.Red;
+                }
+                row++;
+            }
+
+            var range = worksheet.Range(4, 1, row - 1, headers.Length);
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorderColor = XLColor.LightGray;
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
         }
     }
 }

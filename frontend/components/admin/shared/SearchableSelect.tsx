@@ -70,7 +70,7 @@ export function SearchableSelect({
       {/* Dropdown Toggle Button */}
       <div
         onClick={toggleDropdown}
-        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer flex justify-between items-center"
+        className="w-full px-4 py-3 bg-white border border-slate-200 rounded font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer flex justify-between items-center"
       >
         <span className="truncate">
           {selectedOption ? selectedOption.label : placeholder}
@@ -82,7 +82,7 @@ export function SearchableSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           {/* Search Input */}
           <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
             <div className="relative">
@@ -91,7 +91,7 @@ export function SearchableSelect({
               </span>
               <input
                 type="text"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

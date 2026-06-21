@@ -11,9 +11,10 @@ interface OverviewTabProps {
   summary: DashboardSummary;
   timeSeriesData: TimeSeriesStat[];
   isChartReady: boolean;
+  filterSection?: React.ReactNode;
 }
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesData, isChartReady }) => {
+export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesData, isChartReady, filterSection }) => {
   // Format percent formatting
   const formatPercent = (val: number) => {
     return `${val > 0 ? "+" : ""}${val}%`;
@@ -117,7 +118,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesDat
       {/* KPI Dashboard Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 kpi-print">
         {/* Revenue card */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
+        <div className="bg-white p-5 rounded shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
           <div className="flex justify-between items-start w-full">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -143,7 +144,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesDat
         </div>
 
         {/* Orders count card */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
+        <div className="bg-white p-5 rounded shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
           <div className="flex justify-between items-start w-full">
             <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -166,7 +167,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesDat
         </div>
 
         {/* Products sold card */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
+        <div className="bg-white p-5 rounded shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
           <div className="flex justify-between items-start w-full">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -184,7 +185,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesDat
         </div>
 
         {/* Total customers card */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
+        <div className="bg-white p-5 rounded shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
           <div className="flex justify-between items-start w-full">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -202,7 +203,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesDat
         </div>
 
         {/* Average order value card */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
+        <div className="bg-white p-5 rounded shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 print-card min-h-[135px]">
           <div className="flex justify-between items-start w-full">
             <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -220,8 +221,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ summary, timeSeriesDat
         </div>
       </div>
 
+      {filterSection}
+
       {/* Mixed Trend Chart */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
+      <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
         <h3 className="font-bold text-slate-800 text-base mb-6">Xu hướng Doanh thu & Đơn hàng</h3>
         {isChartReady && mixedChart ? (
           <Chart
