@@ -8,7 +8,8 @@ import {
   fetchAllCategories,
   deleteCategory,
   toggleCategoryStatus,
-  CategoryInfo
+  CategoryInfo,
+  exportCategoriesExcel
 } from "@/lib/features/categories/categoryApi";
 import { getProducts } from "@/lib/api";
 import CategoryStats from "@/components/admin/categories/CategoryStats";
@@ -20,6 +21,32 @@ export default function AdminCategoriesPage() {
   // Loaders
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      setExporting(true);
+      const statusVal = selectedStatus === "active" ? true : selectedStatus === "inactive" ? false : null;
+      const blob = await exportCategoriesExcel(token, searchTerm, statusVal);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `DanhSachDanhMuc_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      toast.success("Xuất file Excel thành công!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Không thể xuất file Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Data states
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
@@ -229,6 +256,18 @@ export default function AdminCategoriesPage() {
           <p className="font-body-md text-body-md text-on-surface-variant/70">Quản lý phân cấp phân loại sản phẩm trong hệ thống</p>
         </div>
         <div className="flex items-center gap-sm shrink-0">
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="bg-emerald-600 text-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+          >
+            {exporting ? (
+              <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+            ) : (
+              <span className="material-symbols-outlined text-[18px]">download</span>
+            )}
+            Xuất Excel
+          </button>
           <button
             onClick={() => router.push("/admin/categories/new")}
             className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"

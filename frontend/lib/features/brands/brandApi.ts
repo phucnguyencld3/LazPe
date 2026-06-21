@@ -129,3 +129,22 @@ export const deleteBrand = async (token: string, id: number): Promise<any> => {
   }
   return res.json();
 };
+
+export const exportBrandsExcel = async (
+  token: string,
+  searchTerm: string = "",
+  status: boolean | null = null
+): Promise<Blob> => {
+  const params = new URLSearchParams({
+    searchTerm: searchTerm
+  });
+  if (status !== null) {
+    params.append("status", status.toString());
+  }
+
+  const res = await fetch(`${API_BASE_URL}/Suppliers/export-excel?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to export brands Excel");
+  return res.blob();
+};

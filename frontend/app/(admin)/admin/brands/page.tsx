@@ -13,7 +13,8 @@ import {
   deleteBrand,
   fetchAllBrands,
   BrandInfo,
-  EditBrandPayload
+  EditBrandPayload,
+  exportBrandsExcel
 } from "@/lib/features/brands/brandApi";
 
 export default function AdminBrandsPage() {
@@ -24,6 +25,32 @@ export default function AdminBrandsPage() {
   // Loaders
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      setExporting(true);
+      const statusVal = statusFilter === "active" ? true : statusFilter === "inactive" ? false : null;
+      const blob = await exportBrandsExcel(token, searchTerm, statusVal);
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `DanhSachThuongHieu_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      toast.success("Xuất file Excel thành công!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Không thể xuất file Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Stats state
   const [stats, setStats] = useState<{
@@ -189,13 +216,27 @@ export default function AdminBrandsPage() {
             Xem, tạo mới, chỉnh sửa thông tin các thương hiệu của sản phẩm trong hệ thống
           </p>
         </div>
-        <button
-          onClick={() => router.push("/admin/brands/new")}
-          className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[16px]">add</span>
-          Thêm thương hiệu mới
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="bg-emerald-600 text-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {exporting ? (
+              <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+            ) : (
+              <span className="material-symbols-outlined text-[16px]">download</span>
+            )}
+            Xuất Excel
+          </button>
+          <button
+            onClick={() => router.push("/admin/brands/new")}
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Thêm thương hiệu mới
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}

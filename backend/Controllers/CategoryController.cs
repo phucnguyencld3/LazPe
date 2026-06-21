@@ -100,6 +100,38 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Xuất danh mục sản phẩm ra Excel
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Permission("Category.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string searchTerm = "",
+            [FromQuery] bool? status = null)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting categories to Excel...");
+                var fileContents = await _categoryService.ExportExcelAsync(searchTerm, status);
+                var fileName = $"DanhSachDanhMuc_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting categories to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
+                });
+            }
+        }
+
+        /// <summary>
         /// Lấy chi tiết category - Yêu cầu quyền Category.Read
         /// </summary>
         [HttpGet("{id}/detail")]
