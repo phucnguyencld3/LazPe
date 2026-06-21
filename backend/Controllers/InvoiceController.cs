@@ -110,6 +110,9 @@ namespace PolyBabyAPI.Controllers
                     cancelled = invoices.Count(i => i.Status == OrderStatus.Cancelled),
                     todayRevenue = invoices
                         .Where(i => i.CreatedAt.HasValue && i.CreatedAt.Value.Date == today && i.Status != OrderStatus.Cancelled)
+                        .Sum(i => i.TotalPrice),
+                    totalRevenue = invoices
+                        .Where(i => i.Status == OrderStatus.Completed)
                         .Sum(i => i.TotalPrice)
                 };
 
