@@ -18,6 +18,8 @@ export default function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortValue, setSortValue] = useState("created_desc");
+  const [minPrice, setMinPrice] = useState<number | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 10;
@@ -45,7 +47,7 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]);
-  }, [statusFilter, debouncedSearch, sortValue]);
+  }, [statusFilter, debouncedSearch, sortValue, minPrice, maxPrice]);
 
   const loadMetrics = async (token: string) => {
     try {
@@ -71,7 +73,7 @@ export default function AdminOrdersPage() {
       if (sortValue === "total_desc") { sortBy = 'total'; desc = true; }
       if (sortValue === "total_asc") { sortBy = 'total'; desc = false; }
       
-      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter, sortBy, desc);
+      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter, sortBy, desc, minPrice, maxPrice);
       setOrders(data.items);
       setTotalCount(data.totalCount);
       setSelectedInvoiceIds([]);
@@ -94,7 +96,7 @@ export default function AdminOrdersPage() {
   // Fetch paginated data whenever dependencies change
   useEffect(() => {
     loadOrders();
-  }, [currentPage, statusFilter, debouncedSearch, sortValue]);
+  }, [currentPage, statusFilter, debouncedSearch, sortValue, minPrice, maxPrice]);
 
   const handleBulkConfirm = async () => {
     if (selectedInvoiceIds.length === 0) return;
@@ -181,6 +183,20 @@ export default function AdminOrdersPage() {
         counts={counts}
         sortValue={sortValue}
         setSortValue={setSortValue}
+        onApplyFilters={(filters) => {
+          let min: number | null = null;
+          let max: number | null = null;
+          if (filters.orderValue === "Dưới 500k") {
+            max = 500000;
+          } else if (filters.orderValue === "500k - 2M") {
+            min = 500000;
+            max = 2000000;
+          } else if (filters.orderValue === "Trên 2M") {
+            min = 2000000;
+          }
+          setMinPrice(min);
+          setMaxPrice(max);
+        }}
       />
 
       <OrderTable 

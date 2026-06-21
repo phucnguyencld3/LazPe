@@ -249,14 +249,16 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] string? sortBy,
             [FromQuery] bool desc = false,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] decimal? minPrice = null,
+            [FromQuery] decimal? maxPrice = null)
         {
             try
             {
                 if (page < 1) page = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-                var (items, totalCount) = await _invoiceService.QueryAsync(search, status, sortBy, desc, page, pageSize);
+                var (items, totalCount) = await _invoiceService.QueryAsync(search, status, sortBy, desc, page, pageSize, minPrice, maxPrice);
                 var invoiceIds = items.Select(i => i.InvoiceID).ToList();
                 var itemCountMap = await _context.InvoiceDetails
                     .AsNoTracking()

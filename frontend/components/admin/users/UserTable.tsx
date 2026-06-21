@@ -31,7 +31,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   onReset,
 }) => {
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
       <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
         {/* Search box */}
         <div className="flex-1 min-w-[260px] relative">
@@ -172,3 +172,4 @@ export const UserTable: React.FC<UserTableProps> = ({
     </div>
   );
 };
+

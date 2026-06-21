@@ -51,7 +51,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
       {/* Status Tabs */}
       <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
         <button
@@ -175,4 +175,5 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
     </div>
   );
 };
+
 

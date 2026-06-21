@@ -133,7 +133,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
           </div>
         </div>
       )}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -274,4 +274,5 @@ export const OrderTable: React.FC<OrderTableProps> = ({
     </>
   );
 };
+
 

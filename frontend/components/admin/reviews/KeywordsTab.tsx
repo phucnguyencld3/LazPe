@@ -126,7 +126,7 @@ export const KeywordsTab: React.FC<KeywordsTabProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-300">
       {/* Header Action Bar */}
       <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
         {/* Search keyword */}
@@ -276,3 +276,4 @@ export const KeywordsTab: React.FC<KeywordsTabProps> = ({
     </div>
   );
 };
+

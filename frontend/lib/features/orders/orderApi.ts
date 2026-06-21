@@ -86,11 +86,15 @@ export const fetchOrdersPaginated = async (
   search?: string,
   status?: number | null,
   sortBy: string = 'created',
-  desc: boolean = true
+  desc: boolean = true,
+  minPrice?: number | null,
+  maxPrice?: number | null
 ): Promise<{ items: OrderInfo[]; totalCount: number }> => {
   let url = `${API_BASE_URL}/Invoice/search?page=${page}&pageSize=${pageSize}&sortBy=${sortBy}&desc=${desc}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
   if (status !== undefined && status !== null) url += `&status=${status}`;
+  if (minPrice !== undefined && minPrice !== null) url += `&minPrice=${minPrice}`;
+  if (maxPrice !== undefined && maxPrice !== null) url += `&maxPrice=${maxPrice}`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
