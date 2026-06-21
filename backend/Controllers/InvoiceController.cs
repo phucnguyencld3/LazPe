@@ -97,7 +97,7 @@ namespace PolyBabyAPI.Controllers
             try
             {
                 var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.Now, tz).Date;
+                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
                 var invoices = await _context.Invoices.AsNoTracking().Where(i => !i.IsDeleted).ToListAsync();
                 
                 var result = new
