@@ -28,7 +28,17 @@ namespace PolyBabyAPI.Interface
             int page,
             int pageSize,
             decimal? minPrice = null,
-            decimal? maxPrice = null);
+            decimal? maxPrice = null,
+            string? dateRange = null);
+
+        Task<byte[]> ExportExcelAsync(
+            string? search,
+            OrderStatus? status,
+            string? sortBy,
+            bool desc,
+            decimal? minPrice = null,
+            decimal? maxPrice = null,
+            string? dateRange = null);
 
         Task<bool> ConfirmAsync(int invoiceId);
         Task<bool> MarkShippedAsync(int invoiceId);

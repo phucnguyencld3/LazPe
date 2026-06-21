@@ -115,7 +115,7 @@ Trước khi chạy bất kỳ lệnh nào sau đây, AI **bắt buộc** phải
 * `git commit`
 * `git push`
 * `git pull`
-* `git merge`
+* `git merge` (`sẽ luôn sử dụng git merge --no-ff`)
 * `git rebase`
 * `git checkout`
 * `git switch`

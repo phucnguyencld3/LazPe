@@ -7,7 +7,7 @@ interface OrderProductListProps {
 
 export const OrderProductList: React.FC<OrderProductListProps> = ({ order }) => {
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+    <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-10 border-b border-slate-100">
         <h3 className="text-xl font-bold text-slate-800">Danh sách sản phẩm</h3>
       </div>
@@ -36,7 +36,7 @@ export const OrderProductList: React.FC<OrderProductListProps> = ({ order }) => 
               <tr key={idx} className={`transition-colors ${isGift ? 'bg-emerald-50/30 hover:bg-emerald-50/60' : 'hover:bg-slate-50/50'}`}>
                 <td className="px-10 py-6">
                   <div className="flex items-center gap-5">
-                    <div className={`w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border ${isGift ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-100 border-slate-100'}`}>
+                    <div className={`w-16 h-16 rounded-[6px] overflow-hidden flex-shrink-0 flex items-center justify-center border ${isGift ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-100 border-slate-100'}`}>
                       {item.imageUrl && item.imageUrl.trim() !== "" ? (
                         <img
                           src={item.imageUrl}

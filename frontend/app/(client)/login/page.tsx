@@ -284,7 +284,7 @@ export default function LoginPage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary-container opacity-20 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl"></div>
 
         {/* 2FA Card */}
-        <div className="w-full max-w-md min-w-[320px] md:min-w-[400px] flex-shrink-0 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_-10px_rgba(135,78,88,0.1)] z-10 p-8 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full max-w-md min-w-[320px] md:min-w-[400px] flex-shrink-0 bg-surface-container-lowest rounded-[5px] overflow-hidden shadow-[0_20px_40px_-10px_rgba(135,78,88,0.1)] z-10 p-8 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="text-center mb-8">
             <h2 className="font-headline-lg text-2xl font-bold text-primary mb-2">Xác thực 2 bước</h2>
             <p className="font-body-md text-slate-500 text-sm">Tài khoản của bạn đã được bảo vệ. Vui lòng nhập mã xác thực để đăng nhập.</p>
@@ -292,12 +292,12 @@ export default function LoginPage() {
 
           {/* Segmented Buttons for Provider Choice if multiple are available */}
           {twoFactorProviders.length > 1 && (
-            <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+            <div className="flex bg-slate-100 p-1 rounded-[5px] mb-6">
               {twoFactorProviders.includes("Authenticator") && (
                 <button
                   type="button"
                   onClick={() => handleProviderChange("Authenticator")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${twoFactorProvider === "Authenticator"
+                  className={`flex-1 py-2 text-xs font-bold rounded-[5px] transition-all ${twoFactorProvider === "Authenticator"
                     ? "bg-white text-slate-800 shadow-sm font-bold"
                     : "text-slate-500 hover:text-slate-800 font-semibold"
                     }`}
@@ -309,7 +309,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => handleProviderChange("Email")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${twoFactorProvider === "Email"
+                  className={`flex-1 py-2 text-xs font-bold rounded-[5px] transition-all ${twoFactorProvider === "Email"
                     ? "bg-white text-slate-800 shadow-sm font-bold"
                     : "text-slate-500 hover:text-slate-800 font-semibold"
                     }`}
@@ -328,7 +328,7 @@ export default function LoginPage() {
             )}
 
             {/* Provider instructions */}
-            <div className="text-center text-xs font-medium text-slate-500 bg-slate-50 rounded-xl p-4">
+            <div className="text-center text-xs font-medium text-slate-500 bg-slate-50 rounded-[5px] p-4">
               {twoFactorProvider === "Authenticator" ? (
                 <span>Mở ứng dụng xác thực của bạn (Google/Microsoft Authenticator) để lấy mã gồm 6 chữ số.</span>
               ) : (
@@ -345,7 +345,7 @@ export default function LoginPage() {
                 value={twoFactorCode}
                 onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="••••••"
-                className="w-full text-center text-2xl font-bold tracking-[12px] pl-[12px] h-16 bg-surface-container-low border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-container text-on-surface font-mono focus:bg-surface-container transition-all"
+                className="w-full text-center text-2xl font-bold tracking-[12px] pl-[12px] h-16 bg-surface-container-low border-none rounded-[5px] focus:outline-none focus:ring-2 focus:ring-primary-container text-on-surface font-mono focus:bg-surface-container transition-all"
                 required
               />
             </div>
@@ -372,7 +372,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || twoFactorCode.length < 6}
-                className="w-full h-14 bg-primary text-on-primary font-headline-md rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 disabled:opacity-60 disabled:hover:scale-100 cursor-pointer"
+                className="w-full h-14 bg-primary text-on-primary font-headline-md rounded-[5px] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 disabled:opacity-60 disabled:hover:scale-100 cursor-pointer"
               >
                 {loading ? "Đang xử lý..." : "Xác nhận & Đăng nhập"}
               </button>
@@ -385,7 +385,7 @@ export default function LoginPage() {
                   setEmailOtpSent(false);
                   setError("");
                 }}
-                className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-700 font-headline-md rounded-full transition-colors flex items-center justify-center cursor-pointer"
+                className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-700 font-headline-md rounded-[5px] transition-colors flex items-center justify-center cursor-pointer"
               >
                 Quay lại đăng nhập
               </button>
@@ -403,10 +403,10 @@ export default function LoginPage() {
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
 
       {/* Login Card */}
-      <div className="w-full max-w-[900px] bg-surface-container-lowest rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="w-full max-w-[900px] bg-surface-container-lowest rounded-[5px] overflow-hidden flex flex-col md:flex-row shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* Left Side: Visual/Branding */}
-        <div className="hidden md:flex md:w-1/2 relative flex-col justify-end items-center p-8 lg:p-12 text-center pb-24 overflow-hidden rounded-l-3xl bg-primary-container">
+        <div className="hidden md:flex md:w-1/2 relative flex-col justify-end items-center p-8 lg:p-12 text-center pb-24 overflow-hidden rounded-l-[5px] bg-primary-container">
           <div className="absolute inset-0 z-0 bg-primary-container">
             <video
               autoPlay
@@ -458,7 +458,7 @@ export default function LoginPage() {
 
           <form className="space-y-4" onSubmit={handleLogin}>
             {error && (
-              <div className="p-2.5 bg-red-100 text-red-700 rounded-xl text-xs font-medium border border-red-200">
+              <div className="p-2.5 bg-red-100 text-red-700 rounded-[5px] text-xs font-medium border border-red-200">
                 {error}
               </div>
             )}
@@ -473,7 +473,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full h-12 pl-11 pr-4 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/50 text-on-surface transition-all font-medium text-sm"
+                  className="w-full h-12 pl-11 pr-4 bg-surface-container-low border-none rounded-[5px] focus:ring-2 focus:ring-primary/50 text-on-surface transition-all font-medium text-sm"
                   placeholder="email@vidu.com"
                 />
               </div>
@@ -494,7 +494,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full h-12 pl-11 pr-11 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/50 text-on-surface transition-all font-medium text-sm"
+                  className="w-full h-12 pl-11 pr-11 bg-surface-container-low border-none rounded-[5px] focus:ring-2 focus:ring-primary/50 text-on-surface transition-all font-medium text-sm"
                   placeholder="••••••••"
                 />
                 <button
@@ -526,7 +526,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-primary text-on-primary font-headline-md text-sm rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0"
+                className="w-full h-12 bg-primary text-on-primary font-headline-md text-sm rounded-[5px] shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 {loading ? "Đang xử lý..." : "Đăng nhập"}
                 {!loading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}

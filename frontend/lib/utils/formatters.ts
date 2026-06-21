@@ -14,6 +14,45 @@ export const formatDateTime = (dateString: string) => {
   });
 };
 
+export const formatAddress = (address: string | null | undefined): string => {
+  if (!address) return '';
+  return address
+    .split(',')
+    .map(part => part.trim())
+    .filter(part => part && part !== '-' && part.toLowerCase() !== 'null')
+    .join(', ');
+};
+
+export const formatLocationName = (name: string | null | undefined): string => {
+  if (!name) return "";
+
+  const locationMap: Record<string, string> = {
+    "Ho Chi Minh": "Hồ Chí Minh",
+    "Ha Noi": "Hà Nội",
+    "Da Nang": "Đà Nẵng",
+    "Hai Phong": "Hải Phòng",
+    "Can Tho": "Cần Thơ",
+    "Binh Duong": "Bình Dương",
+    "Dong Nai": "Đồng Nai",
+    "Quang Ninh": "Quảng Ninh",
+    "Ba Ria - Vung Tau": "Bà Rịa - Vũng Tàu",
+    "Thua Thien Hue": "Thừa Thiên Huế",
+    // common ones
+  };
+
+  // Direct match
+  if (locationMap[name]) {
+    return locationMap[name];
+  }
+
+  // Handle prefix combinations
+  if (name.includes("Thanh pho Ho Chi Minh") || name.includes("TP Ho Chi Minh")) {
+    return "Thành phố Hồ Chí Minh";
+  }
+
+  return name;
+};
+
 export function formatPrivilegeDetailLines(type: string, valueStr?: string): string[] {
   if (!valueStr) return [];
   try {

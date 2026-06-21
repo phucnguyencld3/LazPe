@@ -1,19 +1,28 @@
 "use client";
 
 import { Product } from "@/types";
-import { Heart, Star } from "lucide-react";
-import Link from "next/link";
+import { Heart, Star, ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useWishlist } from "@/context/WishlistContext";
+import React, { useState } from "react";
+import QuickAddModal from "@/components/client/products/QuickAddModal";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const isLiked = isInWishlist(product.id);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+
   return (
-    <Link href={product.isBundle ? `/bundles/${product.id}` : `/products/${product.id}`} className="h-full flex flex-col">
+    <>
+    <div 
+      onClick={() => router.push(product.isBundle ? `/bundles/${product.id}` : `/products/${product.id}`)} 
+      className="h-full flex flex-col"
+    >
       <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between">
         {/* Product Image */}
         <div className="relative aspect-square bg-slate-100 overflow-hidden">
@@ -57,7 +66,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               e.stopPropagation();
               toggleWishlist(product);
             }}
-            className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 hover:bg-white w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
+            className={`absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 hover:bg-white w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm z-10 ${isLiked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0'}`}
           >
             <Heart
               size={16}
@@ -67,6 +76,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                   : "text-slate-600 hover:text-rose-500 transition-colors"
               }
             />
+          </button>
+
+          {/* Quick Add Button */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowQuickAdd(true);
+            }}
+            className="absolute top-12 sm:top-14 right-2 sm:right-3 bg-white/90 hover:bg-rose-500 hover:text-white text-slate-600 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm z-10 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 delay-75"
+          >
+            <ShoppingCart size={16} />
           </button>
         </div>
 
@@ -188,6 +209,10 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
+    {showQuickAdd && (
+      <QuickAddModal productId={product.id} onClose={() => setShowQuickAdd(false)} />
+    )}
+    </>
   );
 }
