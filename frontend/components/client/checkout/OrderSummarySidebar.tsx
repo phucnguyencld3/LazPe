@@ -25,6 +25,8 @@ interface OrderSummarySidebarProps {
   earnPolicy: LoyaltyEarnPolicySummary | null;
   redeemPolicy: LoyaltyRedeemPolicySummary | null;
   estimatedEarnPoints: number;
+  handleOpenVoucherModal: () => void;
+  handleRemoveVoucher: (type?: number) => Promise<void> | void;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({

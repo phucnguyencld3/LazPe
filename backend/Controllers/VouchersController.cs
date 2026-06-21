@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
@@ -24,6 +25,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // GET: api/vouchers
+        [Permission("Voucher.Read")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -157,6 +159,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/vouchers/search-users?keyword=
         [Authorize]
+        [Permission("User.Read")]
         [HttpGet("search-users")]
         public async Task<IActionResult> SearchUsers([FromQuery] string? keyword)
         {
@@ -193,6 +196,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // GET: api/vouchers/5
+        [Permission("Voucher.Read")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -224,6 +228,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // GET: api/vouchers/5/usages
+        [Permission("Voucher.Read")]
         [HttpGet("{id}/usages")]
         public async Task<IActionResult> GetUsages(int id)
         {
@@ -274,6 +279,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // POST: api/vouchers
+        [Permission("Voucher.Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateVoucherRequest request)
         {
@@ -355,6 +361,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // PUT: api/vouchers/5
+        [Permission("Voucher.Update")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateVoucherRequest request)
         {
@@ -599,6 +606,7 @@ namespace PolyBabyAPI.Controllers
 
         // POST: api/vouchers/assign-direct
         [Authorize]
+        [Permission("Voucher.Update")]
         [HttpPost("assign-direct")]
         public async Task<IActionResult> AssignDirect([FromBody] AssignExclusiveVoucherRequest request)
         {
@@ -708,6 +716,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/vouchers/{id}/direct-assignments
         [Authorize]
+        [Permission("Voucher.Read")]
         [HttpGet("{id}/direct-assignments")]
         public async Task<IActionResult> GetDirectAssignments(int id)
         {
@@ -752,6 +761,7 @@ namespace PolyBabyAPI.Controllers
 
         // DELETE: api/vouchers/direct-assignments/{userVoucherId}
         [Authorize]
+        [Permission("Voucher.Update")]
         [HttpDelete("direct-assignments/{userVoucherId}")]
         public async Task<IActionResult> RevokeDirectAssignment(int userVoucherId)
         {
@@ -794,6 +804,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // PUT: api/vouchers/5/toggle-status
+        [Permission("Voucher.Update")]
         [HttpPut("{id}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(int id)
         {
@@ -807,6 +818,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // DELETE: api/vouchers/5
+        [Permission("Voucher.Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -825,6 +837,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // POST: api/vouchers/generate-code
+        [Permission("Voucher.Create")]
         [HttpPost("generate-code")]
         public async Task<IActionResult> GenerateCode()
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
@@ -175,6 +176,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/flashsale/admin
         [HttpGet("admin")]
+        [Permission("FlashSale.Read")]
         public async Task<IActionResult> GetAdminFlashSales()
         {
             var sales = await _context.FlashSales
@@ -235,6 +237,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/flashsale/admin/5
         [HttpGet("admin/{id}")]
+        [Permission("FlashSale.Read")]
         public async Task<IActionResult> GetAdminFlashSaleById(int id)
         {
             var sale = await _context.FlashSales
@@ -342,6 +345,7 @@ namespace PolyBabyAPI.Controllers
 
         // POST: api/flashsale/admin
         [HttpPost("admin")]
+        [Permission("FlashSale.Create")]
         public async Task<IActionResult> CreateFlashSale([FromBody] CreateFlashSaleDto dto)
         {
             var now = DateTime.Now;
@@ -404,6 +408,7 @@ namespace PolyBabyAPI.Controllers
 
         // PUT: api/flashsale/admin/5
         [HttpPut("admin/{id}")]
+        [Permission("FlashSale.Update")]
         public async Task<IActionResult> UpdateFlashSale(int id, [FromBody] UpdateFlashSaleDto dto)
         {
             var sale = await _context.FlashSales
@@ -483,6 +488,7 @@ namespace PolyBabyAPI.Controllers
 
         // DELETE: api/flashsale/admin/5
         [HttpDelete("admin/{id}")]
+        [Permission("FlashSale.Delete")]
         public async Task<IActionResult> DeleteFlashSale(int id)
         {
             var sale = await _context.FlashSales
@@ -508,6 +514,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/flashsale/admin/{id}/purchasers
         [HttpGet("admin/{id}/purchasers")]
+        [Permission("FlashSale.Read")]
         public async Task<IActionResult> GetFlashSalePurchasers(int id)
         {
             var sale = await _context.FlashSales
@@ -629,3 +636,4 @@ namespace PolyBabyAPI.Controllers
         }
     }
 }
+

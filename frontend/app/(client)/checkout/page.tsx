@@ -26,7 +26,8 @@ import { OrderNoteSection } from "@/components/client/checkout/OrderNoteSection"
 import { OrderSummarySidebar } from "@/components/client/checkout/OrderSummarySidebar";
 import { AddressModal } from "@/components/client/checkout/AddressModal";
 import { VoucherModal } from "@/components/client/cart/VoucherModal";
-import { getPublicVouchers, applyVoucherToCart, removeVoucherFromCart, Voucher } from "@/lib/api";
+import { getPublicVouchers, applyVoucherToCart, removeVoucherFromCart} from "@/lib/api";
+import { Voucher } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -594,3 +595,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
