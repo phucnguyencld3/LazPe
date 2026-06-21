@@ -29,7 +29,7 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* User Table */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mt-6">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-6">
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
           <div className="flex-1 relative min-w-[300px]">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
@@ -187,3 +187,4 @@ export const PermissionUsersTab: React.FC<PermissionUsersTabProps> = ({
     </div>
   );
 };
+

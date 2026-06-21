@@ -498,7 +498,7 @@ namespace PolyBabyAPI.Services
 
         // ======== Tìm kiếm / sắp xếp / phân trang ========
         public async Task<(IEnumerable<Invoice> Items, int TotalCount)> QueryAsync(
-            string? search, OrderStatus? status, string? sortBy, bool desc, int page, int pageSize)
+            string? search, OrderStatus? status, string? sortBy, bool desc, int page, int pageSize, decimal? minPrice = null, decimal? maxPrice = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
@@ -517,6 +517,12 @@ namespace PolyBabyAPI.Services
 
             if (status.HasValue)
                 q = q.Where(i => i.Status == status.Value);
+
+            if (minPrice.HasValue)
+                q = q.Where(i => i.TotalPrice >= minPrice.Value);
+
+            if (maxPrice.HasValue)
+                q = q.Where(i => i.TotalPrice <= maxPrice.Value);
 
             var sortedQuery = (sortBy, desc) switch
             {

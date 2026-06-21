@@ -220,7 +220,7 @@ export const ModerationTab: React.FC<ModerationTabProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-300">
       {/* Filters Bar */}
       <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
         {/* Search box */}
@@ -651,3 +651,4 @@ export const ModerationTab: React.FC<ModerationTabProps> = ({
     </div>
   );
 };
+

@@ -237,7 +237,7 @@ export const ComboList: React.FC<ComboListProps> = ({
       </div>
 
       {/* Filter and Content Card */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {/* Tool Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex flex-wrap items-center gap-4 flex-1">
@@ -336,7 +336,7 @@ export const ComboList: React.FC<ComboListProps> = ({
             {filteredBundles.map((bundle) => (
               <div 
                 key={bundle.bundleID}
-                className="bg-white rounded-[2rem] border border-slate-100 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 flex flex-col overflow-hidden group"
+                className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 flex flex-col overflow-hidden group"
               >
                 {/* Thumbnail Image Container */}
                 <div className="relative aspect-video w-full bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden">
@@ -627,3 +627,4 @@ export const ComboList: React.FC<ComboListProps> = ({
     </div>
   );
 };
+
