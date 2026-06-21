@@ -63,11 +63,19 @@ export default function WishlistPage() {
       </div>
 
       <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 min-h-[400px]">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-          {wishlist.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {wishlist.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+            <Heart size={48} className="mx-auto text-slate-300 mb-4" />
+            <h3 className="text-lg font-bold text-slate-700 mb-1">Chưa có sản phẩm yêu thích nào</h3>
+            <p className="text-slate-500 text-sm">Bạn chưa lưu sản phẩm nào. Hãy khám phá cửa hàng và thả tim cho những sản phẩm bạn yêu thích nhé!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {wishlist.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
