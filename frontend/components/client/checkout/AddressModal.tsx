@@ -550,8 +550,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                       options={districts}
                       value={addressForm.districtCode}
                       onChange={onDistrictSelect}
-                      placeholder="Chọn Quận / Huyện"
-                      searchPlaceholder="Tìm kiếm quận/huyện..."
+                      placeholder={addressForm.apiVersion === 'v2' ? "Chọn Xã / Phường" : "Chọn Quận / Huyện"}
+                      searchPlaceholder={addressForm.apiVersion === 'v2' ? "Tìm kiếm xã/phường..." : "Tìm kiếm quận/huyện..."}
                       disabled={!addressForm.provinceCode}
                       accentColor="rose"
                     />
