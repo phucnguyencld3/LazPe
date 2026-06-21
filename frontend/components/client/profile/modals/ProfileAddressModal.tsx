@@ -199,7 +199,9 @@ export function ProfileAddressModal({
 
               {districts.length > 0 && (
                 <div className="space-y-1">
-                  <label className="font-bold text-xs text-slate-700 ml-1">Quận / Huyện</label>
+                  <label className="font-bold text-xs text-slate-700 ml-1">
+                    {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'}
+                  </label>
                   <SearchableSelect
                     options={districts}
                     value={addressForm.districtCode}
@@ -212,7 +214,7 @@ export function ProfileAddressModal({
                 </div>
               )}
 
-              {wards.length > 0 && (
+              {wards.length > 0 && addressForm.apiVersion !== 'v2' && (
                 <div className="space-y-1">
                   <label className="font-bold text-xs text-slate-700 ml-1">Phường / Xã</label>
                   <SearchableSelect

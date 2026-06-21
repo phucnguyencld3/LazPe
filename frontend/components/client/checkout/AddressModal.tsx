@@ -354,8 +354,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
       setAddressFormError("Vui lòng điền đầy đủ các trường thông tin bắt buộc!");
       return;
     }
-    if (!addressForm.provinceCode || !addressForm.districtCode || !addressForm.wardCode) {
-      setAddressFormError("Vui lòng chọn Tỉnh/Thành, Quận/Huyện và Phường/Xã!");
+    if (!addressForm.provinceCode || !addressForm.districtCode || (addressForm.apiVersion !== 'v2' && !addressForm.wardCode)) {
+      setAddressFormError("Vui lòng chọn đầy đủ thông tin khu vực hành chính!");
       return;
     }
 
@@ -544,7 +544,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                 {districts.length > 1 && (
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Quận / Huyện <span className="text-rose-500">*</span>
+                      {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'} <span className="text-rose-500">*</span>
                     </label>
                     <SearchableSelect
                       options={districts}
@@ -559,10 +559,11 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                 )}
 
                 {/* Ward */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                    Phường / Xã <span className="text-rose-500">*</span>
-                  </label>
+                {addressForm.apiVersion !== 'v2' && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Phường / Xã <span className="text-rose-500">*</span>
+                    </label>
                   <SearchableSelect
                     options={wards}
                     value={addressForm.wardCode}
@@ -572,7 +573,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                     disabled={!addressForm.districtCode}
                     accentColor="rose"
                   />
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Detail Address */}
