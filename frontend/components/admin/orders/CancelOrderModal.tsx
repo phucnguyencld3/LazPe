@@ -25,7 +25,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-      <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-8 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-4">

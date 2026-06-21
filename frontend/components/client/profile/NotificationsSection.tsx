@@ -25,6 +25,8 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [selectedNotif, setSelectedNotif] = useState<UserNotificationItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
@@ -54,6 +56,10 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
   useEffect(() => {
     fetchNotifications(activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchTerm]);
 
   useEffect(() => {
     if (initialSelectedId) {
@@ -298,6 +304,12 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
     notif.shortDescription.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
+  const currentNotifications = filteredNotifications.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // ----------------------------------------------------
   // Detail View Rendering
   // ----------------------------------------------------
@@ -493,7 +505,7 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredNotifications.map((notif) => (
+          {currentNotifications.map((notif) => (
             <div
               key={notif.id}
               onClick={() => handleRowClick(notif)}
@@ -571,6 +583,34 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
               </div>
             </div>
           ))}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredNotifications.length)} trong số {filteredNotifications.length} thông báo
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ArrowLeft size={14} />
+                </button>
+                <div className="flex items-center px-2">
+                  <span className="text-xs font-bold text-slate-700">Trang {currentPage} / {totalPages}</span>
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

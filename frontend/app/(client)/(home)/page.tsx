@@ -422,7 +422,7 @@ function FlashSaleCampaignBlock({ campaign }: { campaign: FlashSaleCampaign }) {
   if (products.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm pt-3 px-3 md:pt-4 md:px-4 pb-1 border border-rose-100 relative overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-[10px] shadow-sm pt-3 px-3 md:pt-4 md:px-4 pb-1 border border-rose-100 relative overflow-hidden h-full flex flex-col">
       {/* Nền trang trí */}
       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-rose-100/50 to-orange-100/50 rounded-bl-[60px] -z-10 pointer-events-none"></div>
 

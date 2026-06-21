@@ -39,8 +39,8 @@ export default function BatchPrintPage() {
     }
   };
 
-  const waitingOrders = orders.filter(o => o.statusCode === 1 && !o.printTicketUrl).reverse(); // Cũ nhất lên trước
-  const storedOrders = orders.filter(o => !!o.printTicketUrl);
+  const waitingOrders = orders.filter(o => (o.statusCode === 1 || o.statusCode === 2) && !o.printTicketUrl).reverse(); // Cũ nhất lên trước
+  const storedOrders = orders.filter(o => (o.statusCode === 1 || o.statusCode === 2 || o.statusCode === 3) && !!o.printTicketUrl);
 
   const displayOrders = activeTab === "waiting" ? waitingOrders : storedOrders;
 
@@ -85,7 +85,7 @@ export default function BatchPrintPage() {
           </h1>
           <p className="text-slate-500 mt-1">
             {activeTab === "waiting" 
-              ? "Danh sách các đơn hàng đã xác nhận, chờ in phiếu giao hàng."
+              ? "Danh sách các đơn hàng đã xác nhận hoặc đang giao, chờ in phiếu giao hàng."
               : "Danh sách các hóa đơn đã được in và lưu trữ bản PDF trên hệ thống."}
           </p>
         </div>

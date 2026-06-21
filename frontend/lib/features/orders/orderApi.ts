@@ -88,13 +88,15 @@ export const fetchOrdersPaginated = async (
   sortBy: string = 'created',
   desc: boolean = true,
   minPrice?: number | null,
-  maxPrice?: number | null
+  maxPrice?: number | null,
+  dateRange?: string
 ): Promise<{ items: OrderInfo[]; totalCount: number }> => {
   let url = `${API_BASE_URL}/Invoice/search?page=${page}&pageSize=${pageSize}&sortBy=${sortBy}&desc=${desc}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
   if (status !== undefined && status !== null) url += `&status=${status}`;
   if (minPrice !== undefined && minPrice !== null) url += `&minPrice=${minPrice}`;
   if (maxPrice !== undefined && maxPrice !== null) url += `&maxPrice=${maxPrice}`;
+  if (dateRange) url += `&dateRange=${encodeURIComponent(dateRange)}`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -219,4 +221,35 @@ export const bulkMarkShippedOrders = async (token: string, invoiceIds: number[])
     body: JSON.stringify({ invoiceIds })
   });
   return res.json();
+};
+
+export const exportOrdersToExcel = async (
+  token: string,
+  search?: string,
+  status?: number | null,
+  sortBy: string = 'created',
+  desc: boolean = true,
+  minPrice?: number | null,
+  maxPrice?: number | null,
+  dateRange?: string
+): Promise<Blob> => {
+  let url = `${API_BASE_URL}/Invoice/export?sortBy=${sortBy}&desc=${desc}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  if (status !== undefined && status !== null) url += `&status=${status}`;
+  if (minPrice !== undefined && minPrice !== null) url += `&minPrice=${minPrice}`;
+  if (maxPrice !== undefined && maxPrice !== null) url += `&maxPrice=${maxPrice}`;
+  if (dateRange) url += `&dateRange=${encodeURIComponent(dateRange)}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Lỗi khi xuất danh sách đơn hàng ra Excel");
+  }
+
+  return await response.blob();
 };

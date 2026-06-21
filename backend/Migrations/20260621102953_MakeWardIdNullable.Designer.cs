@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260621102953_MakeWardIdNullable")]
+    partial class MakeWardIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -207,7 +210,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Address");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ApplicationUser", b =>
@@ -390,7 +393,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("BundleID");
 
-                    b.ToTable("Bundles", (string)null);
+                    b.ToTable("Bundles");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.BundleItem", b =>
@@ -419,7 +422,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("VariantID");
 
-                    b.ToTable("BundleItems", (string)null);
+                    b.ToTable("BundleItems");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Cart", b =>
@@ -469,7 +472,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("VoucherID");
 
-                    b.ToTable("Carts", (string)null);
+                    b.ToTable("Carts");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.CartDetail", b =>
@@ -509,7 +512,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("VariantID");
 
-                    b.ToTable("CartDetails", (string)null);
+                    b.ToTable("CartDetails");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Categories", b =>
@@ -554,7 +557,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("CategoryID");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ChatMessage", b =>
@@ -596,7 +599,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("ChatMessages", (string)null);
+                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ChatSession", b =>
@@ -644,7 +647,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ChatSessions", (string)null);
+                    b.ToTable("ChatSessions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.District", b =>
@@ -687,7 +690,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProvinceID");
 
-                    b.ToTable("Districts", (string)null);
+                    b.ToTable("Districts");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.FlashSale", b =>
@@ -734,7 +737,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FlashSales", (string)null);
+                    b.ToTable("FlashSales");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.FlashSaleItem", b =>
@@ -779,7 +782,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("FlashSaleId");
 
-                    b.ToTable("FlashSaleItems", (string)null);
+                    b.ToTable("FlashSaleItems");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Invoice", b =>
@@ -809,10 +812,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("InvoiceCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -822,9 +821,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<int?>("PayMethod")
                         .HasColumnType("int");
-
-                    b.Property<string>("PrintTicketUrl")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ShippedAt")
                         .HasColumnType("datetime2");
@@ -878,10 +874,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("TrackingCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("UserID")
                         .HasColumnType("nvarchar(450)");
 
@@ -896,7 +888,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("VoucherID");
 
-                    b.ToTable("Invoices", (string)null);
+                    b.ToTable("Invoices");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.InvoiceDetail", b =>
@@ -933,7 +925,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("VariantID");
 
-                    b.ToTable("InvoiceDetails", (string)null);
+                    b.ToTable("InvoiceDetails");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyAuditLog", b =>
@@ -984,7 +976,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("LogID");
 
-                    b.ToTable("LoyaltyAuditLogs", (string)null);
+                    b.ToTable("LoyaltyAuditLogs");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyBirthdayGiftLog", b =>
@@ -1025,7 +1017,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("LoyaltyBirthdayGiftLogs", (string)null);
+                    b.ToTable("LoyaltyBirthdayGiftLogs");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyEarnPolicy", b =>
@@ -1072,7 +1064,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("PolicyID");
 
-                    b.ToTable("LoyaltyEarnPolicies", (string)null);
+                    b.ToTable("LoyaltyEarnPolicies");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyManualRevocation", b =>
@@ -1107,7 +1099,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("LoyaltyManualRevocations", (string)null);
+                    b.ToTable("LoyaltyManualRevocations");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyMonthlyVoucher", b =>
@@ -1149,7 +1141,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("TierID");
 
-                    b.ToTable("LoyaltyMonthlyVouchers", (string)null);
+                    b.ToTable("LoyaltyMonthlyVouchers");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyPointHistory", b =>
@@ -1189,7 +1181,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID", "CreatedAt");
 
-                    b.ToTable("LoyaltyPointHistories", (string)null);
+                    b.ToTable("LoyaltyPointHistories");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyProfile", b =>
@@ -1200,14 +1192,8 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int>("AvailablePoints")
                         .HasColumnType("int");
 
-                    b.Property<int>("CurrentCheckInStreak")
-                        .HasColumnType("int");
-
                     b.Property<int>("CurrentTierID")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("LastCheckInDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
@@ -1225,7 +1211,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("CurrentTierID");
 
-                    b.ToTable("LoyaltyProfiles", (string)null);
+                    b.ToTable("LoyaltyProfiles");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyRedeemPolicy", b =>
@@ -1271,7 +1257,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("TierID");
 
-                    b.ToTable("LoyaltyRedeemPolicies", (string)null);
+                    b.ToTable("LoyaltyRedeemPolicies");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltySetting", b =>
@@ -1320,7 +1306,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LoyaltySettings", (string)null);
+                    b.ToTable("LoyaltySettings");
 
                     b.HasData(
                         new
@@ -1378,7 +1364,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("TierID");
 
-                    b.ToTable("LoyaltyTiers", (string)null);
+                    b.ToTable("LoyaltyTiers");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.LoyaltyTierPrivilege", b =>
@@ -1421,7 +1407,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("TierID");
 
-                    b.ToTable("LoyaltyTierPrivileges", (string)null);
+                    b.ToTable("LoyaltyTierPrivileges");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Notification", b =>
@@ -1518,7 +1504,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.NotificationTemplate", b =>
@@ -1557,7 +1543,7 @@ namespace PolyBabyAPI.Migrations
                     b.HasIndex("TemplateCode")
                         .IsUnique();
 
-                    b.ToTable("NotificationTemplates", (string)null);
+                    b.ToTable("NotificationTemplates");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.PaymentTransaction", b =>
@@ -1601,7 +1587,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("InvoiceID");
 
-                    b.ToTable("PaymentTransactions", (string)null);
+                    b.ToTable("PaymentTransactions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Permission", b =>
@@ -1643,7 +1629,7 @@ namespace PolyBabyAPI.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Product", b =>
@@ -1702,7 +1688,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("SupplierID");
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
@@ -1727,7 +1713,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("ProductImages", (string)null);
+                    b.ToTable("ProductImages");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ProductOption", b =>
@@ -1761,7 +1747,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("ProductOptions", (string)null);
+                    b.ToTable("ProductOptions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ProductOptionValue", b =>
@@ -1798,7 +1784,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProductOptionID");
 
-                    b.ToTable("ProductOptionValues", (string)null);
+                    b.ToTable("ProductOptionValues");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Province", b =>
@@ -1836,7 +1822,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("ProvinceID");
 
-                    b.ToTable("Provinces", (string)null);
+                    b.ToTable("Provinces");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Review", b =>
@@ -1900,7 +1886,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("VariantID");
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ReviewCensorshipLog", b =>
@@ -1938,7 +1924,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ReviewID");
 
-                    b.ToTable("ReviewCensorshipLogs", (string)null);
+                    b.ToTable("ReviewCensorshipLogs");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ReviewComment", b =>
@@ -1978,7 +1964,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("ReviewComments", (string)null);
+                    b.ToTable("ReviewComments");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ReviewLike", b =>
@@ -2005,7 +1991,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("ReviewLikes", (string)null);
+                    b.ToTable("ReviewLikes");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ReviewMedia", b =>
@@ -2036,7 +2022,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ReviewID");
 
-                    b.ToTable("ReviewMedia", (string)null);
+                    b.ToTable("ReviewMedia");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.ReviewSensitiveKeyword", b =>
@@ -2067,7 +2053,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("KeywordID");
 
-                    b.ToTable("ReviewSensitiveKeywords", (string)null);
+                    b.ToTable("ReviewSensitiveKeywords");
 
                     b.HasData(
                         new
@@ -2157,7 +2143,7 @@ namespace PolyBabyAPI.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("RoleTemplates", (string)null);
+                    b.ToTable("RoleTemplates");
 
                     b.HasData(
                         new
@@ -2213,7 +2199,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("SupplierID");
 
-                    b.ToTable("Suppliers", (string)null);
+                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.TemplatePermission", b =>
@@ -2228,7 +2214,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("TemplatePermissions", (string)null);
+                    b.ToTable("TemplatePermissions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserAddress", b =>
@@ -2283,7 +2269,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("WardID");
 
-                    b.ToTable("UserAddresses", (string)null);
+                    b.ToTable("UserAddresses");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserNotification", b =>
@@ -2319,7 +2305,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserId", "IsRead");
 
-                    b.ToTable("UserNotifications", (string)null);
+                    b.ToTable("UserNotifications");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserPermission", b =>
@@ -2343,7 +2329,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("UserPermissions", (string)null);
+                    b.ToTable("UserPermissions");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserVoucher", b =>
@@ -2388,7 +2374,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID", "VoucherID", "Status");
 
-                    b.ToTable("UserVouchers", (string)null);
+                    b.ToTable("UserVouchers");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Variant", b =>
@@ -2444,7 +2430,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("Variants", (string)null);
+                    b.ToTable("Variants");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.VariantOptionValue", b =>
@@ -2465,7 +2451,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProductOptionValueID");
 
-                    b.ToTable("VariantOptionValues", (string)null);
+                    b.ToTable("VariantOptionValues");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Voucher", b =>
@@ -2533,7 +2519,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasKey("VoucherID");
 
-                    b.ToTable("Vouchers", (string)null);
+                    b.ToTable("Vouchers");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.VoucherUsage", b =>
@@ -2567,7 +2553,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("VoucherUsages", (string)null);
+                    b.ToTable("VoucherUsages");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Ward", b =>
@@ -2610,7 +2596,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("DistrictID");
 
-                    b.ToTable("Wards", (string)null);
+                    b.ToTable("Wards");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.Wishlist", b =>
@@ -2628,7 +2614,7 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("Wishlists", (string)null);
+                    b.ToTable("Wishlists");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

@@ -1,3 +1,5 @@
+using System.IO;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interface;
@@ -498,7 +500,7 @@ namespace PolyBabyAPI.Services
 
         // ======== Tìm kiếm / sắp xếp / phân trang ========
         public async Task<(IEnumerable<Invoice> Items, int TotalCount)> QueryAsync(
-            string? search, OrderStatus? status, string? sortBy, bool desc, int page, int pageSize, decimal? minPrice = null, decimal? maxPrice = null)
+            string? search, OrderStatus? status, string? sortBy, bool desc, int page, int pageSize, decimal? minPrice = null, decimal? maxPrice = null, string? dateRange = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
@@ -524,6 +526,32 @@ namespace PolyBabyAPI.Services
             if (maxPrice.HasValue)
                 q = q.Where(i => i.TotalPrice <= maxPrice.Value);
 
+            if (!string.IsNullOrEmpty(dateRange))
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
+
+                if (dateRange == "today")
+                {
+                    q = q.Where(i => i.CreatedAt >= today);
+                }
+                else if (dateRange == "7days")
+                {
+                    var d = today.AddDays(-7);
+                    q = q.Where(i => i.CreatedAt >= d);
+                }
+                else if (dateRange == "30days")
+                {
+                    var d = today.AddDays(-30);
+                    q = q.Where(i => i.CreatedAt >= d);
+                }
+                else if (dateRange == "3months")
+                {
+                    var d = today.AddMonths(-3);
+                    q = q.Where(i => i.CreatedAt >= d);
+                }
+            }
+
             var sortedQuery = (sortBy, desc) switch
             {
                 ("created", true) => q.OrderByDescending(i => i.CreatedAt),
@@ -546,6 +574,134 @@ namespace PolyBabyAPI.Services
                 .ToListAsync();
 
             return (items, total);
+        }
+
+        public async Task<byte[]> ExportExcelAsync(
+            string? search, OrderStatus? status, string? sortBy, bool desc, decimal? minPrice = null, decimal? maxPrice = null, string? dateRange = null)
+        {
+            IQueryable<Invoice> q = _context.Invoices
+                .AsNoTracking()
+                .Where(i => !i.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string s = search.Trim().ToLower();
+                q = q.Where(i => i.InvoiceID.ToString().Contains(s)
+                              || (i.User != null && i.User.FullName != null && i.User.FullName.ToLower().Contains(s))
+                              || (i.User != null && i.User.Email != null && i.User.Email.ToLower().Contains(s)));
+            }
+
+            if (status.HasValue)
+                q = q.Where(i => i.Status == status.Value);
+
+            if (minPrice.HasValue)
+                q = q.Where(i => i.TotalPrice >= minPrice.Value);
+
+            if (maxPrice.HasValue)
+                q = q.Where(i => i.TotalPrice <= maxPrice.Value);
+
+            if (!string.IsNullOrEmpty(dateRange))
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
+
+                if (dateRange == "today")
+                {
+                    q = q.Where(i => i.CreatedAt >= today);
+                }
+                else if (dateRange == "7days")
+                {
+                    var d = today.AddDays(-7);
+                    q = q.Where(i => i.CreatedAt >= d);
+                }
+                else if (dateRange == "30days")
+                {
+                    var d = today.AddDays(-30);
+                    q = q.Where(i => i.CreatedAt >= d);
+                }
+                else if (dateRange == "3months")
+                {
+                    var d = today.AddMonths(-3);
+                    q = q.Where(i => i.CreatedAt >= d);
+                }
+            }
+
+            var sortedQuery = (sortBy, desc) switch
+            {
+                ("created", true) => q.OrderByDescending(i => i.CreatedAt),
+                ("created", false) => q.OrderBy(i => i.CreatedAt),
+                ("total", true) => q.OrderByDescending(i => i.TotalPrice),
+                ("total", false) => q.OrderBy(i => i.TotalPrice),
+                ("status", true) => q.OrderByDescending(i => i.Status),
+                ("status", false) => q.OrderBy(i => i.Status),
+                _ when desc => q.OrderByDescending(i => i.InvoiceID),
+                _ => q.OrderBy(i => i.InvoiceID)
+            };
+
+            var items = await sortedQuery
+                .Include(i => i.User)
+                .Include(i => i.Voucher)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Đơn hàng");
+            
+            // Header
+            worksheet.Cell(1, 1).Value = "Mã ĐH";
+            worksheet.Cell(1, 2).Value = "Mã vận đơn";
+            worksheet.Cell(1, 3).Value = "Ngày tạo";
+            worksheet.Cell(1, 4).Value = "Khách hàng";
+            worksheet.Cell(1, 5).Value = "Email";
+            worksheet.Cell(1, 6).Value = "SĐT";
+            worksheet.Cell(1, 7).Value = "Địa chỉ giao";
+            worksheet.Cell(1, 8).Value = "Thanh toán";
+            worksheet.Cell(1, 9).Value = "Tổng tiền";
+            worksheet.Cell(1, 10).Value = "Trạng thái";
+
+            var headerRange = worksheet.Range("A1:J1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+            int row = 2;
+            foreach (var item in items)
+            {
+                worksheet.Cell(row, 1).Value = item.InvoiceCode ?? item.InvoiceID.ToString();
+                worksheet.Cell(row, 2).Value = item.TrackingCode ?? "N/A";
+                worksheet.Cell(row, 3).Value = item.CreatedAt?.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 4).Value = item.User?.FullName ?? "N/A";
+                worksheet.Cell(row, 5).Value = item.User?.Email ?? "N/A";
+                string formattedAddress = string.IsNullOrWhiteSpace(item.ShippingAddress)
+                    ? "N/A"
+                    : string.Join(", ", item.ShippingAddress.Split(',')
+                        .Select(p => p.Trim())
+                        .Where(p => !string.IsNullOrEmpty(p) && p != "-" && !p.Equals("null", StringComparison.OrdinalIgnoreCase)));
+
+                worksheet.Cell(row, 6).Value = item.ShippingPhone ?? "N/A";
+                worksheet.Cell(row, 7).Value = formattedAddress;
+                worksheet.Cell(row, 8).Value = item.PayMethod?.ToString() ?? "N/A";
+                worksheet.Cell(row, 9).Value = item.TotalPrice;
+                worksheet.Cell(row, 9).Style.NumberFormat.Format = "#,##0\"₫\"";
+                worksheet.Cell(row, 10).Value = item.Status switch
+                {
+                    OrderStatus.Pending => "Chờ xác nhận",
+                    OrderStatus.Confirmed => "Đang xử lý",
+                    OrderStatus.Shipped => "Đang giao",
+                    OrderStatus.Completed => "Hoàn thành",
+                    OrderStatus.Cancelled => "Đã hủy",
+                    _ => item.Status.ToString()
+                };
+
+                row++;
+            }
+            
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            await _auditLogService.LogAsync("ExportOrders", "Invoice", null, null, null, "Xuất danh sách đơn hàng ra file Excel");
+
+            return stream.ToArray();
         }
 
         // ======== Xác nhận đơn hàng ========

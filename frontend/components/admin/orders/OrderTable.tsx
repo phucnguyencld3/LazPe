@@ -103,7 +103,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
   return (
     <>
       {selectedInvoiceIds.length > 0 && (
-        <div className="bg-primary/5 border border-primary/20 p-3 rounded-2xl mb-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div className="bg-primary/5 border border-primary/20 p-3 rounded-[8px] mb-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <span className="text-sm font-bold text-primary">
             Đã chọn {selectedInvoiceIds.length}/10 đơn hàng
           </span>
@@ -111,7 +111,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
             {statusFilter === 0 && onBulkConfirm && (
               <button 
                 onClick={onBulkConfirm}
-                className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
+                className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-[4px] hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
               >
                 Xác nhận hàng loạt
               </button>
@@ -119,21 +119,21 @@ export const OrderTable: React.FC<OrderTableProps> = ({
             {statusFilter === 1 && onBulkMarkShipped && (
               <button 
                 onClick={onBulkMarkShipped}
-                className="px-4 py-2 bg-secondary text-white text-xs font-bold rounded-xl hover:bg-secondary/90 transition-all shadow-sm cursor-pointer"
+                className="px-4 py-2 bg-secondary text-white text-xs font-bold rounded-[4px] hover:bg-secondary/90 transition-all shadow-sm cursor-pointer"
               >
                 Giao hàng hàng loạt
               </button>
             )}
             <button 
               onClick={() => setSelectedInvoiceIds && setSelectedInvoiceIds([])}
-              className="px-4 py-2 bg-white text-slate-500 border border-slate-200 text-xs font-bold rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
+              className="px-4 py-2 bg-white text-slate-500 border border-slate-200 text-xs font-bold rounded-[4px] hover:bg-slate-50 transition-all cursor-pointer"
             >
               Hủy bỏ
             </button>
           </div>
         </div>
       )}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

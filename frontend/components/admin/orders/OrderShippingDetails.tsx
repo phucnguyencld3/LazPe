@@ -45,22 +45,22 @@ export const OrderShippingDetails: React.FC<OrderShippingDetailsProps> = ({ orde
   return (
     <div className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+        <div className="w-12 h-12 rounded-[6px] bg-emerald-50 flex items-center justify-center text-emerald-600">
           <span className="material-symbols-outlined">payments</span>
         </div>
         <h3 className="text-xl font-bold text-slate-800">Phương thức thanh toán</h3>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+        <div className="bg-slate-50 p-6 rounded-[8px] border border-slate-100">
           <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Loại thanh toán</p>
           <p className="font-bold text-slate-700">{order.payMethod || "Thanh toán khi nhận hàng (COD)"}</p>
         </div>
-        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+        <div className="bg-slate-50 p-6 rounded-[8px] border border-slate-100">
           <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Thời gian tạo</p>
           <p className="font-bold text-slate-700">{formatDateTime(order.createdAt)}</p>
         </div>
-        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+        <div className="bg-slate-50 p-6 rounded-[8px] border border-slate-100">
           <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Mã tham chiếu</p>
           <p className="font-bold text-slate-700 text-sm overflow-hidden text-ellipsis whitespace-nowrap" title={refCode}>
             {refCode}
@@ -69,8 +69,8 @@ export const OrderShippingDetails: React.FC<OrderShippingDetailsProps> = ({ orde
       </div>
 
       {hasPaymentError && errorMessage && (
-        <div className="mt-4 p-6 bg-rose-50 border border-rose-100 rounded-3xl flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+        <div className="mt-4 p-6 bg-rose-50 border border-rose-100 rounded-[8px] flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="w-10 h-10 rounded-[6px] bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
             <span className="material-symbols-outlined">error</span>
           </div>
           <div>

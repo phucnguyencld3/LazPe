@@ -69,12 +69,12 @@ function ResetPasswordContent() {
   };
 
   return (
-    <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-3xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-[5px] overflow-hidden shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Decorative Header */}
       <div className="h-32 w-full bg-primary relative overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white rounded-full blur-xl"></div>
-          <div className="absolute top-10 -left-10 w-24 h-24 bg-secondary-container rounded-full blur-xl"></div>
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white rounded-[5px] blur-xl"></div>
+          <div className="absolute top-10 -left-10 w-24 h-24 bg-secondary-container rounded-[5px] blur-xl"></div>
         </div>
         <span className="material-symbols-outlined text-[64px] text-white opacity-90 z-10">lock_reset</span>
       </div>
@@ -88,12 +88,12 @@ function ResetPasswordContent() {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {error && (
-            <div className="p-2.5 bg-red-100 text-red-700 text-xs font-medium rounded-xl border border-red-200 text-center">
+            <div className="p-2.5 bg-red-100 text-red-700 text-xs font-medium rounded-[5px] border border-red-200 text-center">
               {error}
             </div>
           )}
           {success && (
-            <div className="p-2.5 bg-green-100 text-green-700 text-xs font-medium rounded-xl border border-green-200 text-center">
+            <div className="p-2.5 bg-green-100 text-green-700 text-xs font-medium rounded-[5px] border border-green-200 text-center">
               {success}
             </div>
           )}
@@ -106,7 +106,7 @@ function ResetPasswordContent() {
                 lock
               </span>
               <input 
-                className="w-full h-12 pl-11 pr-12 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/50 outline-none font-medium text-[13px] text-on-surface transition-all placeholder:text-outline-variant" 
+                className="w-full h-12 pl-11 pr-12 bg-surface-container-low border-none rounded-[5px] focus:ring-2 focus:ring-primary/50 outline-none font-medium text-[13px] text-on-surface transition-all placeholder:text-outline-variant" 
                 id="password" 
                 placeholder="••••••••" 
                 type={showPassword ? "text" : "password"}
@@ -115,7 +115,7 @@ function ResetPasswordContent() {
                 required
               />
               <button 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors w-8 h-8 flex items-center justify-center rounded-[5px] hover:bg-surface-container" 
                 onClick={() => setShowPassword(!showPassword)} 
                 type="button"
               >
@@ -134,7 +134,7 @@ function ResetPasswordContent() {
                 lock_reset
               </span>
               <input 
-                className="w-full h-12 pl-11 pr-12 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/50 outline-none font-medium text-[13px] text-on-surface transition-all placeholder:text-outline-variant" 
+                className="w-full h-12 pl-11 pr-12 bg-surface-container-low border-none rounded-[5px] focus:ring-2 focus:ring-primary/50 outline-none font-medium text-[13px] text-on-surface transition-all placeholder:text-outline-variant" 
                 id="confirm-password" 
                 placeholder="••••••••" 
                 type={showConfirmPassword ? "text" : "password"}
@@ -143,7 +143,7 @@ function ResetPasswordContent() {
                 required
               />
               <button 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors w-8 h-8 flex items-center justify-center rounded-[5px] hover:bg-surface-container" 
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
                 type="button"
               >
@@ -157,7 +157,7 @@ function ResetPasswordContent() {
           {/* Submit Button */}
           <div className="pt-2">
             <button 
-              className="w-full h-12 bg-primary text-on-primary rounded-xl font-headline-md text-[13px] flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 disabled:opacity-75 disabled:hover:translate-y-0"
+              className="w-full h-12 bg-primary text-on-primary rounded-[5px] font-headline-md text-[13px] flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 disabled:opacity-75 disabled:hover:translate-y-0"
               type="submit"
               disabled={loading}
             >
@@ -201,7 +201,7 @@ export default function ResetPasswordPage() {
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
 
       <Suspense fallback={
-        <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-3xl p-12 flex justify-center items-center shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)]">
+        <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-[5px] p-12 flex justify-center items-center shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)]">
           <span className="material-symbols-outlined animate-spin text-primary text-[40px]">sync</span>
         </div>
       }>
