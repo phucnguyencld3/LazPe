@@ -17,6 +17,7 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortValue, setSortValue] = useState("created_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 10;
@@ -44,7 +45,7 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]);
-  }, [statusFilter, debouncedSearch]);
+  }, [statusFilter, debouncedSearch, sortValue]);
 
   const loadMetrics = async (token: string) => {
     try {
@@ -63,7 +64,14 @@ export default function AdminOrdersPage() {
         return;
       }
       setLoading(true);
-      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter);
+      
+      let sortBy = 'created';
+      let desc = true;
+      if (sortValue === "created_asc") { sortBy = 'created'; desc = false; }
+      if (sortValue === "total_desc") { sortBy = 'total'; desc = true; }
+      if (sortValue === "total_asc") { sortBy = 'total'; desc = false; }
+      
+      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter, sortBy, desc);
       setOrders(data.items);
       setTotalCount(data.totalCount);
       setSelectedInvoiceIds([]);
@@ -86,7 +94,7 @@ export default function AdminOrdersPage() {
   // Fetch paginated data whenever dependencies change
   useEffect(() => {
     loadOrders();
-  }, [currentPage, statusFilter, debouncedSearch]);
+  }, [currentPage, statusFilter, debouncedSearch, sortValue]);
 
   const handleBulkConfirm = async () => {
     if (selectedInvoiceIds.length === 0) return;
@@ -171,6 +179,8 @@ export default function AdminOrdersPage() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         counts={counts}
+        sortValue={sortValue}
+        setSortValue={setSortValue}
       />
 
       <OrderTable 

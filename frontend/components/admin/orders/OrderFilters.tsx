@@ -13,6 +13,8 @@ interface OrderFiltersProps {
     completed: number;
     cancelled: number;
   };
+  sortValue: string;
+  setSortValue: (val: string) => void;
   onApplyFilters?: (filters: { dateRange: string; orderValue: string }) => void;
 }
 
@@ -22,6 +24,8 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
   searchTerm,
   setSearchTerm,
   counts,
+  sortValue,
+  setSortValue,
   onApplyFilters,
 }) => {
   const [dateRange, setDateRange] = useState("");
@@ -130,6 +134,18 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
           <option>Trên 2M</option>
         </select>
 
+        {/* Sort Option */}
+        <select
+          value={sortValue}
+          onChange={(e) => setSortValue(e.target.value)}
+          className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+        >
+          <option value="created_desc">Mới nhất đến cũ nhất</option>
+          <option value="created_asc">Cũ nhất đến mới nhất</option>
+          <option value="total_desc">Giá trị cao nhất</option>
+          <option value="total_asc">Giá trị thấp nhất</option>
+        </select>
+
         {/* Filter Action Button */}
         <button
           onClick={handleFilterClick}
@@ -140,13 +156,14 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
         </button>
 
         {/* Reset Filters button */}
-        {(searchTerm || dateRange || orderValue !== "Mọi mức giá" || statusFilter !== null) && (
+        {(searchTerm || dateRange || orderValue !== "Mọi mức giá" || statusFilter !== null || sortValue !== "created_desc") && (
           <button
             onClick={() => {
               setSearchTerm("");
               setDateRange("");
               setOrderValue("Mọi mức giá");
               setStatusFilter(null);
+              setSortValue("created_desc");
             }}
             className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
