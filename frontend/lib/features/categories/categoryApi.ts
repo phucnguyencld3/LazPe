@@ -142,3 +142,42 @@ export const exportCategoriesExcel = async (
   if (!res.ok) throw new Error("Failed to export categories Excel");
   return res.blob();
 };
+
+export const downloadCategoryTemplate = async (): Promise<Blob> => {
+  const res = await fetch(`${API_BASE_URL}/CategoryImport/template`);
+  if (!res.ok) throw new Error("Failed to download category template");
+  return res.blob();
+};
+
+export const validateCategoryImport = async (token: string, file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE_URL}/CategoryImport/validate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to validate categories excel file");
+  }
+  return res.json();
+};
+
+export const commitCategoryImport = async (token: string, payload: any): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/CategoryImport/commit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to commit categories import");
+  }
+  return res.json();
+};
+

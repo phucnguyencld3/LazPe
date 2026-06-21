@@ -6,7 +6,7 @@ namespace PolyBabyAPI.Models
     {
         public string UserId { get; set; } = string.Empty;
         public int PermissionId { get; set; }
-        public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
+        public DateTime GrantedAt { get; set; } = DateTime.Now;
         public string? GrantedBy { get; set; } // UserId của admin cấp quyền
         public bool IsGranted { get; set; } = true; // true = Override Add, false = Override Deny
 

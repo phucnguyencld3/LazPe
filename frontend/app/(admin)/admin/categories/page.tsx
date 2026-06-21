@@ -269,6 +269,13 @@ export default function AdminCategoriesPage() {
             Xuất Excel
           </button>
           <button
+            onClick={() => router.push("/admin/categories/import")}
+            className="border border-primary text-primary bg-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+            Import Excel
+          </button>
+          <button
             onClick={() => router.push("/admin/categories/new")}
             className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >

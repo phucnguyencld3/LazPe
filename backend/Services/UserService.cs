@@ -75,7 +75,7 @@ namespace PolyBabyAPI.Services
                         Avatar = u.Avatar,
                         Status = u.Status,
                         EmailConfirmed = u.EmailConfirmed,
-                        IsLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTime.UtcNow,
+                        IsLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTime.Now,
                         LockoutEnd = u.LockoutEnd.HasValue ? u.LockoutEnd.Value.DateTime : (DateTime?)null, // ✅ SỬA: Convert DateTimeOffset to DateTime
                         RegisterDate = u.RegisterDate, 
                         Roles = new List<string>() // TODO: Load roles
@@ -126,7 +126,7 @@ namespace PolyBabyAPI.Services
                     Avatar = user.Avatar,
                     Status = user.Status,
                     EmailConfirmed = user.EmailConfirmed,
-                    IsLocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow,
+                    IsLocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.Now,
                     LockoutEnd = user.LockoutEnd.HasValue ? user.LockoutEnd.Value.DateTime : (DateTime?)null, // ✅ SỬA: Convert DateTimeOffset to DateTime
                     DateOfBirth = user.DateOfBirth,
                     AccessFailedCount = user.AccessFailedCount,
@@ -315,7 +315,7 @@ namespace PolyBabyAPI.Services
                     .Where(u => u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow)
                     .CountAsync();
                 var newUsersThisMonth = await _context.Users
-                    .Where(u => u.RegisterDate >= DateTime.UtcNow.AddDays(-30))
+                    .Where(u => u.RegisterDate >= DateTime.Now.AddDays(-30))
                     .CountAsync();
 
                 return new UserStatisticsDto

@@ -324,7 +324,7 @@ namespace PolyBabyAPI.Controllers
                     Logo = dto.Logo,
                     Description = dto.Description ?? string.Empty,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     Status = dto.Status
                 };
 

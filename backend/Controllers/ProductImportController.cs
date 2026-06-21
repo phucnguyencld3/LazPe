@@ -217,10 +217,11 @@ namespace PolyBabyAPI.Controllers
             {
                 using var stream = new MemoryStream();
                 await file.CopyToAsync(stream);
+                stream.Position = 0;
                 using var workbook = new XLWorkbook(stream);
 
-                var productsSheet = workbook.Worksheet("Products");
-                var variantsSheet = workbook.Worksheet("Variants");
+                workbook.TryGetWorksheet("Products", out var productsSheet);
+                workbook.TryGetWorksheet("Variants", out var variantsSheet);
 
                 if (productsSheet == null || variantsSheet == null)
                     return BadRequest("File không đúng định dạng mẫu. Cần có 2 sheet 'Products' và 'Variants'.");

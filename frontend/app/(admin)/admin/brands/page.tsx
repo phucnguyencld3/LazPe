@@ -230,6 +230,13 @@ export default function AdminBrandsPage() {
             Xuất Excel
           </button>
           <button
+            onClick={() => router.push("/admin/brands/import")}
+            className="border border-primary text-primary bg-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">upload_file</span>
+            Import Excel
+          </button>
+          <button
             onClick={() => router.push("/admin/brands/new")}
             className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
           >

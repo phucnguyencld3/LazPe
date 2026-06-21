@@ -92,7 +92,7 @@ namespace PolyBabyAPI.Services
                         ActionUrl = "/admin/reviews",
                         TargetType = TargetType.Role,
                         TargetValue = "Admin",
-                        PublishedAt = DateTime.UtcNow
+                        PublishedAt = DateTime.Now
                     };
                     await _notificationService.CreateNotificationAsync(notifDto, "System");
                 }
@@ -214,7 +214,7 @@ namespace PolyBabyAPI.Services
                         ActionUrl = "/admin/reviews",
                         TargetType = TargetType.Role,
                         TargetValue = "Admin",
-                        PublishedAt = DateTime.UtcNow
+                        PublishedAt = DateTime.Now
                     };
                     await _notificationService.CreateNotificationAsync(notifDto, "System");
                 }
@@ -463,7 +463,7 @@ namespace PolyBabyAPI.Services
                         ActionUrl = "/admin/reviews",
                         TargetType = TargetType.Role,
                         TargetValue = "Admin",
-                        PublishedAt = DateTime.UtcNow
+                        PublishedAt = DateTime.Now
                     };
                     await _notificationService.CreateNotificationAsync(notifDto, "System");
                 }
@@ -496,7 +496,7 @@ namespace PolyBabyAPI.Services
                         ActionUrl = "/profile?tab=loyalty",
                         TargetType = TargetType.SpecificUsers,
                         TargetValue = userId,
-                        PublishedAt = DateTime.UtcNow
+                        PublishedAt = DateTime.Now
                     };
                     await _notificationService.CreateNotificationAsync(notifDto, "System");
                 }
@@ -520,7 +520,7 @@ namespace PolyBabyAPI.Services
                         ActionUrl = "/profile?tab=loyalty",
                         TargetType = TargetType.SpecificUsers,
                         TargetValue = userId,
-                        PublishedAt = DateTime.UtcNow
+                        PublishedAt = DateTime.Now
                     };
                     await _notificationService.CreateNotificationAsync(notifDto, "System");
                 }
@@ -1065,7 +1065,7 @@ namespace PolyBabyAPI.Services
                                     ActionUrl = "/profile?tab=loyalty",
                                     TargetType = TargetType.SpecificUsers,
                                     TargetValue = review.UserID,
-                                    PublishedAt = DateTime.UtcNow
+                                    PublishedAt = DateTime.Now
                                 };
                                 await _notificationService.CreateNotificationAsync(rewardNotifDto, "System");
                             }
@@ -1114,7 +1114,7 @@ namespace PolyBabyAPI.Services
                     ActionUrl = "/profile?tab=reviews",
                     TargetType = TargetType.SpecificUsers,
                     TargetValue = review.UserID,
-                    PublishedAt = DateTime.UtcNow
+                    PublishedAt = DateTime.Now
                 };
                 await _notificationService.CreateNotificationAsync(notifDto, "System");
             }
