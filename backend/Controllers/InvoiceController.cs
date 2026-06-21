@@ -292,6 +292,33 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Xuất danh sách hóa đơn ra Excel
+        /// </summary>
+        [HttpGet("export")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string? search,
+            [FromQuery] OrderStatus? status,
+            [FromQuery] string? sortBy,
+            [FromQuery] bool desc = false,
+            [FromQuery] decimal? minPrice = null,
+            [FromQuery] decimal? maxPrice = null,
+            [FromQuery] string? dateRange = null)
+        {
+            try
+            {
+                var excelData = await _invoiceService.ExportExcelAsync(search, status, sortBy, desc, minPrice, maxPrice, dateRange);
+                string fileName = $"DanhSachDonHang_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(excelData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error exporting invoices to Excel");
+                return StatusCode(500, new { message = "Lỗi khi xuất danh sách đơn hàng", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Lấy lịch sử sử dụng voucher của một đơn hàng
         /// </summary>
         [HttpGet("{id}/voucher-usage")]
