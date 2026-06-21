@@ -63,53 +63,11 @@ export default function WishlistPage() {
       </div>
 
       <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 min-h-[400px]">
-        {wishlist.length === 0 ? (
-          <div className="relative w-full max-w-[40rem] mx-auto mt-4 mb-8">
-            {/* Decorative background blobs */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-rose-200/40 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-300/30 rounded-full blur-2xl -z-10 pointer-events-none"></div>
-            
-            <div className="text-center py-16 px-6 sm:px-12 bg-white/70 backdrop-blur-md rounded-[2rem] border border-white shadow-[0_20px_40px_rgba(225,29,72,0.05)] relative overflow-hidden group">
-              {/* Floating micro-elements */}
-              <div className="absolute top-10 left-10 text-rose-200 opacity-50 group-hover:-translate-y-2 group-hover:scale-110 transition-all duration-700 pointer-events-none">
-                <Heart size={24} className="fill-rose-200" />
-              </div>
-              <div className="absolute bottom-16 right-12 text-pink-200 opacity-60 group-hover:-translate-y-3 group-hover:scale-110 transition-all duration-1000 delay-100 pointer-events-none">
-                <Heart size={32} className="fill-pink-200" />
-              </div>
-              <div className="absolute top-20 right-20 text-rose-100 opacity-40 group-hover:-translate-y-1 group-hover:scale-110 transition-all duration-500 delay-200 pointer-events-none">
-                <Heart size={16} className="fill-rose-100" />
-              </div>
-
-              {/* Main Icon */}
-              <div className="relative w-28 h-28 mx-auto mb-8">
-                <div className="absolute inset-0 bg-rose-200 rounded-full animate-ping opacity-20"></div>
-                <div className="relative w-full h-full bg-gradient-to-tr from-rose-50 to-pink-50/50 rounded-full flex items-center justify-center shadow-inner border border-white">
-                  <Heart size={48} className="text-rose-500 fill-rose-500/20 drop-shadow-sm group-hover:scale-110 transition-transform duration-500" />
-                </div>
-              </div>
-              
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mb-4 tracking-tight">Danh sách yêu thích trống</h2>
-              <p className="w-full max-w-[28rem] mx-auto text-slate-500 mb-10 leading-relaxed font-medium">
-                Bạn chưa lưu sản phẩm nào. Hãy khám phá cửa hàng và thả tim cho những sản phẩm bạn yêu thích nhé!
-              </p>
-              
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold text-lg rounded-full shadow-[0_8px_20px_rgba(225,29,72,0.25)] hover:shadow-[0_12px_25px_rgba(225,29,72,0.35)] hover:-translate-y-1 active:translate-y-0 active:scale-95 transition-all"
-              >
-                <ShoppingBag size={20} />
-                Khám phá sản phẩm ngay
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            {wishlist.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+          {wishlist.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
       </div>
     </div>
   );
