@@ -46,7 +46,7 @@ namespace PolyBabyAPI.Services
                     ProductId = productId,
                     InteractionType = interactionType,
                     Score = score,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
 
                 await _mongoDbService.UserInteractions.InsertOneAsync(interaction);

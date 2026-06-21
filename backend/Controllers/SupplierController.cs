@@ -140,6 +140,38 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Xuất file Excel danh sách nhà cung cấp/thương hiệu
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Permission("Supplier.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string searchTerm = "",
+            [FromQuery] bool? status = null)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting suppliers list to Excel...");
+                var fileContents = await _supplierService.ExportExcelAsync(searchTerm, status);
+                var fileName = $"DanhSachThuongHieu_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error exporting suppliers to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
+                });
+            }
+        }
+
+        /// <summary>
         /// Lấy danh sách nhà cung cấp hoạt động
         /// </summary>
         [HttpGet("active")]
@@ -292,7 +324,7 @@ namespace PolyBabyAPI.Controllers
                     Logo = dto.Logo,
                     Description = dto.Description ?? string.Empty,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     Status = dto.Status
                 };
 

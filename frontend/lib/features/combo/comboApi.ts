@@ -173,3 +173,22 @@ export async function updateBundleItemQuantity(bundleItemId: number, quantity: n
   const result = await response.json();
   return result;
 }
+
+export async function exportCombosExcel(
+  token: string,
+  searchTerm: string = "",
+  status: boolean | null = null
+): Promise<Blob> {
+  const params = new URLSearchParams({
+    searchTerm: searchTerm
+  });
+  if (status !== null) {
+    params.append("status", status.toString());
+  }
+
+  const res = await fetch(`${API_BASE_URL}/Bundle/export-excel?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to export combos Excel");
+  return res.blob();
+}

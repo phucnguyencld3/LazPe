@@ -18,15 +18,15 @@ namespace PolyBabyAPI.Services
 
         public async Task ExecuteAsync()
         {
-            _logger.LogInformation($"[{DateTime.UtcNow}] Bắt đầu chạy Job huấn luyện AI mô hình Trend...");
+            _logger.LogInformation($"[{DateTime.Now}] Bắt đầu chạy Job huấn luyện AI mô hình Trend...");
             try
             {
                 await _trendService.TrainTrendModelAsync();
-                _logger.LogInformation($"[{DateTime.UtcNow}] Hoàn thành Job huấn luyện AI mô hình Trend.");
+                _logger.LogInformation($"[{DateTime.Now}] Hoàn thành Job huấn luyện AI mô hình Trend.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[{DateTime.UtcNow}] Lỗi khi chạy Job huấn luyện AI mô hình Trend.");
+                _logger.LogError(ex, $"[{DateTime.Now}] Lỗi khi chạy Job huấn luyện AI mô hình Trend.");
             }
         }
     }

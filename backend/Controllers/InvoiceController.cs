@@ -97,7 +97,7 @@ namespace PolyBabyAPI.Controllers
             try
             {
                 var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
+                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.Now, tz).Date;
                 var invoices = await _context.Invoices.AsNoTracking().Where(i => !i.IsDeleted).ToListAsync();
                 
                 var result = new
@@ -657,7 +657,7 @@ namespace PolyBabyAPI.Controllers
                         ActionUrl = $"/admin/orders/{invoice.InvoiceID}",
                         TargetType = TargetType.Role,
                         TargetValue = "Admin",
-                        PublishedAt = DateTime.UtcNow
+                        PublishedAt = DateTime.Now
                     };
                     await _notificationService.CreateNotificationAsync(notifDto, "System");
                 }
@@ -771,7 +771,7 @@ namespace PolyBabyAPI.Controllers
                             ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                             TargetType = TargetType.SpecificUsers,
                             TargetValue = invoice.UserID,
-                            PublishedAt = DateTime.UtcNow
+                            PublishedAt = DateTime.Now
                         };
                         await _notificationService.CreateNotificationAsync(notifDto, "System");
                     }
@@ -821,7 +821,7 @@ namespace PolyBabyAPI.Controllers
                             ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                             TargetType = TargetType.SpecificUsers,
                             TargetValue = invoice.UserID,
-                            PublishedAt = DateTime.UtcNow
+                            PublishedAt = DateTime.Now
                         };
                         await _notificationService.CreateNotificationAsync(notifDto, "System");
                     }
@@ -972,7 +972,7 @@ namespace PolyBabyAPI.Controllers
                                     ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                                     TargetType = TargetType.SpecificUsers,
                                     TargetValue = invoice.UserID,
-                                    PublishedAt = DateTime.UtcNow
+                                    PublishedAt = DateTime.Now
                                 };
                                 await _notificationService.CreateNotificationAsync(notifDto, "System");
                             }
@@ -1042,7 +1042,7 @@ namespace PolyBabyAPI.Controllers
                                     ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                                     TargetType = TargetType.SpecificUsers,
                                     TargetValue = invoice.UserID,
-                                    PublishedAt = DateTime.UtcNow
+                                    PublishedAt = DateTime.Now
                                 };
                                 await _notificationService.CreateNotificationAsync(notifDto, "System");
                             }
@@ -1145,7 +1145,7 @@ namespace PolyBabyAPI.Controllers
                             ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                             TargetType = TargetType.SpecificUsers,
                             TargetValue = invoice.UserID,
-                            PublishedAt = DateTime.UtcNow
+                            PublishedAt = DateTime.Now
                         };
                         await _notificationService.CreateNotificationAsync(notifDto, "System");
                     }
@@ -1196,7 +1196,7 @@ namespace PolyBabyAPI.Controllers
                             ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                             TargetType = TargetType.SpecificUsers,
                             TargetValue = invoice.UserID,
-                            PublishedAt = DateTime.UtcNow
+                            PublishedAt = DateTime.Now
                         };
                         await _notificationService.CreateNotificationAsync(notifDto, "System");
                     }
@@ -1247,7 +1247,7 @@ namespace PolyBabyAPI.Controllers
                             ActionUrl = $"/profile?tab=orders&id={invoice.InvoiceID}",
                             TargetType = TargetType.SpecificUsers,
                             TargetValue = invoice.UserID,
-                            PublishedAt = DateTime.UtcNow
+                            PublishedAt = DateTime.Now
                         };
                         await _notificationService.CreateNotificationAsync(notifDto, "System");
                     }

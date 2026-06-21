@@ -20,7 +20,8 @@ import {
   getBundles, 
   deleteBundle, 
   toggleBundleStatus, 
-  BundleResponse 
+  BundleResponse,
+  exportCombosExcel
 } from "@/lib/features/combo/comboApi";
 
 interface ComboListProps {
@@ -36,6 +37,29 @@ export const ComboList: React.FC<ComboListProps> = ({
 }) => {
   const [bundles, setBundles] = useState<BundleResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      const statusVal = statusFilter === "active" ? true : statusFilter === "inactive" ? false : null;
+      const blob = await exportCombosExcel(token, searchTerm, statusVal);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `DanhSachCombo_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      toast.success("Xuất file Excel thành công!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Không thể xuất file Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
   
   // View mode: grid or table
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
@@ -180,13 +204,27 @@ export const ComboList: React.FC<ComboListProps> = ({
             Tạo và cấu hình các gói sản phẩm đi kèm với giá ưu đãi để tăng doanh thu
           </p>
         </div>
-        <button
-          onClick={onCreateClick}
-          className="bg-primary text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
-        >
-          <Plus size={18} />
-          <span>Tạo Combo mới</span>
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+          >
+            {exporting ? (
+              <Loader className="animate-spin h-4.5 w-4.5" />
+            ) : (
+              <span className="material-symbols-outlined text-[18px]">download</span>
+            )}
+            <span>Xuất Excel</span>
+          </button>
+          <button
+            onClick={onCreateClick}
+            className="bg-primary text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+          >
+            <Plus size={18} />
+            <span>Tạo Combo mới</span>
+          </button>
+        </div>
       </header>
 
       {/* Stats Cards Grid */}

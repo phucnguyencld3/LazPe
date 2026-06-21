@@ -23,7 +23,7 @@ namespace PolyBabyAPI.Models.Mongo
         public float Score { get; set; }
 
         [BsonElement("CreatedAt")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 
     public enum InteractionType

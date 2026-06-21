@@ -348,6 +348,95 @@ export default function AdminStatisticsPage() {
     return diffDays > 186;
   };
 
+  // Filter Section UI (can be passed to tabs)
+  const filterSection = (
+    <div className="bg-white rounded border border-slate-100 shadow-sm p-6 mb-8 no-print">
+      <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-100">
+        <span className="material-symbols-outlined text-primary">filter_alt</span>
+        <h2 className="font-bold text-slate-800 text-sm">Bộ lọc tìm kiếm</h2>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div>
+          <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Từ ngày</label>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className={`w-full px-4 py-3 bg-white border rounded font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer ${
+              isDateLimitExceeded() ? "border-rose-500 bg-rose-50/50" : "border-slate-200"
+            }`}
+          />
+        </div>
+        <div>
+          <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Đến ngày</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className={`w-full px-4 py-3 bg-white border rounded font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer ${
+              isDateLimitExceeded() ? "border-rose-500 bg-rose-50/50" : "border-slate-200"
+            }`}
+          />
+        </div>
+        <div>
+          <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Danh mục</label>
+          <SearchableSelect
+            options={[{ value: "", label: "Tất cả danh mục" }, ...categoriesList.map(c => ({ value: c.categoryID, label: c.categoryName }))]}
+            value={selectedCategory}
+            onChange={(val) => setSelectedCategory(val)}
+            placeholder="Tất cả danh mục"
+            searchPlaceholder="Tìm kiếm danh mục..."
+          />
+        </div>
+        <div>
+          <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Thương hiệu</label>
+          <SearchableSelect
+            options={[{ value: "", label: "Tất cả thương hiệu" }, ...brandsList.map(b => ({ value: b.supplierID, label: b.supplierName }))]}
+            value={selectedBrand}
+            onChange={(val) => setSelectedBrand(val)}
+            placeholder="Tất cả thương hiệu"
+            searchPlaceholder="Tìm kiếm thương hiệu..."
+          />
+        </div>
+        <div>
+          <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Sản phẩm</label>
+          <SearchableSelect
+            options={[{ value: "", label: "Tất cả sản phẩm" }, ...productsList.map(p => ({ value: p.productID, label: `[${p.code}] ${p.productName}` }))]}
+            value={selectedProduct}
+            onChange={(val) => setSelectedProduct(val)}
+            placeholder="Tất cả sản phẩm"
+            searchPlaceholder="Tìm kiếm sản phẩm..."
+          />
+        </div>
+        <div>
+          <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Nhóm theo</label>
+          <SearchableSelect
+            options={[
+              { value: "", label: "Tự động (Ngày/Tháng)" },
+              { value: "Day", label: "Theo ngày" },
+              { value: "Month", label: "Theo tháng" },
+              { value: "Quarter", label: "Theo quý" },
+              { value: "Year", label: "Theo năm" },
+            ]}
+            value={groupType}
+            onChange={(val) => setGroupType(val)}
+            placeholder="Nhóm theo..."
+            searchPlaceholder="Tìm cách nhóm..."
+          />
+        </div>
+      </div>
+      
+      {/* Date limit error message */}
+      {isDateLimitExceeded() && (
+        <div className="mt-4 p-4 bg-rose-50 border border-rose-100 text-rose-700 text-xs font-semibold rounded flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px]">error</span>
+          <span>Khoảng thời gian không được vượt quá 6 tháng (186 ngày). Vui lòng chọn lại.</span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6 min-h-screen pb-12">
       {/* Dynamic print-style overrides to format printed page perfectly */}
@@ -450,116 +539,24 @@ export default function AdminStatisticsPage() {
         </button>
       </div>
 
-      {/* Filter Section */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 mb-8 no-print">
-        <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-100">
-          <span className="material-symbols-outlined text-primary">filter_alt</span>
-          <h2 className="font-bold text-slate-800 text-sm">Bộ lọc tìm kiếm</h2>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div>
-            <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Từ ngày</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className={`w-full px-4 py-3 bg-white border rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer ${
-                isDateLimitExceeded() ? "border-rose-500 bg-rose-50/50" : "border-slate-200"
-              }`}
-            />
-          </div>
 
-          <div>
-            <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Đến ngày</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className={`w-full px-4 py-3 bg-white border rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer ${
-                isDateLimitExceeded() ? "border-rose-500 bg-rose-50/50" : "border-slate-200"
-              }`}
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Danh mục</label>
-            <SearchableSelect
-              value={selectedCategory}
-              onChange={setSelectedCategory}
-              options={[
-                { value: "", label: "Tất cả danh mục" },
-                ...categoriesList.map((c) => ({ value: c.categoryID, label: c.categoryName })),
-              ]}
-              placeholder="Chọn danh mục..."
-              searchPlaceholder="Tìm danh mục..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Thương hiệu</label>
-            <SearchableSelect
-              value={selectedBrand}
-              onChange={setSelectedBrand}
-              options={[
-                { value: "", label: "Tất cả thương hiệu" },
-                ...brandsList.map((b) => ({ value: b.supplierID, label: b.supplierName })),
-              ]}
-              placeholder="Chọn thương hiệu..."
-              searchPlaceholder="Tìm thương hiệu..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Sản phẩm</label>
-            <SearchableSelect
-              value={selectedProduct}
-              onChange={setSelectedProduct}
-              options={[
-                { value: "", label: "Tất cả sản phẩm" },
-                ...productsList.map((p) => ({ value: p.productID, label: `[${p.code}] ${p.productName}` })),
-              ]}
-              placeholder="Chọn sản phẩm..."
-              searchPlaceholder="Tìm mã hoặc tên SP..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-500 font-bold text-xs uppercase tracking-wider mb-2">Nhóm theo</label>
-            <SearchableSelect
-              value={groupType}
-              onChange={setGroupType}
-              options={[
-                { value: "", label: "Tự động (Ngày/Tháng)" },
-                { value: "Day", label: "Theo ngày" },
-                { value: "Month", label: "Theo tháng" },
-                { value: "Quarter", label: "Theo quý" },
-                { value: "Year", label: "Theo năm" },
-              ]}
-              placeholder="Nhóm theo..."
-              searchPlaceholder="Tìm cách nhóm..."
-            />
-          </div>
-        </div>
-
-        {isDateLimitExceeded() && (
-          <div className="mt-4 p-4 bg-rose-50 border border-rose-100 text-rose-700 text-xs font-semibold rounded-2xl flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">warning</span>
-            <span>Khoảng thời gian chọn không được vượt quá 6 tháng (186 ngày). Hãy rút ngắn phạm vi lọc để thực hiện truy vấn.</span>
-          </div>
-        )}
-      </div>
+      {/* Filter is passed down or rendered before tabs based on active tab */}
+      {activeTab !== "overview" && filterSection}
 
       {loading ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 animate-pulse h-28"></div>
-            ))}
-          </div>
+          {activeTab === "overview" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded shadow-sm border border-slate-100 animate-pulse h-28"></div>
+              ))}
+            </div>
+          )}
+          {activeTab === "overview" && filterSection}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm h-96 animate-pulse"></div>
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm h-96 animate-pulse"></div>
+            <div className="lg:col-span-2 bg-white p-6 rounded border border-slate-100 shadow-sm h-96 animate-pulse"></div>
+            <div className="bg-white p-6 rounded border border-slate-100 shadow-sm h-96 animate-pulse"></div>
           </div>
         </div>
       ) : data ? (
@@ -569,6 +566,7 @@ export default function AdminStatisticsPage() {
               summary={data.summary} 
               timeSeriesData={data.timeSeriesData} 
               isChartReady={isChartReady} 
+              filterSection={filterSection}
             />
           )}
 
@@ -605,7 +603,7 @@ export default function AdminStatisticsPage() {
           )}
         </>
       ) : (
-        <div className="bg-white p-12 rounded-[2rem] border border-slate-100 shadow-sm text-center text-slate-400">
+        <div className="bg-white p-12 rounded border border-slate-100 shadow-sm text-center text-slate-400">
           <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">bar_chart</span>
           <p className="font-semibold text-sm">Không có dữ liệu trong khoảng thời gian đã chọn.</p>
         </div>

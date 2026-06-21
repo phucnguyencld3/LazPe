@@ -2,22 +2,48 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchUserStats, fetchUsers, UserStats as UserStatsType } from "@/lib/features/users/userApi";
+import { fetchUserStats, fetchUsers, UserStats as UserStatsType, exportUsersExcel } from "@/lib/features/users/userApi";
 import { UserStats } from "@/components/admin/users/UserStats";
 import { UserFilters } from "@/components/admin/users/UserFilters";
 import { UserTable } from "@/components/admin/users/UserTable";
+import { toast } from "@/lib/toast";
 
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState<UserStatsType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      setExporting(true);
+      const blob = await exportUsersExcel(token, debouncedSearch);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `DanhSachTaiKhoan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      toast.success("Xuất file Excel thành công!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Không thể xuất file Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Debounce search term
   useEffect(() => {
@@ -83,8 +109,16 @@ export default function AdminUsersPage() {
           <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý người dùng</h1>
           <p className="font-body-md text-body-md text-on-surface-variant/70">Theo dõi và kiểm soát tài khoản người dùng</p>
         </div>
-        <button className="border border-primary text-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer">
-          <span className="material-symbols-outlined text-[18px]">file_export</span>
+        <button
+          onClick={handleExportExcel}
+          disabled={exporting}
+          className="border border-emerald-600 text-emerald-600 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+        >
+          {exporting ? (
+            <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-emerald-600 border-t-transparent"></div>
+          ) : (
+            <span className="material-symbols-outlined text-[18px]">file_export</span>
+          )}
           Xuất dữ liệu
         </button>
       </header>

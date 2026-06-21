@@ -179,6 +179,38 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Xuất danh sách Combo sản phẩm ra Excel
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Permission("Bundle.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string searchTerm = "",
+            [FromQuery] bool? status = null)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting bundles list to Excel...");
+                var fileContents = await _bundleService.ExportExcelAsync(searchTerm, status);
+                var fileName = $"DanhSachCombo_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error exporting bundles to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
+                });
+            }
+        }
+
+        /// <summary>
         /// Lấy chi tiết bundle (cho admin)
         /// </summary>
         /// <param name="id"></param>
