@@ -38,22 +38,23 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
   };
 
   const getTabClass = (isActive: boolean, isError: boolean = false) => {
+    const baseClass = "flex-1 px-5 py-2.5 rounded-[8px] font-bold text-xs transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap text-center";
     if (isActive) {
       if (isError) {
-        return "px-5 py-2.5 bg-rose-600 text-white rounded-2xl font-bold text-xs shadow-md shadow-rose-600/20 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
+        return `${baseClass} bg-rose-600 text-white shadow-md shadow-rose-600/20`;
       }
-      return "px-5 py-2.5 bg-primary text-on-primary rounded-2xl font-bold text-xs shadow-md shadow-primary/20 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
+      return `${baseClass} bg-primary text-on-primary shadow-md shadow-primary/20`;
     }
     if (isError) {
-      return "px-5 py-2.5 bg-slate-50 hover:bg-rose-50 hover:text-error text-slate-600 rounded-2xl font-bold text-xs border border-slate-200 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
+      return `${baseClass} bg-slate-50 hover:bg-rose-50 hover:text-error text-slate-600 border border-slate-200`;
     }
-    return "px-5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs border border-slate-200 transition-all active:scale-95 duration-200 cursor-pointer whitespace-nowrap";
+    return `${baseClass} bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200`;
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
       {/* Status Tabs */}
-      <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+      <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center gap-2 w-full overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setStatusFilter(null)}
           className={getTabClass(statusFilter === null)}
@@ -102,7 +103,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             placeholder="Mã đơn hàng, tên khách hàng..."
             type="text"
           />
@@ -113,20 +114,24 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
             calendar_today
           </span>
-          <input
+          <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            placeholder="Khoảng thời gian..."
-            type="text"
-          />
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer appearance-none"
+          >
+            <option value="">Tất cả thời gian</option>
+            <option value="today">Hôm nay</option>
+            <option value="7days">7 ngày qua</option>
+            <option value="30days">30 ngày qua</option>
+            <option value="3months">3 tháng gần nhất</option>
+          </select>
         </div>
 
         {/* Price Value */}
         <select
           value={orderValue}
           onChange={(e) => setOrderValue(e.target.value)}
-          className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+          className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
         >
           <option>Mọi mức giá</option>
           <option>Dưới 500k</option>
@@ -138,7 +143,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
         <select
           value={sortValue}
           onChange={(e) => setSortValue(e.target.value)}
-          className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+          className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
         >
           <option value="created_desc">Mới nhất đến cũ nhất</option>
           <option value="created_asc">Cũ nhất đến mới nhất</option>
@@ -149,7 +154,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
         {/* Filter Action Button */}
         <button
           onClick={handleFilterClick}
-          className="px-5 py-3 bg-primary text-on-primary rounded-2xl font-bold text-sm shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+          className="px-5 py-3 bg-primary text-on-primary rounded-[8px] font-bold text-sm shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
         >
           <span className="material-symbols-outlined text-[18px]">filter_list</span>
           Lọc dữ liệu
@@ -165,7 +170,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
               setStatusFilter(null);
               setSortValue("created_desc");
             }}
-            className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">clear</span>
             Xóa bộ lọc

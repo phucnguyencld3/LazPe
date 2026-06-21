@@ -1,5 +1,6 @@
 import React from "react";
 import { OrderInfo } from "@/lib/features/orders/orderApi";
+import { formatAddress } from "@/lib/utils/formatters";
 
 interface OrderCustomerInfoProps {
   order: OrderInfo;
@@ -38,11 +39,11 @@ export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) =
           <img
             src={order.userAvatar}
             alt={customerName}
-            className="w-12 h-12 rounded-2xl object-cover shrink-0 border border-slate-100"
+            className="w-12 h-12 rounded-[8px] object-cover shrink-0 border border-slate-100"
           />
         ) : (
           <div
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 ${getAvatarColors(
+            className={`w-12 h-12 rounded-[8px] flex items-center justify-center text-sm font-bold shrink-0 ${getAvatarColors(
               customerName
             )}`}
           >
@@ -72,7 +73,7 @@ export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) =
             <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest">ĐỊA CHỈ NHẬN HÀNG</p>
           </div>
           <p className="text-slate-700 font-semibold leading-relaxed">
-            {order.shippingAddress || 'Chưa cập nhật địa chỉ'}
+            {formatAddress(order.shippingAddress) || 'Chưa cập nhật địa chỉ'}
           </p>
         </div>
       </div>

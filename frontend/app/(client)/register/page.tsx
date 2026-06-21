@@ -22,6 +22,7 @@ export default function RegisterPage() {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -261,9 +262,9 @@ export default function RegisterPage() {
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
 
       {/* Register Card */}
-      <div className="w-full max-w-[900px] bg-surface-container-lowest rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="w-full max-w-[900px] bg-surface-container-lowest rounded-[5px] overflow-hidden flex flex-col md:flex-row shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Left Side: Visual/Branding */}
-        <div className="hidden md:flex md:w-1/2 relative flex-col justify-end items-center p-8 lg:p-12 text-center pb-24 overflow-hidden rounded-l-3xl bg-primary-container">
+        <div className="hidden md:flex md:w-1/2 relative flex-col justify-end items-center p-8 lg:p-12 text-center pb-24 overflow-hidden rounded-l-[5px] bg-primary-container">
           <div className="absolute inset-0 z-0 bg-primary-container">
             <video
               autoPlay
@@ -326,12 +327,12 @@ export default function RegisterPage() {
 
               <form className="space-y-3" onSubmit={handleRegister}>
                 {error && (
-                  <div className="p-2 bg-red-100 text-red-700 text-xs rounded-xl border border-red-200 font-medium">
+                  <div className="p-2 bg-red-100 text-red-700 text-xs rounded-[5px] border border-red-200 font-medium">
                     {error}
                   </div>
                 )}
                 {success && (
-                  <div className="p-2 bg-green-100 text-green-700 text-xs rounded-xl border border-green-200 font-medium">
+                  <div className="p-2 bg-green-100 text-green-700 text-xs rounded-[5px] border border-green-200 font-medium">
                     {success}
                   </div>
                 )}
@@ -343,7 +344,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <span className={`text-[18px] ${getInputIconClass("fullName")}`}>person</span>
                       <input 
-                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
                         id="full-name" placeholder="Nguyễn Văn A" type="text"
                         value={fullName} onChange={(e) => setFullName(e.target.value)}
                         onFocus={() => setFocusedField("fullName")} onBlur={() => setFocusedField(null)} required
@@ -357,7 +358,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <span className={`text-[18px] ${getInputIconClass("phone")}`}>call</span>
                       <input 
-                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
                         id="phone" placeholder="090 123 4567" type="tel"
                         value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}
                         onFocus={() => setFocusedField("phone")} onBlur={() => setFocusedField(null)}
@@ -373,7 +374,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <span className={`text-[18px] ${getInputIconClass("email")}`}>mail</span>
                       <input 
-                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
                         id="email" placeholder="example@gmail.com" type="email"
                         value={email} onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setFocusedField("email")} onBlur={() => setFocusedField(null)} required
@@ -387,7 +388,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <span className={`text-[18px] ${getInputIconClass("dob")}`}>calendar_today</span>
                       <input 
-                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
                         id="dob" type="date"
                         value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
                         onFocus={() => setFocusedField("dob")} onBlur={() => setFocusedField(null)}
@@ -403,7 +404,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <span className={`text-[18px] ${getInputIconClass("password")}`}>lock</span>
                       <input 
-                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
                         id="password" placeholder="••••••••" type="password"
                         value={password} onChange={(e) => setPassword(e.target.value)}
                         onFocus={() => setFocusedField("password")} onBlur={() => setFocusedField(null)} required
@@ -417,7 +418,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <span className={`text-[18px] ${getInputIconClass("confirmPassword")}`}>lock_reset</span>
                       <input 
-                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-xl text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium" 
                         id="confirm-password" placeholder="••••••••" type="password"
                         value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                         onFocus={() => setFocusedField("confirmPassword")} onBlur={() => setFocusedField(null)} required
@@ -434,14 +435,14 @@ export default function RegisterPage() {
                     checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)}
                   />
                   <label className="font-label-md text-[11px] text-on-surface-variant cursor-pointer select-none" htmlFor="terms">
-                    Tôi đồng ý với <a className="text-primary hover:underline font-bold" href="#">điều khoản và chính sách</a>.
+                    Tôi đồng ý với <a className="text-primary hover:underline font-bold" href="#" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}>điều khoản và chính sách</a>.
                   </label>
                 </div>
 
                 {/* CTA Button */}
                 <div className="pt-2">
                   <button 
-                    className="w-full h-11 bg-primary text-on-primary font-headline-md text-[13px] rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75 disabled:hover:translate-y-0" 
+                    className="w-full h-11 bg-primary text-on-primary font-headline-md text-[13px] rounded-[5px] shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75 disabled:hover:translate-y-0" 
                     type="submit" disabled={loading}
                   >
                     {loading ? (
@@ -462,12 +463,12 @@ export default function RegisterPage() {
           ) : (
             <form className="space-y-5" onSubmit={handleVerifyOtp}>
               {error && (
-                <div className="p-3 bg-red-100 text-red-700 text-[13px] rounded-xl border border-red-200 font-medium">
+                <div className="p-3 bg-red-100 text-red-700 text-[13px] rounded-[5px] border border-red-200 font-medium">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="p-3 bg-green-100 text-green-700 text-[13px] rounded-xl border border-green-200 font-medium">
+                <div className="p-3 bg-green-100 text-green-700 text-[13px] rounded-[5px] border border-green-200 font-medium">
                   {success}
                 </div>
               )}
@@ -478,7 +479,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <span className={`text-[20px] ${getInputIconClass("otp")}`}>lock</span>
                   <input 
-                    className="w-full h-12 pl-11 pr-4 bg-surface-container-low border-none rounded-xl tracking-[0.25em] text-center text-lg font-bold focus:ring-2 focus:ring-primary/50 transition-all" 
+                    className="w-full h-12 pl-11 pr-4 bg-surface-container-low border-none rounded-[5px] tracking-[0.25em] text-center text-lg font-bold focus:ring-2 focus:ring-primary/50 transition-all" 
                     id="otp" placeholder="• • • • • •" type="text" inputMode="numeric" pattern="\d{6}" maxLength={6}
                     value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                     onFocus={() => setFocusedField("otp")} onBlur={() => setFocusedField(null)} required
@@ -508,7 +509,7 @@ export default function RegisterPage() {
 
               {/* CTA Button */}
               <button 
-                className="w-full h-12 bg-primary text-on-primary font-headline-md text-sm rounded-xl shadow-md shadow-primary/20 hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75" 
+                className="w-full h-12 bg-primary text-on-primary font-headline-md text-sm rounded-[5px] shadow-md shadow-primary/20 hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75" 
                 type="submit" disabled={loading}
               >
                 {loading ? (
@@ -537,6 +538,91 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+
+      {/* Terms and Policy Modal (Word-like style) */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h2 className="text-lg font-bold text-slate-800">Điều khoản và Chính sách</h2>
+              <button onClick={() => setShowTermsModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-8 md:p-12 overflow-y-auto text-slate-700 leading-relaxed text-[15px] text-justify bg-white" style={{ boxShadow: 'inset 0 0 10px rgba(0,0,0,0.05)' }}>
+              <div className="max-w-[800px] mx-auto space-y-6">
+                <div className="text-center mb-8">
+                  <h1 className="text-2xl font-bold text-slate-900 mb-2 uppercase">Điều khoản Dịch vụ và Chính sách Bảo mật</h1>
+                  <p className="text-sm italic text-slate-500">Cập nhật lần cuối: Tháng 6 năm 2026</p>
+                </div>
+
+                <p>Chào mừng bạn đến với <strong>LazPe</strong>. Bằng việc đăng ký tài khoản và sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản và điều kiện dưới đây. Xin vui lòng đọc kỹ trước khi tiếp tục.</p>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">1. Chấp nhận điều khoản</h3>
+                <p>Việc bạn đăng ký tài khoản, truy cập và sử dụng nền tảng thương mại điện tử LazPe đồng nghĩa với việc bạn xác nhận đã đọc, hiểu rõ và đồng ý bị ràng buộc bởi toàn bộ các Điều khoản Dịch vụ và Chính sách Bảo mật này. Nếu bạn không đồng ý với bất kỳ phần nào của Điều khoản, vui lòng ngừng sử dụng dịch vụ ngay lập tức.</p>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">2. Đăng ký Tài khoản và Trách nhiệm Người dùng</h3>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>Tính xác thực:</strong> Bạn cam kết cung cấp thông tin cá nhân (Họ tên, Số điện thoại, Email, Ngày sinh) chính xác, đầy đủ và cập nhật kịp thời khi có thay đổi. LazPe không chịu trách nhiệm cho các rủi ro phát sinh do thông tin sai lệch.</li>
+                  <li><strong>Bảo mật tài khoản:</strong> Bạn có trách nhiệm tự bảo mật mật khẩu và các thông tin đăng nhập. Mọi hoạt động phát sinh từ tài khoản của bạn sẽ do bạn hoàn toàn chịu trách nhiệm.</li>
+                  <li><strong>Hành vi nghiêm cấm:</strong> Nghiêm cấm sử dụng LazPe để thực hiện các hành vi gian lận thương mại, phát tán mã độc, spam, xâm phạm quyền sở hữu trí tuệ, hoặc các hành vi vi phạm pháp luật hiện hành của nước Cộng hòa Xã hội Chủ nghĩa Việt Nam.</li>
+                </ul>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">3. Chính sách Mua bán, Thanh toán và Đổi trả</h3>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>Giao dịch:</strong> Mọi đơn đặt hàng trên LazPe đều phụ thuộc vào tình trạng sẵn có của sản phẩm. LazPe có quyền từ chối hoặc hủy đơn hàng vì lý do khách quan (lỗi hệ thống, hết hàng, hoặc nghi ngờ gian lận).</li>
+                  <li><strong>Thanh toán:</strong> Người dùng có thể thanh toán qua các cổng thanh toán hợp pháp được tích hợp (như VNPay, thẻ tín dụng, ví điện tử) hoặc thanh toán khi nhận hàng (COD). LazPe cam kết bảo mật mọi thông tin thanh toán của bạn thông qua tiêu chuẩn mã hóa quốc tế.</li>
+                  <li><strong>Giao hàng & Đổi trả:</strong> LazPe cam kết giao hàng đúng thời gian dự kiến nhưng không chịu trách nhiệm cho các sự cố do thiên tai hoặc lỗi từ bên thứ ba. Chính sách đổi trả/hoàn tiền áp dụng trong vòng 7 ngày kể từ ngày nhận hàng với điều kiện sản phẩm còn nguyên tem mác và lỗi do nhà sản xuất.</li>
+                </ul>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">4. Thu thập Dữ liệu & Ứng dụng Trí tuệ Nhân tạo (AI)</h3>
+                <p className="mb-2">Để mang lại trải nghiệm mua sắm cá nhân hóa và tiện lợi nhất cho mẹ và bé, hệ thống LazPe có sử dụng các thuật toán Trí tuệ Nhân tạo (AI) tiên tiến. Bằng việc sử dụng dịch vụ, bạn đồng ý cho phép chúng tôi thu thập và xử lý các thông tin sau:</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>Hành vi mua sắm:</strong> Lịch sử truy cập, thời gian xem sản phẩm, các mặt hàng đã thêm vào giỏ, tần suất mua sắm và các đánh giá/phản hồi sản phẩm.</li>
+                  <li><strong>Mục đích sử dụng AI:</strong> Toàn bộ dữ liệu hành vi này được đưa vào mô hình học máy (Machine Learning) <strong>duy nhất nhằm mục đích</strong> huấn luyện AI. Hệ thống sẽ phân tích để tự động hiểu sở thích, từ đó gợi ý những sản phẩm phù hợp nhất với nhu cầu, độ tuổi của bé và thói quen tiêu dùng của bạn.</li>
+                  <li><strong>Cam kết an toàn:</strong> Quá trình phân tích dữ liệu AI được tự động hóa hoàn toàn, ẩn danh danh tính người dùng và được mã hóa an toàn tuyệt đối.</li>
+                </ul>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">5. Chính sách Bảo mật Thông tin (Privacy Policy)</h3>
+                <p className="mb-2">LazPe coi trọng quyền riêng tư của bạn. Việc thu thập và xử lý dữ liệu cá nhân tuân thủ nghiêm ngặt các quy định pháp luật:</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>Mục đích:</strong> Thông tin cá nhân (Email, SĐT, Địa chỉ) chỉ được sử dụng để xử lý đơn hàng, liên lạc hỗ trợ khách hàng, gửi thông báo bảo mật và nâng cao chất lượng dịch vụ.</li>
+                  <li><strong>Không mua bán dữ liệu:</strong> LazPe <strong>cam kết tuyệt đối không bán, trao đổi hay chia sẻ trái phép</strong> dữ liệu cá nhân của bạn cho bất kỳ bên thứ ba nào vì mục đích thương mại. Thông tin chỉ được cung cấp cho các đối tác vận chuyển và thanh toán để hoàn tất đơn hàng của bạn.</li>
+                  <li><strong>Sử dụng Cookie:</strong> LazPe sử dụng cookie để lưu trữ phiên đăng nhập và cải thiện tốc độ tải trang. Bạn có quyền từ chối cookie qua cài đặt trình duyệt, tuy nhiên điều này có thể ảnh hưởng đến một số tính năng của trang web.</li>
+                </ul>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">6. Quyền Sở hữu Trí tuệ</h3>
+                <p>Toàn bộ nội dung, hình ảnh, mã nguồn, logo và thiết kế đồ họa trên nền tảng LazPe đều thuộc quyền sở hữu trí tuệ hợp pháp của LazPe hoặc các đối tác được cấp phép. Nghiêm cấm mọi hành vi sao chép, chỉnh sửa, phân phối hoặc sử dụng cho mục đích thương mại khi chưa có sự cho phép bằng văn bản.</p>
+
+                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-2">7. Thay đổi Điều khoản</h3>
+                <p>LazPe có toàn quyền cập nhật hoặc thay đổi Điều khoản Dịch vụ và Chính sách Bảo mật này vào bất kỳ lúc nào mà không cần báo trước. Tuy nhiên, các thay đổi lớn liên quan đến quyền lợi người dùng sẽ được thông báo qua Email hoặc thông báo đẩy trên hệ thống. Việc bạn tiếp tục sử dụng dịch vụ sau khi các sửa đổi có hiệu lực đồng nghĩa với việc bạn chấp nhận các thay đổi đó.</p>
+
+                <div className="mt-12 text-center pt-6 border-t border-slate-200 border-dashed">
+                  <p className="font-semibold text-slate-800 mb-1">Cảm ơn bạn đã tin tưởng và đồng hành cùng LazPe.</p>
+                  <p className="text-sm italic text-slate-500">Mọi thắc mắc xin vui lòng liên hệ bộ phận CSKH qua email: support@lazpe.vn</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+              <button 
+                onClick={() => setShowTermsModal(false)} 
+                className="px-6 py-2 bg-slate-200 text-slate-700 font-bold rounded-[5px] hover:bg-slate-300 transition-colors shadow-sm"
+              >
+                Đóng
+              </button>
+              <button 
+                onClick={() => {
+                  setTermsAccepted(true);
+                  setShowTermsModal(false);
+                }} 
+                className="px-6 py-2 bg-primary text-white font-bold rounded-[5px] hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                Tôi Đồng Ý
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

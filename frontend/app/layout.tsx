@@ -85,6 +85,7 @@ export default function RootLayout({
           {children}
           <DisclaimerModal />
           <Toaster richColors position="top-right" closeButton visibleToasts={3} className="print:hidden" />
+          <div id="modal-root"></div>
         </GoogleProvider>
       </body>
     </html>

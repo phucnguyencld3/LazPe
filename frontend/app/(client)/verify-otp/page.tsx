@@ -157,10 +157,10 @@ function VerifyOtpContent() {
   };
 
   return (
-    <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-3xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-[5px] overflow-hidden shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="p-8 md:p-10">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mb-5">
+          <div className="w-16 h-16 bg-primary-container rounded-[5px] flex items-center justify-center mb-5">
             <span className="material-symbols-outlined text-primary text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>
               mark_email_read
             </span>
@@ -173,7 +173,7 @@ function VerifyOtpContent() {
 
         <form className="space-y-6" onSubmit={handleVerify}>
           {error && (
-            <div className="p-2.5 bg-red-100 text-red-700 text-xs font-medium rounded-xl border border-red-200 text-center">
+            <div className="p-2.5 bg-red-100 text-red-700 text-xs font-medium rounded-[5px] border border-red-200 text-center">
               {error}
             </div>
           )}
@@ -183,7 +183,7 @@ function VerifyOtpContent() {
               <input
                 key={idx}
                 id={`otp-${idx}`}
-                className="w-10 h-12 md:w-12 md:h-14 text-center text-xl font-bold bg-surface-container-low border-2 border-transparent rounded-xl focus:border-primary/50 focus:bg-white outline-none transition-all duration-200 shadow-inner"
+                className="w-10 h-12 md:w-12 md:h-14 text-center text-xl font-bold bg-surface-container-low border-2 border-transparent rounded-[5px] focus:border-primary/50 focus:bg-white outline-none transition-all duration-200 shadow-inner"
                 maxLength={1}
                 type="text"
                 pattern="[0-9]*"
@@ -217,7 +217,7 @@ function VerifyOtpContent() {
 
           <div className="pt-2">
             <button
-              className="w-full h-12 bg-primary text-on-primary rounded-xl font-headline-md text-[13px] flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 disabled:opacity-75 disabled:hover:translate-y-0"
+              className="w-full h-12 bg-primary text-on-primary rounded-[5px] font-headline-md text-[13px] flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 disabled:opacity-75 disabled:hover:translate-y-0"
               type="submit"
               disabled={loading}
             >
@@ -255,7 +255,7 @@ export default function VerifyOtpPage() {
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
 
       <Suspense fallback={
-        <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-3xl p-12 flex justify-center items-center shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)]">
+        <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-[5px] p-12 flex justify-center items-center shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)]">
           <span className="material-symbols-outlined animate-spin text-primary text-[40px]">sync</span>
         </div>
       }>

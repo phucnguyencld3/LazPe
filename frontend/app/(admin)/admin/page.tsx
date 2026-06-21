@@ -27,19 +27,30 @@ async function getAdminDashboardStats() {
     }
   } catch (e) { }
 
-  let totalOrders = 47;
-  let completedOrders = 9;
-  let pendingOrders = 7;
-  let canceledOrders = 23;
-  let totalRevenue = 225000;
+  let totalOrders = 0;
+  let completedOrders = 0;
+  let pendingOrders = 0;
+  let canceledOrders = 0;
+  let totalRevenue = 0;
 
   let recentOrders: any[] = [];
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/Invoice/metrics`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      totalOrders = data.totalOrders ?? 0;
+      pendingOrders = data.pending ?? 0;
+      completedOrders = data.completed ?? 0;
+      canceledOrders = data.cancelled ?? 0;
+      totalRevenue = data.totalRevenue ?? data.todayRevenue ?? 0;
+    }
+  } catch (e) { }
 
   try {
     const res = await fetch(`${API_BASE_URL}/Invoice/search?page=1&pageSize=5&sortBy=CreatedAt&desc=true`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data.TotalCount !== undefined) totalOrders = data.TotalCount;
       if (data.items) recentOrders = data.items;
       else if (data.Items) recentOrders = data.Items;
     }

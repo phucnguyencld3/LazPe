@@ -25,6 +25,8 @@ interface OrderSummarySidebarProps {
   earnPolicy: LoyaltyEarnPolicySummary | null;
   redeemPolicy: LoyaltyRedeemPolicySummary | null;
   estimatedEarnPoints: number;
+  handleOpenVoucherModal: () => void;
+  handleRemoveVoucher: (type?: number) => Promise<void> | void;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
@@ -49,6 +51,8 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   earnPolicy,
   redeemPolicy,
   estimatedEarnPoints,
+  handleOpenVoucherModal,
+  handleRemoveVoucher,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
 
@@ -66,7 +70,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
 
   return (
     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Heading */}
         <div className="p-6 border-b border-slate-100">
@@ -76,15 +80,19 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
           </div>
 
           {/* List of checked items */}
-          <div className="max-h-[300px] overflow-y-auto pr-1 space-y-4 scrollbar-thin">
+          <div className="max-h-[300px] overflow-y-auto pr-3 pt-2 pb-2 space-y-4 scrollbar-thin -mt-2">
             {selectedItems.map((item) => {
               const isBundle = !!item.bundleID;
               const name = isBundle ? item.bundle?.name : item.product?.name;
               const image = isBundle ? item.bundle?.imageUrl : item.variant?.imageUrl || item.product?.imageUrl;
               
-              const variantText = isBundle
+              let variantText = isBundle
                 ? "Gói Combo"
                 : [item.variant?.color, item.variant?.size].filter(Boolean).join(" - ");
+              
+              if (variantText) {
+                variantText = variantText.replace(/\s*-\s*Xem chi ti[eế]t/gi, "").replace(/\s*Xem chi ti[eế]t/gi, "").trim();
+              }
 
               return (
                 <div key={item.cartDetailID} className={`flex gap-3 items-center ${item.isGift ? "opacity-90" : ""}`}>
@@ -132,128 +140,119 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
           </div>
         </div>
 
-        {/* Voucher apply indicator */}
-        {cart?.voucher && (
-          <div className="mx-6 mt-6 p-3 rounded-xl border border-dashed border-rose-200 bg-rose-500/[0.02] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-grow">
-              <div className="text-xs font-bold text-slate-800">
-                Đã áp dụng mã: <span className="text-rose-600 font-extrabold">{cart.voucher.code}</span>
-              </div>
-              <div className="text-[10px] text-slate-500 truncate">
-                {cart.voucher.name}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {cart?.shippingVoucher && (
-          <div className="mx-6 mt-4 p-3 rounded-xl border border-dashed border-sky-200 bg-sky-500/[0.02] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-base font-bold">local_shipping</span>
-            </div>
-            <div className="min-w-0 flex-grow">
-              <div className="text-xs font-bold text-slate-800">
-                Đã áp dụng mã ship: <span className="text-sky-600 font-extrabold">{cart.shippingVoucher.code}</span>
-              </div>
-              <div className="text-[10px] text-slate-500 truncate">
-                {cart.shippingVoucher.name}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Loyalty Points Widget */}
-        <div className="mx-6 mt-4 p-4 rounded-xl border border-slate-100 bg-slate-50/50 space-y-3">
+        {/* Vouchers Section */}
+        <div className="px-6 py-4 space-y-3 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-              <span className="material-symbols-outlined text-rose-500 text-base font-bold">military_tech</span>
-              <span>Dùng điểm tích lũy</span>
+              <span className="material-symbols-outlined text-rose-500 text-base font-bold">local_activity</span>
+              <span>Mã giảm giá LazPe</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-bold">
-              Có sẵn: <span className="text-rose-500 font-extrabold">{availablePoints.toLocaleString("vi-VN")}</span>
-            </span>
+            <button 
+              type="button"
+              onClick={handleOpenVoucherModal}
+              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center"
+            >
+              Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
           </div>
 
-          <div className="flex gap-2">
-            <div className="relative flex-grow">
+          {(cart?.voucher || cart?.shippingVoucher) && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {cart?.voucher && (
+                <div className="py-1 px-2 rounded-[4px] border border-dashed border-rose-200 bg-rose-50 flex items-center gap-1.5 w-fit">
+                  <Sparkles className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                  <span className="text-[11px] font-extrabold text-rose-600">{cart.voucher.code}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveVoucher(1)}
+                    className="text-slate-400 hover:text-rose-500 transition-colors flex items-center"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              )}
+              {cart?.shippingVoucher && (
+                <div className="py-1 px-2 rounded-[4px] border border-dashed border-sky-200 bg-sky-50 flex items-center gap-1.5 w-fit">
+                  <span className="material-symbols-outlined text-[14px] font-bold text-sky-500 shrink-0">local_shipping</span>
+                  <span className="text-[11px] font-extrabold text-sky-600">{cart.shippingVoucher.code}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveVoucher(2)}
+                    className="text-slate-400 hover:text-sky-500 transition-colors flex items-center"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Loyalty Points Widget */}
+        {availablePoints >= 1000 && (
+          <div className="px-6 py-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                <span className="material-symbols-outlined text-rose-500 text-base font-bold">military_tech</span>
+                <span>Dùng điểm tích lũy</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-bold">
+                Có sẵn: <span className="text-rose-500 font-extrabold">{availablePoints.toLocaleString("vi-VN")}</span>
+              </span>
+            </div>
+
+            <div className="flex items-center bg-white rounded-[6px] border border-slate-200 p-1 focus-within:border-rose-400 focus-within:ring-1 focus-within:ring-rose-400/20 transition-all">
               <input
                 type="number"
-                placeholder="Nhập số điểm..."
+                placeholder="Tối thiểu 1.000đ"
                 value={inputPoints === 0 ? "" : inputPoints}
                 onChange={(e) => {
                   const val = Math.max(0, parseInt(e.target.value) || 0);
                   setInputPoints(val);
                 }}
                 disabled={isApplyingPoints || submitting}
-                className="w-full bg-white text-slate-800 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-rose-400 disabled:bg-slate-100 transition-colors placeholder:text-slate-400 placeholder:font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="flex-grow w-full bg-transparent text-slate-800 text-xs font-semibold px-2 outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              {availablePoints > 0 && (
+              {availablePoints > 0 && inputPoints !== Math.min(availablePoints, subTotal - discountAmount) && (
                 <button
                   type="button"
                   onClick={() => {
                     const maxPoints = Math.min(availablePoints, subTotal - discountAmount);
                     setInputPoints(maxPoints);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:underline active:scale-95 transition-all"
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-600 px-2 transition-colors whitespace-nowrap"
                   disabled={isApplyingPoints || submitting}
                 >
                   Tối đa
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => handleApplyPoints(inputPoints)}
+                disabled={isApplyingPoints || submitting || (inputPoints > 0 && inputPoints < 1000)}
+                className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white text-xs font-bold px-4 py-1.5 rounded-[4px] transition-colors flex items-center justify-center shrink-0 active:scale-95"
+              >
+                {isApplyingPoints ? (
+                  <Loader className="animate-spin h-3.5 w-3.5 text-white" />
+                ) : (
+                  "Áp dụng"
+                )}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => handleApplyPoints(inputPoints)}
-              disabled={isApplyingPoints || submitting}
-              className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center justify-center min-w-[70px] active:scale-95"
-            >
-              {isApplyingPoints ? (
-                <Loader className="animate-spin h-3.5 w-3.5 text-white" />
-              ) : (
-                "Áp dụng"
-              )}
-            </button>
-          </div>
-
-          {loyaltyMessage && (
-            <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>✓</span> {loyaltyMessage}
-            </p>
-          )}
-          {loyaltyError && (
-            <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1">
-              <span>⚠</span> {loyaltyError}
-            </p>
-          )}
-        </div>
-
-        {(earnPolicyText || redeemPolicyText) && (
-          <div className="mx-6 mt-4 p-4 rounded-xl border border-slate-100 bg-white space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              <span className="material-symbols-outlined text-rose-500 text-base font-bold">workspace_premium</span>
-              <span>Cơ chế Loyalty hiện tại</span>
-            </div>
-            {earnPolicyText && (
-              <div className="text-[11px] text-slate-600">
-                <span className="font-semibold text-slate-700">Tích điểm:</span> {earnPolicyText}
-                {earnPolicy?.isCampaign && earnPolicy.name ? (
-                  <span className="text-rose-500 font-semibold"> · {earnPolicy.name}</span>
-                ) : null}
-              </div>
+            
+            {inputPoints > 0 && inputPoints < 1000 && (
+              <p className="text-[10px] text-rose-500 font-semibold px-1 mt-1">Mức áp dụng tối thiểu là 1.000 điểm</p>
             )}
-            {redeemPolicyText && (
-              <div className="text-[11px] text-slate-600">
-                <span className="font-semibold text-slate-700">Đổi điểm:</span> {redeemPolicyText}
-              </div>
+
+            {loyaltyError && (
+              <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1">
+                <span>⚠</span> {loyaltyError}
+              </p>
             )}
-            <div className="text-[11px] text-slate-700 font-semibold">
-              Đơn hàng này tích được: <span className="text-rose-500 font-extrabold">{estimatedEarnPoints.toLocaleString("vi-VN")}</span> điểm
-            </div>
           </div>
         )}
+
+
 
         {/* Price Calculations */}
         <div className="p-6 space-y-4">
@@ -322,7 +321,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             <button
               onClick={handlePlaceOrder}
               disabled={submitting}
-              className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white rounded-xl py-3.5 font-bold text-sm shadow-md hover:shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 bouncy-hover transition-all"
+              className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white rounded-[8px] py-3.5 font-bold text-sm shadow-md hover:shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 bouncy-hover transition-all"
             >
               {submitting ? (
                 <>

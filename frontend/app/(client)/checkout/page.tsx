@@ -25,6 +25,9 @@ import { PaymentMethodSection } from "@/components/client/checkout/PaymentMethod
 import { OrderNoteSection } from "@/components/client/checkout/OrderNoteSection";
 import { OrderSummarySidebar } from "@/components/client/checkout/OrderSummarySidebar";
 import { AddressModal } from "@/components/client/checkout/AddressModal";
+import { VoucherModal } from "@/components/client/cart/VoucherModal";
+import { getPublicVouchers, applyVoucherToCart, removeVoucherFromCart} from "@/lib/api";
+import { Voucher } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -51,6 +54,11 @@ export default function CheckoutPage() {
 
   // Address Modal state
   const [addressModalOpen, setAddressModalOpen] = useState(false);
+
+  // Voucher Modal state
+  const [voucherModalOpen, setVoucherModalOpen] = useState(false);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
 
   // Pricing states
   const [subTotal, setSubTotal] = useState(0);
@@ -383,6 +391,57 @@ export default function CheckoutPage() {
     }
   };
 
+  const loadVouchersList = async () => {
+    setLoadingVouchers(true);
+    try {
+      const voucherData = await getPublicVouchers();
+      if (voucherData) {
+        setVouchers(voucherData);
+      }
+    } catch (error) {
+      console.error("Error loading vouchers:", error);
+    } finally {
+      setLoadingVouchers(false);
+    }
+  };
+
+  const handleOpenVoucherModal = () => {
+    setVoucherModalOpen(true);
+    loadVouchersList();
+  };
+
+  const handleApplyVoucherFromModal = async (code: string) => {
+    if (!token) return;
+    try {
+      const res = await applyVoucherToCart(token, code);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Áp dụng mã giảm giá thành công!");
+      } else {
+        toast.error(res.message || "Áp dụng voucher thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
+  const handleRemoveVoucher = async (type?: number) => {
+    if (!token) return;
+    try {
+      const res = await removeVoucherFromCart(token, type);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Đã hủy áp dụng mã giảm giá");
+      } else {
+        toast.error(res.message || "Không thể hủy mã giảm giá");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
   const handleOpenNewAddressForm = () => {
     // This function can be passed down to open the modal and trigger new form logic
   };
@@ -500,6 +559,8 @@ export default function CheckoutPage() {
             earnPolicy={loyaltyPolicySummary?.earnPolicy || null}
             redeemPolicy={loyaltyPolicySummary?.redeemPolicy || null}
             estimatedEarnPoints={estimatedEarnPoints}
+            handleOpenVoucherModal={handleOpenVoucherModal}
+            handleRemoveVoucher={handleRemoveVoucher}
           />
         </div>
 
@@ -519,6 +580,19 @@ export default function CheckoutPage() {
           normalizeName={normalizeName}
         />
       )}
+
+      {/* Voucher Selection Modal */}
+      <VoucherModal
+        voucherModalOpen={voucherModalOpen}
+        setVoucherModalOpen={setVoucherModalOpen}
+        loadingVouchers={loadingVouchers}
+        vouchers={vouchers}
+        subTotal={subTotal}
+        handleApplyVoucherFromModal={handleApplyVoucherFromModal}
+        cart={cart}
+        handleRemoveVoucher={handleRemoveVoucher}
+      />
     </div>
   );
 }
+
