@@ -507,8 +507,8 @@ export default function ProfilePage() {
     if (!userProfile || !token) return;
     setAddressError(null);
 
-    if (!addressForm.provinceCode || !addressForm.districtCode || !addressForm.wardCode) {
-      setAddressError("Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã");
+    if (!addressForm.provinceCode || !addressForm.districtCode || (addressForm.apiVersion !== 'v2' && !addressForm.wardCode)) {
+      setAddressError("Vui lòng chọn đầy đủ thông tin khu vực hành chính");
       return;
     }
 
