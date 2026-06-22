@@ -2,9 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { useBanners } from '@/hooks/useBanners';
+import { BannerRenderer } from '@/components/shared/banner/BannerRenderer';
 
 export default function HomeBanner() {
+  const { banners, loading } = useBanners('home');
   const [currentBanner, setCurrentBanner] = useState(0);
+  
+  // Original fallback banners if DB is empty
   const bannerImages = [
     '/banner/banner1.png.png',
     '/banner/banner2.png.png',
@@ -14,11 +19,25 @@ export default function HomeBanner() {
   ];
 
   useEffect(() => {
+    if (banners && banners.length > 0) return; // Không cần tự xoay vòng nếu xài BannerRenderer (tuỳ vào Template)
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % bannerImages.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [banners]);
+
+  if (loading) {
+    return <div className="rounded-[10px] w-full h-[180px] sm:h-[250px] md:h-[350px] bg-slate-200 animate-pulse flex items-center justify-center">Đang tải banner...</div>;
+  }
+
+  // Nếu có banner cấu hình từ Admin thì render BannerRenderer
+  if (banners && banners.length > 0) {
+    return (
+      <div className="relative w-full">
+        {banners.map(b => <BannerRenderer key={b.id || 'preview'} banner={b} />)}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-[10px] w-full h-[180px] sm:h-[250px] md:h-[350px] relative overflow-hidden shadow-sm flex items-center justify-center group bg-slate-100">

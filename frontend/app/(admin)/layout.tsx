@@ -617,6 +617,14 @@ export default function AdminLayout({
                 <span className="material-symbols-outlined text-[22px] flex-shrink-0">loyalty</span>
                 {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chương trình Loyalty</span>}
               </Link>
+              <Link
+                href="/admin/banners"
+                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/banners") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Quản lý Banner" : undefined}
+              >
+                <span className="material-symbols-outlined text-[22px] flex-shrink-0">view_carousel</span>
+                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Quản lý Banner</span>}
+              </Link>
             </div>
 
             {/* NHÂN SỰ & NGƯỜI DÙNG */}

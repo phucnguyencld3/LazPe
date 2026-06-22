@@ -8,6 +8,18 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import { CartProvider } from "@/context/CartContext";
 import CustomerChatWidget from "@/components/client/CustomerChatWidget";
 import ScrollToTopButton from "@/components/client/layout/ScrollToTopButton";
+import { useBanners } from "@/hooks/useBanners";
+import { BannerRenderer } from "@/components/shared/banner/BannerRenderer";
+
+function GlobalPromoBanner() {
+  const { banners } = useBanners("promo");
+  if (!banners || banners.length === 0) return null;
+  return (
+    <div className="w-full z-50 relative">
+      {banners.map(b => <BannerRenderer key={b.id || 'preview'} banner={b} />)}
+    </div>
+  );
+}
 
 export default function ClientLayout({
   children,
@@ -24,10 +36,18 @@ export default function ClientLayout({
     '/verify-otp'
   ].includes(pathname);
 
+  // Sync route changes to Admin Live Preview
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'ROUTE_CHANGE', pathname }, '*');
+    }
+  }, [pathname]);
+
   return (
     <WishlistProvider>
       <CartProvider>
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
+          {!isAuthPage && <GlobalPromoBanner />}
           <HeaderV2 />
           <main className={`flex-grow ${isAuthPage ? "w-full flex flex-col h-screen overflow-hidden" : "w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-[110px] sm:mt-20 mb-12"}`}>
             {children}

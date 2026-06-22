@@ -1,10 +1,23 @@
 import React from 'react';
 import Link from 'next/link';
 import { Mail, Phone, MessageCircle, CreditCard, Truck, ShieldCheck, BadgeCheck } from 'lucide-react';
+import { useBanners } from '@/hooks/useBanners';
+import { BannerRenderer } from '@/components/shared/banner/BannerRenderer';
 
 export function Footer() {
+  const { banners } = useBanners('footer');
+
   return (
-    <footer className="border-t border-surface-variant bg-surface-container-lowest py-6 px-4 sm:px-6 lg:px-8 mt-auto">
+    <footer className="border-t border-surface-variant bg-surface-container-lowest mt-auto relative">
+      {/* Banner Chân Trang (Footer) */}
+      {banners && banners.length > 0 && (
+        <div className="w-full bg-slate-50 border-b border-surface-variant">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            {banners.map(b => <BannerRenderer key={b.id || 'preview'} banner={b} />)}
+          </div>
+        </div>
+      )}
+      <div className="py-6 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
           {/* Cột 1: Thông tin công ty */}
@@ -118,6 +131,7 @@ export function Footer() {
             <Link href="/privacy" className="hover:text-primary">Chính sách bảo mật</Link>
           </div>
         </div>
+      </div>
       </div>
     </footer>
   );

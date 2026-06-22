@@ -83,6 +83,10 @@ namespace PolyBabyAPI.Data
         public DbSet<FlashSale> FlashSales { get; set; }
         public DbSet<FlashSaleItem> FlashSaleItems { get; set; }
 
+        // ===== Banner =====
+        public DbSet<Banner> Banners { get; set; }
+        public DbSet<BannerVersion> BannerVersions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -93,6 +97,35 @@ namespace PolyBabyAPI.Data
                 .WithMany(fs => fs.FlashSaleItems)
                 .HasForeignKey(fsi => fsi.FlashSaleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ===== Banner Configurations =====
+            builder.Entity<Banner>(entity =>
+            {
+                entity.HasKey(b => b.Id);
+                entity.HasIndex(b => b.Position);
+                entity.HasIndex(b => b.Status);
+                entity.OwnsOne(b => b.LayoutConfig, cb => 
+                {
+                    cb.ToJson();
+                    cb.OwnsMany(l => l.Items);
+                    cb.OwnsOne(l => l.Responsive);
+                });
+            });
+
+            builder.Entity<BannerVersion>(entity =>
+            {
+                entity.HasKey(bv => bv.Id);
+                entity.HasOne(bv => bv.Banner)
+                      .WithMany()
+                      .HasForeignKey(bv => bv.BannerId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.OwnsOne(bv => bv.LayoutConfig, cb => 
+                {
+                    cb.ToJson();
+                    cb.OwnsMany(l => l.Items);
+                    cb.OwnsOne(l => l.Responsive);
+                });
+            });
 
             // ===== Province - District - Ward =====
             builder.Entity<District>()
