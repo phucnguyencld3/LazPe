@@ -419,7 +419,9 @@ export default function CartPage() {
     cart.cartDetails.forEach((cd) => {
       if (checkedDetails[cd.cartDetailID]) {
         subTotal += cd.totalPrice;
-        selectedCount += cd.quantity;
+        if (!cd.isGift) {
+          selectedCount += 1;
+        }
       }
     });
 

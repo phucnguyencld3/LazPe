@@ -48,6 +48,7 @@ export interface Product {
   maxPrice?: number;
   minEffectivePrice?: number;
   maxEffectivePrice?: number;
+  limitExceeded?: boolean;
   variantCount?: number;
   image?: string;
   imageUrls?: string[];

@@ -135,6 +135,9 @@ export const FlashSaleSection: React.FC = () => {
         <div key={currentSale.id} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 transition-all duration-300 animate-[fadeIn_0.4s_ease-out]">
           {currentSale.flashSaleItems.map((item) => {
             const hasStock = item.totalQuantity > item.soldQuantity;
+            const isLimitExceeded = item.maxQuantityPerUser > 0 && (item.userPurchasedQuantity || 0) >= item.maxQuantityPerUser;
+            const isDisabled = (!hasStock || isLimitExceeded) && isActive;
+            
             const discountPercent = item.originalPrice > 0 ? Math.round(((item.originalPrice - item.discountPrice) / item.originalPrice) * 100) : 0;
             const progressPercent = Math.min(100, Math.max(0, (item.soldQuantity / item.totalQuantity) * 100));
             const isGift = item.discountType === 2; // DiscountType.FreeGift
@@ -146,7 +149,7 @@ export const FlashSaleSection: React.FC = () => {
             return (
               <div 
                 key={item.id} 
-                className="group flex flex-col bg-white rounded-[10px] border border-slate-100 hover:border-rose-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden relative"
+                className={`group flex flex-col bg-white rounded-[10px] border border-slate-100 transition-all duration-300 overflow-hidden relative ${isDisabled ? "opacity-60 grayscale-[50%]" : "hover:border-rose-200 shadow-sm hover:shadow-lg"}`}
               >
                 {/* Image & Badges */}
                 <div className="relative aspect-[4/5] bg-slate-50 overflow-hidden">
@@ -175,10 +178,10 @@ export const FlashSaleSection: React.FC = () => {
                   )}
 
                   {/* Out of Stock Overlay */}
-                  {!hasStock && isActive && (
+                  {isDisabled && (
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
-                      <span className="text-white font-extrabold text-xs uppercase bg-slate-800/90 px-3 py-1 rounded-full">
-                        Hết hàng
+                      <span className="text-white font-extrabold text-xs uppercase bg-slate-800/90 px-3 py-1 rounded-full text-center">
+                        {!hasStock ? "Hết hàng" : "Hết lượt mua"}
                       </span>
                     </div>
                   )}
@@ -237,13 +240,13 @@ export const FlashSaleSection: React.FC = () => {
                         <button className="w-full py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] sm:text-[11px] font-bold rounded-[8px] active:scale-95 transition-all">
                           Xem chi tiết
                         </button>
-                      ) : hasStock ? (
+                      ) : !isDisabled ? (
                         <button className="w-full py-1 bg-gradient-to-r from-rose-500 to-orange-400 hover:brightness-110 text-white text-[10px] sm:text-[11px] font-bold rounded-[8px] active:scale-95 transition-all shadow-md">
                           Mua ngay
                         </button>
                       ) : (
                         <button disabled className="w-full py-1 bg-slate-100 text-slate-400 text-[10px] sm:text-[11px] font-bold rounded-[8px] cursor-not-allowed">
-                          Hết hàng
+                          {!hasStock ? "Hết hàng" : "Hết lượt mua"}
                         </button>
                       )}
                     </Link>

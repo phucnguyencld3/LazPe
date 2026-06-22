@@ -92,6 +92,7 @@ namespace PolyBabyAPI.Services
             var now = DateTime.Now;
             int? flashSaleMaxQty = null;
             string flashSaleGiftVariantIds = null;
+            int? fsItemId = null;
 
             if (variantId.HasValue || bundleId.HasValue)
             {
@@ -117,6 +118,7 @@ namespace PolyBabyAPI.Services
 
                     if (fsItem != null)
                     {
+                        fsItemId = fsItem.Id;
                         if (fsItem.MaxQuantityPerUser > 0)
                         {
                             flashSaleMaxQty = fsItem.MaxQuantityPerUser;
@@ -149,13 +151,13 @@ namespace PolyBabyAPI.Services
                     }
 
                     existingDetail.Quantity = targetQuantity;
-                    existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID, targetQuantity);
+                    existingDetail.UnitPrice = await GetEffectivePriceAsync(userId, existingDetail.VariantID, existingDetail.BundleID, targetQuantity);
                 }
                 else if (existingDetail.BundleID.HasValue)
                 {
                     var targetQuantity = existingDetail.Quantity + quantity;
                     existingDetail.Quantity = targetQuantity;
-                    existingDetail.UnitPrice = await GetEffectivePriceAsync(existingDetail.VariantID, existingDetail.BundleID, existingDetail.Quantity);
+                    existingDetail.UnitPrice = await GetEffectivePriceAsync(userId, existingDetail.VariantID, existingDetail.BundleID, existingDetail.Quantity);
                 }
 
                 existingDetail.TotalPrice = existingDetail.UnitPrice * existingDetail.Quantity;
@@ -186,7 +188,7 @@ namespace PolyBabyAPI.Services
                     if (!exists) throw new ArgumentException("Combo không tồn tại");
                 }
 
-                newDetail.UnitPrice = await GetEffectivePriceAsync(variantId, bundleId, newDetail.Quantity);
+                newDetail.UnitPrice = await GetEffectivePriceAsync(userId, variantId, bundleId, newDetail.Quantity);
                 newDetail.TotalPrice = newDetail.UnitPrice * newDetail.Quantity;
                 _context.CartDetails.Add(newDetail);
             }
@@ -273,10 +275,14 @@ namespace PolyBabyAPI.Services
                         }
                     }
 
-                    detail.Quantity = quantity;
-                    detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID, quantity);
-                    detail.TotalPrice = detail.UnitPrice * quantity;
-                    await _context.SaveChangesAsync();
+                    var cart = await _context.Carts.FindAsync(detail.CartID);
+                    if (cart != null)
+                    {
+                        detail.Quantity = quantity;
+                        detail.UnitPrice = await GetEffectivePriceAsync(cart.UserID, detail.VariantID, detail.BundleID, quantity);
+                        detail.TotalPrice = detail.UnitPrice * quantity;
+                        await _context.SaveChangesAsync();
+                    }
                 }
                 await CalculateCartTotalAsync(detail.CartID);
             }
@@ -443,7 +449,7 @@ namespace PolyBabyAPI.Services
 
             foreach (var detail in cart.CartDetails)
             {
-                detail.UnitPrice = await GetEffectivePriceAsync(detail.VariantID, detail.BundleID, detail.Quantity);
+                detail.UnitPrice = await GetEffectivePriceAsync(cart.UserID, detail.VariantID, detail.BundleID, detail.Quantity);
                 detail.TotalPrice = detail.UnitPrice * detail.Quantity;
 
                 var matchingCampaigns = activeGiftCampaigns.Where(fsi => 
@@ -461,8 +467,10 @@ namespace PolyBabyAPI.Services
                         
                         if (matchingCampaign.MaxQuantityPerUser > 0)
                         {
-                            int userGiftLimit = matchingCampaign.MaxQuantityPerUser / matchingCampaign.RequiredQuantity;
-                            maxGiftAllowed = Math.Min(maxGiftAllowed, userGiftLimit);
+                            var userBought = await GetUserFlashSaleBoughtCountAsync(cart.UserID, matchingCampaign.Id);
+                            int remainingAllowed = Math.Max(0, matchingCampaign.MaxQuantityPerUser - userBought);
+                            int maxGiftsForRemaining = remainingAllowed / matchingCampaign.RequiredQuantity;
+                            maxGiftAllowed = Math.Min(maxGiftAllowed, maxGiftsForRemaining);
                         }
 
                         int giftsToGive = Math.Min(giftMultiplier, maxGiftAllowed);
@@ -582,7 +590,7 @@ namespace PolyBabyAPI.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task<decimal> GetEffectivePriceAsync(int? variantId, int? bundleId, int quantity)
+        private async Task<decimal> GetEffectivePriceAsync(string userId, int? variantId, int? bundleId, int quantity)
         {
             var now = DateTime.Now;
 
@@ -602,7 +610,19 @@ namespace PolyBabyAPI.Services
 
                 if (flashSaleItem != null)
                 {
-                    return flashSaleItem.DiscountPrice;
+                    bool limitExceeded = false;
+                    if (flashSaleItem.MaxQuantityPerUser > 0)
+                    {
+                        var userBought = await GetUserFlashSaleBoughtCountAsync(userId, flashSaleItem.Id);
+                        if (userBought + quantity > flashSaleItem.MaxQuantityPerUser)
+                        {
+                            limitExceeded = true;
+                        }
+                    }
+                    if (!limitExceeded)
+                    {
+                        return flashSaleItem.DiscountPrice;
+                    }
                 }
 
                 var bundle = await _context.Bundles.FindAsync(bundleId.Value);
@@ -631,7 +651,19 @@ namespace PolyBabyAPI.Services
 
                 if (fsVariant != null)
                 {
-                    return fsVariant.DiscountPrice;
+                    bool limitExceeded = false;
+                    if (fsVariant.MaxQuantityPerUser > 0)
+                    {
+                        var userBought = await GetUserFlashSaleBoughtCountAsync(userId, fsVariant.Id);
+                        if (userBought + quantity > fsVariant.MaxQuantityPerUser)
+                        {
+                            limitExceeded = true;
+                        }
+                    }
+                    if (!limitExceeded)
+                    {
+                        return fsVariant.DiscountPrice;
+                    }
                 }
 
                 var fsProduct = await _context.FlashSaleItems
@@ -648,7 +680,19 @@ namespace PolyBabyAPI.Services
 
                 if (fsProduct != null)
                 {
-                    return fsProduct.DiscountPrice;
+                    bool limitExceeded = false;
+                    if (fsProduct.MaxQuantityPerUser > 0)
+                    {
+                        var userBought = await GetUserFlashSaleBoughtCountAsync(userId, fsProduct.Id);
+                        if (userBought + quantity > fsProduct.MaxQuantityPerUser)
+                        {
+                            limitExceeded = true;
+                        }
+                    }
+                    if (!limitExceeded)
+                    {
+                        return fsProduct.DiscountPrice;
+                    }
                 }
 
                 return CalculateEffectiveVariantPrice(variant);
@@ -668,6 +712,42 @@ namespace PolyBabyAPI.Services
 
             var finalPrice = variant.UnitPrice * (1 - (effectiveDiscount / 100m));
             return finalPrice < 0 ? 0 : finalPrice;
+        }
+
+        private async Task<int> GetUserFlashSaleBoughtCountAsync(string userId, int flashSaleItemId)
+        {
+            var fsItem = await _context.FlashSaleItems.FindAsync(flashSaleItemId);
+            if (fsItem == null) return 0;
+
+            var invoiceDetails = await _context.InvoiceDetails
+                .Include(id => id.Invoice)
+                .Where(id => id.Invoice.UserID == userId 
+                    && id.Invoice.Status != OrderStatus.Cancelled
+                    && !id.Invoice.IsDeleted)
+                .ToListAsync();
+
+            int count = 0;
+            foreach (var detail in invoiceDetails)
+            {
+                if (fsItem.ItemType == FlashSaleItemType.Bundle && detail.BundleID == fsItem.ReferenceId)
+                {
+                    count += detail.Quantity;
+                }
+                else if (fsItem.ItemType == FlashSaleItemType.Variant && detail.VariantID == fsItem.ReferenceId)
+                {
+                    count += detail.Quantity;
+                }
+                else if (fsItem.ItemType == FlashSaleItemType.Product && detail.VariantID.HasValue)
+                {
+                    var variant = await _context.Variants.FindAsync(detail.VariantID.Value);
+                    if (variant != null && variant.ProductID == fsItem.ReferenceId)
+                    {
+                        count += detail.Quantity;
+                    }
+                }
+            }
+
+            return count;
         }
     }
 }

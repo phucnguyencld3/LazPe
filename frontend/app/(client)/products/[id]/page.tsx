@@ -191,8 +191,19 @@ export default function ProductDetailPage() {
     
     // Find the tier that matches the current quantity
     const tier = matchedItems.find(item => quantity >= (item.requiredQuantity || 1));
+    const result = tier || matchedItems[matchedItems.length - 1];
     
-    return tier || matchedItems[matchedItems.length - 1];
+    // Nếu flash sale đã hết hàng hoặc người dùng đã hết lượt mua, ẩn hoàn toàn flash sale và hiển thị sản phẩm bình thường
+    if (result) {
+      if (result.soldQuantity >= result.totalQuantity) {
+        return null;
+      }
+      if (result.maxQuantityPerUser > 0 && (result.userPurchasedQuantity || 0) >= result.maxQuantityPerUser) {
+        return null;
+      }
+    }
+    
+    return result;
   }, [activeFlashSale, product, selectedOptions, quantity]);
 
   useEffect(() => {
@@ -298,7 +309,8 @@ export default function ProductDetailPage() {
       const remainingSaleQty = activeFlashSaleItem.totalQuantity - activeFlashSaleItem.soldQuantity;
       limit = Math.min(limit, remainingSaleQty);
       if (activeFlashSaleItem.maxQuantityPerUser > 0) {
-        limit = Math.min(limit, activeFlashSaleItem.maxQuantityPerUser);
+        const userLeft = activeFlashSaleItem.maxQuantityPerUser - (activeFlashSaleItem.userPurchasedQuantity || 0);
+        limit = Math.min(limit, Math.max(0, userLeft));
       }
     }
     return Math.max(0, limit);

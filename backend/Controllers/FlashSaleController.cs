@@ -64,6 +64,24 @@ namespace PolyBabyAPI.Controllers
 
             var responseList = new List<FlashSaleResponseDto>();
 
+            string? userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            List<InvoiceDetail> userPurchases = new List<InvoiceDetail>();
+
+            if (!string.IsNullOrEmpty(userId) && activeSales.Any())
+            {
+                var minStartTime = activeSales.Min(s => s.StartTime);
+                var maxEndTime = activeSales.Max(s => s.EndTime);
+
+                userPurchases = await _context.InvoiceDetails
+                    .Include(d => d.Invoice)
+                    .Include(d => d.Variant)
+                    .Where(d => d.Invoice.UserID == userId
+                                && d.Invoice.Status != OrderStatus.Cancelled
+                                && d.Invoice.CreatedAt >= minStartTime
+                                && d.Invoice.CreatedAt <= maxEndTime)
+                    .ToListAsync();
+            }
+
             foreach (var sale in activeSales)
             {
                 var response = new FlashSaleResponseDto
@@ -85,6 +103,19 @@ namespace PolyBabyAPI.Controllers
                 // Điền thông tin chi tiết tên, ảnh, giá gốc của từng item trong Flash Sale
                 foreach (var item in sale.FlashSaleItems)
                 {
+                    int userQty = 0;
+                    if (!string.IsNullOrEmpty(userId) && item.MaxQuantityPerUser > 0)
+                    {
+                        var relevantPurchases = userPurchases.Where(d => d.Invoice.CreatedAt >= sale.StartTime && d.Invoice.CreatedAt <= sale.EndTime);
+                        if (item.ItemType == FlashSaleItemType.Product) {
+                            userQty = relevantPurchases.Where(d => d.Variant != null && d.Variant.ProductID == item.ReferenceId).Sum(d => d.Quantity);
+                        } else if (item.ItemType == FlashSaleItemType.Variant) {
+                            userQty = relevantPurchases.Where(d => d.VariantID == item.ReferenceId).Sum(d => d.Quantity);
+                        } else if (item.ItemType == FlashSaleItemType.Bundle) {
+                            userQty = relevantPurchases.Where(d => d.BundleID == item.ReferenceId).Sum(d => d.Quantity);
+                        }
+                    }
+
                     var itemDto = new FlashSaleItemResponseDto
                     {
                         Id = item.Id,
@@ -97,7 +128,8 @@ namespace PolyBabyAPI.Controllers
                         GiftVariantIds = !string.IsNullOrEmpty(item.GiftVariantIds) ? item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList() : null,
                         TotalQuantity = item.TotalQuantity,
                         SoldQuantity = item.SoldQuantity,
-                        MaxQuantityPerUser = item.MaxQuantityPerUser
+                        MaxQuantityPerUser = item.MaxQuantityPerUser,
+                        UserPurchasedQuantity = userQty
                     };
 
                     if (item.ItemType == FlashSaleItemType.Product)

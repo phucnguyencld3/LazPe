@@ -23,7 +23,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       onClick={() => router.push(product.isBundle ? `/bundles/${product.id}` : `/products/${product.id}`)} 
       className="h-full flex flex-col"
     >
-      <div className="bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between">
+      <div className={`bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between ${product.limitExceeded || !product.inStock ? "opacity-60 grayscale-[50%]" : ""}`}>
         {/* Product Image */}
         <div className="relative aspect-square bg-slate-100 overflow-hidden">
           {product.image ? (
@@ -53,9 +53,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Stock Status */}
-          {!product.inStock && (
+          {(!product.inStock || product.limitExceeded) && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-              <span className="text-white font-semibold text-lg">Hết hàng</span>
+              <span className="text-white font-semibold text-lg text-center px-2">
+                {!product.inStock ? "Hết hàng" : "Hết lượt mua"}
+              </span>
             </div>
           )}
 
