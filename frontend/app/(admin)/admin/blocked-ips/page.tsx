@@ -43,7 +43,7 @@ export default function BlockedIpsPage() {
     if (!newIp.trim()) return toast.error("Vui lòng nhập IP");
     
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
       const res = await blockIp(token, newIp, reason, duration);
       if (res.success) {
         toast.success(res.message);
@@ -67,7 +67,7 @@ export default function BlockedIpsPage() {
     if (!confirmUnblockIp) return;
     
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
       const res = await unblockIp(token, confirmUnblockIp);
       if (res.success) {
         toast.success(res.message);
