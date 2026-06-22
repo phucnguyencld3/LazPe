@@ -65,6 +65,10 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
     if (activeFlashSaleItem) {
       const remainingSaleQty = activeFlashSaleItem.totalQuantity - activeFlashSaleItem.soldQuantity;
       limit = Math.min(limit, remainingSaleQty);
+      if (activeFlashSaleItem.maxQuantityPerUser > 0) {
+        const userLeft = activeFlashSaleItem.maxQuantityPerUser - (activeFlashSaleItem.userPurchasedQuantity || 0);
+        limit = Math.min(limit, Math.max(0, userLeft));
+      }
     }
     return Math.max(0, limit);
   }, [displayStock, activeFlashSaleItem]);

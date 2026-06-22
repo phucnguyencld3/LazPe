@@ -278,7 +278,7 @@ namespace PolyBabyAPI.Services
                         item.Quantity, item.Variant.VariantID, item.Variant.Stock);
 
                     // Trừ số lượng Flash Sale (nếu có chiến dịch đang diễn ra)
-                    await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, item.VariantID.Value, null, item.Quantity);
+                    await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, item.VariantID.Value, null, item.Quantity, item.UnitPrice);
 
                     // Thêm Log AI Purchase
                     await _recommendationService.LogInteractionAsync(cart.UserID, item.Variant.ProductID, PolyBabyAPI.Models.Mongo.InteractionType.Purchase);
@@ -300,7 +300,7 @@ namespace PolyBabyAPI.Services
                     }
 
                     // Trừ số lượng Flash Sale Bundle
-                    await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, null, item.BundleID.Value, item.Quantity);
+                    await HandleFlashSaleCheckoutDeductionAsync(cart.UserID, null, item.BundleID.Value, item.Quantity, item.UnitPrice);
                 }
             }
 
@@ -1099,7 +1099,7 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== PRIVATE: XỬ LÝ KHẤU TRỪ VÀ KIỂM TRA FLASH SALE KHI THANH TOÁN ========
-        private async Task HandleFlashSaleCheckoutDeductionAsync(string userId, int? variantId, int? bundleId, int quantity)
+        private async Task HandleFlashSaleCheckoutDeductionAsync(string userId, int? variantId, int? bundleId, int quantity, decimal unitPrice)
         {
             var now = DateTime.Now;
 
@@ -1114,7 +1114,7 @@ namespace PolyBabyAPI.Services
                         && fsi.ReferenceId == bundleId.Value)
                     .FirstOrDefaultAsync();
 
-                if (fsItem != null)
+                if (fsItem != null && unitPrice == fsItem.DiscountPrice)
                 {
                     if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                     {
@@ -1161,7 +1161,7 @@ namespace PolyBabyAPI.Services
                         .FirstOrDefaultAsync();
                 }
 
-                if (fsItem != null)
+                if (fsItem != null && unitPrice == fsItem.DiscountPrice)
                 {
                     if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                     {

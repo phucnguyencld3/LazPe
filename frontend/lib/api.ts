@@ -135,12 +135,18 @@ export async function getProducts(
 
 export async function getCurrentFlashSales(): Promise<FlashSaleCampaign[] | null> {
   try {
+    const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/FlashSale/current`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      next: { revalidate: 60 } // Cache for 60 seconds
+      headers,
+      next: { revalidate: 0 } // Cache for 0 seconds because it depends on the user
     });
 
     if (!response.ok) {
