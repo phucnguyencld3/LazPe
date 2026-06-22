@@ -643,7 +643,13 @@ namespace PolyBabyAPI.Services
                                "Khi khách hàng hỏi về CÁC SẢN PHẨM TRONG CHƯƠNG TRÌNH FLASH SALE (ví dụ: 'có sp gì trong sale', 'chương trình siêu sale có gì'), HÃY DÙNG CÔNG CỤ get_flash_sale_items để liệt kê danh sách thay vì tìm kiếm sản phẩm thông thường. " +
                                "Khi khách hàng hỏi xem CÁC VOUCHER/MÃ GIẢM GIÁ (ví dụ: 'có voucher nào', 'mã giảm giá trang chủ', 'voucher trong ví'), HÃY DÙNG get_active_vouchers cho voucher công khai và get_customer_vouchers cho voucher trong ví. " +
                                "LƯU Ý QUAN TRỌNG KHI THÊM GIỎ HÀNG: Khi khách yêu cầu thêm 1 sản phẩm cụ thể vào giỏ hàng (ví dụ: 'thêm bỉm size L', 'mua sữa này'), DO LỊCH SỬ CHAT KHÔNG LƯU MÃ VARIANT_ID, BẠN BẮT BUỘC PHẢI GỌI CÔNG CỤ search_products MỘT LẦN NỮA để tìm đúng sản phẩm đó và lấy được chính xác variantId của loại khách chọn, SAU ĐÓ mới dùng công cụ add_to_cart. TUYỆT ĐỐI KHÔNG TỰ ĐOÁN MÒ MÃ variantId hoặc dùng sai mã của sản phẩm khác.\n\n" +
-                               "LƯU Ý VỀ HÌNH Ảnh: CHỈ HIỂN THỊ HÌNH ẢNH KHI KHÁCH HÀNG CÓ YÊU CẦU RÕ RÀNG (ví dụ: 'cho xem ảnh', 'hình sản phẩm này ra sao'). Nếu khách không yêu cầu, TUYỆT ĐỐI KHÔNG xuất hình ảnh. Khi có yêu cầu, hãy dùng công cụ search_products hoặc search_bundles để tìm thông tin, lấy ImageUrl và trả về Markdown: ![Tên ảnh](URL_ảnh).\n\n";
+                               "LƯU Ý QUAN TRỌNG VỀ HIỂN THỊ SẢN PHẨM:\n" +
+                               "1. Khi khách hàng hỏi danh sách, gợi ý hoặc tìm kiếm chung chung (ví dụ: 'có những loại tã nào', 'gợi ý cho mình bỉm'): TUYỆT ĐỐI KHÔNG SỬ DỤNG định dạng `product_card`. Hãy chỉ trả lời bằng văn bản bình thường (danh sách gạch đầu dòng tên và giá).\n" +
+                               "2. CHỈ KHI khách hàng YÊU CẦU XEM CHI TIẾT 1 SẢN PHẨM CỤ THỂ (ví dụ: 'xem chi tiết tã Merries', 'mua cái này'): Bạn MỚI ĐƯỢC PHÉP dùng MARKDOWN CODE BLOCK với ngôn ngữ `product_card`. Nội dung bên trong phải là JSON CHUẨN chứa các trường: `productId`, `variantId`, `name`, `price`, `imageUrl`. Ví dụ:\n" +
+                               "```product_card\n" +
+                               "{ \"productId\": 1, \"variantId\": 10, \"name\": \"Sữa bột\", \"price\": 500000, \"imageUrl\": \"url_anh\" }\n" +
+                               "```\n" +
+                               "3. NẾU khách hàng CHỈ YÊU CẦU XEM HÌNH ẢNH (ví dụ: 'cho mình xem ảnh', 'hình sản phẩm đâu'): TUYỆT ĐỐI KHÔNG dùng `product_card`. Hãy gửi hình ảnh trực tiếp bằng Markdown chuẩn `![Tên ảnh](URL)`.\n\n";
 
             var requestBody = new GeminiRequest
             {

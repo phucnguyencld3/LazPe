@@ -6,6 +6,84 @@ import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
+  const [adding, setAdding] = useState(false);
+  
+  const handleAddToCart = async () => {
+    try {
+      setAdding(true);
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
+        return;
+      }
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL
+        ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "")
+        : "http://localhost:5101";
+        
+      const res = await fetch(`${API_BASE}/api/cart/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          variantID: data.variantId || data.productId,
+          quantity: 1
+        })
+      });
+      const result = await res.json();
+      if (result.success || res.ok) {
+        toast.success(`Đã thêm ${data.name} vào giỏ hàng!`);
+        window.dispatchEvent(new Event("cart_updated"));
+      } else {
+        toast.error(result.message || "Không thể thêm vào giỏ hàng");
+      }
+    } catch (e) {
+      toast.error("Lỗi khi thêm vào giỏ hàng");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full">
+      <div 
+        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px] cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={() => onZoomImage && onZoomImage(data.imageUrl || '/assets/img/products/default-product.jpg')}
+        title="Phóng to ảnh"
+      >
+        <img src={data.imageUrl || '/assets/img/products/default-product.jpg'} alt={data.name} className="max-h-[60px] max-w-full object-contain mix-blend-multiply" />
+      </div>
+      <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
+        <h4 
+          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words" 
+          title={data.name}
+        >
+          {data.name}
+        </h4>
+        <div className="flex items-center justify-between">
+          <span className="text-primary font-bold text-[13px] truncate pr-1">
+            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
+          </span>
+          <button 
+            onClick={handleAddToCart}
+            disabled={adding}
+            className="bg-primary/10 hover:bg-primary text-primary hover:text-white disabled:bg-slate-100 disabled:text-slate-400 p-1.5 rounded-lg transition-colors flex items-center justify-center shrink-0 active:scale-95"
+            title="Thêm giỏ hàng"
+          >
+            {adding ? (
+              <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
+            ) : (
+              <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface Message {
   id: number;
   chatSessionId: string;
@@ -639,6 +717,18 @@ export default function CustomerChatWidget() {
                                 <ReactMarkdown 
                                   remarkPlugins={[remarkGfm]}
                                   components={{
+                                    code: ({ node, inline, className, children, ...props }: any) => {
+                                      const match = /language-(\w+)/.exec(className || '');
+                                      if (!inline && match && match[1] === 'product_card') {
+                                        try {
+                                          const data = JSON.parse(String(children).replace(/\n$/, ''));
+                                          return <ChatProductCard data={data} onZoomImage={setZoomedImage} />;
+                                        } catch (e) {
+                                          return <code className={className} {...props}>{children}</code>;
+                                        }
+                                      }
+                                      return <code className={className} {...props}>{children}</code>;
+                                    },
                                     img: ({ node, ...props }) => (
                                       <img
                                         {...props}

@@ -54,7 +54,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
             className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20 accent-rose-500 transition-all cursor-pointer"
           />
           <span className="font-bold text-slate-800 group-hover:text-rose-500 transition-colors text-sm">
-            Chọn tất cả ({cart.cartDetails.length})
+            Chọn tất cả ({cart.cartDetails.filter(d => !d.isGift).length})
           </span>
         </label>
         <div className="flex gap-4">
@@ -108,7 +108,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                     if (detail.product?.productID && item.itemType === 1 && item.referenceId === detail.product.productID) return true;
                     return false;
                   });
-                  if (matchedItem) {
+                  if (matchedItem && detail.unitPrice === matchedItem.discountPrice) {
                     flashSaleItem = matchedItem;
                     break;
                   }
@@ -128,12 +128,19 @@ export const CartItemList: React.FC<CartItemListProps> = ({
                 );
 
                 let associatedGift = null;
-                if (flashSaleItem && flashSaleItem.discountType === 2 && flashSaleItem.giftVariantIds && Array.isArray(flashSaleItem.giftVariantIds)) {
-                  const giftIds = flashSaleItem.giftVariantIds;
-                  const giftIndex = remainingGifts.findIndex(g => g.variantID && giftIds.includes(g.variantID));
-                  if (giftIndex !== -1) {
-                    associatedGift = remainingGifts[giftIndex];
-                    remainingGifts.splice(giftIndex, 1);
+                if (flashSaleItem && flashSaleItem.discountType === 2) {
+                  if (flashSaleItem.giftVariantIds && Array.isArray(flashSaleItem.giftVariantIds)) {
+                    const giftIds = flashSaleItem.giftVariantIds;
+                    const giftIndex = remainingGifts.findIndex(g => g.variantID && giftIds.includes(g.variantID));
+                    if (giftIndex !== -1) {
+                      associatedGift = remainingGifts[giftIndex];
+                      remainingGifts.splice(giftIndex, 1);
+                    } else {
+                      // Không có quà tặng (có thể do hết giới hạn cá nhân hoặc hết hàng tồn quà tặng)
+                      flashSaleItem = undefined;
+                    }
+                  } else {
+                    flashSaleItem = undefined;
                   }
                 }
 

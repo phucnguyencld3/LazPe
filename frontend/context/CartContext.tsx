@@ -36,7 +36,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const calculateCount = (cartData: CartInfo | null) => {
     if (!cartData || !cartData.cartDetails) return 0;
-    return cartData.cartDetails.reduce((sum, item) => sum + item.quantity, 0);
+    return cartData.cartDetails.filter(item => !item.isGift).length;
   };
 
   const refreshCart = async () => {
