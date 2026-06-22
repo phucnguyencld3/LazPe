@@ -109,3 +109,4 @@ logs/
 **/TrendModel.zip
 .env
 backend/wwwroot/uploads/
+backend/TrendModel.zip

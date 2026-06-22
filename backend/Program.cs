@@ -128,6 +128,7 @@ try
     );
     builder.Services.AddSingleton<PolyBabyAPI.Interfaces.IMongoDbService, PolyBabyAPI.Services.MongoDbService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IRecommendationService, PolyBabyAPI.Services.RecommendationService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IIpBlockService, PolyBabyAPI.Services.IpBlockService>();
 
     // Cấu hình Cloudinary
     builder.Services.Configure<CloudinarySettings>(

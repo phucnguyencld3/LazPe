@@ -712,6 +712,16 @@ export default function AdminLayout({
                   {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Phân quyền Truy cập</span>}
                 </Link>
               )}
+              {hasPermission("Admin.Access") && (
+                <Link
+                  href="/admin/blocked-ips"
+                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/blocked-ips") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                  title={!isSidebarExpanded ? "IP Bị Chặn" : undefined}
+                >
+                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">block</span>
+                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">IP Bị Chặn</span>}
+                </Link>
+              )}
               <Link
                 href="/admin/profile"
                 className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}

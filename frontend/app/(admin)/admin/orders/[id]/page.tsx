@@ -12,7 +12,6 @@ import {
 import { CancelOrderModal } from "@/components/admin/orders/CancelOrderModal";
 import { OrderActionBar } from "@/components/admin/orders/OrderActionBar";
 import { OrderCustomerInfo } from "@/components/admin/orders/OrderCustomerInfo";
-import { OrderShippingDetails } from "@/components/admin/orders/OrderShippingDetails";
 import { OrderCostSummary } from "@/components/admin/orders/OrderCostSummary";
 import { OrderProductList } from "@/components/admin/orders/OrderProductList";
 
@@ -109,7 +108,7 @@ export default function OrderDetailsPage() {
   return (
     <main className="w-full pb-20">
       {/* Header */}
-      <header className="h-24 flex items-center justify-between sticky top-0 z-10 bg-background/80 backdrop-blur-md mb-8">
+      <header className="h-24 flex items-center justify-between sticky top-0 z-10 bg-background/80 backdrop-blur-md">
         <div className="flex items-center gap-6">
           <button onClick={() => router.push('/admin/orders')} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
             <span className="material-symbols-outlined">arrow_back</span>
@@ -118,26 +117,25 @@ export default function OrderDetailsPage() {
           <div className="h-6 w-px bg-outline-variant"></div>
           <h2 className="text-2xl font-bold text-on-surface">Đơn hàng #{order.invoiceCode || order.invoiceID.toString().padStart(6, '0')}</h2>
         </div>
-      </header>
-
-      <div className="space-y-8 animate-in fade-in duration-300">
         <OrderActionBar 
           order={order}
           onUpdateStatus={handleUpdateStatus}
           onShowCancelModal={() => setShowCancelModal(true)}
           onPrintOrder={() => router.push(`/admin/orders/${id}/print`)}
         />
+      </header>
+
+      <div className="mt-2 space-y-5 animate-in fade-in duration-300">
 
         {/* Two Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 bg-white rounded-[12px] shadow-sm border border-slate-100 overflow-hidden">
             <OrderCustomerInfo order={order} />
-            <OrderShippingDetails order={order} />
           </div>
 
           {/* Right Column: Summary */}
-          <div className="space-y-8">
+          <div className="space-y-5">
             <OrderCostSummary order={order} />
           </div>
         </div>

@@ -24,5 +24,8 @@ namespace PolyBabyAPI.Services
 
         public IMongoCollection<AuditLog> AuditLogs =>
             _database.GetCollection<AuditLog>("AuditLogs");
+
+        public IMongoCollection<BlockedIp> BlockedIps =>
+            _database.GetCollection<BlockedIp>("BlockedIps");
     }
 }
