@@ -372,7 +372,7 @@ function FlashSaleCampaignBlock({ campaign }: { campaign: FlashSaleCampaign }) {
     categoryId: 0,
     inStock: (item.totalQuantity - item.soldQuantity) > 0,
     quantity: item.totalQuantity - item.soldQuantity,
-    limitExceeded: item.maxQuantityPerUser > 0 && (item.userPurchasedQuantity || 0) >= item.maxQuantityPerUser,
+    limitExceeded: (item.maxQuantityPerUser || 0) > 0 && (item.userPurchasedQuantity || 0) >= (item.maxQuantityPerUser || 0),
   }));
 
   useEffect(() => {

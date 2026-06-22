@@ -106,6 +106,8 @@ export interface FlashSaleItem {
   totalQuantity: number;
   soldQuantity: number;
   status: number;
+  maxQuantityPerUser?: number;
+  userPurchasedQuantity?: number;
 }
 
 export interface FlashSaleCampaign {
