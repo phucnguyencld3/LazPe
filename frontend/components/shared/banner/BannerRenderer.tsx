@@ -86,17 +86,7 @@ export function BannerRenderer({ banner }: BannerRendererProps) {
   if (type === 'slideshow') {
     return (
       <PreviewWrapper>
-        <div className={`relative overflow-hidden ${wrapperStyle}`}>
-          <div className="flex snap-x snap-mandatory overflow-x-auto scrollbar-hide">
-            {items.map((item, idx) => (
-              <div key={idx} className="min-w-full shrink-0 snap-start relative aspect-[21/9]">
-                <BannerLink item={item} isPreview={isPreview}>
-                  <img src={item.imageUrl} alt={item.altText || 'Banner Image'} className="w-full h-full object-cover" />
-                </BannerLink>
-              </div>
-            ))}
-          </div>
-        </div>
+        <BannerSlideshowRenderer banner={banner} wrapperStyle={wrapperStyle} isPreview={isPreview} items={items} />
       </PreviewWrapper>
     );
   }
@@ -324,6 +314,76 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
           <img src={item.imageUrl} alt={item.altText || 'Floating Banner'} className="w-full h-auto max-w-[200px]" />
         </BannerLink>
       </div>
+    </div>
+  );
+}
+
+function BannerSlideshowRenderer({ banner, wrapperStyle, isPreview, items }: { banner: Banner, wrapperStyle: string, isPreview: boolean, items: BannerItem[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % items.length);
+    }, 5000); // 5 seconds autoplay
+    return () => clearInterval(timer);
+  }, [items.length]);
+
+  return (
+    <div className={`relative overflow-hidden group ${wrapperStyle}`}>
+      {/* Slider Container */}
+      <div 
+        className="flex transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
+        {items.map((item, idx) => (
+          <div key={idx} className="min-w-full shrink-0 relative aspect-[21/9]">
+            <BannerLink item={item} isPreview={isPreview}>
+              <img src={item.imageUrl} alt={item.altText || 'Banner Image'} className="w-full h-full object-cover" />
+            </BannerLink>
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation Arrows */}
+      {items.length > 1 && (
+        <>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+            }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-slate-800 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer z-20"
+          >
+            <span className="material-symbols-outlined text-2xl">chevron_left</span>
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex((prev) => (prev + 1) % items.length);
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-slate-800 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer z-20"
+          >
+            <span className="material-symbols-outlined text-2xl">chevron_right</span>
+          </button>
+
+          {/* Dots */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+            {items.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentIndex(idx);
+                }}
+                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer shadow-sm ${
+                  currentIndex === idx ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/80'
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
