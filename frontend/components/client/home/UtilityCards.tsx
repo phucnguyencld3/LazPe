@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Search, Package, Heart, Ticket, Sparkles, Tag } from 'lucide-react';
+import { Calendar, Search, Package, Heart, Ticket, Sparkles, Tag, Gift } from 'lucide-react';
 
 function UtilityIcon({ icon, color, label, badge, href }: any) {
   const content = (
@@ -48,7 +48,7 @@ export default function UtilityCards() {
     <div className="bg-white rounded-[10px] shadow-sm px-5 py-3 md:px-6 md:py-4 mb-2">
       <h3 className="font-bold text-xl mb-3 text-slate-800">Tiện Ích</h3>
       <div className="flex flex-nowrap overflow-x-auto lg:overflow-hidden pb-2 -mx-1 px-1 scrollbar-hide gap-4 sm:gap-6 lg:gap-2 xl:gap-4 lg:justify-between overscroll-x-contain touch-pan-x w-full">
-        <UtilityIcon href="/rewards" icon={<Calendar size={22} />} color="text-red-500" label="Điểm Danh" />
+        <UtilityIcon href="/rewards" icon={<Gift size={22} />} color="text-red-500" label="Nhận Thưởng" />
         <UtilityIcon href="/order-tracking" icon={<Search size={22} />} color="text-indigo-500" label="Tra Cứu Đơn" />
         <UtilityIcon href="/profile?tab=orders" icon={<Package size={22} />} color="text-cyan-500" label="Đơn Của Tôi" />
         <UtilityIcon href="/wishlist" icon={<Heart size={22} />} color="text-rose-500" label="SP Yêu Thích" />
