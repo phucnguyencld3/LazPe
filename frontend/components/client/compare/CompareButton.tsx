@@ -31,20 +31,20 @@ export const CompareButton: React.FC<CompareButtonProps> = ({
   return (
     <button
       onClick={toggleCompare}
-      className={`group relative flex items-center justify-center transition-all ${
+      className={`group flex items-center h-10 px-2.5 rounded-[8px] border transition-all duration-300 ease-out shrink-0 active:scale-90 ${
         isSelected
-          ? "bg-primary text-white"
-          : "bg-white text-slate-400 hover:text-primary hover:bg-primary/5"
+          ? "bg-primary border-primary text-white"
+          : "bg-white border-slate-200 text-slate-400 hover:text-primary hover:bg-primary/5 hover:border-primary/30 shadow-sm"
       } ${className}`}
-      aria-label={isSelected ? "Bỏ so sánh" : "Thêm vào so sánh"}
-      title={isSelected ? "Bỏ so sánh" : "Thêm vào so sánh"}
     >
-      <Scale size={18} className={isSelected ? "fill-primary/20" : ""} />
-      {showText && (
-        <span className="ml-2 text-sm font-medium">
-          {isSelected ? "Đang so sánh" : "So sánh"}
-        </span>
-      )}
+      <Scale size={20} className={`shrink-0 transition-all ${isSelected ? "fill-primary/20" : ""}`} />
+      <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
+        <div className="overflow-hidden">
+          <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+            {isSelected ? "Bỏ so sánh" : "So sánh"}
+          </span>
+        </div>
+      </div>
     </button>
   );
 };

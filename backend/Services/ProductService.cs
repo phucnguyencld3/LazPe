@@ -6,6 +6,7 @@ using PolyBabyAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 using System.Threading;
+using Hangfire;
 
 namespace PolyBabyAPI.Services
 {
@@ -16,15 +17,23 @@ namespace PolyBabyAPI.Services
         private readonly IMemoryCache _cache;
         private readonly ISearchEngineService _searchEngineService;
         private readonly IAuditLogService _auditLogService;
+        private readonly Hangfire.IBackgroundJobClient _backgroundJobClient;
         private static CancellationTokenSource _resetCacheToken = new CancellationTokenSource();
 
-        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache, ISearchEngineService searchEngineService, IAuditLogService auditLogService)
+        public ProductService(
+            ApplicationDbContext context, 
+            ILogger<ProductService> logger, 
+            IMemoryCache cache, 
+            ISearchEngineService searchEngineService, 
+            IAuditLogService auditLogService,
+            Hangfire.IBackgroundJobClient backgroundJobClient)
         {
             _context = context;
             _logger = logger;
             _cache = cache;
             _searchEngineService = searchEngineService;
             _auditLogService = auditLogService;
+            _backgroundJobClient = backgroundJobClient;
         }
 
         public void ClearProductCache()
@@ -804,7 +813,23 @@ namespace PolyBabyAPI.Services
                         variant.UnitPrice += priceDelta;
                         if (variant.UnitPrice < 0)
                             variant.UnitPrice = 0;
+                            
+                        if (priceDelta < 0)
+                        {
+                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, variant.VariantID, variant.UnitPrice));
+                        }
                     }
+                }
+                
+                if (priceDelta < 0)
+                {
+                    _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, null, dto.Price));
+                }
+                
+                var oldStock = product.Stock;
+                if (oldStock == 0 && dto.Stock > 0)
+                {
+                    _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessBackInStockAlertsAsync(product.ProductID, null));
                 }
 
                 await _context.SaveChangesAsync();

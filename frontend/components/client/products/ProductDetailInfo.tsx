@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Star, Minus, Plus, ShoppingCart, Heart } from "lucide-react";
 import { Product, Variant } from "@/types";
 import CountdownTimer from "@/components/client/common/CountdownTimer";

@@ -231,6 +231,7 @@ try
     builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<ISupplierService, SupplierService>();
     builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<IProductAlertService, ProductAlertService>();
     builder.Services.AddScoped<IProductOptionService, ProductOptionService>();
     builder.Services.AddScoped<IVariantService, VariantService>(); 
 

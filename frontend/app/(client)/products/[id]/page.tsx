@@ -3,12 +3,13 @@
 import React, { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
+import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck, Bell } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
 import { getProductDetail, getProducts } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
+import { ProductAlertModal } from "@/components/client/products/ProductAlertModal";
 import { CompareButton } from "@/components/client/compare/CompareButton";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
@@ -42,6 +43,7 @@ export default function ProductDetailPage() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
 
   // Fetch product detail
   useEffect(() => {
@@ -504,8 +506,22 @@ export default function ProductDetailPage() {
               compareAction={
                 <CompareButton 
                   product={product} 
-                  className="h-10 w-10 rounded-[8px] flex items-center justify-center border border-slate-200 transition-all shrink-0 active:scale-90 shadow-sm" 
                 />
+              }
+              alertAction={
+                <button
+                  onClick={() => setIsAlertModalOpen(true)}
+                  className="group flex items-center h-10 px-2.5 rounded-[8px] border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 ease-out shrink-0 active:scale-90 shadow-sm"
+                >
+                  <Bell size={20} className="shrink-0 transition-all" />
+                  <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
+                    <div className="overflow-hidden">
+                      <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                        {displayInStock ? "Theo dõi giá" : "Nhận thông báo"}
+                      </span>
+                    </div>
+                  </div>
+                </button>
               }
             />
 
@@ -551,6 +567,17 @@ export default function ProductDetailPage() {
 
         <ProductRecommendations limit={5} excludeProductId={productId} />
       </div>
+
+      <ProductAlertModal
+        isOpen={isAlertModalOpen}
+        onClose={() => setIsAlertModalOpen(false)}
+        productId={product.id}
+        productName={product.name}
+        variantId={activeVariant?.variantID}
+        variantName={activeVariant?.variantName}
+        isOutOfStock={!displayInStock}
+        currentPrice={displayDiscountPrice || displayPrice}
+      />
     </div>
   );
 }

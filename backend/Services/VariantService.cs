@@ -3,6 +3,7 @@ using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
+using Hangfire;
 
 namespace PolyBabyAPI.Services
 {
@@ -10,11 +11,13 @@ namespace PolyBabyAPI.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<VariantService> _logger;
+        private readonly Hangfire.IBackgroundJobClient _backgroundJobClient;
 
-        public VariantService(ApplicationDbContext context, ILogger<VariantService> logger)
+        public VariantService(ApplicationDbContext context, ILogger<VariantService> logger, Hangfire.IBackgroundJobClient backgroundJobClient)
         {
             _context = context;
             _logger = logger;
+            _backgroundJobClient = backgroundJobClient;
         }
 
         public async Task<List<Variant>> GetVariantsByProductIdAsync(int productId)
@@ -173,8 +176,22 @@ namespace PolyBabyAPI.Services
         {
             try
             {
+                var oldVariant = await _context.Variants.AsNoTracking().FirstOrDefaultAsync(v => v.VariantID == variant.VariantID);
                 _context.Variants.Update(variant);
                 await _context.SaveChangesAsync();
+
+                if (oldVariant != null)
+                {
+                    if (variant.UnitPrice < oldVariant.UnitPrice)
+                    {
+                        _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(variant.ProductID, variant.VariantID, variant.UnitPrice));
+                    }
+                    if (oldVariant.Stock == 0 && variant.Stock > 0)
+                    {
+                        _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessBackInStockAlertsAsync(variant.ProductID, variant.VariantID));
+                    }
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -188,8 +205,16 @@ namespace PolyBabyAPI.Services
         {
             var variant = await _context.Variants.FindAsync(variantId);
             if (variant == null) return false;
+            
+            var oldStock = variant.Stock;
             variant.Stock = newStock;
             await _context.SaveChangesAsync();
+
+            if (oldStock == 0 && newStock > 0)
+            {
+                _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessBackInStockAlertsAsync(variant.ProductID, variant.VariantID));
+            }
+
             return true;
         }
 
@@ -253,6 +278,9 @@ namespace PolyBabyAPI.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var variantIds = updates.Select(u => u.VariantId).ToList();
+                var oldVariants = await _context.Variants.AsNoTracking().Where(v => variantIds.Contains(v.VariantID)).ToListAsync();
+
                 foreach (var update in updates)
                 {
                     // Ef Core 8 ExecuteUpdateAsync for performance
@@ -261,6 +289,19 @@ namespace PolyBabyAPI.Services
                         .ExecuteUpdateAsync(s => s
                             .SetProperty(v => v.UnitPrice, update.UnitPrice)
                             .SetProperty(v => v.Stock, update.Stock));
+
+                    var oldVariant = oldVariants.FirstOrDefault(v => v.VariantID == update.VariantId);
+                    if (oldVariant != null)
+                    {
+                        if (update.UnitPrice < oldVariant.UnitPrice)
+                        {
+                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(oldVariant.ProductID, oldVariant.VariantID, update.UnitPrice));
+                        }
+                        if (oldVariant.Stock == 0 && update.Stock > 0)
+                        {
+                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessBackInStockAlertsAsync(oldVariant.ProductID, oldVariant.VariantID));
+                        }
+                    }
                 }
 
                 await transaction.CommitAsync();

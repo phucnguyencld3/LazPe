@@ -11,6 +11,7 @@ interface ProductImageGalleryProps {
   isWishlisted?: boolean;
   setIsWishlisted?: (wishlisted: boolean) => void;
   compareAction?: React.ReactNode;
+  alertAction?: React.ReactNode;
 }
 
 export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
@@ -23,6 +24,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   isWishlisted = false,
   setIsWishlisted,
   compareAction,
+  alertAction,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(displayImage);
 
@@ -79,18 +81,27 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         {/* Wishlist Toggle Button */}
         <button
           onClick={() => setIsWishlisted && setIsWishlisted(!isWishlisted)}
-          className={`h-10 w-10 rounded-[8px] flex items-center justify-center border transition-all shrink-0 active:scale-90 ${
+          className={`group flex items-center h-10 px-2.5 rounded-[8px] border transition-all duration-300 ease-out shrink-0 active:scale-90 ${
             isWishlisted
               ? "bg-rose-50 border-rose-200 text-rose-500"
-              : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 shadow-sm"
+              : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-sm"
           }`}
-          title="Thêm vào yêu thích"
         >
-          <Heart size={20} className={isWishlisted ? "fill-rose-500" : ""} />
+          <Heart size={20} className={`shrink-0 transition-all ${isWishlisted ? "fill-rose-500" : ""}`} />
+          <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
+            <div className="overflow-hidden">
+              <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                {isWishlisted ? "Bỏ yêu thích" : "Yêu thích"}
+              </span>
+            </div>
+          </div>
         </button>
 
         {/* Compare Button */}
         {compareAction}
+
+        {/* Alert Button */}
+        {alertAction}
 
         {/* Share Button */}
         <button
@@ -107,10 +118,16 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
               toast.success("Đã sao chép đường dẫn sản phẩm!");
             }
           }}
-          className="h-10 w-10 rounded-[8px] flex items-center justify-center border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 active:scale-90 shadow-sm"
-          title="Chia sẻ sản phẩm"
+          className="group flex items-center h-10 px-2.5 rounded-[8px] border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 ease-out shrink-0 active:scale-90 shadow-sm"
         >
-          <span className="material-symbols-outlined text-[18px]">share</span>
+          <span className="material-symbols-outlined text-[18px] shrink-0 transition-all">share</span>
+          <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
+            <div className="overflow-hidden">
+              <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                Chia sẻ
+              </span>
+            </div>
+          </div>
         </button>
       </div>
     </div>
