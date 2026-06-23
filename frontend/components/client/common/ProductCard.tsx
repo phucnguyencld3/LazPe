@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWishlist } from "@/context/WishlistContext";
 import React, { useState } from "react";
 import QuickAddModal from "@/components/client/products/QuickAddModal";
+import { CompareButton } from "@/components/client/compare/CompareButton";
 
 interface ProductCardProps {
   product: Product;
@@ -91,6 +92,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           >
             <ShoppingCart size={16} />
           </button>
+
+          {/* Compare Button */}
+          <div className="absolute top-[88px] sm:top-[104px] right-2 sm:right-3 z-10 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 delay-150 transition-all duration-300">
+            <CompareButton 
+              product={product} 
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full shadow-sm" 
+            />
+          </div>
         </div>
 
         {/* Product Info */}

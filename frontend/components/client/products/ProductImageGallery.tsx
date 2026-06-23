@@ -10,6 +10,7 @@ interface ProductImageGalleryProps {
   imageUrls?: string[];
   isWishlisted?: boolean;
   setIsWishlisted?: (wishlisted: boolean) => void;
+  compareAction?: React.ReactNode;
 }
 
 export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
@@ -21,6 +22,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   imageUrls = [],
   isWishlisted = false,
   setIsWishlisted,
+  compareAction,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(displayImage);
 
@@ -86,6 +88,9 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         >
           <Heart size={20} className={isWishlisted ? "fill-rose-500" : ""} />
         </button>
+
+        {/* Compare Button */}
+        {compareAction}
 
         {/* Share Button */}
         <button
