@@ -9,6 +9,7 @@ import { Product, Variant } from "@/types";
 import { getProductDetail, getProducts } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
+import { CompareButton } from "@/components/client/compare/CompareButton";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
 import { ProductRecommendations } from "@/components/client/products/ProductRecommendations";
@@ -500,6 +501,12 @@ export default function ProductDetailPage() {
               imageUrls={product?.imageUrls}
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
+              compareAction={
+                <CompareButton 
+                  product={product} 
+                  className="h-10 w-10 rounded-[8px] flex items-center justify-center border border-slate-200 transition-all shrink-0 active:scale-90 shadow-sm" 
+                />
+              }
             />
 
             <ProductDetailInfo
