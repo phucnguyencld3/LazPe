@@ -78,9 +78,11 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
       <div>
         {/* Category & Stock Status */}
         <div className="flex justify-between items-center gap-4 mb-4">
-          <span className="bg-rose-50 text-rose-600 text-xs font-bold px-3 py-1 rounded-[4px] uppercase tracking-wider">
-            {product.categoryName || "Đồ chơi cao cấp"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="bg-rose-50 text-rose-600 text-xs font-bold px-3 py-1 rounded-[4px] uppercase tracking-wider">
+              {product.categoryName || "Đồ chơi cao cấp"}
+            </span>
+          </div>
           {displayInStock ? (
             <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>

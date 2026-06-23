@@ -5,6 +5,7 @@ import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { MessagesSquare, X } from 'lucide-react';
 
 const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
   const [adding, setAdding] = useState(false);
@@ -580,11 +581,13 @@ export default function CustomerChatWidget() {
       {/* FAB Button Premium Style */}
       <button
         onClick={toggleOpen}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-[16px] bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
       >
-        <span className="material-symbols-outlined text-[28px]">
-          {isOpen ? "close" : "forum"}
-        </span>
+        {isOpen ? (
+          <X size={28} strokeWidth={2.5} />
+        ) : (
+          <MessagesSquare size={28} strokeWidth={2.5} />
+        )}
       </button>
 
       {/* Chat Window Container Premium Style */}
