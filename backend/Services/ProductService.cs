@@ -6,6 +6,7 @@ using PolyBabyAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 using System.Threading;
+using Hangfire;
 
 namespace PolyBabyAPI.Services
 {
@@ -16,15 +17,23 @@ namespace PolyBabyAPI.Services
         private readonly IMemoryCache _cache;
         private readonly ISearchEngineService _searchEngineService;
         private readonly IAuditLogService _auditLogService;
+        private readonly Hangfire.IBackgroundJobClient _backgroundJobClient;
         private static CancellationTokenSource _resetCacheToken = new CancellationTokenSource();
 
-        public ProductService(ApplicationDbContext context, ILogger<ProductService> logger, IMemoryCache cache, ISearchEngineService searchEngineService, IAuditLogService auditLogService)
+        public ProductService(
+            ApplicationDbContext context, 
+            ILogger<ProductService> logger, 
+            IMemoryCache cache, 
+            ISearchEngineService searchEngineService, 
+            IAuditLogService auditLogService,
+            Hangfire.IBackgroundJobClient backgroundJobClient)
         {
             _context = context;
             _logger = logger;
             _cache = cache;
             _searchEngineService = searchEngineService;
             _auditLogService = auditLogService;
+            _backgroundJobClient = backgroundJobClient;
         }
 
         public void ClearProductCache()
@@ -781,6 +790,8 @@ namespace PolyBabyAPI.Services
                 }
 
                 var oldBasePrice = product.Price;
+                var oldDiscount = product.ProductDiscountPercent;
+                var oldFinalPrice = oldBasePrice * (1m - (oldDiscount / 100m));
 
                 // Update product
                 product.Code = dto.Code ?? product.Code;
@@ -794,17 +805,44 @@ namespace PolyBabyAPI.Services
                 product.SupplierID = dto.SupplierID ?? product.SupplierID;
                 product.Status = dto.Status;
 
+                var newFinalPrice = dto.Price * (1m - (dto.ProductDiscountPercent / 100m));
+                var priceDelta = dto.Price - oldBasePrice;
+
                 // Đồng bộ giá biến thể theo giá gốc mới:
                 // unitPrice mới = unitPrice cũ + (giá gốc mới - giá gốc cũ)
-                var priceDelta = dto.Price - oldBasePrice;
-                if (priceDelta != 0 && product.Variants != null)
+                if (product.Variants != null)
                 {
                     foreach (var variant in product.Variants)
                     {
-                        variant.UnitPrice += priceDelta;
-                        if (variant.UnitPrice < 0)
-                            variant.UnitPrice = 0;
+                        var oldVariantDiscount = variant.VariantDiscountPercent > 0 ? variant.VariantDiscountPercent : oldDiscount;
+                        var oldVariantFinalPrice = variant.UnitPrice * (1m - (oldVariantDiscount / 100m));
+
+                        if (priceDelta != 0)
+                        {
+                            variant.UnitPrice += priceDelta;
+                            if (variant.UnitPrice < 0)
+                                variant.UnitPrice = 0;
+                        }
+                            
+                        var newVariantDiscount = variant.VariantDiscountPercent > 0 ? variant.VariantDiscountPercent : dto.ProductDiscountPercent;
+                        var newVariantFinalPrice = variant.UnitPrice * (1m - (newVariantDiscount / 100m));
+
+                        if (newVariantFinalPrice < oldVariantFinalPrice)
+                        {
+                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, variant.VariantID, newVariantFinalPrice));
+                        }
                     }
+                }
+                
+                if (newFinalPrice < oldFinalPrice)
+                {
+                    _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, null, newFinalPrice));
+                }
+                
+                var oldStock = product.Stock;
+                if (oldStock == 0 && dto.Stock > 0)
+                {
+                    _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessBackInStockAlertsAsync(product.ProductID, null));
                 }
 
                 await _context.SaveChangesAsync();

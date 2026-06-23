@@ -133,3 +133,29 @@ export interface PaginatedResponse<T> {
   currentPage: number;
   pageSize: number;
 }
+
+export enum AlertType {
+  PriceDrop = 0,
+  BackInStock = 1
+}
+
+export interface CreateProductAlertDto {
+  productId: number;
+  variantId?: number;
+  alertType: AlertType;
+  targetPrice?: number;
+}
+
+export interface ProductAlert {
+  id: number;
+  userId: string;
+  productId: number;
+  variantId?: number;
+  productName: string;
+  imageUrl?: string;
+  alertType: AlertType;
+  targetPrice?: number;
+  isTriggered: boolean;
+  createdAt: string;
+}
+
