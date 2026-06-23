@@ -31,5 +31,6 @@ namespace PolyBabyAPI.DTOs.ProductAlert
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastNotifiedAt { get; set; }
+        public bool IsConditionMet { get; set; }
     }
 }

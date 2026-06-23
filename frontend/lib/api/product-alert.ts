@@ -20,6 +20,7 @@ export interface ProductAlertDto {
   isActive: boolean;
   createdAt: string;
   lastNotifiedAt?: string;
+  isConditionMet: boolean;
 }
 
 export async function subscribeAlert(dto: CreateProductAlertDto): Promise<{ success: boolean; message: string }> {

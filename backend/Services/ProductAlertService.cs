@@ -82,14 +82,24 @@ namespace PolyBabyAPI.Services
                     UserId = x.UserId,
                     ProductId = x.ProductId,
                     ProductName = x.Product.ProductName,
-                    ProductImage = x.Product.Images.FirstOrDefault() != null ? x.Product.Images.FirstOrDefault()!.ImageUrl : null,
+                    ProductImage = (x.Variant != null && !string.IsNullOrEmpty(x.Variant.ImageUrl)) 
+                        ? x.Variant.ImageUrl 
+                        : (x.Product.Images.FirstOrDefault() != null ? x.Product.Images.FirstOrDefault()!.ImageUrl : null),
                     VariantId = x.VariantId,
                     VariantName = x.Variant != null ? x.Variant.VariantName : null,
                     AlertType = x.AlertType,
                     TargetPrice = x.TargetPrice,
                     IsActive = x.IsActive,
                     CreatedAt = x.CreatedAt,
-                    LastNotifiedAt = x.LastNotifiedAt
+                    LastNotifiedAt = x.LastNotifiedAt,
+                    IsConditionMet = 
+                        (x.AlertType == ProductAlertType.PriceDrop && 
+                            (x.TargetPrice.HasValue 
+                                ? ((x.Variant != null ? x.Variant.UnitPrice * (1m - ((x.Variant.VariantDiscountPercent > 0 ? x.Variant.VariantDiscountPercent : x.Product.ProductDiscountPercent) / 100m)) : x.Product.Price * (1m - (x.Product.ProductDiscountPercent / 100m))) <= x.TargetPrice.Value)
+                                : (x.Variant != null ? x.Variant.VariantDiscountPercent > 0 || x.Product.ProductDiscountPercent > 0 : x.Product.ProductDiscountPercent > 0)
+                            )
+                        ) ||
+                        (x.AlertType == ProductAlertType.BackInStock && (x.Variant != null ? x.Variant.Stock > 0 : x.Product.Stock > 0))
                 })
                 .ToListAsync();
         }
@@ -161,7 +171,6 @@ namespace PolyBabyAPI.Services
 
             foreach(var alert in matchedAlerts)
             {
-                alert.IsActive = false; // Disable after sending
                 alert.LastNotifiedAt = DateTime.UtcNow;
             }
 
@@ -233,7 +242,6 @@ namespace PolyBabyAPI.Services
 
             foreach(var alert in alerts)
             {
-                alert.IsActive = false; // Disable after sending
                 alert.LastNotifiedAt = DateTime.UtcNow;
             }
 

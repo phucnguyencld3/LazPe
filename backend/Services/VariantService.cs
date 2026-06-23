@@ -182,9 +182,18 @@ namespace PolyBabyAPI.Services
 
                 if (oldVariant != null)
                 {
-                    if (variant.UnitPrice < oldVariant.UnitPrice)
+                    var product = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductID == variant.ProductID);
+                    var productDiscount = product?.ProductDiscountPercent ?? 0;
+                    
+                    var oldDiscount = oldVariant.VariantDiscountPercent > 0 ? oldVariant.VariantDiscountPercent : productDiscount;
+                    var newDiscount = variant.VariantDiscountPercent > 0 ? variant.VariantDiscountPercent : productDiscount;
+                    
+                    var oldFinalPrice = oldVariant.UnitPrice * (1m - (oldDiscount / 100m));
+                    var newFinalPrice = variant.UnitPrice * (1m - (newDiscount / 100m));
+
+                    if (newFinalPrice < oldFinalPrice)
                     {
-                        _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(variant.ProductID, variant.VariantID, variant.UnitPrice));
+                        _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(variant.ProductID, variant.VariantID, newFinalPrice));
                     }
                     if (oldVariant.Stock == 0 && variant.Stock > 0)
                     {
@@ -293,9 +302,15 @@ namespace PolyBabyAPI.Services
                     var oldVariant = oldVariants.FirstOrDefault(v => v.VariantID == update.VariantId);
                     if (oldVariant != null)
                     {
-                        if (update.UnitPrice < oldVariant.UnitPrice)
+                        var product = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductID == oldVariant.ProductID);
+                        var productDiscount = product?.ProductDiscountPercent ?? 0;
+                        var discount = oldVariant.VariantDiscountPercent > 0 ? oldVariant.VariantDiscountPercent : productDiscount;
+                        var oldFinalPrice = oldVariant.UnitPrice * (1m - (discount / 100m));
+                        var newFinalPrice = update.UnitPrice * (1m - (discount / 100m));
+
+                        if (newFinalPrice < oldFinalPrice)
                         {
-                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(oldVariant.ProductID, oldVariant.VariantID, update.UnitPrice));
+                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(oldVariant.ProductID, oldVariant.VariantID, newFinalPrice));
                         }
                         if (oldVariant.Stock == 0 && update.Stock > 0)
                         {

@@ -790,6 +790,8 @@ namespace PolyBabyAPI.Services
                 }
 
                 var oldBasePrice = product.Price;
+                var oldDiscount = product.ProductDiscountPercent;
+                var oldFinalPrice = oldBasePrice * (1m - (oldDiscount / 100m));
 
                 // Update product
                 product.Code = dto.Code ?? product.Code;
@@ -803,27 +805,38 @@ namespace PolyBabyAPI.Services
                 product.SupplierID = dto.SupplierID ?? product.SupplierID;
                 product.Status = dto.Status;
 
+                var newFinalPrice = dto.Price * (1m - (dto.ProductDiscountPercent / 100m));
+                var priceDelta = dto.Price - oldBasePrice;
+
                 // Đồng bộ giá biến thể theo giá gốc mới:
                 // unitPrice mới = unitPrice cũ + (giá gốc mới - giá gốc cũ)
-                var priceDelta = dto.Price - oldBasePrice;
-                if (priceDelta != 0 && product.Variants != null)
+                if (product.Variants != null)
                 {
                     foreach (var variant in product.Variants)
                     {
-                        variant.UnitPrice += priceDelta;
-                        if (variant.UnitPrice < 0)
-                            variant.UnitPrice = 0;
-                            
-                        if (priceDelta < 0)
+                        var oldVariantDiscount = variant.VariantDiscountPercent > 0 ? variant.VariantDiscountPercent : oldDiscount;
+                        var oldVariantFinalPrice = variant.UnitPrice * (1m - (oldVariantDiscount / 100m));
+
+                        if (priceDelta != 0)
                         {
-                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, variant.VariantID, variant.UnitPrice));
+                            variant.UnitPrice += priceDelta;
+                            if (variant.UnitPrice < 0)
+                                variant.UnitPrice = 0;
+                        }
+                            
+                        var newVariantDiscount = variant.VariantDiscountPercent > 0 ? variant.VariantDiscountPercent : dto.ProductDiscountPercent;
+                        var newVariantFinalPrice = variant.UnitPrice * (1m - (newVariantDiscount / 100m));
+
+                        if (newVariantFinalPrice < oldVariantFinalPrice)
+                        {
+                            _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, variant.VariantID, newVariantFinalPrice));
                         }
                     }
                 }
                 
-                if (priceDelta < 0)
+                if (newFinalPrice < oldFinalPrice)
                 {
-                    _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, null, dto.Price));
+                    _backgroundJobClient.Enqueue<IProductAlertService>(s => s.ProcessPriceDropAlertsAsync(product.ProductID, null, newFinalPrice));
                 }
                 
                 var oldStock = product.Stock;
