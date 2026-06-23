@@ -83,6 +83,9 @@ namespace PolyBabyAPI.Data
         public DbSet<FlashSale> FlashSales { get; set; }
         public DbSet<FlashSaleItem> FlashSaleItems { get; set; }
 
+        // ===== Product Alerts =====
+        public DbSet<ProductAlert> ProductAlerts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -383,6 +386,29 @@ namespace PolyBabyAPI.Data
             {
                 entity.HasKey(nt => nt.Id);
                 entity.HasIndex(nt => nt.TemplateCode).IsUnique();
+            });
+
+            // ===== Product Alerts Configurations =====
+            builder.Entity<ProductAlert>(entity =>
+            {
+                entity.HasKey(pa => pa.Id);
+
+                entity.HasOne(pa => pa.User)
+                      .WithMany()
+                      .HasForeignKey(pa => pa.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pa => pa.Product)
+                      .WithMany()
+                      .HasForeignKey(pa => pa.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pa => pa.Variant)
+                      .WithMany()
+                      .HasForeignKey(pa => pa.VariantId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(pa => new { pa.ProductId, pa.IsActive });
             });
 
             // ===== Loyalty Settings Seed =====

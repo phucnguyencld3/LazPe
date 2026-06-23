@@ -41,6 +41,7 @@ import { PrivacySection } from "@/components/client/profile/PrivacySection";
 import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
 import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 import { SpendingSection } from "@/components/client/profile/SpendingSection";
+import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -635,6 +636,7 @@ export default function ProfilePage() {
                       { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                       { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
                       { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
@@ -666,6 +668,7 @@ export default function ProfilePage() {
                       { id: "address", label: "Địa chỉ", icon: "location_on" },
                       { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "alerts", label: "Báo giá", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá", icon: "reviews" },
                       { id: "privacy", label: "Bảo mật", icon: "policy" },
@@ -745,6 +748,10 @@ export default function ProfilePage() {
                 onClearInitialOrderId={handleClearInitialId}
                 onChangeTab={handleTabChange}
               />
+            )}
+
+            {activeTab === "alerts" && (
+              <ProductAlertsSection token={token} />
             )}
 
             {activeTab === "notifications" && (

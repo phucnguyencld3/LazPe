@@ -1,12 +1,12 @@
 "use client";
 
 import { Product } from "@/types";
-import { Heart, Star, ShoppingCart } from "lucide-react";
+import { Heart, Star, ShoppingCart, Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCompare } from "@/context/CompareContext";
 import React, { useState } from "react";
 import QuickAddModal from "@/components/client/products/QuickAddModal";
-import { CompareButton } from "@/components/client/compare/CompareButton";
 
 interface ProductCardProps {
   product: Product;
@@ -15,7 +15,10 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { isInCompare, addToCompare, removeFromCompare } = useCompare();
+  
   const isLiked = isInWishlist(product.id);
+  const isCompared = isInCompare(product.id);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   return (
@@ -94,12 +97,20 @@ export default function ProductCard({ product }: ProductCardProps) {
           </button>
 
           {/* Compare Button */}
-          <div className="absolute top-[88px] sm:top-[104px] right-2 sm:right-3 z-10 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 delay-150 transition-all duration-300">
-            <CompareButton 
-              product={product} 
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full shadow-sm" 
-            />
-          </div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isCompared) {
+                removeFromCompare(product.id);
+              } else {
+                addToCompare(product);
+              }
+            }}
+            className={`absolute top-[88px] sm:top-[104px] right-2 sm:right-3 bg-white/90 hover:bg-rose-500 hover:text-white w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm z-10 ${isCompared ? 'opacity-100 bg-primary/10' : 'opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0'} delay-150`}
+          >
+            <Scale size={16} className={isCompared ? "text-primary" : "text-slate-600"} />
+          </button>
         </div>
 
         {/* Product Info */}
