@@ -8,6 +8,7 @@ using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
+using PolyBabyAPI.Filters;
 
 namespace PolyBabyAPI.Controllers
 {
@@ -588,6 +589,7 @@ namespace PolyBabyAPI.Controllers
         /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động + points quy đổi)
         /// </summary>
         [HttpPost("create-from-cart/{cartId}")]
+        [TypeFilter(typeof(AntiSpamCheckoutFilter))]
         //[Authorize]
         public async Task<ActionResult<object>> CreateFromCart(
             int cartId,

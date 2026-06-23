@@ -33,9 +33,11 @@ namespace PolyBabyAPI.Services
             return blockedIps.Contains(ipAddress);
         }
 
-        public async Task BlockIpAsync(string ipAddress, string reason, int durationDays = 30, string? userId = null, string? userEmail = null, List<string>? recentInvoices = null)
+        public async Task BlockIpAsync(string ipAddress, string reason, int durationDays = 30, string? userId = null, string? userEmail = null, List<string>? recentInvoices = null, int durationMinutes = 0)
         {
             if (string.IsNullOrEmpty(ipAddress)) return;
+
+            var expiresAt = durationMinutes > 0 ? DateTime.UtcNow.AddMinutes(durationMinutes) : DateTime.UtcNow.AddDays(durationDays);
 
             var existing = await _mongoDbService.BlockedIps.Find(x => x.IpAddress == ipAddress).FirstOrDefaultAsync();
             if (existing != null)
@@ -44,7 +46,7 @@ namespace PolyBabyAPI.Services
                 var update = Builders<BlockedIp>.Update
                     .Set(x => x.Reason, reason)
                     .Set(x => x.BlockedAt, DateTime.UtcNow)
-                    .Set(x => x.ExpiresAt, DateTime.UtcNow.AddDays(durationDays))
+                    .Set(x => x.ExpiresAt, expiresAt)
                     .Set(x => x.IsActive, true);
                 if (userId != null) update = update.Set(x => x.UserId, userId);
                 if (userEmail != null) update = update.Set(x => x.UserEmail, userEmail);
@@ -60,7 +62,7 @@ namespace PolyBabyAPI.Services
                     IpAddress = ipAddress,
                     Reason = reason,
                     BlockedAt = DateTime.UtcNow,
-                    ExpiresAt = DateTime.UtcNow.AddDays(durationDays),
+                    ExpiresAt = expiresAt,
                     IsActive = true,
                     UserId = userId,
                     UserEmail = userEmail,
