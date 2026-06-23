@@ -25,6 +25,7 @@ export default function AdminLayout({
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -434,7 +435,53 @@ export default function AdminLayout({
               </div>
             )}
           </div>
-          <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
+
+          <div className="relative">
+            <button 
+              onClick={() => {
+                setIsSettingsDropdownOpen(!isSettingsDropdownOpen);
+                setIsNotifDropdownOpen(false);
+              }}
+              className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300 focus:outline-none"
+              title="Cài đặt hệ thống"
+            >
+              settings
+            </button>
+            
+            {isSettingsDropdownOpen && (
+              <div className="absolute right-0 mt-3 w-56 bg-white rounded-[8px] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-2 z-50 text-slate-800">
+                <div className="px-4 pb-2 border-b border-slate-100 mb-2">
+                  <span className="font-bold text-slate-800 text-sm">Bảo mật hệ thống</span>
+                </div>
+                
+                {hasPermission("Admin.Access") ? (
+                  <>
+                    <Link
+                      href="/admin/blocked-ips"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700"
+                      onClick={() => setIsSettingsDropdownOpen(false)}
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-slate-400">block</span>
+                      <span className="font-medium">IP Bị Chặn</span>
+                    </Link>
+                    <Link
+                      href="/admin/security-logs"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-sm text-slate-700"
+                      onClick={() => setIsSettingsDropdownOpen(false)}
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-slate-400">security</span>
+                      <span className="font-medium">Nhật ký Anti-Spam</span>
+                    </Link>
+                  </>
+                ) : (
+                  <div className="px-4 py-3 text-xs text-slate-500 text-center">
+                    Không có quyền truy cập
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <Link href="/admin/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center">
               {user?.avatar ? (
@@ -712,16 +759,7 @@ export default function AdminLayout({
                   {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Phân quyền Truy cập</span>}
                 </Link>
               )}
-              {hasPermission("Admin.Access") && (
-                <Link
-                  href="/admin/blocked-ips"
-                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/blocked-ips") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                  title={!isSidebarExpanded ? "IP Bị Chặn" : undefined}
-                >
-                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">block</span>
-                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">IP Bị Chặn</span>}
-                </Link>
-              )}
+
               <Link
                 href="/admin/profile"
                 className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
