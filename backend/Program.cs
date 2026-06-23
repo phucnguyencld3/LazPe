@@ -304,7 +304,7 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
                 factory: partition => new FixedWindowRateLimiterOptions
                 {
                     AutoReplenishment = true,
-                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 100, // Tối đa 1000 request ở dev, 100 ở prod
+                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 1000, // Tăng lên 1000 request ở prod để tránh block Next.js SSR
                     QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
                     Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
                 }));
@@ -412,15 +412,15 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.ModelTrainingJob>(
             "ai-model-training",
             job => job.ExecuteAsync(),
-            "*/15 * * * *", // Chạy mỗi 15 phút
+            "0 2,14 * * *", // Chạy lúc 2:00 AM và 2:00 PM
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
-        // 5. Job huấn luyện AI Trend Model (Chạy mỗi 15 phút)
+        // 5. Job huấn luyện AI Trend Model (Chạy lúc 3 giờ sáng)
         recurringJobManager.AddOrUpdate<TrendModelTrainingJob>(
             "ai-trend-model-training",
             job => job.ExecuteAsync(),
-            "*/15 * * * *", // Chạy mỗi 15 phút
+            "0 3 * * *", // Chạy lúc 3:00 AM
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }
