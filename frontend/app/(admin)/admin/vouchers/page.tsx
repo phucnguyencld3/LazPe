@@ -431,14 +431,14 @@ export default function AdminVouchersPage() {
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                  <th className="px-6 py-4 text-center w-[80px]">STT</th>
-                  <th className="px-6 py-4">Mã Voucher</th>
-                  <th className="px-6 py-4">Loại Voucher</th>
-                  <th className="px-6 py-4">Mức giảm</th>
-                  <th className="px-6 py-4">Tỉ lệ sử dụng</th>
-                  <th className="px-6 py-4">Loại phân phối</th>
-                  <th className="px-6 py-4 text-center">Trạng thái khóa</th>
-                  <th className="px-6 py-4 text-right">Thao tác</th>
+                  <th className="px-3 py-4 text-center w-[60px] whitespace-nowrap">STT</th>
+                  <th className="px-4 py-4 whitespace-nowrap">Mã Voucher</th>
+                  <th className="px-4 py-4 whitespace-nowrap">Loại Voucher</th>
+                  <th className="px-4 py-4 whitespace-nowrap">Mức giảm</th>
+                  <th className="px-4 py-4 whitespace-nowrap">Tỉ lệ sử dụng</th>
+                  <th className="px-4 py-4">Loại phân phối</th>
+                  <th className="px-4 py-4 text-center whitespace-nowrap">Trạng thái / Hiệu lực</th>
+                  <th className="px-4 py-4 text-right whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -450,18 +450,18 @@ export default function AdminVouchersPage() {
                   return (
                     <tr key={voucher.voucherID} className="hover:bg-slate-100/70 transition-all duration-200 group">
                       {/* STT */}
-                      <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
-                        {index + 1}
+                      <td className="px-3 py-4 text-center text-xs font-semibold text-slate-400 whitespace-nowrap">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       {/* Code */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <span className="text-xs font-bold text-primary tracking-wider font-mono">
                           {voucher.code}
                         </span>
                       </td>
 
                       {/* Voucher Type */}
-                      <td className="px-6 py-4 text-xs font-bold">
+                      <td className="px-4 py-4 text-xs font-bold whitespace-nowrap">
                         {voucher.voucherType === 2 ? (
                           <span className="inline-flex items-center gap-1.5 text-sky-600 text-xs font-bold">
                             <span className="material-symbols-outlined text-[14px]">local_shipping</span>
@@ -476,7 +476,7 @@ export default function AdminVouchersPage() {
                       </td>
 
                       {/* Discount Amount */}
-                      <td className="px-6 py-4 text-sm font-bold text-slate-800">
+                      <td className="px-4 py-4 text-sm font-bold text-slate-800 whitespace-nowrap">
                         {voucher.voucherType === 2 && voucher.isFreeShipping ? (
                           <span className="text-sky-600 font-extrabold">Free Shipping</span>
                         ) : voucher.discountType === 1 
@@ -485,8 +485,8 @@ export default function AdminVouchersPage() {
                       </td>
 
                       {/* Usage bar */}
-                      <td className="px-6 py-4">
-                        <div className="w-32">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="w-28 xl:w-32">
                           <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold mb-1">
                             <span>{voucher.usedQuantity}/{voucher.totalQuantity}</span>
                             <span>{usedPct}%</span>
@@ -501,27 +501,27 @@ export default function AdminVouchersPage() {
                       </td>
 
                       {/* Visibility / Exclusive type */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4 text-xs font-bold whitespace-nowrap">
                         {voucher.visibilityType === 1 ? (
                           voucher.exclusiveType === 2 ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-650">
+                            <span className="inline-flex items-center gap-1 text-teal-650">
                               <span className="material-symbols-outlined text-[14px]">send</span>
                               Công khai - Phát tự động
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-650">
+                            <span className="inline-flex items-center gap-1 text-emerald-650">
                               <span className="material-symbols-outlined text-[14px]">public</span>
                               Công khai
                             </span>
                           )
                         ) : (
                           voucher.exclusiveType === 1 ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600">
+                            <span className="inline-flex items-center gap-1 text-indigo-600">
                               <span className="material-symbols-outlined text-[14px]">vpn_key</span>
                               Độc quyền - Nhập mã
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-600">
+                            <span className="inline-flex items-center gap-1 text-violet-600">
                               <span className="material-symbols-outlined text-[14px]">lock</span>
                               Độc quyền - Phát trực tiếp
                             </span>
@@ -530,12 +530,12 @@ export default function AdminVouchersPage() {
                       </td>
 
                       {/* Validity/Status */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-4 text-center whitespace-nowrap">
                         {getValidityBadge(voucher.startDate, voucher.endDate, voucher.status)}
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => router.push(`/admin/vouchers/${voucher.voucherID}/issued`)}

@@ -26,7 +26,7 @@ import { OrderNoteSection } from "@/components/client/checkout/OrderNoteSection"
 import { OrderSummarySidebar } from "@/components/client/checkout/OrderSummarySidebar";
 import { AddressModal } from "@/components/client/checkout/AddressModal";
 import { VoucherModal } from "@/components/client/cart/VoucherModal";
-import { getPublicVouchers, applyVoucherToCart, removeVoucherFromCart} from "@/lib/api";
+import { getPublicVouchers, applyVoucherToCart, autoApplyVouchersToCart, removeVoucherFromCart, getCheckoutAvailableVouchers} from "@/lib/api";
 import { Voucher } from "@/types";
 
 export default function CheckoutPage() {
@@ -194,7 +194,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    const netSubtotal = Math.max(subTotal - discountAmount - loyaltyDiscount, 0);
+    // Tính điểm tích lũy dựa trên giá trị gốc của sản phẩm (subTotal)
+    const netSubtotal = Math.max(subTotal, 0);
     const basePoints = Math.floor(netSubtotal / policy.vndAmount) * policy.pointsEarned;
     const multiplied = Math.floor(basePoints * (policy.multiplier || 1));
     setEstimatedEarnPoints(Math.max(0, multiplied));
@@ -394,7 +395,9 @@ export default function CheckoutPage() {
   const loadVouchersList = async () => {
     setLoadingVouchers(true);
     try {
-      const voucherData = await getPublicVouchers();
+      const voucherData = token 
+        ? await getCheckoutAvailableVouchers(token)
+        : await getPublicVouchers();
       if (voucherData) {
         setVouchers(voucherData);
       }
@@ -419,6 +422,22 @@ export default function CheckoutPage() {
         toast.success(res.message || "Áp dụng mã giảm giá thành công!");
       } else {
         toast.error(res.message || "Áp dụng voucher thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
+  const handleAutoApplyVouchers = async () => {
+    if (!token) return;
+    try {
+      const res = await autoApplyVouchersToCart(token);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Áp dụng mã giảm giá tốt nhất thành công!");
+      } else {
+        toast.error(res.message || "Không tìm thấy mã giảm giá phù hợp");
       }
     } catch (error) {
       console.error(error);
@@ -560,6 +579,7 @@ export default function CheckoutPage() {
             redeemPolicy={loyaltyPolicySummary?.redeemPolicy || null}
             estimatedEarnPoints={estimatedEarnPoints}
             handleOpenVoucherModal={handleOpenVoucherModal}
+            handleAutoApplyVouchers={handleAutoApplyVouchers}
             handleRemoveVoucher={handleRemoveVoucher}
           />
         </div>

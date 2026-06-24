@@ -14,6 +14,7 @@ interface CartSummaryProps {
   setVoucherCodeInput: (val: string) => void;
   applyingCode: boolean;
   handleApplyVoucherCode: (e: React.FormEvent) => void;
+  handleAutoApplyVouchers?: () => void;
   handleRemoveVoucher: (type?: number) => void;
   handleOpenVoucherModal: () => void;
   handleCheckout: () => void;
@@ -31,6 +32,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   setVoucherCodeInput,
   applyingCode,
   handleApplyVoucherCode,
+  handleAutoApplyVouchers,
   handleRemoveVoucher,
   handleOpenVoucherModal,
   handleCheckout,
@@ -47,9 +49,20 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
 
       {/* Voucher Section */}
       <div className="bg-white p-5 rounded-[12px] shadow-sm border border-slate-100 space-y-3">
-        <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1">
-          <span className="material-symbols-outlined text-rose-500 text-base">confirmation_number</span> Voucher ưu đãi
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1">
+            <span className="material-symbols-outlined text-rose-500 text-base">confirmation_number</span> Voucher ưu đãi
+          </h4>
+          {handleAutoApplyVouchers && (
+            <button
+              onClick={handleAutoApplyVouchers}
+              disabled={applyingCode}
+              className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            >
+              ✨ Tự động áp mã
+            </button>
+          )}
+        </div>
         
         <form onSubmit={handleApplyVoucherCode} className="flex gap-2">
           <div className="relative flex-grow">

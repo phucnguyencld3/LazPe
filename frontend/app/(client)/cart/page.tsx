@@ -9,7 +9,8 @@ import {
   getPublicVouchers,
   getProducts,
   CartInfo,
-  CartDetailInfo
+  CartDetailInfo,
+  getCheckoutAvailableVouchers,
 } from "@/lib/api";
 import { getCurrentFlashSale } from "@/lib/features/flash-sales/flashSaleApi";
 import { useCart } from "@/context/CartContext";
@@ -35,6 +36,7 @@ export default function CartPage() {
     removeFromCart,
     clearCart,
     applyVoucher,
+    autoApplyVouchers,
     removeVoucher
   } = useCart();
   const [checkedDetails, setCheckedDetails] = useState<Record<number, boolean>>({});
@@ -125,7 +127,9 @@ export default function CartPage() {
   const loadVouchersList = async () => {
     setLoadingVouchers(true);
     try {
-      const voucherData = await getPublicVouchers();
+      const voucherData = token 
+        ? await getCheckoutAvailableVouchers(token)
+        : await getPublicVouchers();
       if (voucherData) {
         setVouchers(voucherData);
       }
@@ -286,6 +290,24 @@ export default function CartPage() {
     }
   };
 
+  const handleAutoApplyVouchers = async () => {
+    if (!token) return;
+    setApplyingCode(true);
+    try {
+      const res = await autoApplyVouchers();
+      if (res.success) {
+        showAlert("success", res.message || "Áp dụng mã giảm giá tốt nhất thành công!");
+      } else {
+        showAlert("error", res.message || "Không tìm thấy mã giảm giá phù hợp");
+      }
+    } catch (error) {
+      console.error(error);
+      showAlert("error", "Lỗi kết nối");
+    } finally {
+      setApplyingCode(false);
+    }
+  };
+
   const handleRemoveVoucher = async (type?: number) => {
     if (!token) return;
 
@@ -436,6 +458,9 @@ export default function CartPage() {
       } else {
         discount = cart.voucher.discountAmount;
       }
+      if (discount > subTotal) {
+        discount = subTotal;
+      }
     }
 
     let shipping = 0;
@@ -456,6 +481,9 @@ export default function CartPage() {
         }
         if (cart.shippingVoucher.maxShippingDiscount && cart.shippingVoucher.maxShippingDiscount > 0) {
           shippingDiscount = Math.min(shippingDiscount, cart.shippingVoucher.maxShippingDiscount);
+        }
+        if (shippingDiscount > shipping) {
+          shippingDiscount = shipping;
         }
       }
     }
@@ -512,6 +540,7 @@ export default function CartPage() {
               setVoucherCodeInput={setVoucherCodeInput}
               applyingCode={applyingCode}
               handleApplyVoucherCode={handleApplyVoucherCode}
+              handleAutoApplyVouchers={handleAutoApplyVouchers}
               handleRemoveVoucher={handleRemoveVoucher}
               handleOpenVoucherModal={handleOpenVoucherModal}
               handleCheckout={handleCheckout}

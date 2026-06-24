@@ -228,7 +228,7 @@ namespace PolyBabyAPI.Data
 
             // ===== Voucher =====
             builder.Entity<VoucherUsage>()
-                .HasKey(x => new { x.VoucherID, x.UserID });
+                .HasKey(x => x.Id);
 
             builder.Entity<VoucherUsage>()
                 .HasOne(vu => vu.User)
