@@ -246,13 +246,6 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                         >
                           <span className="material-symbols-outlined">visibility</span>
                         </button>
-                        <button
-                          onClick={() => router.push(`/admin/orders/${order.invoiceID}?page=${currentPage}`)}
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
-                          title="Chỉnh sửa đơn"
-                        >
-                          <span className="material-symbols-outlined">edit</span>
-                        </button>
                       </div>
                     </td>
                   </tr>
