@@ -684,7 +684,7 @@ export default function AdminLayout({
             )}
 
             {/* MARKETING & ƯU ĐÃI */}
-            {(hasPermission("Voucher.Read") || hasPermission("FlashSale.Read") || hasPermission("Loyalty.Read")) && (
+            {(hasPermission("Voucher.Read") || hasPermission("FlashSale.Read") || hasPermission("Loyalty.Read") || hasPermission("Banner.Read")) && (
               <div className="space-y-1 pt-2">
                 {isSidebarExpanded ? (
                   <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Marketing & Ưu đãi</span>
@@ -725,41 +725,18 @@ export default function AdminLayout({
                     {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chương trình Loyalty</span>}
                   </Link>
                 )}
+                {hasPermission("Banner.Read") && (
+                  <Link
+                    href="/admin/banners"
+                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/banners") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                    title={!isSidebarExpanded ? "Quản lý Banner" : undefined}
+                  >
+                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">view_carousel</span>
+                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Quản lý Banner</span>}
+                  </Link>
+                )}
               </div>
             )}
-              <Link
-                href="/admin/vouchers"
-                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                title={!isSidebarExpanded ? "Mã giảm giá (Voucher)" : undefined}
-              >
-                <span className="material-symbols-outlined text-[22px] flex-shrink-0">confirmation_number</span>
-                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Mã giảm giá (Voucher)</span>}
-              </Link>
-              <Link
-                href="/admin/flash-sales"
-                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                title={!isSidebarExpanded ? "Chiến dịch Flash Sale" : undefined}
-              >
-                <span className="material-symbols-outlined text-[22px] flex-shrink-0">bolt</span>
-                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chiến dịch Flash Sale</span>}
-              </Link>
-              <Link
-                href="/admin/loyalty"
-                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                title={!isSidebarExpanded ? "Chương trình Loyalty" : undefined}
-              >
-                <span className="material-symbols-outlined text-[22px] flex-shrink-0">loyalty</span>
-                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chương trình Loyalty</span>}
-              </Link>
-              <Link
-                href="/admin/banners"
-                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/banners") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                title={!isSidebarExpanded ? "Quản lý Banner" : undefined}
-              >
-                <span className="material-symbols-outlined text-[22px] flex-shrink-0">view_carousel</span>
-                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Quản lý Banner</span>}
-              </Link>
-            </div>
 
             {/* NHÂN SỰ & NGƯỜI DÙNG */}
             <div className="space-y-1 pt-2">
