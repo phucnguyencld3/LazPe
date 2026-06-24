@@ -425,13 +425,17 @@ export default function AdminBrandsPage() {
                             >
                               <span className="material-symbols-outlined text-lg">edit</span>
                             </button>
-                            <button
-                              onClick={() => setBrandToDelete({ id: brand.supplierID, name: brand.supplierName })}
-                              className="p-2 hover:bg-rose-50 rounded-full text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
-                              title="Xóa"
-                            >
-                              <span className="material-symbols-outlined text-lg">delete</span>
-                            </button>
+                            {(brand.productCount ?? 0) === 0 ? (
+                              <button
+                                onClick={() => setBrandToDelete({ id: brand.supplierID, name: brand.supplierName })}
+                                className="p-2 hover:bg-rose-50 rounded-full text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
+                                title="Xóa"
+                              >
+                                <span className="material-symbols-outlined text-lg">delete</span>
+                              </button>
+                            ) : (
+                              <div className="w-[36px] h-[36px] shrink-0" />
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -501,13 +501,17 @@ export default function AdminCategoriesPage() {
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                          <button
-                            onClick={() => setCategoryToDelete({ id: cat.categoryID, name: cat.categoryName })}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                            title="Xóa danh mục"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                          {(cat.productCount ?? 0) === 0 ? (
+                            <button
+                              onClick={() => setCategoryToDelete({ id: cat.categoryID, name: cat.categoryName })}
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
+                              title="Xóa danh mục"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          ) : (
+                            <div className="w-8 h-8 shrink-0" />
+                          )}
                         </div>
                       </td>
                     </tr>
