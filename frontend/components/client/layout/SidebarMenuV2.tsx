@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { getCategories } from '@/lib/api';
 import { Category } from '@/types';
+import { useBanners } from '@/hooks/useBanners';
+import { BannerRenderer } from '@/components/shared/banner/BannerRenderer';
 
 export default function SidebarMenuV2() {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const { banners, loading: bannersLoading } = useBanners('left');
 
   useEffect(() => {
     let isMounted = true;
@@ -122,14 +125,20 @@ export default function SidebarMenuV2() {
       </div>
 
       {/* Vertical Promo Banner */}
-      <div className="bg-gradient-to-br from-pink-100 to-orange-50 rounded-[10px] shadow-sm p-4 text-center cursor-pointer hover:shadow-md transition-shadow">
-        <p className="text-xs font-bold text-primary mb-1 uppercase">Dành riêng hội viên</p>
-        <h4 className="text-lg font-black text-slate-800 leading-tight mb-2">Nhận quà thả ga</h4>
-        <p className="text-[10px] text-slate-500 mb-2">Tích lũy chi tiêu 3.000.000đ</p>
-        <button className="bg-primary text-white text-xs font-bold py-1.5 px-4 rounded-full w-full hover:bg-primary/90 transition-colors">
-          Đổi Ngay
-        </button>
-      </div>
+      {banners && banners.length > 0 ? (
+        <div className="relative w-full">
+          {banners.map(b => <BannerRenderer key={b.id || 'preview'} banner={b} />)}
+        </div>
+      ) : (
+        <div className="bg-gradient-to-br from-pink-100 to-orange-50 rounded-[10px] shadow-sm p-4 text-center cursor-pointer hover:shadow-md transition-shadow">
+          <p className="text-xs font-bold text-primary mb-1 uppercase">Dành riêng hội viên</p>
+          <h4 className="text-lg font-black text-slate-800 leading-tight mb-2">Nhận quà thả ga</h4>
+          <p className="text-[10px] text-slate-500 mb-2">Tích lũy chi tiêu 3.000.000đ</p>
+          <button className="bg-primary text-white text-xs font-bold py-1.5 px-4 rounded-full w-full hover:bg-primary/90 transition-colors">
+            Đổi Ngay
+          </button>
+        </div>
+      )}
 
     </div>
   );

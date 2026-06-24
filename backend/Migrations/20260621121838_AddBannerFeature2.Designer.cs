@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260621121838_AddBannerFeature2")]
+    partial class AddBannerFeature2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -355,11 +358,6 @@ namespace PolyBabyAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Page")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Position")
                         .IsRequired()
@@ -1793,50 +1791,6 @@ namespace PolyBabyAPI.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.ProductAlert", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AlertType")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastNotifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("TargetPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("VariantId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("VariantId");
-
-                    b.HasIndex("ProductId", "IsActive");
-
-                    b.ToTable("ProductAlerts");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
                 {
                     b.Property<int>("ProductImageID")
@@ -2402,7 +2356,7 @@ namespace PolyBabyAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("WardID")
+                    b.Property<int>("WardID")
                         .HasColumnType("int");
 
                     b.HasKey("AddressID");
@@ -2670,11 +2624,11 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.VoucherUsage", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("VoucherID")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("UserID")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("CartID")
                         .HasColumnType("int");
@@ -2691,22 +2645,13 @@ namespace PolyBabyAPI.Migrations
                     b.Property<DateTime>("UsedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("VoucherID")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
+                    b.HasKey("VoucherID", "UserID");
 
                     b.HasIndex("CartID");
 
                     b.HasIndex("InvoiceID");
 
                     b.HasIndex("UserID");
-
-                    b.HasIndex("VoucherID");
 
                     b.ToTable("VoucherUsages");
                 });
@@ -3333,32 +3278,6 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("Supplier");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.ProductAlert", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PolyBabyAPI.Models.Variant", "Variant")
-                        .WithMany()
-                        .HasForeignKey("VariantId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Product");
-
-                    b.Navigation("User");
-
-                    b.Navigation("Variant");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.ProductImage", b =>
                 {
                     b.HasOne("PolyBabyAPI.Models.Product", "Product")
@@ -3532,7 +3451,8 @@ namespace PolyBabyAPI.Migrations
                     b.HasOne("PolyBabyAPI.Models.Ward", "Ward")
                         .WithMany()
                         .HasForeignKey("WardID")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("District");
 

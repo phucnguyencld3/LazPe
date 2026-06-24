@@ -1,0 +1,131 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Banner } from '@/types/banner';
+import { ProductSelectModal } from '../combo/ProductSelectModal';
+import { BannerForm } from './BannerForm';
+import { BannerPreview } from './BannerPreview';
+
+export function BannerConfigBuilder({ 
+  initialBanner, 
+  existingBanners,
+  onSave,
+  token
+}: { 
+  initialBanner?: Banner;
+  existingBanners?: Banner[];
+  onSave?: (banner: Partial<Banner>) => void;
+  token?: string;
+}) {
+  const [formData, setFormData] = useState<Partial<Banner>>(initialBanner || {
+    name: '',
+    position: 'home',
+    type: 'slideshow',
+    page: 'global',
+    layoutConfig: {
+      items: [],
+      animation: '',
+      containerStyle: '',
+      gridColumns: 2,
+      gridGap: 4,
+      popupDelay: 1000,
+      showCloseButton: true,
+      responsive: {},
+      floatingConfig: {
+        anchor: 'bottom-right',
+        closeable: true
+      }
+    }
+  });
+
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (initialBanner) {
+      setFormData(initialBanner);
+    }
+  }, [initialBanner]);
+
+  React.useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'SELECT_BANNER_POSITION') {
+        setFormData(prev => ({ ...prev, position: e.data.position }));
+      }
+      if (e.data?.type === 'ROUTE_CHANGE') {
+        // Automatically switch page based on iframe route navigation,
+        // but only if we are not editing an existing banner, or if user permits
+        const newPath = e.data.pathname;
+        let mappedPage = 'home';
+        if (newPath.startsWith('/products/')) mappedPage = 'product_detail';
+        else if (newPath.startsWith('/products')) mappedPage = 'products';
+        else if (newPath.startsWith('/cart')) mappedPage = 'cart';
+        else if (newPath.startsWith('/checkout')) mappedPage = 'checkout';
+        else if (newPath.startsWith('/profile')) mappedPage = 'profile';
+        else if (newPath.startsWith('/bundles')) mappedPage = 'combo';
+        
+        // Don't auto-switch if position is global-only
+        setFormData(prev => {
+          if (prev.position === 'home' || prev.position === 'footer') {
+            return prev;
+          }
+          return { ...prev, page: mappedPage };
+        });
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const handleProductSelect = (productId: number) => {
+    if (activeItemIndex !== null) {
+      const newItems = [...(formData.layoutConfig?.items || [])];
+      const redirect = newItems[activeItemIndex].redirect || { enabled: true, type: 'product' };
+      const resolvedUrl = `/products/${productId}`;
+      newItems[activeItemIndex] = {
+        ...newItems[activeItemIndex],
+        redirect: {
+          ...redirect,
+          type: 'product',
+          value: productId,
+          resolved_url: resolvedUrl // usually single product uses /products/123
+        },
+        redirectUrl: resolvedUrl
+      };
+      setFormData({
+        ...formData,
+        layoutConfig: { ...formData.layoutConfig!, items: newItems }
+      });
+    }
+    setIsProductModalOpen(false);
+  };
+
+  const handleOpenProductModal = (index: number) => {
+    setActiveItemIndex(index);
+    setIsProductModalOpen(true);
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 p-0">
+      <BannerForm 
+        formData={formData} 
+        setFormData={setFormData}
+        existingBanners={existingBanners}
+        token={token}
+        onSave={onSave}
+        onOpenProductModal={handleOpenProductModal}
+      />
+      
+      <BannerPreview formData={formData} />
+
+      {token && (
+        <ProductSelectModal
+          isOpen={isProductModalOpen}
+          onClose={() => setIsProductModalOpen(false)}
+          onProductSelect={handleProductSelect}
+          token={token}
+        />
+      )}
+    </div>
+  );
+}

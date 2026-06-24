@@ -5,11 +5,15 @@ import Link from "next/link";
 import { Bolt, ChevronRight, Flame, Loader2 } from "lucide-react";
 import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleStatus, FlashSaleItemResponseDto } from "@/lib/features/flash-sales/flashSaleApi";
 import CountdownTimer from "@/components/client/common/CountdownTimer";
+import { useBanners } from "@/hooks/useBanners";
+import { BannerRenderer } from "@/components/shared/banner/BannerRenderer";
 
 export const FlashSaleSection: React.FC = () => {
   const [flashSales, setFlashSales] = useState<FlashSaleResponseDto[]>([]);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  const { banners: flashSaleBanners } = useBanners("flash_sale");
 
   const fetchSale = async () => {
     try {
@@ -43,7 +47,8 @@ export const FlashSaleSection: React.FC = () => {
     (fs) => fs.isActive && fs.flashSaleItems && fs.flashSaleItems.length > 0
   );
 
-  if (validSales.length === 0) {
+  // Still render if there's a preview banner even if validSales is empty
+  if (validSales.length === 0 && (!flashSaleBanners || flashSaleBanners.length === 0)) {
     return null;
   }
 
@@ -51,15 +56,24 @@ export const FlashSaleSection: React.FC = () => {
   const currentSaleIndex = activeTabIndex < validSales.length ? activeTabIndex : 0;
   const currentSale = validSales[currentSaleIndex];
 
-  const isUpcoming = currentSale.status === FlashSaleStatus.Upcoming;
-  const isActive = currentSale.status === FlashSaleStatus.Active;
+  const isUpcoming = currentSale ? currentSale.status === FlashSaleStatus.Upcoming : false;
+  const isActive = currentSale ? currentSale.status === FlashSaleStatus.Active : false;
   
   // Choose target countdown date based on status
-  const targetTime = isUpcoming ? currentSale.startTime : currentSale.endTime;
+  const targetTime = currentSale ? (isUpcoming ? currentSale.startTime : currentSale.endTime) : "";
 
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50/50 via-white to-transparent overflow-hidden">
       <div className="mx-auto max-w-7xl">
+        {/* Flash Sale Banner */}
+        {flashSaleBanners && flashSaleBanners.length > 0 && (
+          <div className="mb-8 w-full">
+            {flashSaleBanners.map(b => <BannerRenderer key={b.id || 'preview'} banner={b} />)}
+          </div>
+        )}
+
+        {validSales.length === 0 ? null : (
+          <>
         {/* Campaign Tabs */}
         {validSales.length > 1 && (
           <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none mb-6">
@@ -130,8 +144,11 @@ export const FlashSaleSection: React.FC = () => {
             />
           </div>
         </div>
+        </>
+        )}
 
         {/* Product Grid */}
+        {currentSale && (
         <div key={currentSale.id} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 transition-all duration-300 animate-[fadeIn_0.4s_ease-out]">
           {currentSale.flashSaleItems.map((item) => {
             const hasStock = item.totalQuantity > item.soldQuantity;
@@ -256,6 +273,7 @@ export const FlashSaleSection: React.FC = () => {
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );

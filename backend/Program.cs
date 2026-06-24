@@ -226,6 +226,7 @@ try
     builder.Services.AddScoped<IStatisticsService, StatisticsService>();
     builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
+    builder.Services.AddScoped<IBannerService, BannerService>();
 
     // Product services
     builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -431,6 +432,7 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
 
     app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
     app.MapHub<PolyBabyAPI.Hubs.NotificationHub>("/notificationHub");
+    app.MapHub<PolyBabyAPI.Hubs.BannerHub>("/bannerHub");
     app.MapControllers();
     app.MapControllerRoute(
         name: "areas",
