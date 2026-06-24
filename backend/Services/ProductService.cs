@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.DTOs;
+using PolyBabyAPI.Helpers;
 using PolyBabyAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
@@ -60,6 +61,16 @@ namespace PolyBabyAPI.Services
                     try
                     {
                         var matchingIds = await _searchEngineService.SearchProductsAsync(searchTerm);
+                        if (!matchingIds.Any())
+                        {
+                            // Thử tìm kiếm bằng keyword không dấu trên Meilisearch
+                            var noTone = StringHelper.RemoveVietnameseTones(searchTerm);
+                            if (noTone != searchTerm)
+                            {
+                                matchingIds = await _searchEngineService.SearchProductsAsync(noTone);
+                            }
+                        }
+
                         if (matchingIds.Any())
                         {
                             query = query.Where(p => matchingIds.Contains(p.ProductID));
@@ -67,13 +78,28 @@ namespace PolyBabyAPI.Services
                         }
                         else
                         {
-                            query = query.Where(p => p.ProductID == 0); // Force empty
+                            // Nếu vẫn không có, fallback về SQL
+                            var noTone = StringHelper.RemoveVietnameseTones(searchTerm).ToLower();
+                            var allProducts = _context.Products.Select(x => new { x.ProductID, x.ProductName }).ToList();
+                            var matchedIds = allProducts.Where(x => 
+                                (x.ProductName ?? "").ToLower().Contains(searchTerm.ToLower()) || 
+                                StringHelper.RemoveVietnameseTones(x.ProductName ?? "").ToLower().Contains(noTone)
+                            ).Select(x => x.ProductID).ToList();
+                            
+                            query = query.Where(p => matchedIds.Contains(p.ProductID));
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Meilisearch query failed. Fallback to SQL Server LIKE.");
-                        query = query.Where(p => p.ProductName.Contains(searchTerm));
+                        var noTone = StringHelper.RemoveVietnameseTones(searchTerm).ToLower();
+                        var allProducts = _context.Products.Select(x => new { x.ProductID, x.ProductName }).ToList();
+                        var matchedIds = allProducts.Where(x => 
+                            (x.ProductName ?? "").ToLower().Contains(searchTerm.ToLower()) || 
+                            StringHelper.RemoveVietnameseTones(x.ProductName ?? "").ToLower().Contains(noTone)
+                        ).Select(x => x.ProductID).ToList();
+                        
+                        query = query.Where(p => matchedIds.Contains(p.ProductID));
                     }
                 }
 

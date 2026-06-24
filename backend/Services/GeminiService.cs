@@ -778,5 +778,103 @@ namespace PolyBabyAPI.Services
             }
             return Task.FromResult(fakeEmbed);
         }
+
+        public async Task<string> AnalyzeImageForSearchAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return string.Empty;
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            var base64Data = Convert.ToBase64String(memoryStream.ToArray());
+            var mimeType = file.ContentType;
+
+            var requestBody = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Role = "user",
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = "Hãy mô tả ngắn gọn và chính xác nhất sản phẩm chính trong bức ảnh này bằng 1 đến 4 từ khóa (ví dụ: xe đẩy em bé, bỉm moony, bình sữa, ...). Chỉ trả về từ khóa tìm kiếm cốt lõi, không giải thích gì thêm." },
+                            new GeminiPart 
+                            { 
+                                InlineData = new GeminiInlineData 
+                                { 
+                                    MimeType = mimeType, 
+                                    Data = base64Data 
+                                } 
+                            }
+                        }
+                    }
+                }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody, _jsonOptions), Encoding.UTF8, "application/json");
+            string currentKey = GetNextApiKey();
+            string requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={currentKey}";
+            
+            var response = await _httpClient.PostAsync(requestUrl, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini Vision API Error: {Error}", err);
+                return string.Empty;
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<GeminiResponse>(responseString, _jsonOptions);
+            return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+        }
+
+        public async Task<string> TranscribeAudioAsync(IFormFile audio)
+        {
+            if (audio == null || audio.Length == 0) return string.Empty;
+
+            using var memoryStream = new MemoryStream();
+            await audio.CopyToAsync(memoryStream);
+            var base64Data = Convert.ToBase64String(memoryStream.ToArray());
+            var mimeType = audio.ContentType;
+
+            var requestBody = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Role = "user",
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = "Hãy chuyển đoạn âm thanh sau thành văn bản tiếng Việt. Chỉ xuất kết quả là những từ đã nói, không giải thích gì thêm." },
+                            new GeminiPart 
+                            { 
+                                InlineData = new GeminiInlineData 
+                                { 
+                                    MimeType = mimeType, 
+                                    Data = base64Data 
+                                } 
+                            }
+                        }
+                    }
+                }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody, _jsonOptions), Encoding.UTF8, "application/json");
+            string currentKey = GetNextApiKey();
+            string requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={currentKey}";
+            
+            var response = await _httpClient.PostAsync(requestUrl, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini Audio API Error: {Error}", err);
+                return string.Empty;
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<GeminiResponse>(responseString, _jsonOptions);
+            return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+        }
     }
 }

@@ -207,7 +207,35 @@ export default function AdminProductsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
       
-      toast.success("Xuất dữ liệu thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.dismiss();
+      toast.error("Không thể kết nối đến máy chủ.");
+    }
+  };
+
+  // Handle Sync Meilisearch
+  const handleSyncMeilisearch = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      toast.loading("Đang đồng bộ dữ liệu lên Meilisearch...");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api'}/Product/sync-meilisearch`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      toast.dismiss();
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        toast.success(data.message || "Đồng bộ dữ liệu thành công!");
+      } else {
+        toast.error(data.message || "Lỗi khi đồng bộ dữ liệu.");
+      }
     } catch (err) {
       console.error(err);
       toast.dismiss();
@@ -260,6 +288,13 @@ export default function AdminProductsPage() {
           >
             <span className="material-symbols-outlined text-[18px]">file_export</span>
             Xuất dữ liệu
+          </button>
+          <button
+            onClick={handleSyncMeilisearch}
+            className="border border-emerald-500 text-emerald-600 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">sync</span>
+            Đồng bộ Meilisearch
           </button>
           <button
             onClick={() => {

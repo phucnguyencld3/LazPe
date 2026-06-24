@@ -41,8 +41,21 @@ namespace PolyBabyAPI.Models.Gemini
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public GeminiFunctionResponse? FunctionResponse { get; set; }
 
+        [JsonPropertyName("inlineData")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public GeminiInlineData? InlineData { get; set; }
+
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    }
+
+    public class GeminiInlineData
+    {
+        [JsonPropertyName("mimeType")]
+        public string MimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("data")]
+        public string Data { get; set; } = string.Empty;
     }
 
     public class GeminiFunctionCall

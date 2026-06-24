@@ -250,7 +250,9 @@ try
 
     //Đăng ký Permission Service
     builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
+    builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
+    builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+    builder.Services.AddScoped<IVoiceSearchService, VoiceSearchService>();
 
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
