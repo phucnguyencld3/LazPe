@@ -209,9 +209,22 @@ export default function AdminLayout({
           }
         });
 
-        if (!res.ok) {
+        // Chỉ đăng xuất nếu lỗi là 401 Unauthorized (Token hết hạn/sai)
+        if (res.status === 401) {
           clearAuth();
           window.location.replace("/login");
+          return;
+        }
+
+        // Bỏ qua lỗi 429 (Rate Limit) hoặc 5xx (Server Error), không đăng xuất người dùng
+        if (!res.ok) {
+          // Thử lấy User từ LocalStorage nếu server đang sập tạm thời
+          const storage = localStorage.getItem("token") ? localStorage : sessionStorage;
+          const cachedUser = storage.getItem("user");
+          if (cachedUser) {
+             setIsAuth(true);
+             setUser(JSON.parse(cachedUser));
+          }
           return;
         }
 
@@ -221,18 +234,22 @@ export default function AdminLayout({
         const permissions = apiUser?.permissions || [];
         const hasDashboardAccess = apiUser?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
-        if (!data.success || !hasDashboardAccess) {
+        if (data.success && !hasDashboardAccess) {
+          // Người dùng hợp lệ nhưng không có quyền truy cập Admin
           clearAuth();
           window.location.replace("/login");
-        } else {
+        } else if (data.success && apiUser) {
           setIsAuth(true);
           setUser(apiUser);
           const storage = localStorage.getItem("token") ? localStorage : sessionStorage;
           storage.setItem("user", JSON.stringify(apiUser));
+        } else if (!data.success && data.message === 'Too many requests.') {
+           // Giữ nguyên phiên đăng nhập nếu bị rate limit
+           setIsAuth(true);
         }
       } catch (e) {
-        clearAuth();
-        window.location.replace("/login");
+        console.warn("Auth check failed due to network or server issue, preserving session");
+        // Không gọi clearAuth() ở đây để tránh văng web khi server rớt tạm thời
       }
     };
     checkAuth();
