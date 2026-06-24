@@ -596,20 +596,28 @@ export default function HeaderV2() {
                 </div>
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-3">
-                <Link 
-                  href="/login" 
-                  className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors px-3 py-2"
-                >
-                  Đăng nhập
+              <>
+                {/* Mobile View: User Icon */}
+                <Link href="/login" className="sm:hidden p-1.5 text-slate-600 hover:text-primary transition-colors relative" title="Đăng nhập">
+                  <User size={22} className="hover:text-primary transition-colors" />
                 </Link>
-                <Link 
-                  href="/register" 
-                  className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-[8px] transition-all duration-200 active:scale-95 shadow-sm"
-                >
-                  Đăng ký
-                </Link>
-              </div>
+
+                {/* Desktop View: Buttons */}
+                <div className="hidden sm:flex items-center gap-3">
+                  <Link 
+                    href="/login" 
+                    className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors px-3 py-2"
+                  >
+                    Đăng nhập
+                  </Link>
+                  <Link 
+                    href="/register" 
+                    className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-[8px] transition-all duration-200 active:scale-95 shadow-sm"
+                  >
+                    Đăng ký
+                  </Link>
+                </div>
+              </>
             )}
           </div>
         </div>
