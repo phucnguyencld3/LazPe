@@ -28,18 +28,58 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
 
   if (!voucherModalOpen) return null;
 
-  const filteredVouchers = vouchers.filter((v) => {
-    // Ẩn các voucher đã hết hạn hoặc hết lượt dùng
-    if (new Date(v.endDate).getTime() < Date.now() || v.usedQuantity >= v.totalQuantity) {
-      return false;
-    }
+  const filteredVouchers = vouchers
+    .filter((v) => {
+      // Ẩn các voucher đã hết hạn hoặc hết lượt dùng
+      if (new Date(v.endDate).getTime() < Date.now() || v.usedQuantity >= v.totalQuantity) {
+        return false;
+      }
 
-    if (activeTab === "product") {
-      return v.voucherType !== 2; // Voucher đơn hàng (product discount)
-    } else {
-      return v.voucherType === 2; // Voucher vận chuyển (shipping discount)
-    }
-  });
+      if (activeTab === "product") {
+        return v.voucherType !== 2; // Voucher đơn hàng (product discount)
+      } else {
+        return v.voucherType === 2; // Voucher vận chuyển (shipping discount)
+      }
+    })
+    .sort((a, b) => {
+      // 1. Có thể áp dụng được không?
+      const aEligible = subTotal >= a.minOrderValue;
+      const bEligible = subTotal >= b.minOrderValue;
+
+      if (aEligible && !bEligible) return -1;
+      if (!aEligible && bEligible) return 1;
+
+      // 2. Tính mức giảm giá ước tính
+      const getEstimatedDiscount = (v: Voucher) => {
+        if (v.voucherType !== 2) {
+          // Product discount
+          let discount = 0;
+          if (v.discountType === 1) { // %
+            discount = subTotal * (v.discountValue / 100);
+          } else { // Tiền mặt
+            discount = v.discountValue;
+          }
+          if (v.maxDiscount && v.maxDiscount > 0 && discount > v.maxDiscount) {
+            discount = v.maxDiscount;
+          }
+          return Math.min(discount, subTotal);
+        } else {
+          // Shipping discount
+          if (v.isFreeShipping) {
+            return v.maxShippingDiscount && v.maxShippingDiscount > 0 ? v.maxShippingDiscount : 999999;
+          }
+          if (v.discountType === 1) {
+            return v.maxShippingDiscount && v.maxShippingDiscount > 0 ? v.maxShippingDiscount : 30000 * (v.discountValue / 100); // Giả sử phí ship 30k
+          }
+          return v.discountValue;
+        }
+      };
+
+      const aDiscount = getEstimatedDiscount(a);
+      const bDiscount = getEstimatedDiscount(b);
+
+      return bDiscount - aDiscount; // Giảm nhiều nhất xếp trên
+    });
 
   const isVoucherApplied = (voucher: Voucher) => {
     if (!cart) return false;
@@ -90,7 +130,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
         </div>
 
         {/* Voucher List Content */}
-        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto">
+        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto overscroll-contain">
           {loadingVouchers ? (
             <div className="flex justify-center py-10">
               <Loader className="animate-spin text-rose-500" size={24} />

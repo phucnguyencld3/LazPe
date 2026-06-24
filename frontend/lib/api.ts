@@ -293,6 +293,29 @@ export async function getPublicVouchers(): Promise<Voucher[] | null> {
   }
 }
 
+export async function getCheckoutAvailableVouchers(token: string): Promise<Voucher[] | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/checkout-available`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch checkout available vouchers:", response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching checkout available vouchers:", error);
+    return null;
+  }
+}
+
 export async function collectVoucher(id: number): Promise<{ success: boolean; message: string }> {
   try {
     const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
@@ -1075,6 +1098,31 @@ export async function applyVoucherToCart(
     };
   } catch (error) {
     console.error("Error applying voucher to cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function autoApplyVouchersToCart(
+  token: string
+): Promise<{ success: boolean; message?: string; data?: CartInfo; appliedCodes?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/auto-apply-vouchers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+      appliedCodes: result.appliedCodes,
+    };
+  } catch (error) {
+    console.error("Error auto applying vouchers to cart:", error);
     return { success: false, message: "Lỗi kết nối" };
   }
 }

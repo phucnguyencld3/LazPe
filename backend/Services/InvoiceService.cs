@@ -336,7 +336,6 @@ namespace PolyBabyAPI.Services
                     });
                 }
 
-                // ✅ Ghi lịch sử sử dụng voucher vào VoucherUsages
                 if (appliedVoucher != null)
                 {
                     var userVoucher = await _context.UserVouchers
@@ -346,9 +345,22 @@ namespace PolyBabyAPI.Services
                         .OrderBy(uv => uv.CollectedAt)
                         .FirstOrDefaultAsync();
 
+                    // Tự động thêm voucher public vào ví nếu chưa có
+                    if (userVoucher == null && appliedVoucher.VisibilityType == VoucherVisibilityType.Public)
+                    {
+                         userVoucher = new UserVoucher
+                         {
+                             UserID = cart.UserID,
+                             VoucherID = appliedVoucher.VoucherID,
+                             Status = UserVoucherStatus.Unused,
+                             CollectedAt = DateTime.Now
+                         };
+                         _context.UserVouchers.Add(userVoucher);
+                    }
+
                     if (userVoucher == null)
                     {
-                        throw new InvalidOperationException("Voucher chưa tồn tại trong ví hoặc đã được sử dụng.");
+                        throw new InvalidOperationException("Voucher sản phẩm chưa tồn tại trong ví hoặc đã được sử dụng.");
                     }
 
                     userVoucher.Status = UserVoucherStatus.Used;
@@ -374,7 +386,6 @@ namespace PolyBabyAPI.Services
                         appliedVoucher.Code, appliedVoucher.VoucherID, cart.UserID, invoice.InvoiceID, discountAmount, subTotal);
                 }
 
-                // ✅ Ghi lịch sử sử dụng voucher vận chuyển vào VoucherUsages
                 if (appliedShippingVoucher != null)
                 {
                     var userVoucher = await _context.UserVouchers
@@ -383,6 +394,19 @@ namespace PolyBabyAPI.Services
                             && uv.Status == UserVoucherStatus.Unused)
                         .OrderBy(uv => uv.CollectedAt)
                         .FirstOrDefaultAsync();
+
+                    // Tự động thêm voucher public vào ví nếu chưa có
+                    if (userVoucher == null && appliedShippingVoucher.VisibilityType == VoucherVisibilityType.Public)
+                    {
+                         userVoucher = new UserVoucher
+                         {
+                             UserID = cart.UserID,
+                             VoucherID = appliedShippingVoucher.VoucherID,
+                             Status = UserVoucherStatus.Unused,
+                             CollectedAt = DateTime.Now
+                         };
+                         _context.UserVouchers.Add(userVoucher);
+                    }
 
                     if (userVoucher == null)
                     {
@@ -752,7 +776,7 @@ namespace PolyBabyAPI.Services
             {
                 if (!string.IsNullOrEmpty(invoice.UserID))
                 {
-                    await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.TotalPrice);
+                    await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
                 }
             }
             catch (Exception ex)
@@ -1297,7 +1321,7 @@ namespace PolyBabyAPI.Services
                     {
                         try
                         {
-                            await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.TotalPrice);
+                            await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
                         }
                         catch (Exception lEx)
                         {

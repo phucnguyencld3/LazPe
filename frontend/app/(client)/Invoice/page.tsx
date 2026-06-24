@@ -265,7 +265,6 @@ function InvoiceContent() {
                   </div>
                 </div>
 
-                {/* Calculations Bill */}
                 <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100 space-y-2 text-xs">
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Tạm tính</span>
@@ -283,11 +282,19 @@ function InvoiceContent() {
                       <span className="font-bold">- {formatVND(invoice.discountAmount)}</span>
                     </div>
                   )}
+                  {invoice.shippingDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-sky-600 font-bold">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">local_shipping</span> Giảm phí vận chuyển
+                      </span>
+                      <span>- {formatVND(invoice.shippingDiscountAmount)}</span>
+                    </div>
+                  )}
                   <div className="h-px bg-slate-200 my-1" />
                   <div className="flex justify-between items-center pt-1">
                     <span className="font-bold text-slate-800 text-sm">Tổng thanh toán</span>
                     <span className="text-lg font-extrabold text-rose-500">
-                      {formatVND(invoice.totalPrice + invoice.shippingFee)}
+                      {formatVND(invoice.finalAmount || (invoice.totalPrice + invoice.shippingFee - (invoice.shippingDiscountAmount || 0)))}
                     </span>
                   </div>
                 </div>

@@ -26,6 +26,7 @@ interface OrderSummarySidebarProps {
   redeemPolicy: LoyaltyRedeemPolicySummary | null;
   estimatedEarnPoints: number;
   handleOpenVoucherModal: () => void;
+  handleAutoApplyVouchers?: () => void;
   handleRemoveVoucher: (type?: number) => Promise<void> | void;
 }
 
@@ -52,6 +53,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   redeemPolicy,
   estimatedEarnPoints,
   handleOpenVoucherModal,
+  handleAutoApplyVouchers,
   handleRemoveVoucher,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
@@ -147,13 +149,25 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               <span className="material-symbols-outlined text-rose-500 text-base font-bold">local_activity</span>
               <span>Mã giảm giá LazPe</span>
             </div>
-            <button 
-              type="button"
-              onClick={handleOpenVoucherModal}
-              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center"
-            >
-              Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
+            <div className="flex gap-3 items-center">
+              {handleAutoApplyVouchers && (
+                <button
+                  type="button"
+                  onClick={handleAutoApplyVouchers}
+                  disabled={submitting}
+                  className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  ✨ Tự động áp mã
+                </button>
+              )}
+              <button 
+                type="button"
+                onClick={handleOpenVoucherModal}
+                className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center cursor-pointer"
+              >
+                Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
           </div>
 
           {(cart?.voucher || cart?.shippingVoucher) && (

@@ -131,7 +131,7 @@ namespace PolyBabyAPI.Controllers
             var eligibleVouchers = vouchers.Where(v => 
             {
                 userVoucherUsages.TryGetValue(v.VoucherID, out int usedCount);
-                return usedCount < v.UsageLimitPerUser;
+                return v.UsageLimitPerUser <= 0 || usedCount < v.UsageLimitPerUser;
             });
 
             return Ok(eligibleVouchers.Select(v => new
@@ -150,6 +150,98 @@ namespace PolyBabyAPI.Controllers
                 v.RemainingQuantity,
                 v.VisibilityType,
                 IsCollected = collectedVoucherIds.Contains(v.VoucherID),
+                v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
+            }));
+        }
+
+        // GET: api/vouchers/checkout-available
+        [Authorize]
+        [HttpGet("checkout-available")]
+        public async Task<IActionResult> GetCheckoutAvailableVouchers()
+        {
+            var now = DateTime.Now;
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            // 1. Get all public vouchers
+            var publicVouchersQuery = _context.Vouchers
+                .Where(v => v.Status
+                    && v.VisibilityType == VoucherVisibilityType.Public
+                    && v.ExclusiveType != ExclusiveDistributionType.DirectAssign
+                    && v.StartDate <= now
+                    && v.EndDate >= now
+                    && v.UsedQuantity < v.TotalQuantity)
+                .AsQueryable();
+
+            // 2. Get all vouchers in user's wallet that are unused
+            var walletVoucherIds = await _context.UserVouchers
+                .Where(uv => uv.UserID == userId && uv.Status == UserVoucherStatus.Unused && uv.Voucher != null && uv.Voucher.EndDate >= now)
+                .Select(uv => uv.VoucherID)
+                .ToListAsync();
+
+            var walletVouchersQuery = _context.Vouchers
+                .Where(v => walletVoucherIds.Contains(v.VoucherID) && v.Status && v.UsedQuantity < v.TotalQuantity)
+                .AsQueryable();
+
+            // Combine both queries
+            var combinedVouchers = await publicVouchersQuery.Union(walletVouchersQuery)
+                .OrderByDescending(v => v.StartDate)
+                .Select(v => new
+                {
+                    v.VoucherID,
+                    v.Code,
+                    v.Name,
+                    v.DiscountType,
+                    v.DiscountValue,
+                    v.MinOrderValue,
+                    v.MaxDiscount,
+                    v.TotalQuantity,
+                    v.UsedQuantity,
+                    v.StartDate,
+                    v.EndDate,
+                    RemainingQuantity = v.TotalQuantity - v.UsedQuantity,
+                    VisibilityType = v.VisibilityType.ToString(),
+                    VoucherType = (int)v.VoucherType,
+                    v.IsFreeShipping,
+                    v.MaxShippingDiscount,
+                    v.UsageLimitPerUser
+                })
+                .ToListAsync();
+
+            var userVoucherUsages = await _context.VoucherUsages
+                .Where(vu => vu.UserID == userId)
+                .GroupBy(vu => vu.VoucherID)
+                .Select(g => new { VoucherID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.VoucherID, x => x.Count);
+
+            var eligibleVouchers = combinedVouchers.Where(v => 
+            {
+                userVoucherUsages.TryGetValue(v.VoucherID, out int usedCount);
+                return v.UsageLimitPerUser <= 0 || usedCount < v.UsageLimitPerUser;
+            });
+
+            return Ok(eligibleVouchers.Select(v => new
+            {
+                v.VoucherID,
+                v.Code,
+                v.Name,
+                v.DiscountType,
+                v.DiscountValue,
+                v.MinOrderValue,
+                v.MaxDiscount,
+                v.TotalQuantity,
+                v.UsedQuantity,
+                v.StartDate,
+                v.EndDate,
+                v.RemainingQuantity,
+                v.VisibilityType,
+                IsCollected = walletVoucherIds.Contains(v.VoucherID),
                 v.VoucherType,
                 v.IsFreeShipping,
                 v.MaxShippingDiscount,
