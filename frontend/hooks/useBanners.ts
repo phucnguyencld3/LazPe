@@ -60,8 +60,12 @@ export function useBanners(position: string) {
   const fetchBanners = async () => {
     try {
       // In a real app, this URL should come from env config e.g., process.env.NEXT_PUBLIC_API_URL
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
-      const res = await fetch(`${baseUrl}/api/clientbanners/position/${position}?page=${page}`);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api';
+      
+      // Đảm bảo không bị lặp /api/api khi gọi fetch
+      const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+      const res = await fetch(`${apiUrl}/clientbanners/position/${position}?page=${page}`);
+      
       if (res.ok) {
         const data: Banner[] = await res.json();
         setFetchedBanners(data);
@@ -77,9 +81,11 @@ export function useBanners(position: string) {
     fetchBanners();
 
     // Setup SignalR connection to listen for realtime updates
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api';
+    const hubUrl = baseUrl.replace(/\/api\/?$/, ''); // Cắt bỏ /api ở cuối để trỏ thẳng tới domain gốc
+    
     const connection = new HubConnectionBuilder()
-      .withUrl(`${baseUrl}/bannerHub`)
+      .withUrl(`${hubUrl}/bannerHub`)
       .withAutomaticReconnect()
       .build();
 
