@@ -26,7 +26,7 @@ import { OrderNoteSection } from "@/components/client/checkout/OrderNoteSection"
 import { OrderSummarySidebar } from "@/components/client/checkout/OrderSummarySidebar";
 import { AddressModal } from "@/components/client/checkout/AddressModal";
 import { VoucherModal } from "@/components/client/cart/VoucherModal";
-import { getPublicVouchers, applyVoucherToCart, autoApplyVouchersToCart, removeVoucherFromCart, getCheckoutAvailableVouchers} from "@/lib/api";
+import { getPublicVouchers, applyVoucherToCart, autoApplyVouchersToCart, removeVoucherFromCart, getCheckoutAvailableVouchers, toggleSmartVoucher} from "@/lib/api";
 import { Voucher } from "@/types";
 
 export default function CheckoutPage() {
@@ -429,6 +429,23 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleToggleSmartVoucher = async (enabled: boolean) => {
+    if (!token) return;
+    try {
+      const res = await toggleSmartVoucher(token, enabled);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Đã cập nhật trạng thái Smart Voucher");
+        window.dispatchEvent(new Event("cart_updated"));
+      } else {
+        toast.error(res.message || "Thao tác thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
   const handleAutoApplyVouchers = async () => {
     if (!token) return;
     try {
@@ -581,6 +598,7 @@ export default function CheckoutPage() {
             handleOpenVoucherModal={handleOpenVoucherModal}
             handleAutoApplyVouchers={handleAutoApplyVouchers}
             handleRemoveVoucher={handleRemoveVoucher}
+            handleToggleSmartVoucher={handleToggleSmartVoucher}
           />
         </div>
 

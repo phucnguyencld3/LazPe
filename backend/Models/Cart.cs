@@ -41,6 +41,9 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Trạng thái")]
         public bool Status { get; set; }
 
+        [Display(Name = "Tự động áp mã")]
+        public bool IsSmartVoucher { get; set; } = true;
+
         [ForeignKey(nameof(UserID))]
         public virtual ApplicationUser User { get; set; }
 

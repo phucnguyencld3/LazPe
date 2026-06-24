@@ -37,7 +37,8 @@ export default function CartPage() {
     clearCart,
     applyVoucher,
     autoApplyVouchers,
-    removeVoucher
+    removeVoucher,
+    toggleSmartVoucher
   } = useCart();
   const [checkedDetails, setCheckedDetails] = useState<Record<number, boolean>>({});
   
@@ -544,6 +545,19 @@ export default function CartPage() {
               handleRemoveVoucher={handleRemoveVoucher}
               handleOpenVoucherModal={handleOpenVoucherModal}
               handleCheckout={handleCheckout}
+              handleToggleSmartVoucher={async (enabled) => {
+                try {
+                  const res = await toggleSmartVoucher(enabled);
+                  if (res.success) {
+                    showAlert("success", res.message || "Đã cập nhật trạng thái Smart Voucher");
+                  } else {
+                    showAlert("error", res.message || "Thao tác thất bại");
+                  }
+                } catch (error) {
+                  console.error(error);
+                  showAlert("error", "Lỗi kết nối");
+                }
+              }}
             />
           </div>
         ) : (

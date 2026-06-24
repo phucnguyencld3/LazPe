@@ -31,6 +31,8 @@ namespace PolyBabyAPI.DTOs
 
         public VoucherDto? ShippingVoucher { get; set; }
 
+        public bool IsSmartVoucher { get; set; }
+
         public List<CartDetailDto> CartDetails { get; set; } = new();
 
         // Computed

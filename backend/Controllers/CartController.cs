@@ -286,6 +286,47 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Bật/Tắt tính năng Smart Voucher (Tự động áp mã tối ưu)
+        /// </summary>
+        [HttpPost("toggle-smart-voucher")]
+        public async Task<IActionResult> ToggleSmartVoucher([FromQuery] bool enabled)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var cart = await _cartService.GetCartByUserIdAsync(userId);
+                var result = await _cartService.ToggleSmartVoucherAsync(cart.CartID, enabled);
+
+                if (result.Success)
+                {
+                    var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
+                    var cartDto = MapCartToDto(updatedCart);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        data = cartDto
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling smart voucher to {Enabled}", enabled);
+                return StatusCode(500, new { success = false, message = "Có lỗi khi thay đổi trạng thái tự động áp mã" });
+            }
+        }
+
+        /// <summary>
         /// Áp dụng mã giảm giá
         /// </summary>
         [HttpPost("apply-voucher")]
@@ -393,6 +434,7 @@ namespace PolyBabyAPI.Controllers
                 ShippingDiscountAmount = cart.ShippingDiscountAmount,
                 Voucher = cart.Voucher != null ? MapVoucherToDto(cart.Voucher) : null,
                 ShippingVoucher = cart.ShippingVoucher != null ? MapVoucherToDto(cart.ShippingVoucher) : null,
+                IsSmartVoucher = cart.IsSmartVoucher,
                 CartDetails = cart.CartDetails.Select(MapCartDetailToDto).ToList()
             };
         }

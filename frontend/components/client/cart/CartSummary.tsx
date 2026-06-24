@@ -18,6 +18,7 @@ interface CartSummaryProps {
   handleRemoveVoucher: (type?: number) => void;
   handleOpenVoucherModal: () => void;
   handleCheckout: () => void;
+  handleToggleSmartVoucher?: (enabled: boolean) => void;
 }
 
 export const CartSummary: React.FC<CartSummaryProps> = ({
@@ -36,6 +37,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   handleRemoveVoucher,
   handleOpenVoucherModal,
   handleCheckout,
+  handleToggleSmartVoucher,
 }) => {
   const hasAppliedVouchers = !!cart.voucher || !!cart.shippingVoucher;
   const isInputMatchingApplied = voucherCodeInput === "" || 
@@ -48,20 +50,38 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
     <aside className="lg:col-span-4 space-y-md">
 
       {/* Voucher Section */}
-      <div className="bg-white p-5 rounded-[12px] shadow-sm border border-slate-100 space-y-3">
+      <div className="bg-white p-5 rounded-[12px] shadow-sm border border-slate-100 space-y-3.5">
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1">
             <span className="material-symbols-outlined text-rose-500 text-base">confirmation_number</span> Voucher ưu đãi
           </h4>
-          {handleAutoApplyVouchers && (
-            <button
-              onClick={handleAutoApplyVouchers}
-              disabled={applyingCode}
-              className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
-            >
-              ✨ Tự động áp mã
-            </button>
-          )}
+        </div>
+        
+        {/* Smart Voucher Premium Switch */}
+        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-rose-500/5 to-orange-500/5 rounded-xl border border-rose-100/50">
+          <div className="space-y-0.5">
+            <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1">
+              ✨ Smart Voucher
+            </span>
+            <span className="text-[10px] text-slate-400 font-semibold leading-none">
+              Tự động áp dụng mã ưu đãi tốt nhất
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={cart.isSmartVoucher}
+            onClick={() => handleToggleSmartVoucher?.(!cart.isSmartVoucher)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              cart.isSmartVoucher ? "bg-gradient-to-r from-rose-500 to-orange-500" : "bg-slate-200"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                cart.isSmartVoucher ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </button>
         </div>
         
         <form onSubmit={handleApplyVoucherCode} className="flex gap-2">

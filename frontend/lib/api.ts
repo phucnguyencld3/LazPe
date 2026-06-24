@@ -1005,6 +1005,7 @@ export interface CartInfo {
   shippingVoucher?: VoucherCartInfo | null;
   cartDetails: CartDetailInfo[];
   totalItems: number;
+  isSmartVoucher?: boolean;
 }
 
 export async function getCart(token: string): Promise<CartInfo | null> {
@@ -1152,6 +1153,31 @@ export async function autoApplyVouchersToCart(
     };
   } catch (error) {
     console.error("Error auto applying vouchers to cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export async function toggleSmartVoucher(
+  token: string,
+  enabled: boolean
+): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/toggle-smart-voucher?enabled=${enabled}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error toggling smart voucher:", error);
     return { success: false, message: "Lỗi kết nối" };
   }
 }

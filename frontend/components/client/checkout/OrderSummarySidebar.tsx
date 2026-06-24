@@ -28,6 +28,7 @@ interface OrderSummarySidebarProps {
   handleOpenVoucherModal: () => void;
   handleAutoApplyVouchers?: () => void;
   handleRemoveVoucher: (type?: number) => Promise<void> | void;
+  handleToggleSmartVoucher?: (enabled: boolean) => void;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
@@ -55,6 +56,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   handleOpenVoucherModal,
   handleAutoApplyVouchers,
   handleRemoveVoucher,
+  handleToggleSmartVoucher,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
 
@@ -143,23 +145,13 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
         </div>
 
         {/* Vouchers Section */}
-        <div className="px-6 py-4 space-y-3 border-t border-slate-100">
+        <div className="px-6 py-4 space-y-3.5 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
               <span className="material-symbols-outlined text-rose-500 text-base font-bold">local_activity</span>
               <span>Mã giảm giá LazPe</span>
             </div>
             <div className="flex gap-3 items-center">
-              {handleAutoApplyVouchers && (
-                <button
-                  type="button"
-                  onClick={handleAutoApplyVouchers}
-                  disabled={submitting}
-                  className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                >
-                  ✨ Tự động áp mã
-                </button>
-              )}
               <button 
                 type="button"
                 onClick={handleOpenVoucherModal}
@@ -168,6 +160,33 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                 Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
               </button>
             </div>
+          </div>
+
+          {/* Smart Voucher Premium Switch for Checkout */}
+          <div className="flex items-center justify-between p-2.5 bg-gradient-to-r from-rose-500/5 to-orange-500/5 rounded-lg border border-rose-100/50">
+            <div className="space-y-0.5">
+              <span className="text-[11px] font-extrabold text-slate-800 flex items-center gap-1">
+                ✨ Smart Voucher
+              </span>
+              <span className="text-[9px] text-slate-400 font-semibold leading-none">
+                Tự động áp dụng mã ưu đãi tốt nhất
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={cart?.isSmartVoucher}
+              onClick={() => handleToggleSmartVoucher?.(!cart?.isSmartVoucher)}
+              className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                cart?.isSmartVoucher ? "bg-gradient-to-r from-rose-500 to-orange-500" : "bg-slate-200"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  cart?.isSmartVoucher ? "translate-x-3.5" : "translate-x-0"
+                }`}
+              />
+            </button>
           </div>
 
           {(cart?.voucher || cart?.shippingVoucher) && (

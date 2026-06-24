@@ -10,6 +10,7 @@ import {
   applyVoucherToCart as apiApplyVoucherToCart,
   autoApplyVouchersToCart as apiAutoApplyVouchersToCart,
   removeVoucherFromCart as apiRemoveVoucherFromCart,
+  toggleSmartVoucher as apiToggleSmartVoucher,
   CartInfo
 } from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -26,6 +27,7 @@ interface CartContextType {
   applyVoucher: (voucherCode: string) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
   autoApplyVouchers: () => Promise<{ success: boolean; message?: string; data?: CartInfo; appliedCodes?: string }>;
   removeVoucher: (type?: number) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
+  toggleSmartVoucher: (enabled: boolean) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -235,6 +237,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const toggleSmartVoucher = async (enabled: boolean) => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) {
+      return { success: false, message: "Chưa đăng nhập" };
+    }
+
+    setLoading(true);
+    try {
+      const res = await apiToggleSmartVoucher(token, enabled);
+      if (res.success && res.data) {
+        setCart(res.data);
+        setCartCount(calculateCount(res.data));
+      }
+      return res;
+    } catch (err) {
+      console.error("Error in toggleSmartVoucher context:", err);
+      return { success: false, message: "Lỗi kết nối đến server" };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -248,7 +272,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         applyVoucher,
         autoApplyVouchers,
-        removeVoucher
+        removeVoucher,
+        toggleSmartVoucher
       }}
     >
       {children}
