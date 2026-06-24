@@ -662,7 +662,7 @@ namespace PolyBabyAPI.Controllers
                     matchedAddress = defaultAddress;
                 }
 
-                // ✅ Lấy selectedCartDetailIds từ body (nếu có)
+                // Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
 
                 if (isShadowBan)
