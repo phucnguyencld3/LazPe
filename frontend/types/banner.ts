@@ -50,6 +50,8 @@ export interface Banner {
   status: 'Draft' | 'Published';
   version: string;
   layoutConfig: BannerLayoutConfig;
+  draftConfig?: BannerLayoutConfig;
+  hasUnpublishedChanges?: boolean;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;

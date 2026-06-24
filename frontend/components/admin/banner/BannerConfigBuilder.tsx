@@ -72,6 +72,21 @@ export function BannerConfigBuilder({
           return { ...prev, page: mappedPage };
         });
       }
+      
+      if (e.data?.type === 'UPDATE_FLOATING_OFFSET') {
+        console.log('Admin received UPDATE_FLOATING_OFFSET', e.data);
+        setFormData(prev => {
+          const newLayout = { ...(prev.layoutConfig || { items: [] }) };
+          newLayout.floatingConfig = { 
+            ...(newLayout.floatingConfig || {}), 
+            anchor: 'custom', 
+            offsetX: e.data.offsetX, 
+            offsetY: e.data.offsetY 
+          };
+          console.log('New layout config:', newLayout);
+          return { ...prev, layoutConfig: newLayout };
+        });
+      }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);

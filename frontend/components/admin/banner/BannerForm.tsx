@@ -29,7 +29,9 @@ export function BannerForm({
 
   const handleImageUpload = async (file: File, index: number) => {
     if (!token) {
-      alert("Bạn cần đăng nhập để tải ảnh lên.");
+      toast.error("Bạn cần đăng nhập để tải ảnh lên.", {
+        description: "Vui lòng kiểm tra lại phiên đăng nhập."
+      });
       return;
     }
     
@@ -52,11 +54,11 @@ export function BannerForm({
       if (res.ok && data.success) {
         handleItemChange(index, 'imageUrl', data.url);
       } else {
-        alert(data.message || "Tải ảnh thất bại");
+        toast.error(data.message || "Tải ảnh thất bại");
       }
     } catch (err) {
       console.error(err);
-      alert("Lỗi kết nối khi tải ảnh");
+      toast.error("Lỗi kết nối khi tải ảnh");
     } finally {
       setUploadingIndex(null);
     }
@@ -130,14 +132,25 @@ export function BannerForm({
   };
 
   const handleDeleteItem = (index: number) => {
-    if (window.confirm('Bạn có chắc muốn xóa ảnh này?')) {
-      const newItems = [...(formData.layoutConfig?.items || [])];
-      newItems.splice(index, 1);
-      setFormData({
-        ...formData,
-        layoutConfig: { ...formData.layoutConfig!, items: newItems }
-      });
-    }
+    toast('Bạn có chắc muốn xóa ảnh này?', {
+      description: 'Hành động này không thể hoàn tác sau khi lưu.',
+      action: {
+        label: 'Xóa ngay',
+        onClick: () => {
+          const newItems = [...(formData.layoutConfig?.items || [])];
+          newItems.splice(index, 1);
+          setFormData({
+            ...formData,
+            layoutConfig: { ...formData.layoutConfig!, items: newItems }
+          });
+          toast.success('Đã xóa ảnh tạm thời');
+        }
+      },
+      cancel: {
+        label: 'Hủy',
+        onClick: () => {}
+      }
+    });
   };
 
   return (

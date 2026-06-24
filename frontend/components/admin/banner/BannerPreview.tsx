@@ -13,17 +13,42 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Gửi dữ liệu qua iframe mỗi khi cấu hình thay đổi
+  // Gửi dữ liệu qua iframe mỗi khi cấu hình thay đổi, có debounce 300ms để chống lag
   useEffect(() => {
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        {
-          type: 'LIVE_PREVIEW_BANNER',
-          banner: formData
-        },
-        '*' // Cho phép chạy local
-      );
-    }
+    const handler = setTimeout(() => {
+      if (iframeRef.current && iframeRef.current.contentWindow) {
+        iframeRef.current.contentWindow.postMessage(
+          {
+            type: 'UPDATE_PREVIEW_BANNER',
+            banner: formData
+          },
+          '*' // Cho phép chạy local
+        );
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [formData]);
+
+  // Lắng nghe yêu cầu từ iframe khi iframe đã sẵn sàng
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'REQUEST_PREVIEW_BANNER') {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          iframeRef.current.contentWindow.postMessage(
+            {
+              type: 'LIVE_PREVIEW_BANNER',
+              banner: formData
+            },
+            '*'
+          );
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, [formData]);
 
   useEffect(() => {
@@ -106,7 +131,17 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
             >
               <iframe 
                 ref={iframeRef}
-                src="/" 
+                src={(() => {
+                  switch (formData.page) {
+                    case 'products': return '/products';
+                    case 'product_detail': return '/products/1';
+                    case 'cart': return '/cart';
+                    case 'checkout': return '/checkout';
+                    case 'profile': return '/profile';
+                    case 'combo': return '/bundles';
+                    default: return '/';
+                  }
+                })()}
                 className="w-full h-full border-none"
                 title="Client Live Preview"
                 onLoad={() => {

@@ -60,7 +60,9 @@ namespace PolyBabyAPI.Services
                 Type = request.Type,
                 Page = request.Page,
                 Status = "Draft",
-                LayoutConfig = request.LayoutConfig,
+                LayoutConfig = new BannerLayoutConfig(),
+                DraftConfig = request.LayoutConfig,
+                HasUnpublishedChanges = true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 Version = "1.0.0"
@@ -80,17 +82,17 @@ namespace PolyBabyAPI.Services
             banner.Position = request.Position;
             banner.Type = request.Type;
             banner.Page = request.Page;
-            banner.LayoutConfig = request.LayoutConfig;
+            banner.DraftConfig = request.LayoutConfig;
+            banner.HasUnpublishedChanges = true;
             banner.UpdatedAt = DateTime.Now;
 
-            // If it was published, a change makes it draft again or we just update the draft version
-            // Depending on requirements, we can leave status as is or revert to Draft. 
-            // Let's set to Draft because any edit needs a re-publish.
-            if (banner.Status == "Published")
+            // Do NOT change status back to Draft if it's already Published
+            if (banner.Status != "Published")
             {
                 banner.Status = "Draft";
             }
 
+            _context.Update(banner); // Force EF to track the updated JSON payload
             await _context.SaveChangesAsync();
             return MapToDto(banner);
         }
@@ -132,9 +134,13 @@ namespace PolyBabyAPI.Services
 
             banner.Status = "Published";
             banner.Version = newVersion;
+            banner.LayoutConfig = banner.DraftConfig ?? banner.LayoutConfig; // Merge draft to published
+            banner.DraftConfig = null; // Clear draft
+            banner.HasUnpublishedChanges = false;
             banner.PublishedAt = DateTime.Now;
             banner.UpdatedAt = DateTime.Now;
 
+            _context.Update(banner); // Force EF to track JSON updates
             await _context.SaveChangesAsync();
 
             // Notify real-time clients
@@ -166,12 +172,15 @@ namespace PolyBabyAPI.Services
 
             // Restore
             banner.LayoutConfig = version.LayoutConfig;
+            banner.DraftConfig = null;
+            banner.HasUnpublishedChanges = false;
             banner.Version = Guid.NewGuid().ToString("N").Substring(0, 8); // new version hash
             banner.UpdatedAt = DateTime.Now;
             // Assuming rollback implies it is published immediately
             banner.Status = "Published";
             banner.PublishedAt = DateTime.Now;
 
+            _context.Update(banner);
             await _context.SaveChangesAsync();
 
             await NotifyClientsAsync(banner.Position);
@@ -208,6 +217,8 @@ namespace PolyBabyAPI.Services
                 Status = banner.Status,
                 Version = banner.Version,
                 LayoutConfig = banner.LayoutConfig,
+                DraftConfig = banner.DraftConfig,
+                HasUnpublishedChanges = banner.HasUnpublishedChanges,
                 PublishedAt = banner.PublishedAt,
                 CreatedAt = banner.CreatedAt,
                 UpdatedAt = banner.UpdatedAt

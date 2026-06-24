@@ -11,13 +11,19 @@ export default function BannersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
+
   const fetchBanners = async () => {
     try {
       setLoading(true);
       const token = getValidToken();
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
       const res = await fetch(`${baseUrl}/api/admin/banners`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        cache: 'no-store'
       });
       if (res.ok) {
         const data = await res.json();
@@ -35,6 +41,20 @@ export default function BannersPage() {
   }, []);
 
   const handleSave = async (draft: Partial<Banner>) => {
+    // Client-side validation
+    if (!draft.name?.trim()) {
+      toast.error('Lỗi dữ liệu', { description: 'Tên banner không được để trống.' });
+      return;
+    }
+    if (!draft.type) {
+      toast.error('Lỗi dữ liệu', { description: 'Vui lòng chọn Bố cục hiển thị.' });
+      return;
+    }
+    if (!draft.position) {
+      toast.error('Lỗi dữ liệu', { description: 'Vui lòng chọn Vị trí hiển thị.' });
+      return;
+    }
+
     try {
       const token = getValidToken();
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
@@ -59,7 +79,21 @@ export default function BannersPage() {
       } else {
         const errorText = await res.text();
         console.error("Save Draft Error:", errorText);
-        toast.error(`Có lỗi xảy ra: ${errorText || res.statusText}`);
+        try {
+          const errObj = JSON.parse(errorText);
+          if (errObj.errors) {
+            const errorMessages = Object.values(errObj.errors).flat().join(', ');
+            toast.error('Lỗi kiểm tra dữ liệu', { description: errorMessages });
+            return;
+          }
+          if (errObj.message) {
+            toast.error('Lỗi từ máy chủ', { description: errObj.message });
+            return;
+          }
+        } catch (e) {
+          // Fallback if not JSON
+        }
+        toast.error('Lỗi lưu bản nháp', { description: res.statusText || 'Không thể lưu banner' });
       }
     } catch (error: any) {
       console.error("Save Draft Exception:", error);
@@ -92,25 +126,43 @@ export default function BannersPage() {
   };
 
   const handleDelete = async (bannerId: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa banner này?')) return;
-    try {
-      const token = getValidToken();
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
-      const res = await fetch(`${baseUrl}/api/admin/banners/${bannerId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    toast('Bạn có chắc chắn muốn xóa banner này?', {
+      description: 'Hành động này không thể hoàn tác.',
+      action: {
+        label: 'Xóa ngay',
+        onClick: async () => {
+          try {
+            const token = getValidToken();
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+            const res = await fetch(`${baseUrl}/api/admin/banners/${bannerId}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` }
+            });
 
-      if (res.ok) {
-        toast.success('Xóa banner thành công!');
-        fetchBanners();
-      } else {
-        toast.error('Lỗi khi xóa banner.');
-      }
-    } catch (error) {
-      toast.error('Lỗi kết nối máy chủ.');
-    }
+            if (res.ok) {
+              toast.success('Xóa banner thành công!');
+              fetchBanners();
+            } else {
+              toast.error('Lỗi khi xóa banner.');
+            }
+          } catch (error) {
+            toast.error('Lỗi kết nối máy chủ.');
+          }
+        }
+      },
+      cancel: { label: 'Hủy', onClick: () => {} }
+    });
   };
+
+  const filteredBanners = banners.filter(banner => {
+    const matchesSearch = banner.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (statusFilter === 'all') return matchesSearch;
+    if (statusFilter === 'published') return matchesSearch && banner.status === 'Published';
+    if (statusFilter === 'draft') return matchesSearch && banner.status !== 'Published';
+    
+    return matchesSearch;
+  });
 
   const getPositionLabel = (pos?: string) => {
     if (!pos) return 'Chưa xác định';
@@ -198,16 +250,96 @@ export default function BannersPage() {
             Quay lại danh sách
           </button>
           <BannerConfigBuilder 
-            initialBanner={selectedBanner} 
+            initialBanner={{
+              ...selectedBanner,
+              layoutConfig: selectedBanner.draftConfig || selectedBanner.layoutConfig
+            }}
             existingBanners={banners}
             onSave={handleSave} 
             token={getValidToken() || undefined}
           />
         </div>
       ) : (
-        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse whitespace-nowrap">
+        <>
+          {/* Stats Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Total */}
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">view_carousel</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng số Banner</span>
+              </div>
+              <span className="text-2xl font-extrabold text-slate-800">{banners.length}</span>
+            </div>
+
+            {/* Published */}
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">publish</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hiển thị</span>
+              </div>
+              <span className="text-2xl font-extrabold text-slate-800">
+                {banners.filter(b => b.status === 'Published').length}
+              </span>
+            </div>
+
+            {/* Drafts */}
+            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">edit_document</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Bản nháp</span>
+              </div>
+              <span className="text-2xl font-extrabold text-slate-800">
+                {banners.filter(b => b.status !== 'Published').length}
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
+            {/* Search, filters block */}
+            <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
+              <div className="flex-1 min-w-[260px] relative">
+                <span className="material-symbols-outlined text-slate-400 text-lg absolute left-4.5 top-1/2 -translate-y-1/2">
+                  search
+                </span>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Tìm kiếm banner theo tên..."
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[165px] cursor-pointer"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="published">Đang hiển thị (Published)</option>
+                <option value="draft">Bản nháp (Draft)</option>
+              </select>
+
+              {(searchTerm || statusFilter !== "all") && (
+                <button
+                  onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
+                  className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">clear</span>
+                  Xóa bộ lọc
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/55 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
                   <th className="px-6 py-4 text-center w-[80px]">STT</th>
@@ -221,7 +353,7 @@ export default function BannersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {banners.map((banner, index) => (
+                {filteredBanners.map((banner, index) => (
                   <tr key={banner.id} className="hover:bg-slate-100/70 transition-all duration-200 group">
                     <td className="px-6 py-4 text-center text-xs font-semibold text-slate-400">
                       {index + 1}
@@ -240,10 +372,15 @@ export default function BannersPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       {banner.status === 'Published' ? (
-                        <span className="text-emerald-600 text-xs font-bold inline-flex items-center gap-1.5 justify-center">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                          Đã xuất bản
-                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-emerald-600 text-xs font-bold inline-flex items-center gap-1.5 justify-center">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Đã xuất bản
+                          </span>
+                          {banner.hasUnpublishedChanges && (
+                            <span className="text-[10px] text-amber-500 font-semibold bg-amber-50 px-1.5 py-0.5 rounded">Có nháp mới</span>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-slate-500 text-xs font-bold inline-flex items-center gap-1.5 justify-center">
                           <span className="w-2 h-2 rounded-full bg-slate-400"></span>
@@ -265,15 +402,15 @@ export default function BannersPage() {
                         </button>
                         <button 
                           onClick={() => handlePublish(banner.id)}
-                          disabled={banner.status === 'Published'}
+                          disabled={banner.status === 'Published' && !banner.hasUnpublishedChanges}
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                            banner.status === 'Published' 
+                            (banner.status === 'Published' && !banner.hasUnpublishedChanges)
                               ? 'text-slate-300 cursor-not-allowed' 
-                              : 'text-secondary hover:bg-secondary-container/20 cursor-pointer'
+                              : 'text-amber-500 hover:bg-amber-50 cursor-pointer'
                           }`}
-                          title={banner.status === 'Published' ? 'Đã xuất bản' : 'Xuất bản banner'}
+                          title={banner.status === 'Published' && banner.hasUnpublishedChanges ? 'Xuất bản bản nháp' : 'Xuất bản'}
                         >
-                          <span className="material-symbols-outlined text-[18px]">publish</span>
+                          <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
                         </button>
                         <button 
                           onClick={() => handleDelete(banner.id)}
@@ -286,18 +423,20 @@ export default function BannersPage() {
                     </td>
                   </tr>
                 ))}
-                {banners.length === 0 && (
+                {filteredBanners.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center py-20">
-                      <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">view_carousel</span>
-                      <p className="text-slate-400 font-bold text-sm">Chưa có banner nào. Hãy tạo mới một banner.</p>
+                    <td colSpan={8} className="text-center py-20 bg-slate-50/30">
+                      <span className="material-symbols-outlined text-slate-200 text-6xl mb-3 block">search_off</span>
+                      <p className="text-slate-500 font-bold text-sm">Không tìm thấy banner nào</p>
+                      <p className="text-slate-400 text-xs mt-1">Hãy thử thay đổi điều kiện lọc hoặc tạo mới một banner.</p>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </main>
   );

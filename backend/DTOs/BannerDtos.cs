@@ -13,6 +13,8 @@ namespace PolyBabyAPI.DTOs
         public string Status { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
         public BannerLayoutConfig LayoutConfig { get; set; } = new BannerLayoutConfig();
+        public BannerLayoutConfig? DraftConfig { get; set; }
+        public bool HasUnpublishedChanges { get; set; }
         public DateTime? PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

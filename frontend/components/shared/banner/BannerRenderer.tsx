@@ -246,6 +246,9 @@ export function BannerLink({ item, isPreview, onClick, children }: { item: Banne
 
 function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: Banner, wrapperStyle: string, isPreview: boolean }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [dragPos, setDragPos] = useState<{ x: number, y: number } | null>(null);
+  const dragRef = React.useRef({ isDragging: false, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 });
+
   const layoutConfig = banner.layoutConfig || { items: [] };
   const items = layoutConfig.items || [];
   const item = items.length > 0 ? items[0] : null;
@@ -263,6 +266,11 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
     }
   }, [banner, isPreview, fc]);
 
+  // Reset drag position if props change
+  useEffect(() => {
+    setDragPos(null);
+  }, [fc.offsetX, fc.offsetY, fc.anchor]);
+
   if (!isOpen || !item) return null;
 
   const anchorClasses: Record<string, string> = {
@@ -275,44 +283,112 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
   };
 
   const style: React.CSSProperties = {
-    zIndex: fc.zIndex || 40,
-    opacity: fc.shadow ? undefined : 1 // just a stub
+    ...(fc.zIndex ? { zIndex: fc.zIndex } : {}),
   };
-
-  if (fc.anchor === 'custom') {
-    style.top = fc.offsetY !== undefined ? `${fc.offsetY}px` : 0;
-    style.left = fc.offsetX !== undefined ? `${fc.offsetX}px` : 0;
+  
+  if (fc.anchor === 'custom' || dragPos) {
+    if (dragPos) {
+      style.left = `${dragPos.x}px`;
+      style.top = `${dragPos.y}px`;
+    } else {
+      style.left = `${fc.offsetX || 0}vw`;
+      style.top = `${fc.offsetY || 0}vh`;
+    }
+    style.transform = 'none'; // Overwrite default anchor transforms if any
   }
 
-  return (
-    <div 
-      className={`absolute ${anchorClasses[fc.anchor] || ''} ${wrapperStyle} ${isPreview ? 'ring-4 ring-rose-500 ring-offset-2' : ''} transition-all duration-300 pointer-events-auto`}
-      style={style}
-    >
-      {isPreview && (
-        <div className="absolute -top-7 right-0 bg-rose-500 text-white text-xs px-2 py-1 rounded-t shadow z-50 whitespace-nowrap">
-          Live Preview: Floating Promo
-        </div>
-      )}
-      
-      {fc.closeable && (
-        <button 
-          onClick={() => {
-            setIsOpen(false);
-            if (fc.closeSession) {
-              sessionStorage.setItem(`floating_closed_${banner.id}`, 'true');
-            }
-          }}
-          className="absolute -top-3 -right-3 text-white bg-black/50 hover:bg-black/80 rounded-full w-6 h-6 flex items-center justify-center z-10 text-xs shadow-md"
-        >
-          &times;
-        </button>
-      )}
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPreview) return;
+    
+    // Check if clicking close button
+    if ((e.target as HTMLElement).tagName.toLowerCase() === 'button') return;
+    
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    
+    const startLeft = dragPos ? dragPos.x : rect.left;
+    const startTop = dragPos ? dragPos.y : rect.top;
 
-      <div className={`overflow-hidden rounded-lg ${fc.shadow ? fc.shadow : 'shadow-lg'} bg-transparent`}>
-        <BannerLink item={item} isPreview={isPreview}>
-          <img src={item.imageUrl} alt={item.altText || 'Floating Banner'} className="w-full h-auto max-w-[200px]" />
-        </BannerLink>
+    dragRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialLeft: startLeft,
+      initialTop: startTop
+    };
+
+    const handlePointerMove = (ev: PointerEvent) => {
+      if (!dragRef.current.isDragging) return;
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      setDragPos({
+        x: dragRef.current.initialLeft + dx,
+        y: dragRef.current.initialTop + dy
+      });
+    };
+
+    const handlePointerUp = (ev: PointerEvent) => {
+      if (!dragRef.current.isDragging) return;
+      dragRef.current.isDragging = false;
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      
+      const finalX = Math.round(dragRef.current.initialLeft + dx);
+      const finalY = Math.round(dragRef.current.initialTop + dy);
+      
+      setDragPos({ x: finalX, y: finalY });
+      
+      // Calculate responsive percentages
+      const vw = parseFloat(((finalX / window.innerWidth) * 100).toFixed(2));
+      const vh = parseFloat(((finalY / window.innerHeight) * 100).toFixed(2));
+      
+      window.parent.postMessage({ 
+        type: 'UPDATE_FLOATING_OFFSET', 
+        offsetX: vw, 
+        offsetY: vh 
+      }, '*');
+
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[9999]">
+      <div 
+        onPointerDown={isPreview ? handlePointerDown : undefined}
+        className={`absolute ${dragPos ? '' : anchorClasses[fc.anchor] || ''} ${wrapperStyle} ${isPreview ? 'ring-4 ring-rose-500 ring-offset-2 cursor-move' : ''} transition-all ${dragPos ? 'duration-0' : 'duration-300'} pointer-events-auto`}
+        style={style}
+      >
+        {isPreview && (
+          <div className="absolute -top-7 right-0 bg-rose-500 text-white text-xs px-2 py-1 rounded-t shadow z-50 whitespace-nowrap">
+            Live Preview: Floating Promo (Drag to move)
+          </div>
+        )}
+        
+        {fc.closeable && (
+          <button 
+            onClick={() => {
+              if (isPreview) return; // Do not close or store session in preview mode
+              setIsOpen(false);
+              if (fc.closeSession) {
+                sessionStorage.setItem(`floating_closed_${banner.id}`, 'true');
+              }
+            }}
+            className="absolute -top-3 -right-3 text-white bg-black/50 hover:bg-black/80 rounded-full w-6 h-6 flex items-center justify-center z-10 text-xs shadow-md"
+          >
+            &times;
+          </button>
+        )}
+
+        <div className={`overflow-hidden rounded-lg ${fc.shadow ? fc.shadow : 'shadow-lg'} bg-transparent`}>
+          <BannerLink item={item} isPreview={isPreview}>
+            <img src={item.imageUrl} alt={item.altText || 'Floating Banner'} className="w-full h-auto max-w-[200px]" draggable={false} />
+          </BannerLink>
+        </div>
       </div>
     </div>
   );

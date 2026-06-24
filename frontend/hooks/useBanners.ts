@@ -61,7 +61,7 @@ export function useBanners(position: string) {
     try {
       // In a real app, this URL should come from env config e.g., process.env.NEXT_PUBLIC_API_URL
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
-      const res = await fetch(`${baseUrl}/api/clientbanners/position/${position}?page=${page}`);
+      const res = await fetch(`${baseUrl}/api/clientbanners/position/${position}?page=${page}`, { cache: 'no-store' });
       if (res.ok) {
         const data: Banner[] = await res.json();
         setFetchedBanners(data);
@@ -83,16 +83,17 @@ export function useBanners(position: string) {
       .withAutomaticReconnect()
       .build();
 
+    let fetchTimeout: NodeJS.Timeout;
+
     connection.start()
       .then(() => {
         console.log('Connected to BannerHub');
         connection.on('BannerUpdated', (updatedPosition: string) => {
           if (updatedPosition === position || updatedPosition === 'all') {
-            // Apply a small random delay (0-2s) to prevent thundering herd
-            const delay = Math.random() * 2000;
-            setTimeout(() => {
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(() => {
               fetchBanners();
-            }, delay);
+            }, 500); // 500ms debounce
           }
         });
       })
@@ -113,7 +114,7 @@ export function useBanners(position: string) {
     if (typeof window === 'undefined') return;
 
     const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'LIVE_PREVIEW_BANNER') {
+      if (event.data?.type === 'LIVE_PREVIEW_BANNER' || event.data?.type === 'UPDATE_PREVIEW_BANNER') {
         const pb = event.data.banner as Banner;
         setActivePreviewPos(pb.position);
         if (pb.position === position) {
@@ -126,6 +127,10 @@ export function useBanners(position: string) {
     };
 
     window.addEventListener('message', handleMessage);
+    
+    // Request preview banner from parent Admin window to avoid missing the initial load event
+    window.parent.postMessage({ type: 'REQUEST_PREVIEW_BANNER' }, '*');
+
     return () => {
       window.removeEventListener('message', handleMessage);
     };

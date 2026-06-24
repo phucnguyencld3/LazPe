@@ -107,8 +107,20 @@ namespace PolyBabyAPI.Data
                 entity.OwnsOne(b => b.LayoutConfig, cb => 
                 {
                     cb.ToJson();
-                    cb.OwnsMany(l => l.Items);
+                    cb.OwnsMany(l => l.Items, ib => {
+                        ib.OwnsOne(i => i.Redirect);
+                    });
                     cb.OwnsOne(l => l.Responsive);
+                    cb.OwnsOne(l => l.FloatingConfig);
+                });
+                entity.OwnsOne(b => b.DraftConfig, cb => 
+                {
+                    cb.ToJson();
+                    cb.OwnsMany(l => l.Items, ib => {
+                        ib.OwnsOne(i => i.Redirect);
+                    });
+                    cb.OwnsOne(l => l.Responsive);
+                    cb.OwnsOne(l => l.FloatingConfig);
                 });
             });
 
@@ -122,8 +134,11 @@ namespace PolyBabyAPI.Data
                 entity.OwnsOne(bv => bv.LayoutConfig, cb => 
                 {
                     cb.ToJson();
-                    cb.OwnsMany(l => l.Items);
+                    cb.OwnsMany(l => l.Items, ib => {
+                        ib.OwnsOne(i => i.Redirect);
+                    });
                     cb.OwnsOne(l => l.Responsive);
+                    cb.OwnsOne(l => l.FloatingConfig);
                 });
             });
 

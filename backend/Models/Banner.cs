@@ -31,6 +31,8 @@ namespace PolyBabyAPI.Models
         public string Version { get; set; } = "1.0.0";
 
         public BannerLayoutConfig LayoutConfig { get; set; } = new BannerLayoutConfig();
+        public BannerLayoutConfig? DraftConfig { get; set; }
+        public bool HasUnpublishedChanges { get; set; }
 
         public DateTime? PublishedAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -58,14 +60,36 @@ namespace PolyBabyAPI.Models
         
         // Responsive config
         public BannerResponsiveConfig? Responsive { get; set; } = new BannerResponsiveConfig();
+
+        // Floating specific
+        public BannerFloatingConfig? FloatingConfig { get; set; }
+    }
+
+    public class BannerFloatingConfig
+    {
+        public string Anchor { get; set; } = "bottom-right";
+        public double? OffsetX { get; set; }
+        public double? OffsetY { get; set; }
+        public bool? Closeable { get; set; }
+        public bool? CloseSession { get; set; }
+        public string? Shadow { get; set; }
+        public int? ZIndex { get; set; }
     }
 
     public class BannerItem
     {
         public string ImageUrl { get; set; } = string.Empty;
         public string? AltText { get; set; }
-        public string? RedirectUrl { get; set; }
+        public string? RedirectUrl { get; set; } // Legacy or simple
+        public BannerRedirectConfig? Redirect { get; set; }
         public int Order { get; set; }
+    }
+
+    public class BannerRedirectConfig
+    {
+        public string Type { get; set; } = "none";
+        public string? Value { get; set; }
+        public string? ResolvedUrl { get; set; }
     }
 
     public class BannerResponsiveConfig
