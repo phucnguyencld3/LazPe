@@ -1,5 +1,6 @@
 "use client";
 import { SupplierSelectOption, CategorySelectOption } from "@/lib/features/products/productApi";
+import { SearchableSelect } from "@/components/admin/shared/SearchableSelect";
 
 interface ProductGeneralInfoProps {
   productName: string;
@@ -62,8 +63,7 @@ export function ProductGeneralInfo({
     return !categories.some(c => c.parentID === cat.categoryID && c.status);
   });
 
-  const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
+  const handleCategorySelect = (val: string) => {
     if (val === "") {
       onCategoryChange(null, []);
     } else {
@@ -128,24 +128,14 @@ export function ProductGeneralInfo({
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
                 Thương hiệu / Nhãn hàng <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <select
-                  required
-                  value={supplierId}
-                  onChange={(e) => onSupplierIdChange(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 appearance-none cursor-pointer"
-                >
-                  <option value="">Chọn thương hiệu / nhãn hàng...</option>
-                  {suppliers.map(s => (
-                    <option key={s.supplierID} value={s.supplierID}>
-                      {s.supplierName}
-                    </option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                  unfold_more
-                </span>
-              </div>
+              <SearchableSelect
+                options={suppliers.map(s => ({ value: s.supplierID, label: s.supplierName }))}
+                value={supplierId}
+                onChange={(val) => onSupplierIdChange(val === "" ? "" : Number(val))}
+                placeholder="Chọn thương hiệu / nhãn hàng..."
+                searchPlaceholder="Tìm kiếm thương hiệu..."
+                buttonClassName="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 cursor-pointer flex justify-between items-center"
+              />
             </div>
           </div>
 
@@ -154,23 +144,14 @@ export function ProductGeneralInfo({
             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
               Phân loại danh mục <span className="text-rose-500">*</span>
             </label>
-            <div className="relative">
-              <select
-                value={selectedCategoryId || ""}
-                onChange={handleCategorySelect}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 appearance-none cursor-pointer"
-              >
-                <option value="">Chọn phân loại danh mục...</option>
-                {leafCategories.map(cat => (
-                  <option key={cat.categoryID} value={cat.categoryID}>
-                    {cat.categoryName}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                unfold_more
-              </span>
-            </div>
+            <SearchableSelect
+              options={leafCategories.map(cat => ({ value: cat.categoryID, label: cat.categoryName }))}
+              value={selectedCategoryId || ""}
+              onChange={handleCategorySelect}
+              placeholder="Chọn phân loại danh mục..."
+              searchPlaceholder="Tìm kiếm danh mục..."
+              buttonClassName="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-700 cursor-pointer flex justify-between items-center"
+            />
             
             {/* Detailed Selected Category Path */}
             {selectedCategoryId && selectedPathIds.length > 0 && (
