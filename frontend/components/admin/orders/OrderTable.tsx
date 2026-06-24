@@ -240,14 +240,14 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                     <td className="px-6 py-5 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => router.push(`/admin/orders/${order.invoiceID}`)}
+                          onClick={() => router.push(`/admin/orders/${order.invoiceID}?page=${currentPage}`)}
                           className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
                           title="Xem chi tiết"
                         >
                           <span className="material-symbols-outlined">visibility</span>
                         </button>
                         <button
-                          onClick={() => router.push(`/admin/orders/${order.invoiceID}`)}
+                          onClick={() => router.push(`/admin/orders/${order.invoiceID}?page=${currentPage}`)}
                           className="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
                           title="Chỉnh sửa đơn"
                         >

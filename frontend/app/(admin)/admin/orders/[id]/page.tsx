@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   OrderInfo,
@@ -18,6 +18,9 @@ import { OrderProductList } from "@/components/admin/orders/OrderProductList";
 export default function OrderDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get("page") || "1";
+  
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -98,7 +101,7 @@ export default function OrderDetailsPage() {
     return (
       <div className="text-center py-20">
         <p className="text-error font-bold text-lg">Không tìm thấy đơn hàng</p>
-        <button onClick={() => router.push("/admin/orders")} className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-[8px] font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer">
+        <button onClick={() => router.push(`/admin/orders?page=${fromPage}`)} className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-[8px] font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer">
           Quay lại danh sách
         </button>
       </div>
@@ -110,7 +113,7 @@ export default function OrderDetailsPage() {
       {/* Header */}
       <header className="h-24 flex items-center justify-between sticky top-0 z-10 bg-background/80 backdrop-blur-md">
         <div className="flex items-center gap-6">
-          <button onClick={() => router.push('/admin/orders')} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+          <button onClick={() => router.push(`/admin/orders?page=${fromPage}`)} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
             <span className="material-symbols-outlined">arrow_back</span>
             <span className="font-bold">Quay lại</span>
           </button>

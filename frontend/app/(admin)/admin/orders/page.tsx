@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { OrderInfo, fetchOrdersPaginated, fetchOrderMetrics, bulkConfirmOrders, bulkMarkShippedOrders, exportOrdersToExcel } from "@/lib/features/orders/orderApi";
 import { OrderSummaryCards } from "@/components/admin/orders/OrderSummaryCards";
@@ -21,7 +21,11 @@ export default function AdminOrdersPage() {
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = searchParams.get("page");
+    return p ? Math.max(1, parseInt(p)) : 1;
+  });
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
@@ -44,8 +48,14 @@ export default function AdminOrdersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  const isFirstRender = useRef(true);
+
   // Reset page to 1 when filters change
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     setCurrentPage(1);
     setSelectedInvoiceIds([]);
   }, [statusFilter, debouncedSearch, sortValue, minPrice, maxPrice, dateRange]);
