@@ -238,6 +238,15 @@ export default function AdminProductsPage() {
     };
   };
 
+  const canDeleteProduct = (createdAtStr?: string) => {
+    if (!createdAtStr) return false;
+    const createdDate = new Date(createdAtStr);
+    const now = new Date();
+    const diffMs = now.getTime() - createdDate.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays <= 3;
+  };
+
   return (
     <main className="w-full pb-20">
       {/* Title Header Section */}
@@ -552,13 +561,17 @@ export default function AdminProductsPage() {
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                          <button
-                            onClick={() => handleDeleteClick(product.productID, product.productName)}
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                            title="Xóa"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                          {canDeleteProduct(product.createdAt) ? (
+                            <button
+                              onClick={() => handleDeleteClick(product.productID, product.productName)}
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
+                              title="Xóa"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          ) : (
+                            <div className="w-9 h-9 shrink-0" />
+                          )}
                         </div>
                       </td>
                     </tr>
