@@ -6,6 +6,35 @@ if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.endsWith
 }
 export const API_BASE_URL = apiUrl;
 
+// Patch global fetch to handle 429 globally and safely return JSON to prevent crashes
+if (typeof globalThis !== 'undefined' && !(globalThis as any).__fetchPatched) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    try {
+      const response = await originalFetch(input, init);
+      if (response.status === 429) {
+        if (typeof window !== 'undefined') {
+          import('@/lib/toast').then(({ toast }) => {
+            toast.error('Hệ thống đang xử lý quá nhiều yêu cầu. Vui lòng thao tác chậm lại!');
+          });
+        }
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Hệ thống đang xử lý quá nhiều yêu cầu. Vui lòng thao tác chậm lại!',
+          data: null
+        }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+  (globalThis as any).__fetchPatched = true;
+}
+
 export async function getRecommendations(limit: number = 24): Promise<Product[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/Recommendation/for-you?limit=${limit}`, { cache: 'no-store' });
