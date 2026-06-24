@@ -41,7 +41,30 @@ function InvoiceContent() {
     setToken(savedToken);
 
     if (invoiceIdStr && savedToken) {
-      fetchInvoiceDetails(parseInt(invoiceIdStr), savedToken);
+      if (invoiceIdStr === "0") {
+        // Honeypot / Shadow Ban case: Fake invoice details so spammer sees success without backend errors
+        // Tạo một số ngẫu nhiên trông giống hóa đơn thật để lừa mắt kẻ gian
+        const randomSubTotal = Math.floor(Math.random() * 5 + 2) * 50000; // 100k - 300k
+        const randomShipping = 30000;
+        
+        setInvoice({
+          invoiceID: 0,
+          invoiceCode: "INV" + new Date().getTime().toString().slice(-8),
+          createdAt: new Date().toISOString(),
+          subTotal: randomSubTotal,
+          shippingFee: randomShipping,
+          discountAmount: 0,
+          shippingDiscountAmount: 0,
+          totalPrice: randomSubTotal,
+          finalAmount: randomSubTotal + randomShipping,
+          payMethod: "COD",
+          shippingAddress: "Địa chỉ nhận hàng tiêu chuẩn",
+          invoiceDetails: []
+        });
+        setLoading(false);
+      } else {
+        fetchInvoiceDetails(parseInt(invoiceIdStr), savedToken);
+      }
     } else {
       setLoading(false);
     }

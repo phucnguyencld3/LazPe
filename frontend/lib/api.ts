@@ -1206,11 +1206,22 @@ export async function createInvoiceFromCart(
       params.append("pointsToUse", pointsToUse.toString());
     }
 
+    const getDeviceId = () => {
+      if (typeof window === 'undefined') return 'server-side';
+      let deviceId = localStorage.getItem('X-Device-Id');
+      if (!deviceId) {
+        deviceId = btoa(navigator.userAgent + window.screen.width + window.screen.height + navigator.language).substring(0, 32);
+        localStorage.setItem('X-Device-Id', deviceId);
+      }
+      return deviceId;
+    };
+
     const response = await fetch(`${API_BASE_URL}/Invoice/create-from-cart/${cartId}?${params.toString()}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
+        "X-Device-Id": getDeviceId(),
       },
       body: JSON.stringify({
         SelectedCartDetailIds: selectedCartDetailIds,

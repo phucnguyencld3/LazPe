@@ -607,77 +607,8 @@ namespace PolyBabyAPI.Controllers
 
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "UnknownIP";
 
-                // Kiểm tra xem IP có bị chặn không
-                if (await _ipBlockService.IsIpBlockedAsync(ipAddress))
-                {
-                    return StatusCode(403, new { success = false, message = "Truy cập bị từ chối do phát hiện hành vi bất thường từ địa chỉ IP này. Vui lòng liên hệ bộ phận hỗ trợ." });
-                }
-
-                // Kiểm tra rate limiting cho thanh toán COD
-                if (payMethod == null)
-                {
-                    var cacheKey1m = $"COD_RL_1m_{ipAddress}";
-                    var cacheKey10m = $"COD_RL_10m_{ipAddress}";
-                    var cacheKey1d = $"COD_RL_1d_{ipAddress}";
-
-                    var count1m = _cache.GetOrCreate(cacheKey1m, entry => { entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); return 0; });
-                    var count10m = _cache.GetOrCreate(cacheKey10m, entry => { entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10); return 0; });
-                    var count1d = _cache.GetOrCreate(cacheKey1d, entry => { entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1); return 0; });
-
-                    count1m++;
-                    count10m++;
-                    count1d++;
-
-                    _cache.Set(cacheKey1m, count1m, TimeSpan.FromMinutes(1));
-                    _cache.Set(cacheKey10m, count10m, TimeSpan.FromMinutes(10));
-                    _cache.Set(cacheKey1d, count1d, TimeSpan.FromDays(1));
-
-                    if (count1m >= 5 || count10m >= 30 || count1d >= 50)
-                    {
-                        // Kiểm tra nếu là Admin thì không khóa
-                        var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-                        if (!isAdmin)
-                        {
-                            // Khóa tài khoản 1 ngày
-                            user.LockoutEnd = DateTimeOffset.UtcNow.AddDays(1);
-                            await _userManager.UpdateAsync(user);
-
-                            // Block IP chỉ 1 ngày
-                            var reason = $"Tài khoản {user.Email} có dấu hiệu spam khi tạo liên tục {count1m} đơn COD trong 1 phút (hoặc {count1d} đơn/ngày). Hệ thống đã tự động khóa tài khoản và IP để bảo vệ.";
-                            
-                            var recentInvoices = await _context.Invoices
-                                .Where(i => i.UserID == user.Id)
-                                .OrderByDescending(i => i.CreatedAt)
-                                .Take(5)
-                                .Select(i => i.InvoiceCode)
-                                .ToListAsync();
-                                
-                            await _ipBlockService.BlockIpAsync(ipAddress, reason, 1, user.Id, user.Email, recentInvoices);
-
-                            // Thông báo Admin
-                            try
-                        {
-                            var notifDto = new CreateNotificationDto
-                            {
-                                Title = "Cảnh báo bảo mật: Đã chặn IP Spam COD",
-                                ShortDescription = $"Tự động chặn IP {ipAddress} (User: {user.Email}).",
-                                Content = $"<p>Phát hiện hành vi spam đơn hàng COD từ IP <strong>{ipAddress}</strong>.</p><p>Lý do: {reason}</p>",
-                                Type = NotificationType.System,
-                                Priority = NotificationPriority.High,
-                                ActionType = ActionType.CustomUrl,
-                                ActionUrl = $"/admin/blocked-ips",
-                                TargetType = TargetType.Role,
-                                TargetValue = "Admin",
-                                PublishedAt = DateTime.Now
-                            };
-                            await _notificationService.CreateNotificationAsync(notifDto, "System");
-                        }
-                        catch { }
-
-                            return StatusCode(403, new { success = false, message = "Tài khoản và IP của bạn đã bị tạm khóa do có hành vi spam tạo đơn hàng. Vui lòng liên hệ CSKH." });
-                        }
-                    }
-                }
+                // Shadow Ban Check
+                bool isShadowBan = HttpContext.Items["IsShadowBan"] as bool? ?? false;
 
                 // Xác định địa chỉ giao hàng
                 string address;
@@ -733,6 +664,46 @@ namespace PolyBabyAPI.Controllers
 
                 // ✅ Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
+
+                if (isShadowBan)
+                {
+                    // Đòn tâm lý: Xóa luôn giỏ hàng của kẻ tấn công để chúng tin chắc 100% là đã đặt hàng thành công
+                    if (selectedIds != null && selectedIds.Any())
+                    {
+                        var itemsToRemove = await _context.CartDetails
+                            .Where(cd => cd.CartID == cartId && selectedIds.Contains(cd.CartDetailID))
+                            .ToListAsync();
+                        if (itemsToRemove.Any())
+                        {
+                            _context.CartDetails.RemoveRange(itemsToRemove);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        var itemsToRemove = await _context.CartDetails
+                            .Where(cd => cd.CartID == cartId)
+                            .ToListAsync();
+                        if (itemsToRemove.Any())
+                        {
+                            _context.CartDetails.RemoveRange(itemsToRemove);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+
+                    // Lừa bot bằng cách trả về thành công ảo, tiết kiệm tài nguyên Server
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Đặt hàng thành công!",
+                        data = new { 
+                            InvoiceID = 0, 
+                            InvoiceCode = "INV" + DateTime.Now.ToString("MMddHHmmss"),
+                            Status = "Chờ xác nhận" 
+                        },
+                        paymentUrl = (string?)null
+                    });
+                }
 
                 var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress, pointsToUse);
 
