@@ -561,17 +561,18 @@ export default function AdminProductsPage() {
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                          {canDeleteProduct(product.createdAt) ? (
-                            <button
-                              onClick={() => handleDeleteClick(product.productID, product.productName)}
-                              className="w-9 h-9 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                              title="Xóa"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
-                          ) : (
-                            <div className="w-9 h-9 shrink-0" />
-                          )}
+                          <button
+                            onClick={() => handleDeleteClick(product.productID, product.productName)}
+                            disabled={!canDeleteProduct(product.createdAt)}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                              !canDeleteProduct(product.createdAt)
+                                ? "opacity-30 cursor-not-allowed text-slate-300"
+                                : "text-error hover:bg-error-container/20 cursor-pointer"
+                            }`}
+                            title={!canDeleteProduct(product.createdAt) ? "Chỉ được xóa sản phẩm mới tạo trong vòng 3 ngày" : "Xóa"}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>

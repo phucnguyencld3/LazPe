@@ -2261,12 +2261,12 @@ export default function AdminLoyaltyPage() {
       {activeTab === "settings" && (
         <section className="space-y-md animate-in fade-in duration-200">
           {loadingSettings ? (
-            <div className="p-8 flex flex-col items-center justify-center bg-white rounded-[8px] border border-slate-100 shadow-sm max-w-3xl">
+            <div className="p-8 flex flex-col items-center justify-center bg-white rounded-[8px] border border-slate-100 shadow-sm w-full">
               <Loader className="animate-spin text-primary mb-2" size={24} />
               <span className="text-slate-400 font-bold text-xs">Đang tải cấu hình...</span>
             </div>
           ) : (
-            <div className="bg-white p-8 rounded-[8px] shadow-sm border border-slate-100 max-w-3xl animate-in fade-in duration-200">
+            <div className="bg-white p-8 rounded-[8px] shadow-sm border border-slate-100 w-full animate-in fade-in duration-200">
               <form onSubmit={handleSaveSettings} className="space-y-6">
                 {/* Reward Point Enable Toggle */}
                 <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-[8px] border border-slate-100">

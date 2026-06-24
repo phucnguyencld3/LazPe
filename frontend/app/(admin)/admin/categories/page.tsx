@@ -501,17 +501,18 @@ export default function AdminCategoriesPage() {
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                          {(cat.productCount ?? 0) === 0 ? (
-                            <button
-                              onClick={() => setCategoryToDelete({ id: cat.categoryID, name: cat.categoryName })}
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                              title="Xóa danh mục"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
-                          ) : (
-                            <div className="w-8 h-8 shrink-0" />
-                          )}
+                          <button
+                            onClick={() => setCategoryToDelete({ id: cat.categoryID, name: cat.categoryName })}
+                            disabled={(cat.productCount ?? 0) > 0}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                              (cat.productCount ?? 0) > 0
+                                ? "opacity-30 cursor-not-allowed text-slate-300"
+                                : "text-error hover:bg-error-container/20 cursor-pointer"
+                            }`}
+                            title={(cat.productCount ?? 0) > 0 ? "Không thể xóa danh mục có liên kết sản phẩm" : "Xóa danh mục"}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
