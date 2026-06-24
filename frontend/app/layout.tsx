@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import DisclaimerModal from "@/components/shared/DisclaimerModal";
 import GoogleProvider from "@/components/shared/GoogleProvider";
+import ProgressBar from "@/components/shared/ProgressBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,10 +83,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-body-md bg-background text-on-background">
         <GoogleProvider>
-          {children}
-          <DisclaimerModal />
-          <Toaster richColors position="top-right" closeButton visibleToasts={3} className="print:hidden" />
-          <div id="modal-root"></div>
+          <ProgressBar>
+            {children}
+            <DisclaimerModal />
+            <Toaster richColors position="top-right" closeButton visibleToasts={3} className="print:hidden" />
+            <div id="modal-root"></div>
+          </ProgressBar>
         </GoogleProvider>
       </body>
     </html>
