@@ -48,17 +48,52 @@ export default function AdminOrdersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const isFirstRender = useRef(true);
+  const prevFiltersRef = useRef({
+    statusFilter,
+    debouncedSearch,
+    sortValue,
+    minPrice,
+    maxPrice,
+    dateRange
+  });
 
   // Reset page to 1 when filters change
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    const prev = prevFiltersRef.current;
+    const hasChanged =
+      prev.statusFilter !== statusFilter ||
+      prev.debouncedSearch !== debouncedSearch ||
+      prev.sortValue !== sortValue ||
+      prev.minPrice !== minPrice ||
+      prev.maxPrice !== maxPrice ||
+      prev.dateRange !== dateRange;
+
+    if (hasChanged) {
+      setCurrentPage(1);
+      setSelectedInvoiceIds([]);
+      prevFiltersRef.current = {
+        statusFilter,
+        debouncedSearch,
+        sortValue,
+        minPrice,
+        maxPrice,
+        dateRange
+      };
     }
-    setCurrentPage(1);
-    setSelectedInvoiceIds([]);
   }, [statusFilter, debouncedSearch, sortValue, minPrice, maxPrice, dateRange]);
+
+  // Synchronize currentPage to URL query params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (currentPage === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", currentPage.toString());
+    }
+    const newSearch = params.toString();
+    const newPath = `${window.location.pathname}${newSearch ? "?" + newSearch : ""}`;
+    window.history.replaceState(null, "", newPath);
+  }, [currentPage]);
 
   const loadMetrics = async (token: string) => {
     try {
