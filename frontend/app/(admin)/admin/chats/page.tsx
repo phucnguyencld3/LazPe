@@ -179,27 +179,38 @@ export default function AdminChatsPage() {
 
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
-      // Nếu tin nhắn thuộc phòng đang chọn
-      setSelectedSession(curr => {
-        if (curr && curr.id === normalized.chatSessionId) {
-          setMessages(prev => {
-            // Lọc bỏ tin nhắn tạm có ID âm khi nhận tin nhắn chính thức từ SignalR
-            const filtered = prev.filter(m => m.id > 0);
-            if (filtered.some(m => m.id === normalized.id)) return filtered;
-            return [...filtered, normalized];
-          });
-          // Đánh dấu đã đọc trên server
-          markAsRead(normalized.chatSessionId);
+      
+      // Update messages if the message belongs to the currently selected room
+      // We use the functional updater for setMessages so it always has latest state
+      setMessages(prev => {
+        // If the message doesn't belong to the current room, don't add it to current messages view
+        if (prev.length > 0 && prev[0].chatSessionId !== normalized.chatSessionId) {
+            return prev;
         }
-        return curr;
+        
+        // Remove optimistic temp messages
+        const filtered = prev.filter(m => m.id > 0);
+        if (filtered.some(m => m.id === normalized.id)) return filtered;
+        return [...filtered, normalized];
       });
 
-      // Cập nhật danh sách session
+      // Mark as read if receiving message from customer in current room
+      if (!normalized.isFromAdmin) {
+        markAsRead(normalized.chatSessionId);
+      }
+
+      // Update session list unread counts
       loadSessions();
     });
 
     connection.on("UpdateAdminSessions", () => {
       loadSessions();
+    });
+
+    connection.onreconnected(() => {
+      if (selectedSession) {
+        connection.invoke("JoinRoom", selectedSession.id).catch(console.error);
+      }
     });
 
     connection
@@ -223,13 +234,17 @@ export default function AdminChatsPage() {
   };
 
   const selectRoom = (session: ChatSession) => {
+    // Leave previous room if exists
+    if (hubConnectionRef.current && selectedSession) {
+      hubConnectionRef.current.invoke("LeaveRoom", selectedSession.id).catch(console.error);
+    }
+    
     setSelectedSession(session);
     loadMessages(session.id);
+    
+    // Join new room
     if (hubConnectionRef.current) {
-      if (selectedSession) {
-        hubConnectionRef.current.invoke("LeaveRoom", selectedSession.id);
-      }
-      hubConnectionRef.current.invoke("JoinRoom", session.id);
+      hubConnectionRef.current.invoke("JoinRoom", session.id).catch(console.error);
     }
   };
 
@@ -277,6 +292,9 @@ export default function AdminChatsPage() {
         setMessages(prev => prev.filter(m => m.id !== tempId));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
+        // Cập nhật id thật từ server để xóa trạng thái Đang gửi
+        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
+        
         if (!selectedSession.adminId && currentAdmin) {
           setSelectedSession(prev => prev ? { ...prev, adminId: currentAdmin.id, adminName: currentAdmin.fullName } : null);
         }
@@ -323,6 +341,8 @@ export default function AdminChatsPage() {
         setMessages(prev => prev.filter(m => m.id !== tempId));
         toast.error(data.message || "Không thể gửi sticker.");
       } else {
+        // Cập nhật id thật từ server
+        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
         if (!selectedSession.adminId && currentAdmin) {
           setSelectedSession(prev => prev ? { ...prev, adminId: currentAdmin.id, adminName: currentAdmin.fullName } : null);
         }

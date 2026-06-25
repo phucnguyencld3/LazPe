@@ -296,10 +296,14 @@ export default function CustomerChatWidget() {
       window.dispatchEvent(new Event("cart_updated"));
     });
 
+    connection.onreconnected(() => {
+      connection.invoke("JoinRoom", sid).catch(console.error);
+    });
+
     connection
       .start()
       .then(() => {
-        connection.invoke("JoinRoom", sid);
+        connection.invoke("JoinRoom", sid).catch(console.error);
         hubConnectionRef.current = connection;
       })
       .catch((err) => console.error("SignalR Connection Error: ", err));
@@ -454,6 +458,8 @@ export default function CustomerChatWidget() {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
+        // Cập nhật id thật từ server để xóa trạng thái Đang gửi
+        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
         if (isClosed) {
           setIsClosed(false);
         }
@@ -501,6 +507,8 @@ export default function CustomerChatWidget() {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         toast.error(data.message || "Không thể gửi sticker.");
       } else {
+        // Cập nhật id thật từ server
+        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
         if (isClosed) setIsClosed(false);
       }
     } catch (e) {
