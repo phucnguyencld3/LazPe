@@ -847,7 +847,7 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(100vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>

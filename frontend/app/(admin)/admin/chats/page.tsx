@@ -3,6 +3,38 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+const AdminChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
+  return (
+    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full max-w-sm">
+      <div 
+        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px] cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={() => onZoomImage && onZoomImage(data.imageUrl || '/assets/img/products/default-product.jpg')}
+        title="Phóng to ảnh"
+      >
+        <img src={data.imageUrl || '/assets/img/products/default-product.jpg'} alt={data.name} className="max-h-[60px] max-w-full object-contain mix-blend-multiply" />
+      </div>
+      <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
+        <h4 
+          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words" 
+          title={data.name}
+        >
+          {data.name}
+        </h4>
+        <div className="flex items-center justify-between">
+          <span className="text-primary font-bold text-[13px] truncate pr-1">
+            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
+          </span>
+          <div className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-100 rounded">
+            Sản phẩm
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface ChatSession {
   id: string;
@@ -83,6 +115,7 @@ export default function AdminChatsPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
   const [connectionStatus, setConnectionStatus] = useState<string>("Đang kết nối...");
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
@@ -663,15 +696,15 @@ export default function AdminChatsPage() {
                       key={msg.id}
                       className={`flex flex-col ${msg.isFromAdmin ? "items-end" : "items-start"}`}
                     >
-                      <span className="text-[10px] text-slate-500 mb-0.5 px-1">
+                      <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
                         {msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       <div
-                        className={`max-w-[70%] rounded-[8px] p-3 text-sm shadow-sm ${
+                        className={`max-w-[85%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed shadow-sm ${
                           msg.isFromAdmin
-                            ? "bg-primary-container text-on-primary-container rounded-tr-none"
-                            : "bg-surface text-on-surface rounded-tl-none border border-slate-100"
-                        } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none" : ""}`}
+                            ? "bg-primary text-white rounded-tr-sm"
+                            : "bg-white text-slate-700 rounded-tl-sm border border-slate-100/50"
+                        } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                       >
                         {isMediaUrl(msg.messageText) ? (
                           <img
@@ -683,11 +716,41 @@ export default function AdminChatsPage() {
                             }}
                           />
                         ) : (
-                          msg.messageText && <p className="whitespace-pre-wrap">{msg.messageText}</p>
+                          msg.messageText && (
+                            <div className="prose prose-sm max-w-none break-words leading-relaxed [&>p]:mb-0">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  code: ({ node, inline, className, children, ...props }: any) => {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    if (!inline && match && match[1] === 'product_card') {
+                                      try {
+                                        const data = JSON.parse(String(children).replace(/\n$/, ''));
+                                        return <AdminChatProductCard data={data} onZoomImage={setZoomedImage} />;
+                                      } catch (e) {
+                                        return <code className={className} {...props}>{children}</code>;
+                                      }
+                                    }
+                                    return <code className={className} {...props}>{children}</code>;
+                                  },
+                                  img: ({ node, ...props }) => (
+                                    <img
+                                      {...props}
+                                      className="max-w-[200px] h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 mt-2 shadow-sm"
+                                      onClick={() => setZoomedImage(typeof props.src === 'string' ? props.src : null)}
+                                      alt={props.alt || "Image"}
+                                    />
+                                  )
+                                }}
+                              >
+                                {msg.messageText}
+                              </ReactMarkdown>
+                            </div>
+                          )
                         )}
                       </div>
                       {msg.id < 0 && (
-                        <span className="text-[9px] text-[#0068ff] italic mt-0.5 px-1 animate-pulse">
+                        <span className="text-[10px] text-primary italic mt-1 px-2 animate-pulse font-medium">
                           Đang gửi...
                         </span>
                       )}
@@ -822,6 +885,29 @@ export default function AdminChatsPage() {
                 </button>
               </form>
             </div>
+
+            {/* Image Zoom Modal */}
+            {zoomedImage && (
+              <div 
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+                onClick={() => setZoomedImage(null)}
+              >
+                <div className="relative max-w-4xl max-h-[90vh] flex items-center justify-center">
+                  <button 
+                    onClick={() => setZoomedImage(null)}
+                    className="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                  <img 
+                    src={zoomedImage} 
+                    alt="Zoomed" 
+                    className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* Placeholder */
