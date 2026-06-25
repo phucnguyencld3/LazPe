@@ -150,6 +150,7 @@ export default function CustomerChatWidget() {
   const [isClosed, setIsClosed] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
+  const [connectionStatus, setConnectionStatus] = useState<string>("Đang kết nối...");
   const [isAiMode, setIsAiMode] = useState(true);
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
@@ -267,12 +268,10 @@ export default function CustomerChatWidget() {
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
       setMessages((prev) => {
-        // Lọc bỏ tin nhắn tạm thời (optimistic update có id âm) khi nhận được tin nhắn thực
         const filtered = prev.filter(m => m.id > 0);
         if (filtered.some((m) => m.id === normalized.id)) return filtered;
         return [...filtered, normalized];
       });
-      // Đánh dấu đã đọc ở client khi nhận tin nhắn trong khi đang mở chat
       if (isOpen && !normalized.isFromAdmin) {
         markAsRead(sid);
       }
@@ -292,21 +291,33 @@ export default function CustomerChatWidget() {
     });
 
     connection.on("CartUpdated", () => {
-      // Dispatch a custom event so header cart updates if listening
       window.dispatchEvent(new Event("cart_updated"));
     });
 
     connection.onreconnected(() => {
+      setConnectionStatus("Đã kết nối");
       connection.invoke("JoinRoom", sid).catch(console.error);
+    });
+
+    connection.onreconnecting(() => {
+      setConnectionStatus("Đang kết nối lại...");
+    });
+
+    connection.onclose(() => {
+      setConnectionStatus("Mất kết nối");
     });
 
     connection
       .start()
       .then(() => {
+        setConnectionStatus("Đã kết nối");
         connection.invoke("JoinRoom", sid).catch(console.error);
         hubConnectionRef.current = connection;
       })
-      .catch((err) => console.error("SignalR Connection Error: ", err));
+      .catch((err) => {
+        setConnectionStatus("Lỗi kết nối");
+        console.error("SignalR Connection Error: ", err);
+      });
   };
 
   const markAsRead = async (sid: string) => {
@@ -348,10 +359,8 @@ export default function CustomerChatWidget() {
     }
   };
 
-  // Thêm state hàng chờ cho AI
   const [aiMessageQueue, setAiMessageQueue] = useState<{ id: number, text: string }[]>([]);
 
-  // Effect xử lý hàng chờ AI tuần tự
   useEffect(() => {
     if (isAiMode && aiMessageQueue.length > 0 && !isAdminTyping) {
       const nextItem = aiMessageQueue[0];
@@ -372,7 +381,6 @@ export default function CustomerChatWidget() {
       if (res.ok) {
         const data = await res.json();
         
-        // Tạo tin nhắn AI
         const aiMsg: Message = {
           id: Date.now() + Math.random(),
           chatSessionId: sessionId || "ai-session",
@@ -384,7 +392,6 @@ export default function CustomerChatWidget() {
           createdAt: new Date().toISOString()
         };
 
-        // Cập nhật state: xóa trạng thái "Đang gửi" của tin nhắn user, thêm tin nhắn AI
         setMessages((prev) => {
           const updatedMessages = prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m);
           return [...updatedMessages, aiMsg];
@@ -393,7 +400,6 @@ export default function CustomerChatWidget() {
         const errData = await res.json().catch(() => null);
         const errMsg = errData?.error || "AI không thể phản hồi lúc này.";
         toast.error(errMsg);
-        // Gửi lỗi, xóa tin nhắn tạm
         setMessages((prev) => prev.filter(m => m.id !== tempId));
       }
     } catch (e) {
@@ -401,7 +407,6 @@ export default function CustomerChatWidget() {
       setMessages((prev) => prev.filter(m => m.id !== tempId));
     } finally {
       setIsAdminTyping(false);
-      // Xóa khỏi hàng chờ để xử lý câu tiếp theo
       setAiMessageQueue(prev => prev.slice(1));
     }
   };
@@ -432,7 +437,6 @@ export default function CustomerChatWidget() {
     }
 
     if (isAiMode) {
-      // Cho vào hàng chờ, AI sẽ tự động xử lý tuần tự qua useEffect
       setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
       return;
     }
@@ -458,7 +462,6 @@ export default function CustomerChatWidget() {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
-        // Cập nhật id thật từ server để xóa trạng thái Đang gửi
         setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
         if (isClosed) {
           setIsClosed(false);
@@ -470,57 +473,8 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const sendSticker = async (stickerUrl: string) => {
-    if (!sessionId) return;
-
-    const tempId = -(Date.now() + Math.random());
-    const tempMsg: Message = {
-      id: tempId,
-      chatSessionId: sessionId,
-      senderId: null,
-      senderName: guestName || "Khách hàng",
-      isFromAdmin: false,
-      messageText: stickerUrl,
-      imageUrl: null,
-      createdAt: new Date().toISOString()
-    };
-
-    setMessages((prev) => [...prev, tempMsg]);
-    setShowPicker(false);
-
-    const formData = new FormData();
-    formData.append("messageText", stickerUrl);
-
-    try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const headers: HeadersInit = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE}/api/chat/session/${sessionId}/message`, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!data.success) {
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        toast.error(data.message || "Không thể gửi sticker.");
-      } else {
-        // Cập nhật id thật từ server
-        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
-        if (isClosed) setIsClosed(false);
-      }
-    } catch (e) {
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      toast.error("Gửi sticker thất bại.");
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
-
-    // Auto-resize logic
     e.target.style.height = 'auto';
     e.target.style.height = `${e.target.scrollHeight}px`;
 
@@ -586,7 +540,6 @@ export default function CustomerChatWidget() {
 
   return (
     <>
-      {/* FAB Button Premium Style */}
       <button
         onClick={toggleOpen}
         className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
@@ -598,12 +551,10 @@ export default function CustomerChatWidget() {
         )}
       </button>
 
-      {/* Chat Window Container Premium Style */}
       {isOpen && (
         <div
           className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[85vh] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
         >
-          {/* Premium Gradient Header */}
           <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             <div className="flex items-center gap-3 relative z-10">
@@ -621,7 +572,6 @@ export default function CustomerChatWidget() {
               </div>
             </div>
 
-            {/* Header Action Icons */}
             <div className="flex items-center gap-1.5 text-white/90 relative z-10">
               <button
                 onClick={() => setIsAiMode(!isAiMode)}
@@ -648,10 +598,8 @@ export default function CustomerChatWidget() {
             </div>
           </div>
 
-          {/* Messages Area Soft Background */}
           <div className="flex-1 bg-slate-50/80 backdrop-blur-md flex flex-col min-h-0 overflow-y-auto p-4 space-y-5" style={{ scrollbarWidth: "thin" }}>
             {!isStarted ? (
-              /* Start Chat Form for Guest */
               <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
                 <div className="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-5">
                   <span className="material-symbols-outlined text-on-primary-container text-4xl">forum</span>
@@ -678,7 +626,6 @@ export default function CustomerChatWidget() {
                 </form>
               </div>
             ) : (
-              /* Message Thread */
               <>
                 {messages.length === 0 ? (
                   <div className="text-center text-slate-500 py-10 text-xs bg-white/50 rounded-xl p-4">
@@ -780,7 +727,12 @@ export default function CustomerChatWidget() {
             )}
           </div>
 
-          {/* Footer Input Area Premium Style */}
+          {/* SignalR Connection Status */}
+          <div className="px-4 py-1 bg-gray-50 border-t border-b border-gray-100 flex items-center gap-2 text-xs text-gray-500">
+            <div className={`w-2 h-2 rounded-full ${connectionStatus === 'Đã kết nối' ? 'bg-green-500' : connectionStatus === 'Đang kết nối...' || connectionStatus === 'Đang kết nối lại...' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+            {connectionStatus}
+          </div>
+
           {isStarted && (
             isClosed ? (
               <div className="p-5 bg-white/90 backdrop-blur border-t border-slate-100 flex flex-col items-center gap-3 shrink-0">
@@ -795,9 +747,6 @@ export default function CustomerChatWidget() {
               </div>
             ) : (
               <div className="bg-white/95 backdrop-blur-md border-t border-slate-100 flex flex-col shrink-0 relative pb-safe">
-
-
-                {/* Text input form */}
                 <form onSubmit={handleSend} className="px-4 pb-4 pt-1 flex items-end gap-2">
                   <textarea
                     ref={textareaRef}

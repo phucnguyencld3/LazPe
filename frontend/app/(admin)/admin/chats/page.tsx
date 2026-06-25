@@ -82,6 +82,7 @@ export default function AdminChatsPage() {
   const [currentAdmin, setCurrentAdmin] = useState<{ id: string; fullName: string } | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
+  const [connectionStatus, setConnectionStatus] = useState<string>("Đang kết nối...");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
@@ -211,20 +212,33 @@ export default function AdminChatsPage() {
     });
 
     connection.onreconnected(() => {
+      setConnectionStatus("Đã kết nối");
       if (selectedSessionRef.current) {
         connection.invoke("JoinRoom", selectedSessionRef.current.id).catch(console.error);
       }
+    });
+    
+    connection.onreconnecting(() => {
+      setConnectionStatus("Đang kết nối lại...");
+    });
+    
+    connection.onclose(() => {
+      setConnectionStatus("Mất kết nối");
     });
 
     connection
       .start()
       .then(() => {
+        setConnectionStatus("Đã kết nối");
         // If a session was already selected during connection startup, join it now
         if (selectedSessionRef.current) {
           connection.invoke("JoinRoom", selectedSessionRef.current.id).catch(console.error);
         }
       })
-      .catch(err => console.error("Admin SignalR Connection Error: ", err));
+      .catch(err => {
+        setConnectionStatus("Lỗi kết nối");
+        console.error("Admin SignalR Connection Error: ", err);
+      });
   };
 
   const markAsRead = async (sid: string) => {
