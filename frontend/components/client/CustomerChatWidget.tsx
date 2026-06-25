@@ -730,10 +730,12 @@ export default function CustomerChatWidget() {
           </div>
 
           {/* SignalR Connection Status */}
-          <div className="px-4 py-1 bg-gray-50 border-t border-b border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-            <div className={`w-2 h-2 rounded-full ${connectionStatus === 'Đã kết nối' ? 'bg-green-500' : connectionStatus === 'Đang kết nối...' || connectionStatus === 'Đang kết nối lại...' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
-            {connectionStatus}
-          </div>
+          {connectionStatus !== 'Đã kết nối' && (
+            <div className="px-4 py-1 bg-gray-50 border-t border-b border-gray-100 flex items-center gap-2 text-xs text-gray-500 shrink-0">
+              <div className={`w-2 h-2 rounded-full ${connectionStatus === 'Đã kết nối' ? 'bg-green-500' : connectionStatus === 'Đang kết nối...' || connectionStatus === 'Đang kết nối lại...' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+              {connectionStatus}
+            </div>
+          )}
 
           {isStarted && (
             isClosed ? (
