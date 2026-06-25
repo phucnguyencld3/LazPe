@@ -316,7 +316,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="bg-background font-body-md text-on-surface min-h-screen flex flex-col relative admin-scaled-layout">
+    <div className="bg-background font-body-md text-on-surface min-h-[117.65vh] flex flex-col relative admin-scaled-layout">
       {/* Mobile Top Navigation */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40">
         <div className="flex items-center gap-3">
@@ -847,7 +847,7 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(100vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(117.65vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
