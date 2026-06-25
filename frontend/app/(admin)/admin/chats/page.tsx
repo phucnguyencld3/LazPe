@@ -85,6 +85,12 @@ export default function AdminChatsPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
+  const selectedSessionRef = useRef<ChatSession | null>(null);
+
+  // Auto-sync selectedSession to ref for use inside SignalR callbacks
+  useEffect(() => {
+    selectedSessionRef.current = selectedSession;
+  }, [selectedSession]);
 
   const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101").replace(/\/api$/, "");
 
@@ -177,26 +183,23 @@ export default function AdminChatsPage() {
       .withAutomaticReconnect()
       .build();
 
+    // Set ref immediately so other functions know connection exists
+    hubConnectionRef.current = connection;
+
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
       
       // Update messages if the message belongs to the currently selected room
-      // We use the functional updater for setMessages so it always has latest state
-      setMessages(prev => {
-        // If the message doesn't belong to the current room, don't add it to current messages view
-        if (prev.length > 0 && prev[0].chatSessionId !== normalized.chatSessionId) {
-            return prev;
-        }
+      if (selectedSessionRef.current && selectedSessionRef.current.id === normalized.chatSessionId) {
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.id > 0);
+          if (filtered.some(m => m.id === normalized.id)) return filtered;
+          return [...filtered, normalized];
+        });
         
-        // Remove optimistic temp messages
-        const filtered = prev.filter(m => m.id > 0);
-        if (filtered.some(m => m.id === normalized.id)) return filtered;
-        return [...filtered, normalized];
-      });
-
-      // Mark as read if receiving message from customer in current room
-      if (!normalized.isFromAdmin) {
-        markAsRead(normalized.chatSessionId);
+        if (!normalized.isFromAdmin) {
+          markAsRead(normalized.chatSessionId);
+        }
       }
 
       // Update session list unread counts
@@ -208,15 +211,18 @@ export default function AdminChatsPage() {
     });
 
     connection.onreconnected(() => {
-      if (selectedSession) {
-        connection.invoke("JoinRoom", selectedSession.id).catch(console.error);
+      if (selectedSessionRef.current) {
+        connection.invoke("JoinRoom", selectedSessionRef.current.id).catch(console.error);
       }
     });
 
     connection
       .start()
       .then(() => {
-        hubConnectionRef.current = connection;
+        // If a session was already selected during connection startup, join it now
+        if (selectedSessionRef.current) {
+          connection.invoke("JoinRoom", selectedSessionRef.current.id).catch(console.error);
+        }
       })
       .catch(err => console.error("Admin SignalR Connection Error: ", err));
   };
@@ -233,18 +239,30 @@ export default function AdminChatsPage() {
     }
   };
 
-  const selectRoom = (session: ChatSession) => {
+  const selectRoom = async (session: ChatSession) => {
+    const conn = hubConnectionRef.current;
+    
     // Leave previous room if exists
-    if (hubConnectionRef.current && selectedSession) {
-      hubConnectionRef.current.invoke("LeaveRoom", selectedSession.id).catch(console.error);
+    if (conn && selectedSession) {
+      if (conn.state === signalR.HubConnectionState.Connected) {
+        try {
+          await conn.invoke("LeaveRoom", selectedSession.id);
+        } catch (e) {
+          console.error("LeaveRoom Error:", e);
+        }
+      }
     }
     
     setSelectedSession(session);
     loadMessages(session.id);
     
     // Join new room
-    if (hubConnectionRef.current) {
-      hubConnectionRef.current.invoke("JoinRoom", session.id).catch(console.error);
+    if (conn && conn.state === signalR.HubConnectionState.Connected) {
+      try {
+        await conn.invoke("JoinRoom", session.id);
+      } catch (e) {
+        console.error("JoinRoom Error:", e);
+      }
     }
   };
 

@@ -6,6 +6,9 @@ using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Models;
 using System.Text;
 
+using Microsoft.AspNetCore.SignalR;
+using PolyBabyAPI.Hubs;
+
 namespace PolyBabyAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -14,11 +17,13 @@ namespace PolyBabyAPI.Controllers
     {
         private readonly IGeminiService _geminiService;
         private readonly ApplicationDbContext _dbContext;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatbotController(IGeminiService geminiService, ApplicationDbContext dbContext)
+        public ChatbotController(IGeminiService geminiService, ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext)
         {
             _geminiService = geminiService;
             _dbContext = dbContext;
+            _hubContext = hubContext;
         }
 
         [HttpPost("ask")]
@@ -57,6 +62,21 @@ namespace PolyBabyAPI.Controllers
                 _dbContext.ChatMessages.Add(userMsg);
                 await _dbContext.SaveChangesAsync();
 
+                // Broadcast user message via SignalR
+                var userMsgDto = new
+                {
+                    userMsg.Id,
+                    userMsg.ChatSessionId,
+                    userMsg.SenderId,
+                    userMsg.SenderName,
+                    userMsg.IsFromAdmin,
+                    userMsg.MessageText,
+                    userMsg.ImageUrl,
+                    userMsg.CreatedAt
+                };
+                await _hubContext.Clients.Group(request.SessionId).SendAsync("ReceiveMessage", userMsgDto);
+                await _hubContext.Clients.All.SendAsync("UpdateAdminSessions");
+
                 var responseText = await _geminiService.GenerateTextAsync(request.SessionId, request.Message);
 
                 // Save AI message
@@ -72,6 +92,21 @@ namespace PolyBabyAPI.Controllers
                 session.UpdatedAt = DateTime.Now;
                 session.LastMessageText = responseText.Length > 400 ? responseText.Substring(0, 400) : responseText;
                 await _dbContext.SaveChangesAsync();
+
+                // Broadcast AI message via SignalR
+                var aiMsgDto = new
+                {
+                    aiMsg.Id,
+                    aiMsg.ChatSessionId,
+                    aiMsg.SenderId,
+                    aiMsg.SenderName,
+                    aiMsg.IsFromAdmin,
+                    aiMsg.MessageText,
+                    aiMsg.ImageUrl,
+                    aiMsg.CreatedAt
+                };
+                await _hubContext.Clients.Group(request.SessionId).SendAsync("ReceiveMessage", aiMsgDto);
+                await _hubContext.Clients.All.SendAsync("UpdateAdminSessions");
 
                 return Ok(new { text = responseText });
             }
