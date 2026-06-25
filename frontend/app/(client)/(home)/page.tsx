@@ -61,7 +61,7 @@ export default function HomePageV2() {
         }
 
         // Fetch Best Sellers
-        const bestSellerData = await getProducts(1, 10, "", undefined, "RatingCount", "desc");
+        const bestSellerData = await getProducts(1, 10, "", undefined, "BestSeller", "desc");
         if (isMounted && bestSellerData?.items) {
           setBestSellerProducts(bestSellerData.items);
         }
@@ -88,7 +88,7 @@ export default function HomePageV2() {
           dataItems = await getBundlesAsProducts();
         } else {
           let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
-          if (initialTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+          if (initialTab === 'bestseller') { sortBy = "BestSeller"; sortDir = "desc"; }
           if (initialTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
           if (initialTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
           if (initialTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
@@ -145,7 +145,7 @@ export default function HomePageV2() {
         dataItems = await getBundlesAsProducts();
       } else {
         let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
-        if (tab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+        if (tab === 'bestseller') { sortBy = "BestSeller"; sortDir = "desc"; }
         if (tab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
         if (tab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
         if (tab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
@@ -186,7 +186,7 @@ export default function HomePageV2() {
         newHasMore = false;
       } else {
         let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
-        if (activeTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+        if (activeTab === 'bestseller') { sortBy = "BestSeller"; sortDir = "desc"; }
         if (activeTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
         if (activeTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
         if (activeTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }

@@ -115,6 +115,8 @@ namespace PolyBabyAPI.Services
                         "price" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
                         "code" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Code) : query.OrderByDescending(p => p.Code),
                         "categoryname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Category!.CategoryName) : query.OrderByDescending(p => p.Category!.CategoryName),
+                        "ratingcount" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => _context.Reviews.Count(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == p.ProductID)) : query.OrderByDescending(p => _context.Reviews.Count(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == p.ProductID)),
+                        "bestseller" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Variants.SelectMany(v => v.InvoiceDetails.Where(id => id.Invoice.Status == OrderStatus.Completed)).Sum(id => (int?)id.Quantity) ?? 0) : query.OrderByDescending(p => p.Variants.SelectMany(v => v.InvoiceDetails.Where(id => id.Invoice.Status == OrderStatus.Completed)).Sum(id => (int?)id.Quantity) ?? 0),
                         _ => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt)
                     };
                 }
