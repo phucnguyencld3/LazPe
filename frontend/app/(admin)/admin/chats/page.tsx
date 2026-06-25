@@ -103,7 +103,10 @@ export default function AdminChatsPage() {
   // Load chat sessions on mount & setup SignalR
   useEffect(() => {
     loadSessions();
-    setupSignalR();
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (token) {
+      setupSignalR(token);
+    }
     fetchCurrentAdmin();
 
     return () => {
@@ -175,12 +178,16 @@ export default function AdminChatsPage() {
     }
   };
 
-  const setupSignalR = () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) return;
+  const setupSignalR = async (token: string) => {
+    if (hubConnectionRef.current) {
+      await hubConnectionRef.current.stop();
+    }
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_BASE}/chatHub?access_token=${token}`)
+      .withUrl(`${API_BASE}/chatHub?access_token=${token}`, {
+        // Force SSE/LongPolling to bypass Cloudflare/Antivirus WebSocket frame corruption (Opcode 11)
+        transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+      })
       .withAutomaticReconnect()
       .build();
 

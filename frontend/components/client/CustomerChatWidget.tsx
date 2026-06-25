@@ -261,7 +261,9 @@ export default function CustomerChatWidget() {
       : `${API_BASE}/chatHub`;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl)
+      .withUrl(hubUrl, {
+        transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+      })
       .withAutomaticReconnect()
       .build();
 
