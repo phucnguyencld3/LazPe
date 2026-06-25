@@ -103,7 +103,8 @@ export default function AdminLayout({
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
-        accessTokenFactory: () => token
+        accessTokenFactory: () => token,
+        transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
       })
       .withAutomaticReconnect()
       .build();
