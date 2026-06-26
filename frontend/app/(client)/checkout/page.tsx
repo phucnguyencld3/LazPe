@@ -58,7 +58,7 @@ export default function CheckoutPage() {
 
   // Voucher Modal state
   const [voucherModalOpen, setVoucherModalOpen] = useState(false);
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [vouchers, setVouchers] = useState<any[]>([]);
   const [loadingVouchers, setLoadingVouchers] = useState(false);
 
   // Pricing states

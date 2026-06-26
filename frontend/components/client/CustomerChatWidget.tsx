@@ -453,7 +453,7 @@ export default function CustomerChatWidget() {
     setInputText("");
 
     if (isAiMode) {
-      setAiMessageQueue(prev => [...prev, { id: tempId, text: tempMsg.messageText }]);
+      setAiMessageQueue(prev => [...prev, { id: tempId, text: tempMsg.messageText || "" }]);
     } else {
       sendMessageToAdmin(tempMsg);
     }

@@ -246,20 +246,20 @@ export const bulkMarkShippedOrders = async (token: string, invoiceIds: number[])
 export const exportOrdersToExcel = async (
   token: string,
   search?: string,
-  status?: number,
+  status?: number | null,
   sortBy?: string,
   desc?: boolean,
-  minPrice?: number,
-  maxPrice?: number,
+  minPrice?: number | null,
+  maxPrice?: number | null,
   dateRange?: any
 ): Promise<Blob> => {
   const queryParams = new URLSearchParams();
   if (search) queryParams.append('search', search);
-  if (status !== undefined) queryParams.append('status', status.toString());
+  if (status !== undefined && status !== null) queryParams.append('status', status.toString());
   if (sortBy) queryParams.append('sortBy', sortBy);
   if (desc !== undefined) queryParams.append('desc', desc.toString());
-  if (minPrice !== undefined) queryParams.append('minPrice', minPrice.toString());
-  if (maxPrice !== undefined) queryParams.append('maxPrice', maxPrice.toString());
+  if (minPrice !== undefined && minPrice !== null) queryParams.append('minPrice', minPrice.toString());
+  if (maxPrice !== undefined && maxPrice !== null) queryParams.append('maxPrice', maxPrice.toString());
   if (dateRange?.from) queryParams.append('startDate', dateRange.from.toISOString());
   if (dateRange?.to) queryParams.append('endDate', dateRange.to.toISOString());
 

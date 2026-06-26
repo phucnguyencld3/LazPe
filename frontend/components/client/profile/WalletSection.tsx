@@ -248,7 +248,7 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
                 </div>
               ) : (
                 transactions.map((tx) => (
-                  <div key={tx.id || Math.random()} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
+                  <div key={tx.transactionID || Math.random()} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-full ${tx.direction === 2 ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}>
                         <Wallet className="h-4 w-4" />

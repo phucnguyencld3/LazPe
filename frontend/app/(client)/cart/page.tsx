@@ -43,7 +43,7 @@ export default function CartPage() {
   
   // Voucher States
   const [voucherCodeInput, setVoucherCodeInput] = useState("");
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [vouchers, setVouchers] = useState<any[]>([]);
   const [voucherModalOpen, setVoucherModalOpen] = useState(false);
   const [loadingVouchers, setLoadingVouchers] = useState(false);
 
