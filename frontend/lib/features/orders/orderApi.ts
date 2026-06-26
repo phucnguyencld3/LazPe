@@ -11,6 +11,10 @@ export interface OrderInfo {
   userPhone: string | null;
   subTotal: number;
   discountAmount: number;
+  voucherDiscountAmount?: number;
+  pointsDiscountAmount?: number;
+  coinsDiscountAmount?: number;
+  walletDiscountAmount?: number;
   totalPrice: number;
   shippingFee: number;
   shippingAddress: string | null;

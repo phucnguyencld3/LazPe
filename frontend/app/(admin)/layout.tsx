@@ -743,6 +743,14 @@ export default function AdminLayout({
                     {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chương trình Loyalty</span>}
                   </Link>
                 )}
+                <Link
+                  href="/admin/withdrawals"
+                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/withdrawals") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                  title={!isSidebarExpanded ? "Quản lý Rút tiền" : undefined}
+                >
+                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">account_balance</span>
+                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Quản lý Rút tiền</span>}
+                </Link>
                 {hasPermission("Banner.Read") && (
                   <Link
                     href="/admin/banners"

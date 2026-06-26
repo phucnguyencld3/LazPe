@@ -69,6 +69,8 @@ namespace PolyBabyAPI.DTOs
         public int? ChildAgeMonths { get; set; }
         public double? ChildWeightKg { get; set; }
         public bool IsOnboarded { get; set; }
+        public decimal WalletBalance { get; set; }
+        public decimal CoinsBalance { get; set; }
     }
 
     /// <summary>

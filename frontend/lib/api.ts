@@ -322,9 +322,10 @@ export async function getPublicVouchers(): Promise<Voucher[] | null> {
   }
 }
 
-export async function getCheckoutAvailableVouchers(token: string): Promise<Voucher[] | null> {
+// Lấy danh sách Voucher của người dùng
+export async function getCheckoutAvailableVouchers(token: string): Promise<UserWalletVoucher[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/vouchers/checkout-available`, {
+    const response = await fetch(`${API_BASE_URL}/Vouchers/wallet/checkout-available`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -333,16 +334,132 @@ export async function getCheckoutAvailableVouchers(token: string): Promise<Vouch
     });
 
     if (!response.ok) {
-      console.error("Failed to fetch checkout available vouchers:", response.statusText);
-      return null;
+      console.warn("Failed to fetch checkout available vouchers:", response.statusText);
+      return [];
     }
 
-    const data = await response.json();
-    return data || [];
+    return await response.json();
   } catch (error) {
     console.error("Error fetching checkout available vouchers:", error);
-    return null;
+    return [];
   }
+}
+
+// ==========================================
+// WITHDRAW & BALANCE APIs
+// ==========================================
+
+export interface WithdrawRequest {
+  requestID: number;
+  userID: string;
+  amount: number;
+  bankName: string;
+  bankAccount: string;
+  bankOwnerName: string;
+  status: string;
+  adminNote?: string;
+  createdAt: string;
+  processedAt?: string;
+  user?: {
+    fullName: string;
+    email: string;
+  };
+}
+
+export interface BalanceTransaction {
+  transactionID: number;
+  userID: string;
+  invoiceID?: number;
+  amount: number;
+  direction: number; // 1 = Credit (Cộng), 2 = Debit (Trừ)
+  sourceType: number; // 1 = SystemWallet, 2 = LazPeCoins
+  reason?: string;
+  idempotencyKey?: string;
+  createdAt: string;
+}
+
+export async function createWithdrawRequest(
+  data: { amount: number; bankName: string; bankAccount: string; bankOwnerName: string },
+  token: string
+) {
+  const response = await fetch(`${API_BASE_URL}/Withdraw`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Không thể tạo yêu cầu rút tiền.");
+  }
+  return await response.json();
+}
+
+export async function getMyWithdrawRequests(token: string): Promise<WithdrawRequest[]> {
+  const response = await fetch(`${API_BASE_URL}/Withdraw`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export async function getBalanceHistory(token: string): Promise<BalanceTransaction[]> {
+  const response = await fetch(`${API_BASE_URL}/Withdraw/balance-history`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export async function getAllWithdrawRequests(token: string, status?: string): Promise<WithdrawRequest[]> {
+  let url = `${API_BASE_URL}/Withdraw/admin/all`;
+  if (status) {
+    url += `?status=${status}`;
+  }
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export async function processWithdrawRequest(
+  id: number,
+  data: { isApproved: boolean; adminNote: string },
+  token: string
+) {
+  const response = await fetch(`${API_BASE_URL}/Withdraw/admin/process/${id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Lỗi xử lý rút tiền");
+  }
+  return await response.json();
 }
 
 export async function collectVoucher(id: number): Promise<{ success: boolean; message: string }> {
@@ -388,6 +505,8 @@ export interface UserProfile {
   childAgeMonths?: number | null;
   childWeightKg?: number | null;
   isOnboarded?: boolean;
+  walletBalance?: number;
+  coinsBalance?: number;
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
@@ -1221,7 +1340,11 @@ export async function createInvoiceFromCart(
   payMethod: number | null,
   addressId: number | null,
   selectedCartDetailIds: number[],
-  pointsToUse: number = 0
+  pointsToUse: number = 0,
+  useCoins: boolean = false,
+  coinsToUse: number = 0,
+  useWallet: boolean = false,
+  walletToUse: number = 0
 ): Promise<{ success: boolean; message?: string; paymentUrl?: string; data?: any }> {
   try {
     const params = new URLSearchParams();
@@ -1230,9 +1353,6 @@ export async function createInvoiceFromCart(
     }
     if (addressId !== null) {
       params.append("addressId", addressId.toString());
-    }
-    if (pointsToUse > 0) {
-      params.append("pointsToUse", pointsToUse.toString());
     }
 
     const getDeviceId = () => {
@@ -1254,6 +1374,12 @@ export async function createInvoiceFromCart(
       },
       body: JSON.stringify({
         SelectedCartDetailIds: selectedCartDetailIds,
+        UsePoints: pointsToUse > 0,
+        PointsToUse: pointsToUse,
+        UseCoins: useCoins,
+        CoinsToUse: coinsToUse,
+        UseWallet: useWallet,
+        WalletToUse: walletToUse
       }),
     });
 

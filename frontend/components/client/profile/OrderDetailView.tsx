@@ -6,7 +6,7 @@ import {
   retryVnPayPayment
 } from "@/lib/api";
 import { toast } from "@/lib/toast";
-import { Loader, ArrowLeft, CheckCircle, HelpCircle, XCircle, Info, Copy, ClipboardCheck, X, AlertTriangle } from "lucide-react";
+import { Loader, ArrowLeft, CheckCircle, HelpCircle, XCircle, Info, Copy, ClipboardCheck, X, AlertTriangle, FileText, Wallet, Coins } from "lucide-react";
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -27,9 +27,13 @@ export function OrderDetailView({
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRefundPolicyModal, setShowRefundPolicyModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [selectedReason, setSelectedReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState<"wallet" | "coins">("wallet");
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [autoApproveCountdown, setAutoApproveCountdown] = useState<number | null>(null);
 
   const fetchOrder = async () => {
     setLoading(true);
@@ -84,18 +88,28 @@ export function OrderDetailView({
 
   const handleCancelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cancelReason.trim()) {
-      toast.error("Vui lòng nhập lý do hủy đơn hàng.");
+    const finalReason = selectedReason === "other" || !selectedReason ? cancelReason : selectedReason;
+    
+    if (!finalReason.trim()) {
+      toast.error("Vui lòng chọn hoặc nhập lý do hủy đơn hàng.");
       return;
     }
 
+    // Determine if order is prepaid or VNPay and needs a refund option
+    const isPrepaid = order?.paymentStatus === 'Paid' || (order?.payMethodCode !== 1 && order?.statusCode > 0) || order?.payMethod?.toLowerCase().includes("ví lazpe") || order?.payMethodCode === 3;
+    const reasonPayload = isPrepaid ? `[Hoàn tiền về: ${refundMethod === 'wallet' ? 'Ví LazPe' : 'Xu LazPe'}] ${finalReason}` : finalReason;
+
     setActionLoading(true);
     try {
-      const res = await requestCancelOrder(orderId, token, cancelReason);
+      const res = await requestCancelOrder(orderId, token, reasonPayload);
       if (res.success) {
         toast.success(res.message || "Hủy đơn hàng thành công!");
         setShowCancelModal(false);
         setCancelReason("");
+        setSelectedReason("");
+        if (isPrepaid) {
+          setAutoApproveCountdown(60);
+        }
         await fetchOrder();
         if (onStatusUpdated) onStatusUpdated();
       } else {
@@ -185,6 +199,24 @@ export function OrderDetailView({
     return () => clearInterval(intervalId);
   }, [order?.invoiceID, order?.statusCode, isVnPay]);
 
+  // Auto approve countdown effect
+  useEffect(() => {
+    if (autoApproveCountdown === null || autoApproveCountdown <= 0) return;
+    
+    const intervalId = setInterval(() => {
+      setAutoApproveCountdown((prev) => {
+        if (prev && prev <= 1) {
+          clearInterval(intervalId);
+          fetchOrder();
+          return 0;
+        }
+        return prev ? prev - 1 : 0;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [autoApproveCountdown]);
+
   const formatTimeLeft = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -234,30 +266,30 @@ export function OrderDetailView({
     <div className="space-y-6">
       {/* Navigation Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="space-y-1">
+        <div className="space-y-1 flex-1">
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-primary transition-colors mb-2"
           >
             <ArrowLeft size={14} /> Quay lại danh sách đơn hàng
           </button>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-              Chi tiết đơn hàng <span className="text-primary">#{order.invoiceCode || order.invoiceID}</span>
-            </h1>
-            {isExpired ? (
-              <span className="px-3 py-1 text-xs font-bold border rounded-full text-rose-800 bg-rose-50 border-rose-300">
-                Đã hủy (Quá hạn)
-              </span>
-            ) : (
-              <span className={`px-3 py-1 text-xs font-bold border rounded-full ${getStatusColor(order.statusCode)}`}>
-                {order.status}
-              </span>
-            )}
-          </div>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+            Chi tiết đơn hàng <span className="text-primary">#{order.invoiceCode}</span>
+          </h1>
           <p className="text-xs text-slate-400 font-semibold">
             Ngày đặt hàng: {formatDate(order.createdAt)}
           </p>
+        </div>
+        <div className="shrink-0">
+          {isExpired ? (
+            <span className="px-4 py-1.5 text-sm font-bold border rounded-lg text-rose-800 bg-rose-50 border-rose-300">
+              Đã hủy (Quá hạn)
+            </span>
+          ) : (
+            <span className={`px-4 py-1.5 text-sm font-bold border rounded-lg ${getStatusColor(order.statusCode)}`}>
+              {order.status}
+            </span>
+          )}
         </div>
 
         {/* Action Buttons in Header */}
@@ -324,21 +356,30 @@ export function OrderDetailView({
       {/* Timeline or Cancel Alert */}
       {!isTimelineVisible ? (
         !isExpired && (
-          <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-start gap-4">
-            <XCircle className="text-rose-500 shrink-0 mt-0.5" size={24} />
-            <div className="space-y-1">
-              <h3 className="font-bold text-rose-800 text-sm md:text-base">
-                {order.statusCode === 4 ? "Đang chờ duyệt hủy đơn hàng" : "Đơn hàng đã được hủy thành công"}
-              </h3>
-              <p className="text-xs text-rose-700/80 font-medium">
-                Thời gian cập nhật: {formatDate(order.cancelledAt || order.createdAt)}
-              </p>
-              {order.cancelReason && (
-                <p className="text-xs md:text-sm text-rose-700 bg-rose-100/50 px-3 py-2 rounded-xl mt-2 italic font-semibold">
+          <div className="bg-white border border-rose-100 shadow-sm p-5 rounded-2xl flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+            <div className="flex items-start gap-4 md:w-1/3 shrink-0">
+              <XCircle className="text-rose-500 shrink-0 mt-0.5" size={24} />
+              <div className="space-y-1">
+                <h3 className="font-bold text-rose-800 text-sm md:text-base flex items-center gap-2">
+                  {order.statusCode === 4 ? "Đang chờ duyệt hủy đơn hàng" : "Đơn hàng đã được hủy thành công"}
+                  {order.statusCode === 4 && autoApproveCountdown !== null && autoApproveCountdown > 0 && (
+                    <span className="text-xs px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full font-bold animate-pulse">
+                      Tự động duyệt sau: {autoApproveCountdown}s
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-rose-700/80 font-medium">
+                  Thời gian cập nhật: {formatDate(order.cancelledAt || order.createdAt)}
+                </p>
+              </div>
+            </div>
+            {order.cancelReason && (
+              <div className="md:border-l border-t md:border-t-0 border-rose-100 pt-3 md:pt-0 md:pl-6 md:w-2/3">
+                <p className="text-xs md:text-sm text-rose-700 italic font-semibold">
                   Lý do hủy: "{order.cancelReason}"
                 </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )
       ) : (
@@ -634,10 +675,46 @@ export function OrderDetailView({
                 <span className="text-slate-700 font-bold">{formatPrice(order.shippingFee)}</span>
               </div>
 
-              {order.discountAmount > 0 && (
-                <div className="flex justify-between items-center text-secondary font-bold">
+              {order.voucherDiscountAmount > 0 && (
+                <div className="flex justify-between items-center text-rose-500 font-bold">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">confirmation_number</span> Voucher giảm giá
+                  </span>
+                  <span>-{formatPrice(order.voucherDiscountAmount)}</span>
+                </div>
+              )}
+              
+              {order.pointsDiscountAmount > 0 && (
+                <div className="flex justify-between items-center text-amber-500 font-bold">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">military_tech</span> Điểm tích lũy
+                  </span>
+                  <span>-{formatPrice(order.pointsDiscountAmount)}</span>
+                </div>
+              )}
+
+              {order.coinsDiscountAmount > 0 && (
+                <div className="flex justify-between items-center text-orange-500 font-bold">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">monetization_on</span> LazPe Coins
+                  </span>
+                  <span>-{formatPrice(order.coinsDiscountAmount)}</span>
+                </div>
+              )}
+
+              {order.walletDiscountAmount > 0 && (
+                <div className="flex justify-between items-center text-teal-600 font-bold">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">account_balance_wallet</span> Trừ Ví LazPe
+                  </span>
+                  <span>-{formatPrice(order.walletDiscountAmount)}</span>
+                </div>
+              )}
+
+              {(order.discountAmount > 0 && !order.voucherDiscountAmount && !order.pointsDiscountAmount && !order.coinsDiscountAmount && !order.walletDiscountAmount) && (
+                <div className="flex justify-between items-center text-rose-500 font-bold">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">confirmation_number</span> Giảm giá
                   </span>
                   <span>-{formatPrice(order.discountAmount)}</span>
                 </div>
@@ -687,13 +764,19 @@ export function OrderDetailView({
 
       {/* Cancel Order Dialog Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
-            style={{ width: '448px', maxWidth: 'calc(100vw - 32px)' }}
+            className={`bg-slate-50 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 shrink-0 w-full ${
+              (order?.paymentStatus === 'Paid' || (order?.payMethodCode !== 1 && order?.statusCode > 0) || order?.payMethod?.toLowerCase().includes("ví lazpe") || order?.payMethodCode === 3)
+                ? "max-w-4xl"
+                : "max-w-xl"
+            }`}
           >
-            <div className="flex justify-between items-center">
-              <h3 className="text-base sm:text-lg font-bold text-slate-800">Yêu cầu hủy đơn hàng</h3>
+            <div className="bg-white p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                <AlertTriangle className="text-rose-500 h-5 w-5" />
+                Yêu cầu hủy đơn hàng
+              </h3>
               <button
                 onClick={() => setShowCancelModal(false)}
                 className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
@@ -702,44 +785,243 @@ export function OrderDetailView({
               </button>
             </div>
 
-            <form onSubmit={handleCancelSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                  Lý do hủy đơn hàng
-                </label>
-                <textarea
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng để cải thiện dịch vụ..."
-                  rows={4}
-                  maxLength={500}
-                  className="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary text-sm font-semibold placeholder-slate-400"
-                  required
-                />
-                <p className="text-[10px] text-right text-slate-400 font-semibold">
-                  {cancelReason.length}/500 ký tự
-                </p>
+            <form onSubmit={handleCancelSubmit} className="p-5 sm:p-6">
+              <div className={`grid gap-6 ${(order?.paymentStatus === 'Paid' || (order?.payMethodCode !== 1 && order?.statusCode > 0) || order?.payMethod?.toLowerCase().includes("ví lazpe") || order?.payMethodCode === 3) ? "md:grid-cols-2" : "grid-cols-1"}`}>
+                
+                {/* Left Column: Refund Method (Only for prepaid orders) */}
+                {(order?.paymentStatus === 'Paid' || (order?.payMethodCode !== 1 && order?.statusCode > 0) || order?.payMethod?.toLowerCase().includes("ví lazpe") || order?.payMethodCode === 3) && (
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 mb-1">Hình thức hoàn tiền</h4>
+                      <p className="text-xs text-slate-500 font-medium mb-4">
+                        Vui lòng chọn nơi bạn muốn nhận lại tiền hoàn.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className={`block relative p-4 rounded-xl border-2 cursor-pointer transition-all ${refundMethod === 'wallet' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="wallet"
+                          checked={refundMethod === "wallet"}
+                          onChange={() => setRefundMethod("wallet")}
+                          className="absolute opacity-0 w-0 h-0"
+                        />
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${refundMethod === 'wallet' ? 'border-emerald-500' : 'border-slate-300'}`}>
+                            {refundMethod === 'wallet' && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+                          </div>
+                          <div>
+                            <span className="block text-sm font-bold text-slate-800">Hoàn vào Ví LazPe</span>
+                            <span className="block text-xs text-slate-500 mt-0.5 font-medium">Nhận tiền hoàn tức thì, có thể rút về ngân hàng. (Khuyên dùng)</span>
+                          </div>
+                        </div>
+                      </label>
+
+                      <label className={`block relative p-4 rounded-xl border-2 cursor-pointer transition-all ${refundMethod === 'coins' ? 'border-amber-500 bg-amber-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="coins"
+                          checked={refundMethod === "coins"}
+                          onChange={() => setRefundMethod("coins")}
+                          className="absolute opacity-0 w-0 h-0"
+                        />
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${refundMethod === 'coins' ? 'border-amber-500' : 'border-slate-300'}`}>
+                            {refundMethod === 'coins' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                          </div>
+                          <div>
+                            <span className="block text-sm font-bold text-slate-800">Hoàn thành Xu LazPe</span>
+                            <span className="block text-xs text-slate-500 mt-0.5 font-medium">Nhận ngay lập tức, dùng để giảm giá cho các đơn hàng tiếp theo.</span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onClick={() => setShowRefundPolicyModal(true)} 
+                      className="mt-4 text-[12px] font-bold text-primary hover:underline flex items-center gap-1.5 transition-all w-fit px-2 py-1.5 rounded-lg hover:bg-primary/5"
+                    >
+                      <Info className="w-4 h-4" />
+                      Xem chính sách hoàn tiền
+                    </button>
+                  </div>
+                )}
+
+                {/* Right Column: Cancel Reason */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 mb-1">Lý do hủy đơn hàng</h4>
+                    <p className="text-xs text-slate-500 font-medium mb-4">
+                      Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {[
+                      "Tôi muốn cập nhật địa chỉ/sđt giao hàng.",
+                      "Tôi muốn thêm/thay đổi Mã giảm giá.",
+                      "Tôi muốn thay đổi sản phẩm (Màu sắc, kích thước, số lượng).",
+                      "Thủ tục thanh toán quá rắc rối.",
+                      "Tôi tìm thấy giá rẻ hơn ở nơi khác.",
+                      "Đổi ý, không muốn mua nữa."
+                    ].map((reason) => (
+                      <label key={reason} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
+                        <input
+                          type="radio"
+                          name="cancelReason"
+                          value={reason}
+                          checked={selectedReason === reason}
+                          onChange={(e) => {
+                            setSelectedReason(e.target.value);
+                            setCancelReason("");
+                          }}
+                          className="mt-1 w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded cursor-pointer shrink-0"
+                        />
+                        <span className="text-sm text-slate-700 font-medium">{reason}</span>
+                      </label>
+                    ))}
+
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        value="other"
+                        checked={selectedReason === "other"}
+                        onChange={(e) => setSelectedReason(e.target.value)}
+                        className="mt-1 w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded cursor-pointer shrink-0"
+                      />
+                      <span className="text-sm text-slate-700 font-medium">Lý do khác...</span>
+                    </label>
+                  </div>
+
+                  {selectedReason === "other" && (
+                    <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
+                      <textarea
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        placeholder="Vui lòng nhập lý do cụ thể của bạn..."
+                        rows={3}
+                        maxLength={500}
+                        className="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-medium placeholder-slate-400 transition-all bg-white"
+                        required={selectedReason === "other"}
+                      />
+                      <p className="text-[10px] text-right text-slate-400 font-semibold mt-1">
+                        {cancelReason.length}/500 ký tự
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-3 justify-end pt-2">
+              <div className="flex gap-3 justify-end mt-6 pt-5 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowCancelModal(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors"
+                  className="px-5 py-2.5 border-2 border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-colors"
                   disabled={actionLoading}
                 >
-                  Bỏ qua
+                  Không, giữ lại đơn
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm shadow-rose-600/20 active:scale-[0.98]"
                   disabled={actionLoading}
                 >
-                  {actionLoading ? <Loader size={12} className="animate-spin" /> : null}
-                  Xác nhận hủy
+                  {actionLoading ? <Loader size={16} className="animate-spin" /> : null}
+                  Xác nhận hủy đơn
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Policy Modal */}
+      {showRefundPolicyModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div 
+            className={`bg-white rounded-3xl shadow-2xl flex flex-col w-full relative animate-in zoom-in-95 duration-200 border-t-8 border-t-primary ${
+              (order?.paymentStatus === 'Paid' || (order?.payMethodCode !== 1 && order?.statusCode > 0) || order?.payMethod?.toLowerCase().includes("ví lazpe") || order?.payMethodCode === 3)
+                ? "max-w-4xl"
+                : "max-w-xl"
+            }`}
+          >
+            {/* Paper texture/look */}
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+            
+            <div className="relative p-6 sm:p-8">
+              <button
+                onClick={() => setShowRefundPolicyModal(false)}
+                className="absolute top-4 right-4 p-1.5 hover:bg-slate-200/50 rounded-full text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex flex-col items-center mb-6 text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3 text-primary">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-wider font-serif">
+                  Chính sách hoàn tiền
+                </h3>
+                <div className="w-16 h-1 bg-primary/20 rounded-full mt-3"></div>
+              </div>
+
+              <div className="space-y-6 text-sm text-slate-600 leading-relaxed font-medium">
+                <div className="flex gap-4">
+                  <div className="shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                      <Wallet className="w-4 h-4 text-emerald-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 uppercase tracking-wide mb-1.5">Hoàn tiền vào Ví LazPe</h4>
+                    <div className="space-y-1.5 text-[13px]">
+                      <p><strong className="text-slate-700">Thời gian hoàn:</strong> 1-24 giờ làm việc kể từ khi yêu cầu được phê duyệt.</p>
+                      <p><strong className="text-slate-700">Chi tiết:</strong> Số tiền hoàn lại sẽ được tự động ghi có vào số dư Ví LazPe của Quý khách. Số dư này có thể được sử dụng để thanh toán tức thì cho các đơn hàng tiếp theo, hoặc Quý khách có thể thao tác rút tiền về tài khoản ngân hàng cá nhân đã liên kết. Thời gian xử lý lệnh rút tiền sẽ tuân thủ theo quy định của ngân hàng thụ hưởng (thường mất 1-3 ngày làm việc).</p>
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="border-slate-200/60 border-dashed" />
+
+                <div className="flex gap-4">
+                  <div className="shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
+                      <Coins className="w-4 h-4 text-amber-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 uppercase tracking-wide mb-1.5">Hoàn trả Xu LazPe</h4>
+                    <div className="space-y-1.5 text-[13px]">
+                      <p><strong className="text-slate-700">Thời gian hoàn:</strong> Tự động hoàn ngay lập tức.</p>
+                      <p><strong className="text-slate-700">Chi tiết:</strong> Toàn bộ số lượng Xu LazPe đã sử dụng cho đơn hàng sẽ được hoàn trả nguyên vẹn vào tài khoản của Quý khách. Xu LazPe có giá trị quy đổi (<strong className="text-amber-600">1 Xu = 1 VNĐ</strong>) và chỉ có tác dụng áp dụng ưu đãi giảm giá trực tiếp cho các giao dịch mua sắm trên nền tảng. <br/><span className="text-rose-500 italic mt-1 inline-block">*Lưu ý: Xu LazPe không có giá trị quy đổi thành tiền mặt hoặc rút về tài khoản ngân hàng dưới mọi hình thức.</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-5 border-t border-slate-200/60">
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-[11px] text-slate-400 font-medium text-center italic">
+                    Chính sách hoàn tiền được áp dụng theo quy định hiện hành và tuân thủ tuyệt đối <br className="hidden sm:block"/>
+                    <strong className="text-slate-500 font-semibold">Luật số 122/2025/QH15 của Quốc hội: Luật Thương mại điện tử</strong>.
+                  </p>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setShowRefundPolicyModal(false)}
+                    className="px-8 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-slate-900/20 transition-all active:scale-95"
+                  >
+                    Đã hiểu
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

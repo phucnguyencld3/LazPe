@@ -15,7 +15,8 @@ import {
   CartInfo,
   CartDetailInfo,
   LoyaltyPolicySummaryResponse,
-  normalizeName
+  normalizeName,
+  getUserProfile
 } from "@/lib/api";
 import { getCurrentFlashSale } from "@/lib/features/flash-sales/flashSaleApi";
 
@@ -77,6 +78,14 @@ export default function CheckoutPage() {
   const [isApplyingPoints, setIsApplyingPoints] = useState<boolean>(false);
   const [loyaltyPolicySummary, setLoyaltyPolicySummary] = useState<LoyaltyPolicySummaryResponse | null>(null);
   const [estimatedEarnPoints, setEstimatedEarnPoints] = useState<number>(0);
+
+  // Wallet & Coins states
+  const [useWallet, setUseWallet] = useState(false);
+  const [useCoins, setUseCoins] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [coinsBalance, setCoinsBalance] = useState(0);
+  const [walletDiscount, setWalletDiscount] = useState(0);
+  const [coinsDiscount, setCoinsDiscount] = useState(0);
 
   // Check auth and init
   useEffect(() => {
@@ -184,8 +193,24 @@ export default function CheckoutPage() {
     }
     setShippingDiscountAmount(shipDiscount);
 
-    setTotalPrice(sum + ship - discount - currentLoyaltyDiscount - shipDiscount);
-  }, [selectedItems, cart, loyaltyDiscount]);
+    let totalAfterLoyalty = sum + ship - discount - currentLoyaltyDiscount - shipDiscount;
+
+    let cDiscount = 0;
+    if (useCoins) {
+      cDiscount = Math.min(coinsBalance, totalAfterLoyalty);
+      totalAfterLoyalty -= cDiscount;
+    }
+    setCoinsDiscount(cDiscount);
+
+    let wDiscount = 0;
+    if (useWallet) {
+      wDiscount = Math.min(walletBalance, totalAfterLoyalty);
+      totalAfterLoyalty -= wDiscount;
+    }
+    setWalletDiscount(wDiscount);
+
+    setTotalPrice(totalAfterLoyalty);
+  }, [selectedItems, cart, loyaltyDiscount, useCoins, useWallet, coinsBalance, walletBalance]);
 
   useEffect(() => {
     const policy = loyaltyPolicySummary?.earnPolicy;
@@ -286,6 +311,17 @@ export default function CheckoutPage() {
         }
       } catch (e) {
         console.error("Error fetching loyalty profile:", e);
+      }
+
+      // 4. Fetch User Profile for Wallet & Coins
+      try {
+        const userProfile = await getUserProfile(uid, authToken);
+        if (userProfile) {
+          setWalletBalance(userProfile.walletBalance || 0);
+          setCoinsBalance(userProfile.coinsBalance || 0);
+        }
+      } catch (e) {
+        console.error("Error fetching user profile:", e);
       }
     } catch (error) {
       console.error("Initialization error:", error);
@@ -484,7 +520,11 @@ export default function CheckoutPage() {
         payMethod,
         selectedAddress.addressID,
         selectedIds,
-        pointsToUse
+        pointsToUse,
+        useCoins,
+        coinsDiscount,
+        useWallet,
+        walletDiscount
       );
 
       if (res.success && res.data) {
@@ -578,9 +618,17 @@ export default function CheckoutPage() {
             earnPolicy={loyaltyPolicySummary?.earnPolicy || null}
             redeemPolicy={loyaltyPolicySummary?.redeemPolicy || null}
             estimatedEarnPoints={estimatedEarnPoints}
-            handleOpenVoucherModal={handleOpenVoucherModal}
+            handleOpenVoucherModal={() => setVoucherModalOpen(true)}
             handleAutoApplyVouchers={handleAutoApplyVouchers}
             handleRemoveVoucher={handleRemoveVoucher}
+            useWallet={useWallet}
+            setUseWallet={setUseWallet}
+            useCoins={useCoins}
+            setUseCoins={setUseCoins}
+            walletBalance={walletBalance}
+            coinsBalance={coinsBalance}
+            walletDiscount={walletDiscount}
+            coinsDiscount={coinsDiscount}
           />
         </div>
 

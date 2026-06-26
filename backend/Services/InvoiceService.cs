@@ -119,7 +119,7 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== Tạo hóa đơn từ giỏ hàng (có voucher) ========
-        public async Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, List<int>? selectedCartDetailIds = null, UserAddress? userAddress = null, int pointsToUse = 0)
+        public async Task<Invoice> CreateFromCartAsync(int cartId, PayMethod? payMethod, string shippingAddress, UserAddress? userAddress = null, PolyBabyAPI.DTOs.InvoiceDtos.CheckoutRequestDto? request = null)
         {
             var cart = await _context.Carts
                 .Include(c => c.CartDetails)
@@ -129,15 +129,17 @@ namespace PolyBabyAPI.Services
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher) // ✅ Include Voucher từ Cart
                 .Include(c => c.ShippingVoucher) // Include ShippingVoucher từ Cart
+                .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
 
-            if (cart == null)
+            if (cart == null || cart.User == null)
                 throw new InvalidOperationException("Không tìm thấy giỏ hàng.");
 
             if (cart.CartDetails == null || !cart.CartDetails.Any())
                 throw new InvalidOperationException("Giỏ hàng trống.");
 
             // Xác định items cần checkout
+            var selectedCartDetailIds = request?.SelectedCartDetailIds;
             var itemsToCheckout = selectedCartDetailIds != null && selectedCartDetailIds.Count > 0
                 ? cart.CartDetails.Where(cd => selectedCartDetailIds.Contains(cd.CartDetailID)).ToList()
                 : cart.CartDetails.ToList();
@@ -192,19 +194,44 @@ namespace PolyBabyAPI.Services
             }
 
             // ✅ Kiểm tra và áp dụng Loyalty Points nếu có
-            decimal pointsDiscount = 0;
-            if (pointsToUse > 0)
+            decimal pointsDiscountAmount = 0;
+            if (request != null && request.UsePoints && request.PointsToUse > 0)
             {
-                var isPointsValid = await _loyaltyService.ValidatePointsRedemptionAsync(cart.UserID, pointsToUse, subTotal - discountAmount);
+                var isPointsValid = await _loyaltyService.ValidatePointsRedemptionAsync(cart.UserID, request.PointsToUse, subTotal - discountAmount);
                 if (!isPointsValid)
                 {
                     throw new InvalidOperationException("Số điểm quy đổi sử dụng không hợp lệ hoặc vượt quá số dư khả dụng.");
                 }
-                pointsDiscount = await _loyaltyService.CalculateRedemptionDiscountAsync(cart.UserID, pointsToUse);
+                pointsDiscountAmount = await _loyaltyService.CalculateRedemptionDiscountAsync(cart.UserID, request.PointsToUse);
             }
 
+            decimal remainAfterVoucherAndPoints = subTotal - discountAmount - pointsDiscountAmount;
+            if (remainAfterVoucherAndPoints < 0) remainAfterVoucherAndPoints = 0;
+
+            decimal coinsDiscountAmount = 0;
+            if (request != null && request.UseCoins && request.CoinsToUse > 0)
+            {
+                if (cart.User.CoinsBalance < request.CoinsToUse)
+                    throw new InvalidOperationException("Số dư xu không đủ.");
+                
+                coinsDiscountAmount = Math.Min(request.CoinsToUse, remainAfterVoucherAndPoints);
+            }
+
+            decimal remainAfterCoins = remainAfterVoucherAndPoints - coinsDiscountAmount;
+            
+            decimal walletDiscountAmount = 0;
+            if (request != null && request.UseWallet && request.WalletToUse > 0)
+            {
+                if (cart.User.WalletBalance < request.WalletToUse)
+                    throw new InvalidOperationException("Số dư ví không đủ.");
+                
+                walletDiscountAmount = Math.Min(request.WalletToUse, remainAfterCoins);
+            }
+
+            decimal totalDiscount = discountAmount + pointsDiscountAmount + coinsDiscountAmount + walletDiscountAmount;
+
             // ✅ Tính phí ship gốc dựa trên tổng tiền sau khi trừ giảm giá sản phẩm & điểm loyalty
-            decimal netTotalPrice = subTotal - (discountAmount + pointsDiscount);
+            decimal netTotalPrice = subTotal - totalDiscount;
             if (netTotalPrice < 0) netTotalPrice = 0;
             decimal originalShippingFee = CalculateShippingFee(netTotalPrice);
 
@@ -254,7 +281,11 @@ namespace PolyBabyAPI.Services
                 ShippingRecipientName = userAddress?.RecipientName,
                 ShippingPhone = userAddress?.PhoneNumber,
                 SubTotal = subTotal,
-                DiscountAmount = discountAmount + pointsDiscount,
+                DiscountAmount = totalDiscount,
+                VoucherDiscountAmount = discountAmount,
+                PointsDiscountAmount = pointsDiscountAmount,
+                CoinsDiscountAmount = coinsDiscountAmount,
+                WalletDiscountAmount = walletDiscountAmount,
                 ShippingDiscountAmount = shippingDiscountAmount,
             };
 
@@ -309,6 +340,16 @@ namespace PolyBabyAPI.Services
             if (invoice.TotalPrice < 0) invoice.TotalPrice = 0;
             invoice.ShippingFee = originalShippingFee;
 
+            decimal amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
+            if (amountToPay < 0) amountToPay = 0;
+            invoice.AmountToPay = amountToPay;
+
+            if (amountToPay == 0)
+            {
+                invoice.PayMethod = PayMethod.SystemWallet;
+                invoice.Status = OrderStatus.Confirmed; // Tự động duyệt nếu đã thanh toán hết
+            }
+
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -316,23 +357,59 @@ namespace PolyBabyAPI.Services
                 await _context.SaveChangesAsync(); // Cần save trước để có InvoiceID
 
                 // ✅ Khấu trừ điểm trong LoyaltyProfile & Ghi log lịch sử điểm
-                if (pointsToUse > 0)
+                string idempotencyKey = $"CHECKOUT_{invoice.InvoiceID}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+
+                if (request != null && request.UsePoints && request.PointsToUse > 0)
                 {
-                    var deductResult = await _loyaltyService.ApplyPointsRedemptionAsync(cart.UserID, pointsToUse, invoice.InvoiceID);
+                    var deductResult = await _loyaltyService.ApplyPointsRedemptionAsync(cart.UserID, request.PointsToUse, invoice.InvoiceID);
                     if (!deductResult)
-                    {
                         throw new InvalidOperationException("Khấu trừ điểm Loyalty thất bại. Vui lòng kiểm tra lại số dư điểm.");
-                    }
                 }
 
-                if (payMethod == PayMethod.MobilePayment)
+                if (coinsDiscountAmount > 0)
+                {
+                    cart.User.CoinsBalance -= coinsDiscountAmount;
+                    _context.BalanceTransactions.Add(new BalanceTransaction
+                    {
+                        UserID = cart.UserID,
+                        InvoiceID = invoice.InvoiceID,
+                        Amount = coinsDiscountAmount,
+                        Direction = BalanceTransactionDirection.Debit,
+                        SourceType = BalanceSourceType.Coins,
+                        Reason = $"Thanh toán một phần đơn hàng #{invoice.InvoiceCode}",
+                        IdempotencyKey = idempotencyKey + "_COINS",
+                        HashSignature = "" // To implement HMAC signing later if needed
+                    });
+                }
+
+                if (walletDiscountAmount > 0)
+                {
+                    cart.User.WalletBalance -= walletDiscountAmount;
+                    _context.BalanceTransactions.Add(new BalanceTransaction
+                    {
+                        UserID = cart.UserID,
+                        InvoiceID = invoice.InvoiceID,
+                        Amount = walletDiscountAmount,
+                        Direction = BalanceTransactionDirection.Debit,
+                        SourceType = BalanceSourceType.Wallet,
+                        Reason = $"Thanh toán một phần đơn hàng #{invoice.InvoiceCode}",
+                        IdempotencyKey = idempotencyKey + "_WALLET",
+                        HashSignature = "" 
+                    });
+                }
+
+                if (payMethod == PayMethod.MobilePayment || invoice.AmountToPay == 0)
                 {
                     _context.PaymentTransactions.Add(new PaymentTransaction
                     {
                         InvoiceID = invoice.InvoiceID,
                         TxnRef = invoice.InvoiceID.ToString(),
-                        Status = PaymentTransactionStatus.Pending,
-                        CreatedAt = DateTime.Now
+                        Status = invoice.AmountToPay == 0 ? PaymentTransactionStatus.Success : PaymentTransactionStatus.Pending,
+                        Amount = invoice.AmountToPay,
+                        Provider = invoice.AmountToPay == 0 ? "SystemWallet" : "VNPay",
+                        CreatedAt = DateTime.Now,
+                        PaidAt = invoice.AmountToPay == 0 ? DateTime.Now : null,
+                        CompletedAt = invoice.AmountToPay == 0 ? DateTime.Now : null
                     });
                 }
 
@@ -808,7 +885,11 @@ namespace PolyBabyAPI.Services
             if (invoice.Status == OrderStatus.Shipped || invoice.Status == OrderStatus.Completed || invoice.Status == OrderStatus.Cancelled)
                 return null;
 
-            if (invoice.Status == OrderStatus.Pending)
+            bool isPrepaid = invoice.CoinsDiscountAmount > 0 || 
+                             invoice.WalletDiscountAmount > 0 || 
+                             (invoice.PaymentTransactions != null && invoice.PaymentTransactions.Any(p => p.Status == PaymentTransactionStatus.Success));
+
+            if (!isPrepaid) // Đơn COD thuần túy hoặc thanh toán online chưa thành công
             {
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
@@ -826,7 +907,7 @@ namespace PolyBabyAPI.Services
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    _logger.LogInformation("Người dùng {UserId} tự hủy đơn hàng {InvoiceId} thành công (đơn hàng ở trạng thái Chờ xác nhận). Hàng + Voucher đã được hoàn trả. Lý do: {Reason}",
+                    _logger.LogInformation("Người dùng {UserId} tự hủy đơn hàng {InvoiceId} thành công (Đơn COD/Chưa thanh toán). Hàng + Voucher đã được hoàn trả. Lý do: {Reason}",
                         userId, invoiceId, reason);
 
                     return OrderStatus.Cancelled;
@@ -838,14 +919,17 @@ namespace PolyBabyAPI.Services
                     throw;
                 }
             }
-            else
+            else // Đã thanh toán bằng Ví, Xu hoặc VNPAY thành công
             {
                 invoice.Status = OrderStatus.CancelRequested;
                 invoice.CancelReason = reason;
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Người dùng {UserId} yêu cầu hủy đơn hàng {InvoiceId} ở trạng thái Đã xác nhận (chờ Admin duyệt). Lý do: {Reason}",
+                _logger.LogInformation("Người dùng {UserId} yêu cầu hủy đơn hàng {InvoiceId} (Đơn đã thanh toán). Chuyển sang chờ Admin duyệt. Lý do: {Reason}",
                     userId, invoiceId, reason);
+                    
+                // Lên lịch tự động duyệt sau 1 phút
+                Hangfire.BackgroundJob.Schedule<IInvoiceService>(s => s.ApproveCancelAsync(invoiceId, null), TimeSpan.FromMinutes(1));
 
                 return OrderStatus.CancelRequested;
             }
@@ -868,21 +952,31 @@ namespace PolyBabyAPI.Services
         // ======== Duyệt hoàn trả (Admin) ========
         public async Task<bool> ApproveReturnAsync(int invoiceId, bool isRefundToCoins)
         {
-            var invoice = await _context.Invoices.Include(i => i.User).FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+            var invoice = await _context.Invoices
+                .Include(i => i.User)
+                .Include(i => i.PaymentTransactions)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
             if (invoice == null || invoice.Status != OrderStatus.ReturnRequested) return false;
 
-            invoice.Status = OrderStatus.ReturnedRefunded;
-            
-            if (isRefundToCoins && invoice.User != null)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                invoice.User.WalletBalance += invoice.TotalPrice;
-            }
+                invoice.Status = OrderStatus.ReturnedRefunded;
+                
+                await RefundOrderBalancesAsync(invoice);
 
-            await _context.SaveChangesAsync();
-            
-            Hangfire.BackgroundJob.Schedule<IInvoiceService>(s => s.AutoRestockAfterReturnAsync(invoiceId), TimeSpan.FromDays(14));
-            
-            return true;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                
+                Hangfire.BackgroundJob.Schedule<IInvoiceService>(s => s.AutoRestockAfterReturnAsync(invoiceId), TimeSpan.FromDays(14));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Lỗi khi duyệt hoàn trả đơn hàng {InvoiceId}", invoiceId);
+                return false;
+            }
         }
 
         // ======== Xác nhận đã nhận hàng hoàn (Admin) ========
@@ -926,7 +1020,7 @@ namespace PolyBabyAPI.Services
             await _context.SaveChangesAsync();
         }
 
-        // ======== Admin hủy đơn (CÓ HOÀN TRẢ KHO + VOUCHER) ========
+        // ======== Admin hủy đơn (CÓ HOÀN TRẢ KHO + VOUCHER + VÍ/XU) ========
         public async Task<bool> AdminCancelAsync(int invoiceId, string? reason)
         {
             var invoice = await _context.Invoices
@@ -940,6 +1034,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.VoucherUsages)
                 .Include(i => i.Voucher)
                 .Include(i => i.PaymentTransactions)
+                .Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
 
             if (invoice == null || (invoice.Status != OrderStatus.Pending && invoice.Status != OrderStatus.Confirmed))
@@ -951,6 +1046,7 @@ namespace PolyBabyAPI.Services
                 await RestoreStockAsync(invoice);
                 await RestoreVoucherAsync(invoice);
                 await HandleLoyaltyOnCancelAsync(invoice);
+                await RefundOrderBalancesAsync(invoice);
 
                 invoice.Status = OrderStatus.Cancelled;
                 invoice.CancelReason = reason;
@@ -976,7 +1072,7 @@ namespace PolyBabyAPI.Services
             }
         }
 
-        // ======== Duyệt yêu cầu hủy (CÓ HOÀN TRẢ KHO + VOUCHER) ========
+        // ======== Duyệt yêu cầu hủy (CÓ HOÀN TRẢ KHO + VOUCHER + VÍ/XU) ========
         public async Task<bool> ApproveCancelAsync(int invoiceId, string? reason)
         {
             var invoice = await _context.Invoices
@@ -990,6 +1086,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.VoucherUsages)
                 .Include(i => i.Voucher)
                 .Include(i => i.PaymentTransactions)
+                .Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
 
             if (invoice == null || invoice.Status != OrderStatus.CancelRequested)
@@ -1001,6 +1098,7 @@ namespace PolyBabyAPI.Services
                 await RestoreStockAsync(invoice);
                 await RestoreVoucherAsync(invoice);
                 await HandleLoyaltyOnCancelAsync(invoice);
+                await RefundOrderBalancesAsync(invoice);
 
                 invoice.Status = OrderStatus.Cancelled;
                 invoice.CancelReason = reason ?? invoice.CancelReason;
@@ -1411,6 +1509,94 @@ namespace PolyBabyAPI.Services
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        // ======== HOÀN TIỀN VÀO VÍ/XU (HELPER) ========
+        private async Task RefundOrderBalancesAsync(Invoice invoice)
+        {
+            if (invoice.User == null) return;
+
+            string idempotencyKey = $"REFUND_{invoice.InvoiceID}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+
+            // 1. Hoàn lại Coins
+            if (invoice.CoinsDiscountAmount > 0)
+            {
+                invoice.User.CoinsBalance += invoice.CoinsDiscountAmount;
+                _context.BalanceTransactions.Add(new BalanceTransaction
+                {
+                    UserID = invoice.UserID,
+                    InvoiceID = invoice.InvoiceID,
+                    Amount = invoice.CoinsDiscountAmount,
+                    Direction = BalanceTransactionDirection.Credit,
+                    SourceType = BalanceSourceType.Coins,
+                    Reason = $"Hoàn tiền xu từ đơn hàng #{invoice.InvoiceCode} bị hủy",
+                    IdempotencyKey = idempotencyKey + "_COINS",
+                    HashSignature = "" 
+                });
+            }
+
+            // 2. Hoàn lại Wallet
+            if (invoice.WalletDiscountAmount > 0)
+            {
+                invoice.User.WalletBalance += invoice.WalletDiscountAmount;
+                _context.BalanceTransactions.Add(new BalanceTransaction
+                {
+                    UserID = invoice.UserID,
+                    InvoiceID = invoice.InvoiceID,
+                    Amount = invoice.WalletDiscountAmount,
+                    Direction = BalanceTransactionDirection.Credit,
+                    SourceType = BalanceSourceType.Wallet,
+                    Reason = $"Hoàn tiền ví từ đơn hàng #{invoice.InvoiceCode} bị hủy",
+                    IdempotencyKey = idempotencyKey + "_WALLET",
+                    HashSignature = "" 
+                });
+            }
+
+            // 3. Hoàn lại số tiền đã thanh toán (VNPay hoặc SystemWallet)
+            var successPayments = invoice.PaymentTransactions?
+                .Where(p => p.Status == PaymentTransactionStatus.Success)
+                .ToList();
+
+            if (successPayments != null && successPayments.Any())
+            {
+                decimal totalPaid = successPayments.Sum(p => p.Amount);
+                if (totalPaid > 0)
+                {
+                    bool refundToCoins = !string.IsNullOrEmpty(invoice.CancelReason) && 
+                                         invoice.CancelReason.Contains("[Hoàn tiền về: Xu LazPe]", StringComparison.OrdinalIgnoreCase);
+                    
+                    if (refundToCoins)
+                    {
+                        invoice.User.CoinsBalance += totalPaid;
+                        _context.BalanceTransactions.Add(new BalanceTransaction
+                        {
+                            UserID = invoice.UserID,
+                            InvoiceID = invoice.InvoiceID,
+                            Amount = totalPaid,
+                            Direction = BalanceTransactionDirection.Credit,
+                            SourceType = BalanceSourceType.Coins,
+                            Reason = $"Hoàn xu thanh toán đơn hàng #{invoice.InvoiceCode}",
+                            IdempotencyKey = idempotencyKey + "_VNPAID_COINS",
+                            HashSignature = "" 
+                        });
+                    }
+                    else
+                    {
+                        invoice.User.WalletBalance += totalPaid;
+                        _context.BalanceTransactions.Add(new BalanceTransaction
+                        {
+                            UserID = invoice.UserID,
+                            InvoiceID = invoice.InvoiceID,
+                            Amount = totalPaid,
+                            Direction = BalanceTransactionDirection.Credit,
+                            SourceType = BalanceSourceType.Wallet, 
+                            Reason = $"Hoàn tiền thanh toán đơn hàng #{invoice.InvoiceCode}",
+                            IdempotencyKey = idempotencyKey + "_VNPAID_WALLET",
+                            HashSignature = "" 
+                        });
+                    }
+                }
+            }
         }
     }
 }

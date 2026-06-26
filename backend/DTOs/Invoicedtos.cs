@@ -15,11 +15,20 @@ namespace PolyBabyAPI.DTOs
         }
 
         /// <summary>
-        /// Dùng cho create-from-cart (chọn item cụ thể)
+        /// Dùng cho create-from-cart (chọn item cụ thể và các ví/điểm)
         /// </summary>
-        public class CreateFromCartRequest
+        public class CheckoutRequestDto
         {
             public List<int>? SelectedCartDetailIds { get; set; }
+
+            public bool UsePoints { get; set; }
+            public int PointsToUse { get; set; }
+
+            public bool UseCoins { get; set; }
+            public decimal CoinsToUse { get; set; }
+
+            public bool UseWallet { get; set; }
+            public decimal WalletToUse { get; set; }
         }
 
         /// <summary>

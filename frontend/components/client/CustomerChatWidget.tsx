@@ -502,7 +502,9 @@ export default function CustomerChatWidget() {
     }
 
     const formData = new FormData();
-    formData.append("messageText", tempMsg.messageText);
+    if (tempMsg.messageText) {
+      formData.append("messageText", tempMsg.messageText);
+    }
 
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -519,16 +521,16 @@ export default function CustomerChatWidget() {
 
       const data = await res.json();
       if (!data.success) {
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
-        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
+        setMessages(prev => prev.map(m => m.id === tempMsg.id ? normalizeMessage(data.message) : m));
         if (isClosed) {
           setIsClosed(false);
         }
       }
     } catch (e) {
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
       toast.error("Gửi tin nhắn thất bại. Vui lòng kiểm tra kết nối mạng.");
     }
   };

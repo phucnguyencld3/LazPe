@@ -118,7 +118,7 @@ export default function OrderDetailsPage() {
             <span className="font-bold">Quay lại</span>
           </button>
           <div className="h-6 w-px bg-outline-variant"></div>
-          <h2 className="text-2xl font-bold text-on-surface">Đơn hàng #{order.invoiceCode || order.invoiceID.toString().padStart(6, '0')}</h2>
+          <h2 className="text-2xl font-bold text-on-surface">Đơn hàng #{order.invoiceCode}</h2>
         </div>
         <OrderActionBar 
           order={order}

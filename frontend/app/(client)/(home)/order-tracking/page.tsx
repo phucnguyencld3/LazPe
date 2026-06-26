@@ -140,10 +140,7 @@ export default function OrderTrackingPage() {
               <div>
                 <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Mã đơn hàng</p>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-black text-slate-800">#{orderData.invoiceID}</h2>
-                  {orderData.invoiceCode && (
-                     <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-[4px] border border-slate-200">{orderData.invoiceCode}</span>
-                  )}
+                  <h2 className="text-lg font-black text-slate-800">#{orderData.invoiceCode}</h2>
                 </div>
               </div>
               <div className="flex flex-col items-start md:items-end gap-2">

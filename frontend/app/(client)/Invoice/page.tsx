@@ -54,6 +54,10 @@ function InvoiceContent() {
           subTotal: randomSubTotal,
           shippingFee: randomShipping,
           discountAmount: 0,
+          voucherDiscountAmount: 0,
+          pointsDiscountAmount: 0,
+          coinsDiscountAmount: 0,
+          walletDiscountAmount: 0,
           shippingDiscountAmount: 0,
           totalPrice: randomSubTotal,
           finalAmount: randomSubTotal + randomShipping,
@@ -213,7 +217,7 @@ function InvoiceContent() {
               <div>
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mã Đơn Hàng</div>
                 <div className="text-base font-extrabold text-slate-800">
-                  #{invoice?.invoiceCode || invoiceIdStr || invoice?.invoiceID || "..."}
+                  #{invoice?.invoiceCode || "..."}
                 </div>
               </div>
               <div className="text-right">
@@ -299,9 +303,43 @@ function InvoiceContent() {
                       {invoice.shippingFee === 0 ? "Miễn phí" : formatVND(invoice.shippingFee)}
                     </span>
                   </div>
-                  {invoice.discountAmount > 0 && (
+                  {invoice.voucherDiscountAmount > 0 && (
                     <div className="flex justify-between items-center text-rose-500">
-                      <span>Voucher giảm giá</span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">confirmation_number</span> Voucher giảm giá
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.voucherDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.pointsDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-amber-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">military_tech</span> Điểm tích lũy
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.pointsDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.coinsDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-orange-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">monetization_on</span> LazPe Coins
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.coinsDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.walletDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-teal-600">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">account_balance_wallet</span> Trừ Ví LazPe
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.walletDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {(invoice.discountAmount > 0 && !invoice.voucherDiscountAmount && !invoice.pointsDiscountAmount && !invoice.coinsDiscountAmount && !invoice.walletDiscountAmount) && (
+                    <div className="flex justify-between items-center text-rose-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">confirmation_number</span> Giảm giá
+                      </span>
                       <span className="font-bold">- {formatVND(invoice.discountAmount)}</span>
                     </div>
                   )}

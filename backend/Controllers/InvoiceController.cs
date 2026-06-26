@@ -598,8 +598,7 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] PayMethod? payMethod,
             [FromQuery] int? addressId,
             [FromQuery] string? shippingAddress,
-            [FromBody] CreateFromCartRequest? body,
-            [FromQuery] int pointsToUse = 0)
+            [FromBody] InvoiceDtos.CheckoutRequestDto? body)
         {
             try
             {
@@ -707,7 +706,7 @@ namespace PolyBabyAPI.Controllers
                     });
                 }
 
-                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress, pointsToUse);
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, matchedAddress, body);
 
                 _logger.LogInformation(
                     "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",
@@ -1461,6 +1460,10 @@ namespace PolyBabyAPI.Controllers
                 UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.VoucherDiscountAmount,
+                invoice.PointsDiscountAmount,
+                invoice.CoinsDiscountAmount,
+                invoice.WalletDiscountAmount,
                 invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
@@ -1724,6 +1727,10 @@ namespace PolyBabyAPI.Controllers
                 UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.VoucherDiscountAmount,
+                invoice.PointsDiscountAmount,
+                invoice.CoinsDiscountAmount,
+                invoice.WalletDiscountAmount,
                 invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
@@ -1767,6 +1774,10 @@ namespace PolyBabyAPI.Controllers
 
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.VoucherDiscountAmount,
+                invoice.PointsDiscountAmount,
+                invoice.CoinsDiscountAmount,
+                invoice.WalletDiscountAmount,
                 invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
@@ -1905,15 +1916,5 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
-        /// <summary>
-        /// Request body cho tạo hóa đơn từ giỏ hàng
-        /// </summary>
-        public class CreateFromCartRequest
-        {
-            /// <summary>
-            /// Danh sách CartDetailID được chọn (null = mua tất cả)
-            /// </summary>
-            public List<int>? SelectedCartDetailIds { get; set; }
-        }
     }
 }

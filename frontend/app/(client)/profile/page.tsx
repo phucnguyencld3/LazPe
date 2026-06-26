@@ -42,6 +42,7 @@ import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
 import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 import { SpendingSection } from "@/components/client/profile/SpendingSection";
 import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
+import { WalletSection } from "@/components/client/profile/WalletSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -631,6 +632,7 @@ export default function ProfilePage() {
                   {(
                     [
                       { id: "profile", label: "Thông tin tài khoản", icon: "person" },
+                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
                       { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
                       { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
                       { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
@@ -663,6 +665,7 @@ export default function ProfilePage() {
                   {(
                     [
                       { id: "profile", label: "Tài khoản", icon: "person" },
+                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
                       { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
                       { id: "spending", label: "Chi tiêu", icon: "monitoring" },
                       { id: "address", label: "Địa chỉ", icon: "location_on" },
@@ -731,6 +734,10 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "vouchers" && <VoucherSection token={token} />}
+
+            {activeTab === "wallet" && (
+              <WalletSection token={token} uid={userProfile.userId} />
+            )}
 
             {activeTab === "loyalty" && (
               <LoyaltySection token={token} />

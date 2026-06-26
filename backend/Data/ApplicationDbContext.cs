@@ -61,6 +61,9 @@ namespace PolyBabyAPI.Data
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
 
+        public DbSet<BalanceTransaction> BalanceTransactions { get; set; }
+        public DbSet<WithdrawRequest> WithdrawRequests { get; set; }
+
         // ===== Loyalty Program =====
         public DbSet<LoyaltyProfile> LoyaltyProfiles { get; set; }
         public DbSet<LoyaltyPointHistory> LoyaltyPointHistories { get; set; }

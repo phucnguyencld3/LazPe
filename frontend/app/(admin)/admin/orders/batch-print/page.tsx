@@ -185,7 +185,7 @@ export default function BatchPrintPage() {
                           />
                         </td>
                       )}
-                      <td className="p-4 font-bold text-slate-800">#{order.invoiceCode || order.invoiceID}</td>
+                      <td className="p-4 font-bold text-slate-800">#{order.invoiceCode}</td>
                       <td className="p-4">
                         <div className="font-bold text-slate-800">{order.userFullName || order.userName}</div>
                         <div className="text-xs text-slate-500">{order.userPhone}</div>

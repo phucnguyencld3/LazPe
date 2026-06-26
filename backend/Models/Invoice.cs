@@ -14,7 +14,10 @@ namespace PolyBabyAPI.Models
         DebitCard = 2,
 
         [Display(Name = "Ví điện tử")]
-        MobilePayment = 3
+        MobilePayment = 3,
+
+        [Display(Name = "Ví nội bộ / Hệ thống")]
+        SystemWallet = 4
     }
 
     public enum OrderStatus
@@ -41,7 +44,10 @@ namespace PolyBabyAPI.Models
         ReturnRequested = 6,
 
         [Display(Name = "Đã trả hàng & hoàn tiền")]
-        ReturnedRefunded = 7
+        ReturnedRefunded = 7,
+
+        [Display(Name = "Đã hủy & hoàn tiền")]
+        CancelledRefunded = 8
     }
 
     public enum RefundMethod
@@ -86,8 +92,34 @@ namespace PolyBabyAPI.Models
         public decimal SubTotal { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "Tiền giảm giá")]
+        [Display(Name = "Tổng tiền giảm giá")]
         public decimal DiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Voucher")]
+        public decimal VoucherDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Điểm")]
+        public decimal PointsDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Xu")]
+        public decimal CoinsDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Ví")]
+        public decimal WalletDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Cần thanh toán")]
+        public decimal AmountToPay { get; set; } = 0;
+
+        public RefundMethod? CancelRefundMethod { get; set; }
+
+        public bool IsRefunded { get; set; } = false;
+
+        public DateTime? RefundedAt { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Chiết khấu hạng thẻ")]

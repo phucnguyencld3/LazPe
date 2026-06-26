@@ -23,7 +23,18 @@ namespace PolyBabyAPI.Models
         public override string? PhoneNumber { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        [ConcurrencyCheck]
         public decimal WalletBalance { get; set; } = 0;
+
+        [MaxLength(256)]
+        public string? WalletSignature { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [ConcurrencyCheck]
+        public decimal CoinsBalance { get; set; } = 0;
+
+        [MaxLength(256)]
+        public string? CoinsSignature { get; set; }
 
         // THÊM TRƯỜNG AVATAR
         [Display(Name = "Ảnh đại diện")]

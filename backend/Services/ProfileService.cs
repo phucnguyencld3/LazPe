@@ -52,7 +52,9 @@ namespace PolyBabyAPI.Service
                     ChildGender = user.ChildGender,
                     ChildAgeMonths = user.ChildAgeMonths,
                     ChildWeightKg = user.ChildWeightKg,
-                    IsOnboarded = user.IsOnboarded
+                    IsOnboarded = user.IsOnboarded,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance
                 };
             }
             catch (Exception ex)
@@ -298,7 +300,9 @@ namespace PolyBabyAPI.Service
                     ChildGender = user.ChildGender,
                     ChildAgeMonths = user.ChildAgeMonths,
                     ChildWeightKg = user.ChildWeightKg,
-                    IsOnboarded = user.IsOnboarded
+                    IsOnboarded = user.IsOnboarded,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance
                 };
             }
             catch (Exception ex)
