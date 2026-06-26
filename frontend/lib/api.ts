@@ -1632,6 +1632,146 @@ export async function retryVnPayPayment(
   }
 }
 
+// ===== Return / Refund Workflow =====
+
+export async function requestReturn(
+  orderId: number,
+  token: string,
+  reason: string,
+  description: string,
+  refundMethod: 1 | 2, // 1 = SystemWallet, 2 = LazPeCoins
+  imageUrls?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${orderId}/request-return`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason, description, refundMethod, imageUrls: imageUrls || "" }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Gửi yêu cầu hoàn hàng thành công." : "Không thể gửi yêu cầu hoàn hàng."),
+    };
+  } catch (error) {
+    console.error("Error requesting return:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function cancelReturnRequest(
+  id: number,
+  token: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/cancel-return-request`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Hủy yêu cầu hoàn hàng thành công." : "Không thể hủy yêu cầu hoàn hàng."),
+    };
+  } catch (error) {
+    console.error("Error canceling return request:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function uploadReturnImage(
+  file: File,
+  token: string
+): Promise<{ success: boolean; url?: string; message?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/Invoice/upload-return-image`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    const result = await response.json();
+    if (response.ok && result.success) {
+      return { success: true, url: result.url };
+    }
+    return { success: false, message: result.message || "Upload ảnh thất bại." };
+  } catch (error) {
+    console.error("Error uploading return image:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function approveReturn(
+  id: number,
+  token: string,
+  isRefundToCoins: boolean
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/approve-return`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isRefundToCoins }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Duyệt hoàn trả thành công." : "Không thể duyệt hoàn trả."),
+    };
+  } catch (error) {
+    console.error("Error approving return:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function confirmReturnReceived(
+  id: number,
+  token: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/confirm-return-received`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Xác nhận nhận hàng hoàn thành công." : "Không thể xác nhận."),
+    };
+  } catch (error) {
+    console.error("Error confirming return received:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function getReturnOrders(token: string): Promise<any[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/admin/return-requests`, {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
 export async function getUserVouchers(token: string): Promise<any[] | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/vouchers/wallet`, {

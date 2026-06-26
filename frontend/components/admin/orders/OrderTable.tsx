@@ -95,6 +95,13 @@ export const OrderTable: React.FC<OrderTableProps> = ({
       case 4: // Cancel waiting
         return "text-rose-600";
       case 5: // Cancelled (Đã hủy)
+        return "text-red-600";
+      case 6: // Return requested
+        return "text-orange-600";
+      case 7: // Returned refunded
+        return "text-pink-600";
+      case 8: // Cancelled refunded
+        return "text-red-700";
       default:
         return "text-slate-500";
     }

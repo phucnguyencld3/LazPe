@@ -158,6 +158,24 @@ export function OrdersSection({
             Đã hủy
           </span>
         );
+      case 6:
+        return (
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-orange-700 bg-orange-50 border border-orange-200/60 rounded-[4px]">
+            Yêu cầu trả hàng
+          </span>
+        );
+      case 7:
+        return (
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-pink-700 bg-pink-50 border border-pink-200/60 rounded-[4px]">
+            Đã hoàn tiền
+          </span>
+        );
+      case 8:
+        return (
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-red-700 bg-red-50 border border-red-200/60 rounded-[4px]">
+            Đã hủy & hoàn tiền
+          </span>
+        );
       default:
         return (
           <span className="px-2 py-0.5 text-[9px] font-black uppercase text-slate-700 bg-slate-50 border border-slate-200/60 rounded-[4px]">

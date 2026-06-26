@@ -23,6 +23,13 @@ export interface OrderInfo {
   status: string;
   statusCode: number;
   createdAt: string;
+  completedAt?: string;
+  cancelReason?: string;
+  cancelledAt?: string;
+  returnReason?: string;
+  returnDescription?: string;
+  returnImageUrls?: string;
+  refundMethod?: number;
   hasVoucher: boolean;
   voucherCode: string | null;
   voucherName: string | null;
@@ -55,6 +62,12 @@ export const getStatusBadgeColor = (statusCode: number) => {
       return 'bg-rose-50 text-rose-600 border border-rose-100'; // Chờ duyệt hủy
     case 5:
       return 'bg-red-50 text-red-600 border border-red-100'; // Cancelled
+    case 6:
+      return 'bg-orange-50 text-orange-600 border border-orange-100'; // ReturnRequested
+    case 7:
+      return 'bg-pink-50 text-pink-600 border border-pink-100'; // Returned
+    case 8:
+      return 'bg-red-50 text-red-700 border border-red-200'; // CancelledRefunded
     default:
       return 'bg-slate-50 text-slate-600 border border-slate-100';
   }
@@ -68,6 +81,9 @@ export const getStatusLabel = (statusCode: number) => {
     case 3: return 'Hoàn tất';
     case 4: return 'Chờ duyệt hủy';
     case 5: return 'Đã hủy';
+    case 6: return 'Yêu cầu trả hàng';
+    case 7: return 'Đã hoàn tiền';
+    case 8: return 'Đã hủy & hoàn tiền';
     default: return 'Không rõ';
   }
 };

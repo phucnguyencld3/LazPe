@@ -200,7 +200,7 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
                 <span className="font-semibold text-sm">LazPe Coins</span>
               </div>
               <div className="text-3xl font-black mt-2">
-                {formatVND(profile?.coinsBalance || 0)}
+                {(profile?.coinsBalance || 0).toLocaleString("vi-VN")} xu
               </div>
             </div>
             <div className="mt-6">
@@ -259,7 +259,7 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
                       </div>
                     </div>
                     <div className={`font-black ${tx.direction === 2 ? "text-emerald-500" : "text-rose-500"}`}>
-                      {tx.direction === 2 ? "+" : "-"}{formatVND(tx.amount)}
+                      {tx.direction === 2 ? "+" : "-"}{tx.sourceType === 2 ? `${tx.amount.toLocaleString("vi-VN")} xu` : formatVND(tx.amount)}
                     </div>
                   </div>
                 ))

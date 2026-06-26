@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader, CheckCircle2, XCircle } from "lucide-react";
+import { Loader } from "lucide-react";
 import { toast } from "@/lib/toast";
 import {
   getAllWithdrawRequests,
@@ -24,6 +24,38 @@ const formatDate = (dateString: string) => {
   });
 };
 
+// VietQR bank code mapping
+const BANK_CODE_MAP: Record<string, string> = {
+  "agribank": "970405", "vietcombank": "970436", "vcb": "970436",
+  "vietinbank": "970415", "ctg": "970415", "bidv": "970418",
+  "mbbank": "970422", "mb": "970422", "techcombank": "970407", "tcb": "970407",
+  "vpbank": "970432", "acb": "970416", "sacombank": "970403",
+  "tpbank": "970423", "hdbank": "970437", "vib": "970441",
+  "shb": "970443", "msb": "970426", "lpbank": "970449",
+  "seabank": "970440", "ocb": "970448", "eximbank": "970431",
+  "scb": "970429", "bac a bank": "970409", "nam a bank": "970428",
+  "pvcombank": "970412", "vietabank": "970427", "ncb": "970419",
+  "vietbank": "970433", "kienlongbank": "970452", "saigonbank": "970400",
+  "pg bank": "970430", "baoviet bank": "970438", "gpbank": "970408",
+  "oceanbank": "970414", "cbbank": "970444", "shinhan bank": "970424",
+  "hsbc": "458761", "standard chartered": "970410", "uob": "970458",
+  "woori bank": "970457", "public bank": "970439", "cimb": "422589",
+  "hlbank": "970417",
+};
+
+const getBankCode = (bankName: string): string | null => {
+  const key = bankName.toLowerCase().trim();
+  return BANK_CODE_MAP[key] || null;
+};
+
+const getVietQRUrl = (bankName: string, accountNo: string, amount: number, accountName: string, memo: string) => {
+  const bankCode = getBankCode(bankName);
+  if (!bankCode) return null;
+  const encodedMemo = encodeURIComponent(memo);
+  const encodedName = encodeURIComponent(accountName);
+  return `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodedMemo}&accountName=${encodedName}`;
+};
+
 export default function AdminWithdrawalsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -39,6 +71,7 @@ export default function AdminWithdrawalsPage() {
   const [modalAction, setModalAction] = useState<"approve" | "reject" | null>(null);
   const [adminNote, setAdminNote] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token") || "") : "";
 
@@ -362,87 +395,167 @@ export default function AdminWithdrawalsPage() {
 
       {/* Process Modal */}
       {selectedRequest && modalAction && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-[12px] shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
-            <div className={`p-5 border-b flex justify-between items-center ${modalAction === "approve" ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"}`}>
-              <h3 className={`font-bold text-lg ${modalAction === "approve" ? "text-emerald-800" : "text-rose-800"}`}>
-                {modalAction === "approve" ? "✅ Duyệt yêu cầu rút tiền" : "❌ Từ chối yêu cầu rút tiền"}
-              </h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-[8px] w-full max-w-3xl border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  modalAction === "approve" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-rose-50 text-rose-500 border border-rose-100"
+                }`}>
+                  <span className="material-symbols-outlined text-[20px]">
+                    {modalAction === "approve" ? "check_circle" : "cancel"}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {modalAction === "approve" ? "Duyệt yêu cầu rút tiền" : "Từ chối yêu cầu rút tiền"}
+                  </h3>
+                  <p className="text-xs text-slate-400">#{selectedRequest.requestID} &bull; {selectedRequest.user?.fullName}</p>
+                </div>
+              </div>
               <button
-                onClick={() => { setSelectedRequest(null); setModalAction(null); }}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                onClick={() => { setSelectedRequest(null); setModalAction(null); setShowQR(false); }}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100"
               >
-                <XCircle className="h-5 w-5" />
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Info Card */}
-              <div className="bg-slate-50 rounded-lg p-4 space-y-2 border border-slate-100">
-                <div className="flex justify-between">
-                  <span className="text-xs text-slate-500 font-medium">Mã yêu cầu</span>
-                  <span className="text-sm font-bold text-primary">#{selectedRequest.requestID}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-slate-500 font-medium">Người yêu cầu</span>
-                  <span className="text-sm font-bold text-slate-800">{selectedRequest.user?.fullName || selectedRequest.userID}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-slate-500 font-medium">Số tiền</span>
-                  <span className="text-sm font-black text-emerald-600">{formatVND(selectedRequest.amount)}</span>
-                </div>
-                <div className="border-t border-slate-200 pt-2 mt-2">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-500 font-medium">Ngân hàng</span>
-                    <span className="text-sm font-bold">{selectedRequest.bankName}</span>
+            <div className="p-6">
+              {/* Two-column layout for approve */}
+              <div className={modalAction === "approve" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-4"}>
+                {/* Left: Info */}
+                <div className="space-y-4">
+                  {/* Info Card */}
+                  <div className="bg-slate-50 rounded-lg p-4 space-y-2 border border-slate-100">
+                    <div className="flex justify-between">
+                      <span className="text-xs text-slate-500 font-medium">Mã yêu cầu</span>
+                      <span className="text-sm font-bold text-primary">#{selectedRequest.requestID}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs text-slate-500 font-medium">Người yêu cầu</span>
+                      <span className="text-sm font-bold text-slate-800">{selectedRequest.user?.fullName || selectedRequest.userID}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs text-slate-500 font-medium">Số tiền</span>
+                      <span className="text-sm font-black text-emerald-600">{formatVND(selectedRequest.amount)}</span>
+                    </div>
+                    <div className="border-t border-slate-200 pt-2 mt-2">
+                      <div className="flex justify-between">
+                        <span className="text-xs text-slate-500 font-medium">Ngân hàng</span>
+                        <span className="text-sm font-bold">{selectedRequest.bankName}</span>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-slate-500 font-medium">Số tài khoản</span>
+                        <span className="text-sm font-bold font-mono">{selectedRequest.bankAccount}</span>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-slate-500 font-medium">Chủ tài khoản</span>
+                        <span className="text-sm font-bold uppercase">{selectedRequest.bankOwnerName}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-xs text-slate-500 font-medium">Số tài khoản</span>
-                    <span className="text-sm font-bold font-mono">{selectedRequest.bankAccount}</span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-xs text-slate-500 font-medium">Chủ tài khoản</span>
-                    <span className="text-sm font-bold uppercase">{selectedRequest.bankOwnerName}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Admin Note */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Ghi chú của Admin {modalAction === "reject" && <span className="text-rose-500">*</span>}
-                </label>
-                <textarea
-                  value={adminNote}
-                  onChange={(e) => setAdminNote(e.target.value)}
-                  placeholder={modalAction === "approve" ? "Ghi chú (tùy chọn)..." : "Lý do từ chối..."}
-                  rows={3}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm resize-none"
-                  required={modalAction === "reject"}
-                />
-              </div>
+                  {/* Admin Note */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Ghi chú của Admin {modalAction === "reject" && <span className="text-rose-500">*</span>}
+                    </label>
+                    <textarea
+                      value={adminNote}
+                      onChange={(e) => setAdminNote(e.target.value)}
+                      placeholder={modalAction === "approve" ? "Ghi chú (tùy chọn)..." : "Lý do từ chối..."}
+                      rows={3}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm resize-none"
+                      required={modalAction === "reject"}
+                    />
+                  </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => { setSelectedRequest(null); setModalAction(null); }}
-                  className="flex-1 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-[8px] transition-colors"
-                  disabled={processing}
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  onClick={handleProcess}
-                  disabled={processing || (modalAction === "reject" && !adminNote.trim())}
-                  className={`flex-1 py-2.5 text-sm font-bold text-white rounded-[8px] transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50 ${
-                    modalAction === "approve"
-                      ? "bg-emerald-500 hover:bg-emerald-600"
-                      : "bg-rose-500 hover:bg-rose-600"
-                  }`}
-                >
-                  {processing ? <Loader className="animate-spin h-4 w-4" /> : null}
-                  {modalAction === "approve" ? "Xác nhận Duyệt" : "Xác nhận Từ chối"}
-                </button>
+                  {/* Actions */}
+                  <div className="flex items-center gap-3 w-full">
+                    <button
+                      onClick={() => { setSelectedRequest(null); setModalAction(null); setShowQR(false); }}
+                      className="flex-1 py-2.5 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-sm cursor-pointer transition-colors"
+                      disabled={processing}
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      onClick={handleProcess}
+                      disabled={processing || (modalAction === "reject" && !adminNote.trim())}
+                      className={`flex-1 py-2.5 rounded-[8px] font-bold text-sm text-white flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modalAction === "approve"
+                          ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+                          : "bg-rose-500 hover:bg-rose-600 shadow-rose-500/20"
+                      }`}
+                    >
+                      {processing ? <Loader className="animate-spin h-4 w-4" /> : null}
+                      {modalAction === "approve" ? "Xác nhận Duyệt" : "Xác nhận Từ chối"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right: QR Code (approve only) */}
+                {modalAction === "approve" && (() => {
+                  const refCode = `LAZPE${String(selectedRequest.requestID).padStart(6, "0")}`;
+                  const qrUrl = getVietQRUrl(
+                    selectedRequest.bankName,
+                    selectedRequest.bankAccount,
+                    selectedRequest.amount,
+                    selectedRequest.bankOwnerName,
+                    refCode
+                  );
+                  return (
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">QR Chuyển khoản</p>
+                      {qrUrl ? (
+                        <>
+                          <div className="bg-white border-2 border-emerald-200 rounded-xl p-3 shadow-md">
+                            <img
+                              src={qrUrl}
+                              alt="VietQR Chuyển khoản"
+                              className="w-72 h-72 object-contain"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
+                          <div className="text-center space-y-2">
+                            <p className="text-xs text-slate-500">Quét mã để chuyển khoản ngay</p>
+                            <div className="flex items-center justify-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+                              <span className="material-symbols-outlined text-slate-400 text-[14px]">tag</span>
+                              <span className="font-black text-slate-700 text-xs tracking-widest">{refCode}</span>
+                              <button
+                                type="button"
+                                onClick={() => { navigator.clipboard.writeText(refCode); }}
+                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                                title="Sao chép mã"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400">Đây là mã đối chiếu duy nhất cho yêu cầu này</p>
+                          </div>
+                          <a
+                            href={qrUrl}
+                            download={`qr-ruttien-${selectedRequest.requestID}.png`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1.5"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">download</span>
+                            Tải QR Code
+                          </a>
+                        </>
+                      ) : (
+                        <div className="w-72 h-72 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400">
+                          <span className="material-symbols-outlined text-4xl">qr_code_2</span>
+                          <p className="text-xs text-center px-4">Không tìm thấy mã ngân hàng cho <span className="font-bold">"{selectedRequest.bankName}"</span></p>
+                          <p className="text-[10px] text-slate-400 text-center">Vui lòng chuyển khoản thủ công</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

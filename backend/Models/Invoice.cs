@@ -196,6 +196,10 @@ namespace PolyBabyAPI.Models
 
         [ValidateNever]
         public string? ReturnReason { get; set; }
+
+        [MaxLength(1000)]
+        public string? ReturnDescription { get; set; }
+        
         public string? ReturnImageUrls { get; set; }
         public RefundMethod? RefundMethod { get; set; }
         public bool IsReturnReceived { get; set; }

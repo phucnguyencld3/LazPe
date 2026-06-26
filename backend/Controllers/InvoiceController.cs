@@ -1856,6 +1856,10 @@ namespace PolyBabyAPI.Controllers
                 invoice.CancelReason,
                 invoice.Note,
                 invoice.IsDeleted,
+                invoice.ReturnReason,
+                invoice.ReturnDescription,
+                invoice.ReturnImageUrls,
+                invoice.RefundMethod,
 
                 InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
                 {
@@ -1875,6 +1879,26 @@ namespace PolyBabyAPI.Controllers
 
 
         // ======== Return Workflow ========
+        [Authorize]
+        [HttpPost("upload-return-image")]
+        public async Task<IActionResult> UploadReturnImage(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "Không có file được chọn." });
+
+                var url = await _cloudinaryService.UploadImageAsync(file, "returns");
+                if (string.IsNullOrEmpty(url))
+                    return BadRequest(new { message = "Upload ảnh thất bại." });
+
+                return Ok(new { success = true, url = url });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống.", error = ex.Message });
+            }
+        }
 
         [Authorize]
         [HttpPost("{id}/request-return")]
@@ -1883,10 +1907,23 @@ namespace PolyBabyAPI.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var success = await _invoiceService.RequestReturnAsync(id, userId, request.Reason, request.ImageUrls ?? "", request.RefundMethod);
+            var success = await _invoiceService.RequestReturnAsync(id, userId, request.Reason, request.Description ?? "", request.ImageUrls ?? "", request.RefundMethod);
             if (!success) return BadRequest(new { message = "Không thể yêu cầu hoàn trả cho đơn hàng này." });
 
             return Ok(new { message = "Yêu cầu hoàn trả đã được gửi thành công." });
+        }
+
+        [Authorize]
+        [HttpPost("{id}/cancel-return-request")]
+        public async Task<IActionResult> CancelReturnRequest(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var success = await _invoiceService.CancelReturnRequestAsync(id, userId);
+            if (!success) return BadRequest(new { message = "Không thể hủy yêu cầu hoàn trả cho đơn hàng này." });
+
+            return Ok(new { message = "Hủy yêu cầu hoàn trả thành công." });
         }
 
         [Authorize(Roles = "Admin,Employee")]

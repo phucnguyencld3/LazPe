@@ -48,8 +48,9 @@ namespace PolyBabyAPI.Interface
         Task<bool> ApproveCancelAsync(int invoiceId, string? reason);
         Task<bool> RejectCancelAsync(int invoiceId);
         
-        // Return workflow
-        Task<bool> RequestReturnAsync(int invoiceId, string userId, string reason, string imageUrls, RefundMethod refundMethod);
+        // Trả hàng & hoàn tiền
+        Task<bool> RequestReturnAsync(int invoiceId, string userId, string reason, string description, string imageUrls, RefundMethod refundMethod);
+        Task<bool> CancelReturnRequestAsync(int invoiceId, string userId);
         Task<bool> ApproveReturnAsync(int invoiceId, bool isRefundToCoins);
         Task<bool> ConfirmReturnReceivedAsync(int invoiceId);
         Task AutoRestockAfterReturnAsync(int invoiceId);

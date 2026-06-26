@@ -5,6 +5,7 @@ interface OrderActionBarProps {
   order: OrderInfo;
   onUpdateStatus: (action: string) => void;
   onShowCancelModal: () => void;
+  onShowReturnModal?: () => void;
   onPrintOrder: () => void;
 }
 
@@ -12,6 +13,7 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
   order,
   onUpdateStatus,
   onShowCancelModal,
+  onShowReturnModal,
   onPrintOrder,
 }) => {
   return (
@@ -52,6 +54,26 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
           >
             <span className="material-symbols-outlined">cancel</span>
             Hủy đơn
+          </button>
+        )}
+
+        {order.statusCode === 4 && (
+          <button 
+            onClick={onShowCancelModal}
+            className="px-6 py-2.5 bg-rose-500 text-white hover:bg-rose-600 font-bold rounded-[8px] shadow-md transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined">gavel</span>
+            Duyệt hủy đơn
+          </button>
+        )}
+
+        {order.statusCode === 6 && onShowReturnModal && (
+          <button 
+            onClick={onShowReturnModal}
+            className="px-6 py-2.5 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-[8px] shadow-md transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined">assignment_return</span>
+            Xử lý hoàn hàng
           </button>
         )}
       </div>

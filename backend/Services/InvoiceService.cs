@@ -936,15 +936,30 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== Yêu cầu hoàn trả (Client) ========
-        public async Task<bool> RequestReturnAsync(int invoiceId, string userId, string reason, string imageUrls, RefundMethod refundMethod)
+        public async Task<bool> RequestReturnAsync(int invoiceId, string userId, string reason, string description, string imageUrls, RefundMethod refundMethod)
         {
             var invoice = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && i.UserID == userId && !i.IsDeleted);
             if (invoice == null || invoice.Status != OrderStatus.Completed) return false;
 
             invoice.Status = OrderStatus.ReturnRequested;
             invoice.ReturnReason = reason;
+            invoice.ReturnDescription = description;
             invoice.ReturnImageUrls = imageUrls;
             invoice.RefundMethod = refundMethod;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ======== Hủy yêu cầu hoàn trả (Client) ========
+        public async Task<bool> CancelReturnRequestAsync(int invoiceId, string userId)
+        {
+            var invoice = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && i.UserID == userId && !i.IsDeleted);
+            if (invoice == null || invoice.Status != OrderStatus.ReturnRequested) return false;
+
+            invoice.Status = OrderStatus.Completed;
+            invoice.ReturnReason = null;
+            invoice.ReturnImageUrls = null;
+            invoice.RefundMethod = null;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -962,6 +977,8 @@ namespace PolyBabyAPI.Services
             try
             {
                 invoice.Status = OrderStatus.ReturnedRefunded;
+                invoice.CancelledAt = DateTime.Now;
+                invoice.RefundedAt = DateTime.Now;
                 
                 await RefundOrderBalancesAsync(invoice);
 
@@ -1562,8 +1579,9 @@ namespace PolyBabyAPI.Services
                 decimal totalPaid = successPayments.Sum(p => p.Amount);
                 if (totalPaid > 0)
                 {
-                    bool refundToCoins = !string.IsNullOrEmpty(invoice.CancelReason) && 
-                                         invoice.CancelReason.Contains("[Hoàn tiền về: Xu LazPe]", StringComparison.OrdinalIgnoreCase);
+                    bool refundToCoins = (!string.IsNullOrEmpty(invoice.CancelReason) && 
+                                         invoice.CancelReason.Contains("[Hoàn tiền về: Xu LazPe]", StringComparison.OrdinalIgnoreCase)) ||
+                                         invoice.RefundMethod == RefundMethod.LazPeCoins;
                     
                     if (refundToCoins)
                     {

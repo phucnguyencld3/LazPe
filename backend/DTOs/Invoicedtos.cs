@@ -141,6 +141,7 @@ namespace PolyBabyAPI.DTOs
     {
         [Required]
         public string Reason { get; set; } = null!;
+        public string? Description { get; set; }
         public string? ImageUrls { get; set; }
         public RefundMethod RefundMethod { get; set; }
     }

@@ -7,13 +7,16 @@ import {
   OrderInfo,
   fetchOrderDetails,
   cancelOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  approveReturnOrder
 } from "@/lib/features/orders/orderApi";
 import { CancelOrderModal } from "@/components/admin/orders/CancelOrderModal";
+import { ReturnOrderModal } from "@/components/admin/orders/ReturnOrderModal";
 import { OrderActionBar } from "@/components/admin/orders/OrderActionBar";
 import { OrderCustomerInfo } from "@/components/admin/orders/OrderCustomerInfo";
 import { OrderCostSummary } from "@/components/admin/orders/OrderCostSummary";
 import { OrderProductList } from "@/components/admin/orders/OrderProductList";
+import { AlertTriangle, X } from "lucide-react";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -29,6 +32,11 @@ export default function OrderDetailsPage() {
   const [cancelReason, setCancelReason] = useState("Sản phẩm hết hàng");
   const [otherReason, setOtherReason] = useState("");
   const [canceling, setCanceling] = useState(false);
+
+  // Return Modal State
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [processingReturn, setProcessingReturn] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const loadOrder = async () => {
     try {
@@ -73,6 +81,23 @@ export default function OrderDetailsPage() {
       toast.error("Lỗi khi hủy đơn hàng.");
     } finally {
       setCanceling(false);
+    }
+  };
+
+  const handleReturnSubmit = async (isRefundToCoins: boolean) => {
+    setProcessingReturn(true);
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+      await approveReturnOrder(token, id as string, isRefundToCoins);
+      toast.success("Đã duyệt yêu cầu hoàn trả thành công.");
+      setShowReturnModal(false);
+      loadOrder(); // Reload
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi xử lý yêu cầu hoàn trả.");
+    } finally {
+      setProcessingReturn(false);
     }
   };
 
@@ -124,11 +149,51 @@ export default function OrderDetailsPage() {
           order={order}
           onUpdateStatus={handleUpdateStatus}
           onShowCancelModal={() => setShowCancelModal(true)}
+          onShowReturnModal={() => setShowReturnModal(true)}
           onPrintOrder={() => router.push(`/admin/orders/${id}/print`)}
         />
       </header>
 
       <div className="mt-2 space-y-5 animate-in fade-in duration-300">
+        
+        {/* Return Request Details */}
+        {order?.returnReason && (order.statusCode === 6 || order.statusCode === 7) && (
+          <div className="bg-white border border-orange-200 p-4 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="text-orange-500 shrink-0" size={20} />
+              <h3 className="font-bold text-orange-800 text-sm md:text-base">
+                Yêu cầu hoàn trả {order.statusCode === 7 ? "đã được xử lý" : "đang chờ xử lý"}
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div className="space-y-2 text-sm text-slate-700 bg-white p-3 rounded-xl border border-slate-100">
+                <p className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Thông tin yêu cầu</p>
+                <p><strong>Lý do:</strong> {order.returnReason}</p>
+                {order.returnDescription && <p><strong>Mô tả chi tiết:</strong> {order.returnDescription}</p>}
+                {order.refundMethod !== undefined && (
+                  <p><strong>Phương thức nhận tiền hoàn:</strong> {order.refundMethod === 1 ? 'Ví LazPe' : 'Xu LazPe'}</p>
+                )}
+              </div>
+              
+              {order.returnImageUrls && (
+                <div className="bg-white p-3 rounded-xl border border-slate-100">
+                  <p className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 text-sm">Hình ảnh minh chứng</p>
+                  <div className="flex flex-wrap gap-3">
+                    {order.returnImageUrls.split(",").map((url: string, idx: number) => (
+                      <img 
+                        key={idx} 
+                        src={url} 
+                        alt={`Minh chứng ${idx+1}`} 
+                        className="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-105 hover:opacity-80 transition-all duration-200" 
+                        onClick={() => setSelectedImage(url)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Two Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -156,6 +221,35 @@ export default function OrderDetailsPage() {
         setOtherReason={setOtherReason}
         canceling={canceling}
       />
+
+      {order && (
+        <ReturnOrderModal
+          isOpen={showReturnModal}
+          onClose={() => setShowReturnModal(false)}
+          onSubmit={handleReturnSubmit}
+          order={order}
+          processing={processingReturn}
+        />
+      )}
+
+      {/* Image Preview Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setSelectedImage(null)}>
+          <div className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="absolute -top-12 right-0 text-white hover:text-slate-300 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X size={24} />
+            </button>
+            <img 
+              src={selectedImage} 
+              alt="Zoomed" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
