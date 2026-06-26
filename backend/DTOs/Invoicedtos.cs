@@ -127,4 +127,17 @@ namespace PolyBabyAPI.DTOs
             public string? ImageUrl { get; set; }
         }
     }
+
+    public class ReturnRequestDto
+    {
+        [Required]
+        public string Reason { get; set; } = null!;
+        public string? ImageUrls { get; set; }
+        public RefundMethod RefundMethod { get; set; }
+    }
+
+    public class ReturnApprovalDto
+    {
+        public bool IsRefundToCoins { get; set; }
+    }
 }

@@ -851,6 +851,81 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        // ======== Yêu cầu hoàn trả (Client) ========
+        public async Task<bool> RequestReturnAsync(int invoiceId, string userId, string reason, string imageUrls, RefundMethod refundMethod)
+        {
+            var invoice = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && i.UserID == userId && !i.IsDeleted);
+            if (invoice == null || invoice.Status != OrderStatus.Completed) return false;
+
+            invoice.Status = OrderStatus.ReturnRequested;
+            invoice.ReturnReason = reason;
+            invoice.ReturnImageUrls = imageUrls;
+            invoice.RefundMethod = refundMethod;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ======== Duyệt hoàn trả (Admin) ========
+        public async Task<bool> ApproveReturnAsync(int invoiceId, bool isRefundToCoins)
+        {
+            var invoice = await _context.Invoices.Include(i => i.User).FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+            if (invoice == null || invoice.Status != OrderStatus.ReturnRequested) return false;
+
+            invoice.Status = OrderStatus.ReturnedRefunded;
+            
+            if (isRefundToCoins && invoice.User != null)
+            {
+                invoice.User.WalletBalance += invoice.TotalPrice;
+            }
+
+            await _context.SaveChangesAsync();
+            
+            Hangfire.BackgroundJob.Schedule<IInvoiceService>(s => s.AutoRestockAfterReturnAsync(invoiceId), TimeSpan.FromDays(14));
+            
+            return true;
+        }
+
+        // ======== Xác nhận đã nhận hàng hoàn (Admin) ========
+        public async Task<bool> ConfirmReturnReceivedAsync(int invoiceId)
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle).ThenInclude(b => b.BundleItems).ThenInclude(bi => bi.Variant)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+
+            if (invoice == null || invoice.Status != OrderStatus.ReturnedRefunded || invoice.IsReturnReceived) return false;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                invoice.IsReturnReceived = true;
+                await RestoreStockAsync(invoice);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        // ======== Tự động cộng lại tồn kho sau 14 ngày ========
+        public async Task AutoRestockAfterReturnAsync(int invoiceId)
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle).ThenInclude(b => b.BundleItems).ThenInclude(bi => bi.Variant)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+
+            if (invoice == null || invoice.Status != OrderStatus.ReturnedRefunded || invoice.IsReturnReceived) return;
+
+            invoice.IsReturnReceived = true;
+            await RestoreStockAsync(invoice);
+            await _context.SaveChangesAsync();
+        }
+
         // ======== Admin hủy đơn (CÓ HOÀN TRẢ KHO + VOUCHER) ========
         public async Task<bool> AdminCancelAsync(int invoiceId, string? reason)
         {

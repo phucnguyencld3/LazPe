@@ -22,6 +22,9 @@ namespace PolyBabyAPI.Models
         [StringLength(13, ErrorMessage = "Số điện thoại không hợp lệ")]
         public override string? PhoneNumber { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal WalletBalance { get; set; } = 0;
+
         // THÊM TRƯỜNG AVATAR
         [Display(Name = "Ảnh đại diện")]
         [StringLength(500, ErrorMessage = "Đường dẫn ảnh không được vượt quá 500 ký tự")]

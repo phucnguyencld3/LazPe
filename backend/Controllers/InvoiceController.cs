@@ -6,6 +6,8 @@ using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
+using System.Collections.Generic;
+using System.Security.Claims;
 using PolyBabyAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
 using PolyBabyAPI.Filters;
@@ -1860,6 +1862,48 @@ namespace PolyBabyAPI.Controllers
         }
 
 
+
+        // ======== Return Workflow ========
+
+        [Authorize]
+        [HttpPost("{id}/request-return")]
+        public async Task<IActionResult> RequestReturn(int id, [FromBody] ReturnRequestDto request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var success = await _invoiceService.RequestReturnAsync(id, userId, request.Reason, request.ImageUrls ?? "", request.RefundMethod);
+            if (!success) return BadRequest(new { message = "Không thể yêu cầu hoàn trả cho đơn hàng này." });
+
+            return Ok(new { message = "Yêu cầu hoàn trả đã được gửi thành công." });
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpPost("{id}/approve-return")]
+        public async Task<IActionResult> ApproveReturn(int id, [FromBody] ReturnApprovalDto request)
+        {
+            var success = await _invoiceService.ApproveReturnAsync(id, request.IsRefundToCoins);
+            if (!success) return BadRequest(new { message = "Không thể duyệt hoàn trả đơn hàng này." });
+
+            return Ok(new { message = "Duyệt hoàn trả thành công." });
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpPost("{id}/confirm-return-received")]
+        public async Task<IActionResult> ConfirmReturnReceived(int id)
+        {
+            try
+            {
+                var success = await _invoiceService.ConfirmReturnReceivedAsync(id);
+                if (!success) return BadRequest(new { message = "Không thể xác nhận nhận hàng hoặc đơn hàng chưa được hoàn trả." });
+                return Ok(new { message = "Đã xác nhận nhận hàng hoàn và cộng lại tồn kho." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xác nhận nhận hàng hoàn: {InvoiceId}", id);
+                return StatusCode(500, new { message = "Đã xảy ra lỗi nội bộ." });
+            }
+        }
 
         /// <summary>
         /// Request body cho tạo hóa đơn từ giỏ hàng

@@ -226,30 +226,59 @@ export const bulkMarkShippedOrders = async (token: string, invoiceIds: number[])
 export const exportOrdersToExcel = async (
   token: string,
   search?: string,
-  status?: number | null,
-  sortBy: string = 'created',
-  desc: boolean = true,
-  minPrice?: number | null,
-  maxPrice?: number | null,
-  dateRange?: string
+  status?: number,
+  minPrice?: number,
+  maxPrice?: number
 ): Promise<Blob> => {
-  let url = `${API_BASE_URL}/Invoice/export?sortBy=${sortBy}&desc=${desc}`;
-  if (search) url += `&search=${encodeURIComponent(search)}`;
-  if (status !== undefined && status !== null) url += `&status=${status}`;
-  if (minPrice !== undefined && minPrice !== null) url += `&minPrice=${minPrice}`;
-  if (maxPrice !== undefined && maxPrice !== null) url += `&maxPrice=${maxPrice}`;
-  if (dateRange) url += `&dateRange=${encodeURIComponent(dateRange)}`;
+  const queryParams = new URLSearchParams();
+  if (search) queryParams.append('search', search);
+  if (status !== undefined) queryParams.append('status', status.toString());
+  if (minPrice !== undefined) queryParams.append('minPrice', minPrice.toString());
+  if (maxPrice !== undefined) queryParams.append('maxPrice', maxPrice.toString());
 
-  const response = await fetch(url, {
-    method: "GET",
+  const response = await fetch(`${API_BASE_URL}/AdminInvoice/export?${queryParams.toString()}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   });
 
   if (!response.ok) {
-    throw new Error("Lỗi khi xuất danh sách đơn hàng ra Excel");
+    throw new Error('Failed to export orders');
   }
 
   return await response.blob();
+};
+
+export const requestReturnOrder = async (token: string, id: string, reason: string, imageUrls: string, refundMethod: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/request-return`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ reason, imageUrls, refundMethod })
+  });
+  return res.json();
+};
+
+export const approveReturnOrder = async (token: string, id: string, isRefundToCoins: boolean): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/approve-return`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ isRefundToCoins })
+  });
+  return res.json();
+};
+
+export const confirmReturnReceived = async (token: string, id: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/confirm-return-received`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return res.json();
 };

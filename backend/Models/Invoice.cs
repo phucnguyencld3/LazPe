@@ -35,7 +35,20 @@ namespace PolyBabyAPI.Models
         CancelRequested = 4,
 
         [Display(Name = "Đã hủy")]
-        Cancelled = 5
+        Cancelled = 5,
+
+        [Display(Name = "Yêu cầu trả hàng")]
+        ReturnRequested = 6,
+
+        [Display(Name = "Đã trả hàng & hoàn tiền")]
+        ReturnedRefunded = 7
+    }
+
+    public enum RefundMethod
+    {
+        None = 0,
+        SystemWallet = 1,
+        LazPeCoins = 2
     }
 
     public class Invoice
@@ -150,7 +163,12 @@ namespace PolyBabyAPI.Models
         public string? PrintTicketUrl { get; set; }
 
         [ValidateNever]
-        public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+        public string? ReturnReason { get; set; }
+        public string? ReturnImageUrls { get; set; }
+        public RefundMethod? RefundMethod { get; set; }
+        public bool IsReturnReceived { get; set; }
+
+        public ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 
         // Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
         public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();
