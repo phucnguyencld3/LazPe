@@ -6,6 +6,29 @@ import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MessagesSquare, X } from 'lucide-react';
+import Link from 'next/link';
+
+const ChatProductList = ({ products }: { products: any[] }) => {
+  return (
+    <div className="flex flex-col gap-2 my-2">
+      {products.map((p, i) => (
+        <Link key={`${p.productId}-${i}`} href={`/products/${p.productId}`} className="group flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all w-full cursor-pointer">
+          <div className="w-[60px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[60px]">
+            <img src={p.imageUrl || '/assets/img/products/default-product.jpg'} alt={p.name} className="max-h-[50px] max-w-full object-contain mix-blend-multiply" />
+          </div>
+          <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1">
+            <h4 className="text-[12px] font-semibold text-slate-700 leading-[1.3] whitespace-normal break-words group-hover:text-primary transition-colors line-clamp-2" title={p.name}>
+              {p.name}
+            </h4>
+            <span className="text-primary font-bold text-[12px]">
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0)}
+            </span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+};
 
 const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
   const [adding, setAdding] = useState(false);
@@ -57,12 +80,14 @@ const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url:
         <img src={data.imageUrl || '/assets/img/products/default-product.jpg'} alt={data.name} className="max-h-[60px] max-w-full object-contain mix-blend-multiply" />
       </div>
       <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
-        <h4 
-          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words" 
-          title={data.name}
-        >
-          {data.name}
-        </h4>
+        <Link href={`/products/${data.productId}`} className="group">
+          <h4 
+            className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words group-hover:text-primary transition-colors cursor-pointer" 
+            title={data.name}
+          >
+            {data.name}
+          </h4>
+        </Link>
         <div className="flex items-center justify-between">
           <span className="text-primary font-bold text-[13px] truncate pr-1">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
@@ -270,9 +295,18 @@ export default function CustomerChatWidget() {
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
       setMessages((prev) => {
-        const filtered = prev.filter(m => m.id > 0);
-        if (filtered.some((m) => m.id === normalized.id)) return filtered;
-        return [...filtered, normalized];
+        if (prev.some((m) => m.id === normalized.id)) return prev;
+        
+        if (!normalized.isFromAdmin) {
+          const tempIndex = prev.findIndex(m => m.id < 0 && m.messageText === normalized.messageText);
+          if (tempIndex !== -1) {
+            const next = [...prev];
+            next[tempIndex] = normalized;
+            return next;
+          }
+        }
+        
+        return [...prev, normalized];
       });
       if (isOpen && !normalized.isFromAdmin) {
         markAsRead(sid);
@@ -381,23 +415,9 @@ export default function CustomerChatWidget() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        
-        const aiMsg: Message = {
-          id: Date.now() + Math.random(),
-          chatSessionId: sessionId || "ai-session",
-          senderId: "ai",
-          senderName: "LazPe AI",
-          isFromAdmin: true,
-          messageText: data.text,
-          imageUrl: null,
-          createdAt: new Date().toISOString()
-        };
-
-        setMessages((prev) => {
-          const updatedMessages = prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m);
-          return [...updatedMessages, aiMsg];
-        });
+        // Backend broadcasts the user message and AI message via SignalR.
+        // We remove the tempId in case it wasn't replaced by SignalR yet to prevent orphaned temp messages.
+        setMessages((prev) => prev.filter(m => m.id !== tempId));
       } else {
         const errData = await res.json().catch(() => null);
         const errMsg = errData?.error || "AI không thể phản hồi lúc này.";
@@ -429,22 +449,60 @@ export default function CustomerChatWidget() {
       imageUrl: null,
       createdAt: new Date().toISOString()
     };
-
     setMessages((prev) => [...prev, tempMsg]);
-
-    const textToSend = inputText.trim();
     setInputText("");
+
+    if (isAiMode) {
+      setAiMessageQueue(prev => [...prev, { id: tempId, text: tempMsg.messageText }]);
+    } else {
+      sendMessageToAdmin(tempMsg);
+    }
+  };
+
+  useEffect(() => {
+    const handleOpenChatWithMsg = (e: CustomEvent) => {
+      const msg = e.detail;
+      setIsOpen(true);
+      setIsAiMode(true);
+      
+      // If no sessionId, generate one and start
+      let currentSessionId = sessionId;
+      if (!currentSessionId) {
+        currentSessionId = crypto.randomUUID();
+        localStorage.setItem("chat_session_id", currentSessionId);
+        setSessionId(currentSessionId);
+        setIsStarted(true);
+      }
+
+      const tempId = -(Date.now() + Math.random());
+      const tempMsg: Message = {
+        id: tempId,
+        chatSessionId: currentSessionId || "ai-session",
+        senderId: null,
+        senderName: guestName || "Khách hàng",
+        isFromAdmin: false,
+        messageText: msg,
+        imageUrl: null,
+        createdAt: new Date().toISOString()
+      };
+      
+      setMessages((prev) => [...prev, tempMsg]);
+      setAiMessageQueue((prev) => [...prev, { id: tempId, text: msg }]);
+    };
+
+    window.addEventListener('open_chat_with_msg', handleOpenChatWithMsg as EventListener);
+    return () => {
+      window.removeEventListener('open_chat_with_msg', handleOpenChatWithMsg as EventListener);
+    };
+  }, [guestName, sessionId]);
+
+  const sendMessageToAdmin = async (tempMsg: Message) => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
 
-    if (isAiMode) {
-      setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
-      return;
-    }
-
     const formData = new FormData();
-    formData.append("messageText", textToSend);
+    formData.append("messageText", tempMsg.messageText);
 
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -544,7 +602,7 @@ export default function CustomerChatWidget() {
     <>
       <button
         onClick={toggleOpen}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
       >
         {isOpen ? (
           <X size={28} strokeWidth={2.5} />
@@ -555,7 +613,7 @@ export default function CustomerChatWidget() {
 
       {isOpen && (
         <div
-          className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[85vh] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
+          className="fixed bottom-0 right-0 sm:top-20 sm:bottom-2 sm:right-6 z-[60] w-full sm:w-[45vw] sm:min-w-[460px] sm:max-w-[800px] h-[100dvh] sm:h-auto bg-white rounded-t-3xl sm:rounded-3xl border border-slate-100 flex flex-col overflow-hidden animate-in fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
         >
           <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -687,6 +745,16 @@ export default function CustomerChatWidget() {
                                           return <code className={className} {...props}>{children}</code>;
                                         }
                                       }
+                                      if (!inline && match && match[1] === 'product_list') {
+                                        try {
+                                          const data = JSON.parse(String(children).replace(/\n$/, ''));
+                                          if (Array.isArray(data)) {
+                                            return <ChatProductList products={data} />;
+                                          }
+                                        } catch (e) {
+                                          // fallback
+                                        }
+                                      }
                                       return <code className={className} {...props}>{children}</code>;
                                     },
                                     img: ({ node, ...props }) => (
@@ -696,7 +764,13 @@ export default function CustomerChatWidget() {
                                         onClick={() => setZoomedImage(typeof props.src === 'string' ? props.src : null)}
                                         alt={props.alt || "Image"}
                                       />
-                                    )
+                                    ),
+                                    a: ({ node, href, children, ...props }: any) => {
+                                      if (href && href.startsWith('/')) {
+                                        return <Link href={href} className="text-primary hover:underline font-semibold" {...props}>{children}</Link>;
+                                      }
+                                      return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold" {...props}>{children}</a>;
+                                    }
                                   }}
                                 >
                                   {msg.messageText}

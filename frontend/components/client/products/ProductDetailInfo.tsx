@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Star, Minus, Plus, ShoppingCart, Heart } from "lucide-react";
+import { Star, Minus, Plus, ShoppingCart, Heart, Sparkles } from "lucide-react";
 import { Product, Variant } from "@/types";
 import CountdownTimer from "@/components/client/common/CountdownTimer";
 
@@ -103,33 +103,44 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
           SKU: <span className="text-slate-600">{displaySku}</span>
         </div>
 
-        {/* Star Ratings */}
-        <div className="flex items-center gap-4 mb-6">
-          {product.rating !== undefined && product.rating !== null && product.rating > 0 ? (
-            <>
-              <div className="flex items-center gap-1.5">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={16}
-                      className={i < Math.round(product.rating!) ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}
-                    />
-                  ))}
+        {/* Star Ratings & Ask AI */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            {product.rating !== undefined && product.rating !== null && product.rating > 0 ? (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className={i < Math.round(product.rating!) ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-slate-600 font-bold">
+                    {product.rating.toFixed(1)}
+                  </span>
                 </div>
-                <span className="text-sm text-slate-600 font-bold">
-                  {product.rating.toFixed(1)}
-                </span>
-              </div>
-              {product.ratingCount !== undefined && product.ratingCount !== null && (
-                <span className="text-sm text-slate-400 border-l border-slate-200 pl-4">
-                  {product.ratingCount} Đánh giá
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-xs text-slate-400 font-medium">Chưa có đánh giá</span>
-          )}
+                {product.ratingCount !== undefined && product.ratingCount !== null && (
+                  <span className="text-sm text-slate-400 border-l border-slate-200 pl-4">
+                    {product.ratingCount} Đánh giá
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-xs text-slate-400 font-medium">Chưa có đánh giá</span>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open_chat_with_msg', { detail: `Tư vấn cho tôi về sản phẩm ${product.name}` }));
+            }}
+            className="group flex items-center h-8 sm:h-9 px-3 rounded-[8px] border bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 transition-all duration-300 ease-out shrink-0 active:scale-95 shadow-sm gap-1.5"
+          >
+            <Sparkles size={16} className="transition-transform group-hover:scale-110" />
+            <span className="text-[11px] sm:text-sm font-semibold">Hỏi AI</span>
+          </button>
         </div>
 
         {/* Price Display / Flash Sale Widget */}
@@ -467,7 +478,6 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
               <span className="truncate">Mua ngay</span>
             </button>
           </div>
-
         </div>
       </div>
     </div>
