@@ -247,14 +247,21 @@ export const exportOrdersToExcel = async (
   token: string,
   search?: string,
   status?: number,
+  sortBy?: string,
+  desc?: boolean,
   minPrice?: number,
-  maxPrice?: number
+  maxPrice?: number,
+  dateRange?: any
 ): Promise<Blob> => {
   const queryParams = new URLSearchParams();
   if (search) queryParams.append('search', search);
   if (status !== undefined) queryParams.append('status', status.toString());
+  if (sortBy) queryParams.append('sortBy', sortBy);
+  if (desc !== undefined) queryParams.append('desc', desc.toString());
   if (minPrice !== undefined) queryParams.append('minPrice', minPrice.toString());
   if (maxPrice !== undefined) queryParams.append('maxPrice', maxPrice.toString());
+  if (dateRange?.from) queryParams.append('startDate', dateRange.from.toISOString());
+  if (dateRange?.to) queryParams.append('endDate', dateRange.to.toISOString());
 
   const response = await fetch(`${API_BASE_URL}/AdminInvoice/export?${queryParams.toString()}`, {
     headers: {
