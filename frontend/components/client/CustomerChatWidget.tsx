@@ -6,104 +6,44 @@ import { toast } from "@/lib/toast";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MessagesSquare, X } from 'lucide-react';
-import Link from 'next/link';
-
-const ChatProductList = ({ products }: { products: any[] }) => {
-  return (
-    <div className="flex flex-col gap-2 my-2">
-      {products.map((p, i) => (
-        <Link key={`${p.productId}-${i}`} href={`/products/${p.productId}`} className="group flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all w-full cursor-pointer">
-          <div className="w-[60px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[60px]">
-            <img src={p.imageUrl || '/assets/img/products/default-product.jpg'} alt={p.name} className="max-h-[50px] max-w-full object-contain mix-blend-multiply" />
-          </div>
-          <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1">
-            <h4 className="text-[12px] font-semibold text-slate-700 leading-[1.3] whitespace-normal break-words group-hover:text-primary transition-colors line-clamp-2" title={p.name}>
-              {p.name}
-            </h4>
-            <span className="text-primary font-bold text-[12px]">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0)}
-            </span>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-};
-
+import { useRouter } from "next/navigation";
 const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
-  const [adding, setAdding] = useState(false);
-  
-  const handleAddToCart = async () => {
-    try {
-      setAdding(true);
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token) {
-        toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
-        return;
-      }
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL
-        ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "")
-        : "http://localhost:5101";
-        
-      const res = await fetch(`${API_BASE}/api/cart/add`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          variantID: data.variantId || data.productId,
-          quantity: 1
-        })
-      });
-      const result = await res.json();
-      if (result.success || res.ok) {
-        toast.success(`Đã thêm ${data.name} vào giỏ hàng!`);
-        window.dispatchEvent(new Event("cart_updated"));
-      } else {
-        toast.error(result.message || "Không thể thêm vào giỏ hàng");
-      }
-    } catch (e) {
-      toast.error("Lỗi khi thêm vào giỏ hàng");
-    } finally {
-      setAdding(false);
+  const router = useRouter();
+
+  const handleProductClick = () => {
+    if (data.productId || data.variantId || data.id) {
+      const id = data.productId || data.variantId || data.id;
+      // In case it's a slug, we can use it. But id is usually used in routing.
+      router.push(`/products/${id}`);
     }
   };
 
   return (
-    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full">
+    <div 
+      className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full cursor-pointer hover:border-primary/50 group"
+      onClick={handleProductClick}
+    >
       <div 
-        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px] cursor-pointer hover:opacity-80 transition-opacity"
-        onClick={() => onZoomImage && onZoomImage(data.imageUrl || '/assets/img/products/default-product.jpg')}
-        title="Phóng to ảnh"
+        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px]"
+        title="Xem chi tiết"
       >
-        <img src={data.imageUrl || '/assets/img/products/default-product.jpg'} alt={data.name} className="max-h-[60px] max-w-full object-contain mix-blend-multiply" />
+        <img 
+          src={data.imageUrl || '/assets/img/products/default-product.jpg'} 
+          alt={data.name} 
+          className="max-h-[60px] max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform" 
+        />
       </div>
       <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
-        <Link href={`/products/${data.productId}`} className="group">
-          <h4 
-            className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words group-hover:text-primary transition-colors cursor-pointer" 
-            title={data.name}
-          >
-            {data.name}
-          </h4>
-        </Link>
-        <div className="flex items-center justify-between">
-          <span className="text-primary font-bold text-[13px] truncate pr-1">
+        <h4 
+          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words group-hover:text-primary transition-colors" 
+          title={data.name}
+        >
+          {data.name}
+        </h4>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-rose-600 font-bold text-[13px] truncate pr-1">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
           </span>
-          <button 
-            onClick={handleAddToCart}
-            disabled={adding}
-            className="bg-primary/10 hover:bg-primary text-primary hover:text-white disabled:bg-slate-100 disabled:text-slate-400 p-1.5 rounded-lg transition-colors flex items-center justify-center shrink-0 active:scale-95"
-            title="Thêm giỏ hàng"
-          >
-            {adding ? (
-              <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
-            ) : (
-              <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-            )}
-          </button>
         </div>
       </div>
     </div>
@@ -214,6 +154,11 @@ export default function CustomerChatWidget() {
     const initSession = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       let savedSessionId = localStorage.getItem("chat_session_id");
+      let savedMode = localStorage.getItem("chatMode");
+
+      if (savedMode) {
+        setIsAiMode(savedMode === "AI");
+      }
 
       if (token) {
         // Authenticated user: verify/retrieve active session
@@ -322,8 +267,16 @@ export default function CustomerChatWidget() {
     connection.on("SessionClosed", (closedId: string) => {
       if (closedId === sid) {
         setIsClosed(true);
+        setIsAdminTyping(false);
         toast.info("Cuộc trò chuyện đã được đóng bởi quản trị viên.");
       }
+    });
+
+    connection.on("SupportEnded", () => {
+      setIsAiMode(true);
+      setIsAdminTyping(false);
+      localStorage.setItem("chatMode", "AI");
+      toast.info("Nhân viên CSKH đã rời khỏi cuộc trò chuyện. Trợ lý AI đã tiếp quản.");
     });
 
     connection.on("CartUpdated", () => {
@@ -395,14 +348,35 @@ export default function CustomerChatWidget() {
     }
   };
 
+
+
+  const requestCSKH = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/session/${sessionId}/request-cskh`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        toast.success("Đã gửi yêu cầu kết nối với nhân viên hỗ trợ.");
+        setIsAiMode(false);
+        localStorage.setItem("chatMode", "CSKH");
+      } else {
+        toast.error("Không thể kết nối với CSKH.");
+      }
+    } catch (e) {
+      toast.error("Lỗi khi gửi yêu cầu.");
+    }
+  };
+
+  // Thêm state hàng chờ cho AI
   const [aiMessageQueue, setAiMessageQueue] = useState<{ id: number, text: string }[]>([]);
 
   useEffect(() => {
-    if (isAiMode && aiMessageQueue.length > 0 && !isAdminTyping) {
+    if (aiMessageQueue.length > 0 && !isAdminTyping) {
       const nextItem = aiMessageQueue[0];
       processAiMessage(nextItem.id, nextItem.text);
     }
-  }, [aiMessageQueue, isAdminTyping, isAiMode]);
+  }, [aiMessageQueue, isAdminTyping]);
 
   const processAiMessage = async (tempId: number, textToSend: string) => {
     try {
@@ -433,10 +407,15 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendMessage = async (textToSend: string) => {
     if (!sessionId && !isAiMode) return;
-    if (!inputText.trim()) return;
+    if (!textToSend.trim()) return;
+
+    const lowerText = textToSend.trim().toLowerCase();
+    if (isAiMode && (lowerText === "yêu cầu gặp nhân viên cskh" || lowerText === "gặp cskh" || lowerText === "tôi muốn gặp nhân viên")) {
+      requestCSKH();
+      return;
+    }
 
     const tempId = -(Date.now() + Math.random());
     const tempMsg: Message = {
@@ -445,60 +424,27 @@ export default function CustomerChatWidget() {
       senderId: null,
       senderName: guestName || "Khách hàng",
       isFromAdmin: false,
-      messageText: inputText.trim(),
+      messageText: textToSend,
       imageUrl: null,
       createdAt: new Date().toISOString()
     };
     setMessages((prev) => [...prev, tempMsg]);
-    setInputText("");
 
-    if (isAiMode) {
-      setAiMessageQueue(prev => [...prev, { id: tempId, text: tempMsg.messageText || "" }]);
-    } else {
-      sendMessageToAdmin(tempMsg);
-    }
-  };
-
-  useEffect(() => {
-    const handleOpenChatWithMsg = (e: CustomEvent) => {
-      const msg = e.detail;
-      setIsOpen(true);
-      setIsAiMode(true);
-      
-      // If no sessionId, generate one and start
-      let currentSessionId = sessionId;
-      if (!currentSessionId) {
-        currentSessionId = crypto.randomUUID();
-        localStorage.setItem("chat_session_id", currentSessionId);
-        setSessionId(currentSessionId);
-        setIsStarted(true);
-      }
-
-      const tempId = -(Date.now() + Math.random());
-      const tempMsg: Message = {
-        id: tempId,
-        chatSessionId: currentSessionId || "ai-session",
-        senderId: null,
-        senderName: guestName || "Khách hàng",
-        isFromAdmin: false,
-        messageText: msg,
-        imageUrl: null,
-        createdAt: new Date().toISOString()
-      };
-      
-      setMessages((prev) => [...prev, tempMsg]);
-      setAiMessageQueue((prev) => [...prev, { id: tempId, text: msg }]);
-    };
-
-    window.addEventListener('open_chat_with_msg', handleOpenChatWithMsg as EventListener);
-    return () => {
-      window.removeEventListener('open_chat_with_msg', handleOpenChatWithMsg as EventListener);
-    };
-  }, [guestName, sessionId]);
-
-  const sendMessageToAdmin = async (tempMsg: Message) => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
+    }
+
+    const faqList = [
+      "thời gian giao hàng là bao lâu?",
+      "chính sách đổi trả hàng như thế nào?",
+      "kiểm tra trạng thái đơn hàng của tôi",
+      "tôi muốn thay đổi địa chỉ nhận hàng",
+      "shop có chương trình khuyến mãi nào không?"
+    ];
+
+    if (isAiMode || faqList.includes(lowerText)) {
+      setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
+      return;
     }
 
     const formData = new FormData();
@@ -535,6 +481,59 @@ export default function CustomerChatWidget() {
     }
   };
 
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputText.trim();
+    if (!text) return;
+    setInputText("");
+    await sendMessage(text);
+  };
+
+  const sendSticker = async (stickerUrl: string) => {
+    if (!sessionId) return;
+
+    const tempId = -(Date.now() + Math.random());
+    const tempMsg: Message = {
+      id: tempId,
+      chatSessionId: sessionId,
+      senderId: null,
+      senderName: guestName || "Khách hàng",
+      isFromAdmin: false,
+      messageText: stickerUrl,
+      imageUrl: null,
+      createdAt: new Date().toISOString()
+    };
+
+    setMessages((prev) => [...prev, tempMsg]);
+    setShowPicker(false);
+
+    const formData = new FormData();
+    formData.append("messageText", stickerUrl);
+
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const headers: HeadersInit = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}/api/chat/session/${sessionId}/message`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        toast.error(data.message || "Không thể gửi sticker.");
+      } else {
+        if (isClosed) setIsClosed(false);
+      }
+    } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      toast.error("Gửi sticker thất bại.");
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
     e.target.style.height = 'auto';
@@ -562,9 +561,11 @@ export default function CustomerChatWidget() {
   const handleResetChat = async () => {
     setShowEndChatModal(false);
     localStorage.removeItem("chat_session_id");
+    localStorage.removeItem("chatMode");
     setSessionId(null);
     setIsClosed(false);
     setMessages([]);
+    setIsAiMode(true);
 
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (token) {
@@ -604,7 +605,7 @@ export default function CustomerChatWidget() {
     <>
       <button
         onClick={toggleOpen}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
       >
         {isOpen ? (
           <X size={28} strokeWidth={2.5} />
@@ -615,7 +616,7 @@ export default function CustomerChatWidget() {
 
       {isOpen && (
         <div
-          className="fixed bottom-0 right-0 sm:top-20 sm:bottom-2 sm:right-6 z-[60] w-full sm:w-[45vw] sm:min-w-[460px] sm:max-w-[800px] h-[100dvh] sm:h-auto bg-white rounded-t-3xl sm:rounded-3xl border border-slate-100 flex flex-col overflow-hidden animate-in fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
+          className="fixed bottom-0 right-0 sm:bottom-[10px] sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[calc(100vh-100px)] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
         >
           <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -635,13 +636,6 @@ export default function CustomerChatWidget() {
             </div>
 
             <div className="flex items-center gap-1.5 text-white/90 relative z-10">
-              <button
-                onClick={() => setIsAiMode(!isAiMode)}
-                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${isAiMode ? "bg-white text-primary border-white shadow-sm" : "bg-white/10 border-white/20 hover:bg-white/20"}`}
-                title="Chuyển đổi chế độ AI / Nhân viên"
-              >
-                {isAiMode ? "AI Mode" : "Human"}
-              </button>
               {isStarted && (
                 <button
                   onClick={() => setShowEndChatModal(true)}
@@ -689,18 +683,52 @@ export default function CustomerChatWidget() {
               </div>
             ) : (
               <>
-                {messages.length === 0 ? (
-                  <div className="text-center text-slate-500 py-10 text-xs bg-white/50 rounded-xl p-4">
-                    Bắt đầu cuộc trò chuyện. Hãy gửi lời chào đến chúng tôi!
+                {isAiMode && (
+                  <div className="flex flex-col gap-3 py-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex flex-col items-start w-full">
+                      <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
+                        LazPe AI
+                      </span>
+                      <div className="max-w-[85%] rounded-[20px] px-4 py-3 text-[14px] leading-relaxed shadow-sm bg-white text-slate-700 rounded-tl-sm border border-slate-100/50">
+                        Chào bạn <span className="font-semibold text-primary">{guestName || "khách yêu"}</span> 👋, hôm nay bạn cần LazPe hỗ trợ về điều gì, hãy hỏi ngay để được giải đáp nhanh chóng nhé! ✨
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-start w-full mt-1">
+                      <div className="max-w-[85%] bg-white border border-slate-200 rounded-[16px] overflow-hidden shadow-sm w-full">
+                        <div className="px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-[13px] bg-slate-50/50">
+                          Bạn muốn hỏi về:
+                        </div>
+                        <div className="flex flex-col w-full">
+                          {[
+                            "Thời gian giao hàng là bao lâu?",
+                            "Chính sách đổi trả hàng như thế nào?",
+                            "Kiểm tra trạng thái đơn hàng của tôi",
+                            "Tôi muốn thay đổi địa chỉ nhận hàng",
+                            "Shop có chương trình khuyến mãi nào không?",
+                            "Yêu cầu gặp nhân viên CSKH"
+                          ].map((faq, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => sendMessage(faq)}
+                              className="px-4 py-3 text-left text-[13px] text-primary hover:bg-primary/5 transition-all border-b border-slate-50 last:border-0 hover:pl-5 cursor-pointer font-medium"
+                            >
+                              {faq}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  messages.map((msg) => {
+                )}
+
+                {messages.map((msg) => {
                     const isSystemMessage = msg.senderName === "Hệ thống";
 
                     if (isSystemMessage) {
                       return (
                         <div key={msg.id} className="w-full text-center my-2">
-                          <span className="bg-slate-200/80 text-slate-600 text-[11px] px-3 py-1 rounded-full inline-block shadow-sm">
+                          <span className="text-slate-500 text-[11px] italic">
                             {msg.messageText}
                           </span>
                         </div>
@@ -789,7 +817,7 @@ export default function CustomerChatWidget() {
                       </div>
                     );
                   })
-                )}
+                }
                 {isAdminTyping && (
                   <div className="flex items-center gap-1 text-xs text-slate-500 py-1.5 pl-2 bg-white/40 rounded-full w-fit px-3 shadow-sm">
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce"></span>

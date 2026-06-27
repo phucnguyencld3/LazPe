@@ -62,22 +62,25 @@ namespace PolyBabyAPI.Controllers
                 _dbContext.ChatMessages.Add(userMsg);
                 await _dbContext.SaveChangesAsync();
 
-                // Broadcast user message via SignalR
-                var userMsgDto = new
+                // Predefined FAQ responses to save time and API calls
+                string responseText;
+                var faqMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    userMsg.Id,
-                    userMsg.ChatSessionId,
-                    userMsg.SenderId,
-                    userMsg.SenderName,
-                    userMsg.IsFromAdmin,
-                    userMsg.MessageText,
-                    userMsg.ImageUrl,
-                    userMsg.CreatedAt
+                    { "Thời gian giao hàng là bao lâu?", "Thời gian giao hàng nội thành thường từ 1-2 ngày. Đối với các tỉnh thành khác, thời gian giao hàng khoảng 3-5 ngày làm việc ạ." },
+                    { "Chính sách đổi trả hàng như thế nào?", "LazPe hỗ trợ đổi trả hàng miễn phí trong vòng 7 ngày kể từ khi nhận hàng nếu sản phẩm bị lỗi từ nhà sản xuất hoặc giao sai mẫu. Bạn vui lòng giữ nguyên tem mác và bao bì nhé!" },
+                    { "Kiểm tra trạng thái đơn hàng của tôi", "Để kiểm tra đơn hàng, bạn vui lòng truy cập vào mục 'Tài khoản' > 'Đơn hàng của tôi'. Hoặc bạn có thể yêu cầu kết nối CSKH và cung cấp mã đơn hàng để được hỗ trợ kiểm tra nhé!" },
+                    { "Tôi muốn thay đổi địa chỉ nhận hàng", "Nếu đơn hàng chưa được giao cho đơn vị vận chuyển, bạn có thể tự thay đổi địa chỉ trong phần chi tiết đơn hàng. Nếu đơn đã xuất kho, vui lòng yêu cầu kết nối với Nhân viên CSKH để được hỗ trợ kịp thời ạ." },
+                    { "Shop có chương trình khuyến mãi nào không?", "Hiện tại LazPe đang có nhiều chương trình ưu đãi hấp dẫn như miễn phí vận chuyển, voucher giảm giá cho thành viên mới và các combo tiết kiệm. Bạn có thể xem chi tiết tại trang chủ hoặc mục Voucher nhé!" }
                 };
-                await _hubContext.Clients.Group(request.SessionId).SendAsync("ReceiveMessage", userMsgDto);
-                await _hubContext.Clients.All.SendAsync("UpdateAdminSessions");
 
-                var responseText = await _geminiService.GenerateTextAsync(request.SessionId, request.Message);
+                if (faqMap.TryGetValue(request.Message.Trim(), out var staticResponse))
+                {
+                    responseText = staticResponse;
+                }
+                else
+                {
+                    responseText = await _geminiService.GenerateTextAsync(request.SessionId, request.Message);
+                }
 
                 // Save AI message
                 var aiMsg = new ChatMessage
