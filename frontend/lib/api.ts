@@ -1507,10 +1507,24 @@ export async function syncWishlistApi(
 
 export async function getUserOrders(
   userId: string,
-  token: string
-): Promise<any[] | null> {
+  token: string,
+  status?: string,
+  search?: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<{ items: any[]; totalCount: number; page: number; pageSize: number } | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/Invoice/user/${userId}`, {
+    const url = new URL(`${API_BASE_URL}/Invoice/user/${userId}`);
+    if (status && status !== "all") {
+      url.searchParams.append("status", status);
+    }
+    if (search && search.trim() !== "") {
+      url.searchParams.append("search", search.trim());
+    }
+    url.searchParams.append("page", page.toString());
+    url.searchParams.append("pageSize", pageSize.toString());
+
+    const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

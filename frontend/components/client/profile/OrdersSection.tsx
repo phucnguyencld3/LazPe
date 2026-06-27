@@ -21,17 +21,27 @@ export function OrdersSection({
 }: OrdersSectionProps) {
   const [activeTab, setActiveTab] = useState<"all" | "0" | "2" | "3" | "5">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState<Record<number, boolean>>({});
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 5;
+  const pageSize = 10;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, searchQuery]);
+  }, [activeTab]);
 
   const toggleOrderExpand = (orderId: number) => {
     setExpandedOrders((prev) => ({
@@ -95,9 +105,13 @@ export function OrdersSection({
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const data = await getUserOrders(userId, token);
+      const data = await getUserOrders(userId, token, activeTab, debouncedSearch, currentPage, pageSize);
       if (data) {
-        setOrders(data);
+        setOrders(data.items || []);
+        setTotalCount(data.totalCount || 0);
+      } else {
+        setOrders([]);
+        setTotalCount(0);
       }
     } catch (err) {
       console.error("Error loading user orders:", err);
@@ -111,7 +125,7 @@ export function OrdersSection({
     if (userId && token) {
       loadOrders();
     }
-  }, [userId, token]);
+  }, [userId, token, activeTab, debouncedSearch, currentPage]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
@@ -236,32 +250,7 @@ export function OrdersSection({
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    // Filter by tab
-    let matchesTab = true;
-    if (activeTab === "0") {
-      // Chờ xử lý: Chờ xác nhận (0) hoặc Đã xác nhận (1)
-      matchesTab = order.statusCode === 0 || order.statusCode === 1;
-    } else if (activeTab === "2") {
-      // Vận chuyển: Đang giao hàng (2)
-      matchesTab = order.statusCode === 2;
-    } else if (activeTab === "3") {
-      // Hoàn thành: Hoàn tất (3)
-      matchesTab = order.statusCode === 3;
-    } else if (activeTab === "5") {
-      // Đã hủy: Yêu cầu hủy (4) hoặc Đã hủy (5)
-      matchesTab = order.statusCode === 5 || order.statusCode === 4;
-    }
-
-    // Filter by search query
-    const matchesSearch = searchQuery.trim() === "" ||
-      order.invoiceID.toString().includes(searchQuery) ||
-      (order.invoiceDetails && order.invoiceDetails.some((item: any) =>
-        item.productName.toLowerCase().includes(searchQuery.toLowerCase())
-      ));
-
-    return matchesTab && matchesSearch;
-  });
+  const filteredOrders = orders;
 
   if (loading) {
     return (
@@ -335,8 +324,8 @@ export function OrdersSection({
       <div className="space-y-md">
         {filteredOrders.length > 0 ? (
           (() => {
-            const totalPages = Math.ceil(filteredOrders.length / pageSize);
-            const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+            const totalPages = Math.ceil(totalCount / pageSize);
+            const paginatedOrders = filteredOrders;
 
             return (
               <>
@@ -508,7 +497,7 @@ export function OrdersSection({
                 {totalPages > 1 && (
                   <div className="flex justify-between items-center pt-4 text-xs font-bold text-slate-500 border-t border-slate-100 mt-6">
                     <span>
-                      Hiển thị {paginatedOrders.length} trên tổng số {filteredOrders.length} đơn hàng
+                      Hiển thị {paginatedOrders.length} trên tổng số {totalCount} đơn hàng
                     </span>
 
                     <div className="flex items-center gap-2">

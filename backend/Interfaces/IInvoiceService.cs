@@ -6,6 +6,7 @@ namespace PolyBabyAPI.Interface
     {
         Task<IEnumerable<Invoice>> GetAllAsync();
         Task<IEnumerable<Invoice>> GetByUserAsync(string userId, OrderStatus? status = null);
+        Task<(IEnumerable<Invoice> Items, int TotalCount)> GetByUserPaginatedAsync(string userId, OrderStatus? status = null, string? search = null, int page = 1, int pageSize = 10);
         Task<Invoice?> GetByIdAsync(int id);
         Task AddAsync(Invoice invoice);
         Task UpdateAsync(Invoice invoice);

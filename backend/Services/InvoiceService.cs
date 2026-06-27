@@ -70,6 +70,39 @@ namespace PolyBabyAPI.Services
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Invoice> Items, int TotalCount)> GetByUserPaginatedAsync(string userId, OrderStatus? status = null, string? search = null, int page = 1, int pageSize = 10)
+        {
+            var query = _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.UserID == userId && !i.IsDeleted);
+
+            if (status.HasValue)
+            {
+                query = query.Where(i => i.Status == status.Value);
+            }
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(i => 
+                    (i.InvoiceCode != null && i.InvoiceCode.ToLower().Contains(s)) ||
+                    i.InvoiceDetails.Any(d => d.Variant.Product.ProductName.ToLower().Contains(s) || (d.Bundle != null && d.Bundle.Name.ToLower().Contains(s)))
+                );
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
+                .OrderByDescending(i => i.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         // ======== Lấy hóa đơn theo ID ========
         public async Task<Invoice?> GetByIdAsync(int id)
         {

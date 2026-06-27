@@ -145,13 +145,27 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpGet("user/{userId}")]
         //[Authorize(Roles = "Admin")]
-        public async Task<ActionResult<IEnumerable<object>>> GetByUser(string userId, [FromQuery] OrderStatus? status = null)
+        public async Task<ActionResult<object>> GetByUser(
+            string userId, 
+            [FromQuery] OrderStatus? status = null,
+            [FromQuery] string? search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             try
             {
-                var invoices = await _invoiceService.GetByUserAsync(userId, status);
-                var result = invoices.Select(MapInvoiceToResponse);
-                return Ok(result);
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+                var (invoices, totalCount) = await _invoiceService.GetByUserPaginatedAsync(userId, status, search, page, pageSize);
+                var result = invoices.Select(MapInvoiceToClientListResponse);
+                return Ok(new
+                {
+                    Items = result,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
+                });
             }
             catch (Exception ex)
             {
@@ -1525,6 +1539,36 @@ namespace PolyBabyAPI.Controllers
                         pt.PaidAt
                     })
                     .ToList()
+            };
+        }
+
+        private static object MapInvoiceToClientListResponse(Invoice invoice)
+        {
+            return new
+            {
+                invoice.InvoiceID,
+                invoice.InvoiceCode,
+                invoice.SubTotal,
+                invoice.DiscountAmount,
+                invoice.TotalPrice,
+                invoice.ShippingFee,
+                invoice.ShippingDiscountAmount,
+                PayMethodCode = (int?)invoice.PayMethod,
+                Status = invoice.Status.GetDisplayName(),
+                StatusCode = (int)invoice.Status,
+                invoice.CreatedAt,
+                InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
+                {
+                    d.InvoiceDetailID,
+                    d.VariantID,
+                    d.BundleID,
+                    d.Quantity,
+                    d.UnitPrice,
+                    d.TotalPrice,
+                    ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
+                    VariantName = d.Variant?.VariantName,
+                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? d.Bundle?.ImageUrl)
+                }).ToList()
             };
         }
 
