@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627193203_RemoveLegacyBabyFields")]
+    partial class RemoveLegacyBabyFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -305,14 +308,6 @@ namespace PolyBabyAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<decimal>("WalletBalance")
-                        .IsConcurrencyToken()
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("WalletSignature")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -664,9 +659,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<bool>("IsClosed")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsWaitingForSupport")
-                        .HasColumnType("bit");
-
                     b.Property<string>("LastMessageText")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -835,21 +827,12 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InvoiceID"));
 
-                    b.Property<decimal>("AmountToPay")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("CancelReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("CancelRefundMethod")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal>("CoinsDiscountAmount")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -870,12 +853,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsRefunded")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsReturnReceived")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -883,26 +860,7 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int?>("PayMethod")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("PointsDiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("PrintTicketUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("RefundMethod")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("RefundedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReturnDescription")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ReturnImageUrls")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ReturnReason")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ShippedAt")
@@ -964,14 +922,8 @@ namespace PolyBabyAPI.Migrations
                     b.Property<string>("UserID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("VoucherDiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int?>("VoucherID")
                         .HasColumnType("int");
-
-                    b.Property<decimal>("WalletDiscountAmount")
-                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("InvoiceID");
 
@@ -1653,32 +1605,14 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentTransactionId"));
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FailedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FailureReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("InvoiceID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("RawQuery")
                         .HasMaxLength(2000)
@@ -2685,11 +2619,11 @@ namespace PolyBabyAPI.Migrations
 
             modelBuilder.Entity("PolyBabyAPI.Models.VoucherUsage", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("VoucherID")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("UserID")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("CartID")
                         .HasColumnType("int");
@@ -2706,22 +2640,13 @@ namespace PolyBabyAPI.Migrations
                     b.Property<DateTime>("UsedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("VoucherID")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
+                    b.HasKey("VoucherID", "UserID");
 
                     b.HasIndex("CartID");
 
                     b.HasIndex("InvoiceID");
 
                     b.HasIndex("UserID");
-
-                    b.HasIndex("VoucherID");
 
                     b.ToTable("VoucherUsages");
                 });
@@ -2785,58 +2710,6 @@ namespace PolyBabyAPI.Migrations
                     b.HasIndex("ProductID");
 
                     b.ToTable("Wishlists");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.WithdrawRequest", b =>
-                {
-                    b.Property<int>("RequestID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestID"));
-
-                    b.Property<string>("AdminNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("BankAccount")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("BankName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("BankOwnerName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("UserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("RequestID");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("WithdrawRequests");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -3573,17 +3446,6 @@ namespace PolyBabyAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.WithdrawRequest", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });

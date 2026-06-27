@@ -93,9 +93,19 @@ namespace PolyBabyAPI.Data
         public DbSet<Banner> Banners { get; set; }
         public DbSet<BannerVersion> BannerVersions { get; set; }
 
+        // ===== Baby Profiles =====
+        public DbSet<BabyProfile> BabyProfiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ===== BabyProfile Configurations =====
+            builder.Entity<BabyProfile>()
+                .HasOne(bp => bp.User)
+                .WithMany(u => u.BabyProfiles)
+                .HasForeignKey(bp => bp.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ===== Flash Sale Relationships =====
             builder.Entity<FlashSaleItem>()
