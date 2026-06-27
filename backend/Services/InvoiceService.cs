@@ -980,6 +980,7 @@ namespace PolyBabyAPI.Services
                 invoice.CancelledAt = DateTime.Now;
                 invoice.RefundedAt = DateTime.Now;
                 
+                await HandleLoyaltyOnCancelAsync(invoice);
                 await RefundOrderBalancesAsync(invoice);
 
                 await _context.SaveChangesAsync();

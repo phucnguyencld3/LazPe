@@ -105,7 +105,7 @@ namespace PolyBabyAPI.Controllers
                         }
                     }
 
-                    if (invoice != null && success)
+                    if (invoice != null && success && invoice.Status == OrderStatus.Pending)
                     {
                         invoice.Status = OrderStatus.Confirmed;
                         invoice.ConfirmedAt = DateTime.Now;
