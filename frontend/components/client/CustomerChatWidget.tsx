@@ -116,7 +116,6 @@ export default function CustomerChatWidget() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
   const [isAiMode, setIsAiMode] = useState(true);
-  const [modeSelected, setModeSelected] = useState(false);
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
@@ -158,7 +157,6 @@ export default function CustomerChatWidget() {
 
       if (savedMode) {
         setIsAiMode(savedMode === "AI");
-        setModeSelected(true);
       }
 
       if (token) {
@@ -259,16 +257,16 @@ export default function CustomerChatWidget() {
     connection.on("SessionClosed", (closedId: string) => {
       if (closedId === sid) {
         setIsClosed(true);
+        setIsAdminTyping(false);
         toast.info("Cuộc trò chuyện đã được đóng bởi quản trị viên.");
       }
     });
 
-    connection.on("SupportEnded", (closedId: string) => {
-      if (closedId === sid) {
-        setIsAiMode(true);
-        localStorage.setItem("chatMode", "AI");
-        toast.info("Nhân viên CSKH đã rời khỏi cuộc trò chuyện.");
-      }
+    connection.on("SupportEnded", () => {
+      setIsAiMode(true);
+      setIsAdminTyping(false);
+      localStorage.setItem("chatMode", "AI");
+      toast.info("Nhân viên CSKH đã rời khỏi cuộc trò chuyện. Trợ lý AI đã tiếp quản.");
     });
 
     connection.on("CartUpdated", () => {
@@ -324,15 +322,7 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const selectMode = (mode: "AI" | "CSKH") => {
-    if (mode === "CSKH") {
-      requestCSKH();
-    } else {
-      setIsAiMode(true);
-      setModeSelected(true);
-      localStorage.setItem("chatMode", "AI");
-    }
-  };
+
 
   const requestCSKH = async () => {
     if (!sessionId) return;
@@ -343,7 +333,6 @@ export default function CustomerChatWidget() {
       if (res.ok) {
         toast.success("Đã gửi yêu cầu kết nối với nhân viên hỗ trợ.");
         setIsAiMode(false);
-        setModeSelected(true);
         localStorage.setItem("chatMode", "CSKH");
       } else {
         toast.error("Không thể kết nối với CSKH.");
@@ -358,11 +347,11 @@ export default function CustomerChatWidget() {
 
   // Effect xử lý hàng chờ AI tuần tự
   useEffect(() => {
-    if (isAiMode && aiMessageQueue.length > 0 && !isAdminTyping) {
+    if (aiMessageQueue.length > 0 && !isAdminTyping) {
       const nextItem = aiMessageQueue[0];
       processAiMessage(nextItem.id, nextItem.text);
     }
-  }, [aiMessageQueue, isAdminTyping, isAiMode]);
+  }, [aiMessageQueue, isAdminTyping]);
 
   const processAiMessage = async (tempId: number, textToSend: string) => {
     try {
@@ -416,7 +405,7 @@ export default function CustomerChatWidget() {
     if (!textToSend.trim()) return;
 
     const lowerText = textToSend.trim().toLowerCase();
-    if (lowerText === "yêu cầu gặp nhân viên cskh" || lowerText === "gặp cskh" || lowerText === "tôi muốn gặp nhân viên") {
+    if (isAiMode && (lowerText === "yêu cầu gặp nhân viên cskh" || lowerText === "gặp cskh" || lowerText === "tôi muốn gặp nhân viên")) {
       requestCSKH();
       return;
     }
@@ -439,7 +428,15 @@ export default function CustomerChatWidget() {
       textareaRef.current.style.height = 'auto';
     }
 
-    if (isAiMode) {
+    const faqList = [
+      "thời gian giao hàng là bao lâu?",
+      "chính sách đổi trả hàng như thế nào?",
+      "kiểm tra trạng thái đơn hàng của tôi",
+      "tôi muốn thay đổi địa chỉ nhận hàng",
+      "shop có chương trình khuyến mãi nào không?"
+    ];
+
+    if (isAiMode || faqList.includes(lowerText)) {
       setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
       return;
     }
@@ -557,9 +554,11 @@ export default function CustomerChatWidget() {
   const handleResetChat = async () => {
     setShowEndChatModal(false);
     localStorage.removeItem("chat_session_id");
+    localStorage.removeItem("chatMode");
     setSessionId(null);
     setIsClosed(false);
     setMessages([]);
+    setIsAiMode(true);
 
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (token) {
@@ -681,61 +680,47 @@ export default function CustomerChatWidget() {
                   </button>
                 </form>
               </div>
-            ) : !modeSelected ? (
-              /* Select Mode */
-              <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
-                <div className="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-5">
-                  <span className="material-symbols-outlined text-on-primary-container text-4xl">support_agent</span>
-                </div>
-                <h4 className="font-extrabold text-slate-800 text-xl mb-6">Chọn người hỗ trợ</h4>
-                <div className="flex flex-col gap-4 w-full max-w-[260px]">
-                  <button onClick={() => selectMode("AI")} className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all shadow-md active:scale-[0.98]">
-                    Chat với Trợ lý AI
-                  </button>
-                  <button onClick={() => selectMode("CSKH")} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all shadow-md active:scale-[0.98]">
-                    Gặp nhân viên CSKH
-                  </button>
-                </div>
-              </div>
             ) : (
               /* Message Thread */
               <>
-                <div className="flex flex-col gap-3 py-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="flex flex-col items-start w-full">
-                    <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
-                      LazPe AI
-                    </span>
-                    <div className="max-w-[85%] rounded-[20px] px-4 py-3 text-[14px] leading-relaxed shadow-sm bg-white text-slate-700 rounded-tl-sm border border-slate-100/50">
-                      Chào bạn <span className="font-semibold text-primary">{guestName || "khách yêu"}</span> 👋, hôm nay bạn cần LazPe hỗ trợ về điều gì, hãy hỏi ngay để được giải đáp nhanh chóng nhé! ✨
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-start w-full mt-1">
-                    <div className="max-w-[85%] bg-white border border-slate-200 rounded-[16px] overflow-hidden shadow-sm w-full">
-                      <div className="px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-[13px] bg-slate-50/50">
-                        Bạn muốn hỏi về:
-                      </div>
-                      <div className="flex flex-col w-full">
-                        {[
-                          "Thời gian giao hàng là bao lâu?",
-                          "Chính sách đổi trả hàng như thế nào?",
-                          "Kiểm tra trạng thái đơn hàng của tôi",
-                          "Tôi muốn thay đổi địa chỉ nhận hàng",
-                          "Shop có chương trình khuyến mãi nào không?",
-                          "Yêu cầu gặp nhân viên CSKH"
-                        ].map((faq, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => sendMessage(faq)}
-                            className="px-4 py-3 text-left text-[13px] text-primary hover:bg-primary/5 transition-all border-b border-slate-50 last:border-0 hover:pl-5 cursor-pointer font-medium"
-                          >
-                            {faq}
-                          </button>
-                        ))}
+                {isAiMode && (
+                  <div className="flex flex-col gap-3 py-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex flex-col items-start w-full">
+                      <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
+                        LazPe AI
+                      </span>
+                      <div className="max-w-[85%] rounded-[20px] px-4 py-3 text-[14px] leading-relaxed shadow-sm bg-white text-slate-700 rounded-tl-sm border border-slate-100/50">
+                        Chào bạn <span className="font-semibold text-primary">{guestName || "khách yêu"}</span> 👋, hôm nay bạn cần LazPe hỗ trợ về điều gì, hãy hỏi ngay để được giải đáp nhanh chóng nhé! ✨
                       </div>
                     </div>
+                    
+                    <div className="flex flex-col items-start w-full mt-1">
+                      <div className="max-w-[85%] bg-white border border-slate-200 rounded-[16px] overflow-hidden shadow-sm w-full">
+                        <div className="px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-[13px] bg-slate-50/50">
+                          Bạn muốn hỏi về:
+                        </div>
+                        <div className="flex flex-col w-full">
+                          {[
+                            "Thời gian giao hàng là bao lâu?",
+                            "Chính sách đổi trả hàng như thế nào?",
+                            "Kiểm tra trạng thái đơn hàng của tôi",
+                            "Tôi muốn thay đổi địa chỉ nhận hàng",
+                            "Shop có chương trình khuyến mãi nào không?",
+                            "Yêu cầu gặp nhân viên CSKH"
+                          ].map((faq, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => sendMessage(faq)}
+                              className="px-4 py-3 text-left text-[13px] text-primary hover:bg-primary/5 transition-all border-b border-slate-50 last:border-0 hover:pl-5 cursor-pointer font-medium"
+                            >
+                              {faq}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {messages.map((msg) => {
                     const isSystemMessage = msg.senderName === "Hệ thống";
