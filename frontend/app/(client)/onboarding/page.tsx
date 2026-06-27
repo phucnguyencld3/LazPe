@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { Loader, Heart, Baby, Sparkles, Check, ChevronRight } from "lucide-react";
-import { getUserProfile, updateUserProfile, UserProfile } from "@/lib/api";
+import { getUserProfile, updateUserProfile, addBabyProfile, UserProfile } from "@/lib/api";
+import { validateBabyGrowth } from "@/lib/growthStandards";
 
 const COLOR_OPTIONS = [
   { name: "Hồng pastel", value: "Pink", colorClass: "bg-pink-300 border-pink-400" },
@@ -54,18 +55,7 @@ export default function OnboardingPage() {
               router.push("/");
               return;
             }
-            if (profile.momFavoriteColors) {
-              setSelectedColors(profile.momFavoriteColors.split(",").map(c => c.trim()));
-            }
-            if (profile.childGender) {
-              setGender(profile.childGender);
-            }
-            if (profile.childAgeMonths) {
-              setAgeMonths(profile.childAgeMonths);
-            }
-            if (profile.childWeightKg) {
-              setWeightKg(profile.childWeightKg);
-            }
+            // No longer checking legacy fields during onboarding
           }
           setLoading(false);
         }).catch((err) => {
@@ -92,15 +82,39 @@ export default function OnboardingPage() {
     const userId = user.id || user.userId;
 
     try {
+      // Calculate baby's DateOfBirth
+      const now = new Date();
+      if (knowsAge && ageMonths > 0) {
+        now.setMonth(now.getMonth() - ageMonths);
+      }
+      
+      const validation = validateBabyGrowth(gender, knowsAge ? ageMonths : 0, knowsWeight ? weightKg : null, null);
+      if (!validation.isValid) {
+        toast.error(validation.message || "Thông tin nhập không hợp lệ.");
+        setSubmitting(false);
+        return;
+      }
+
+      const babyPayload = {
+        name: "Bé cưng",
+        relationship: "Con",
+        gender: gender || undefined,
+        dateOfBirth: now.toISOString(),
+        weightKg: knowsWeight ? weightKg : undefined,
+        favoriteColors: selectedColors.join(", ")
+      };
+
+      // Create baby profile first
+      const babyResult = await addBabyProfile(token, babyPayload);
+      if (!babyResult.success) {
+        console.warn("Failed to create baby profile during onboarding:", babyResult.message);
+      }
+
       const profilePayload = {
         fullName: user.fullName || "Khách Hàng",
         email: user.email || "",
         phoneNumber: user.phoneNumber || undefined,
         avatar: user.avatar,
-        momFavoriteColors: selectedColors.join(", "),
-        childGender: gender || null,
-        childAgeMonths: knowsAge ? ageMonths : null,
-        childWeightKg: knowsWeight ? weightKg : null,
         isOnboarded: true
       };
 
@@ -114,10 +128,6 @@ export default function OnboardingPage() {
         if (savedUserJson) {
           const userObj = JSON.parse(savedUserJson);
           userObj.isOnboarded = true;
-          userObj.momFavoriteColors = profilePayload.momFavoriteColors;
-          userObj.childGender = profilePayload.childGender;
-          userObj.childAgeMonths = profilePayload.childAgeMonths;
-          userObj.childWeightKg = profilePayload.childWeightKg;
           
           if (localStorage.getItem("user")) {
             localStorage.setItem("user", JSON.stringify(userObj));

@@ -25,6 +25,7 @@ export default function AdminLayout({
   const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -159,7 +160,7 @@ export default function AdminLayout({
     if (notif.actionUrl) {
       window.location.href = notif.actionUrl;
     } else {
-      window.location.href = "/admin/notifications";
+      window.location.href = `/admin/notifications/inbox?id=${notif.id}`;
     }
   };
 
@@ -424,7 +425,7 @@ export default function AdminLayout({
 
                 <div className="px-3 pt-2 mt-2 border-t border-slate-100">
                   <Link
-                    href="/admin/notifications"
+                    href="/admin/notifications/inbox"
                     className="block text-center w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-[8px] text-xs font-bold text-slate-700 transition-colors"
                     onClick={() => setIsNotifDropdownOpen(false)}
                   >
@@ -435,23 +436,61 @@ export default function AdminLayout({
             )}
           </div>
           <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
-          <Link href="/admin/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center">
-              {user?.avatar ? (
-                <img 
-                  alt="Admin Profile Avatar" 
-                  className="w-full h-full object-cover"
-                  src={user.avatar} 
-                />
-              ) : (
-                <span className="material-symbols-outlined text-slate-500">person</span>
-              )}
+          
+          <div 
+            className="relative flex items-center h-full py-2"
+            onMouseEnter={() => setIsUserDropdownOpen(true)}
+            onMouseLeave={() => setIsUserDropdownOpen(false)}
+          >
+            {/* Avatar / Circle Trigger */}
+            <div className="flex items-center gap-2 transition-opacity cursor-pointer">
+              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center hover:border-primary transition-all duration-200">
+                {user?.avatar ? (
+                  <img 
+                    alt="Admin Profile Avatar" 
+                    className="w-full h-full object-cover"
+                    src={user.avatar} 
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-slate-500">person</span>
+                )}
+              </div>
+              <div className="hidden md:flex flex-col items-start leading-none text-left">
+                <span className="text-xs font-bold text-slate-800">{user?.fullName || "Quản trị viên"}</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">{user?.email || "admin@lazpe.com"}</span>
+              </div>
             </div>
-            <div className="hidden md:flex flex-col items-start leading-none text-left">
-              <span className="text-xs font-bold text-slate-800">{user?.fullName || "Quản trị viên"}</span>
-              <span className="text-[10px] text-slate-500 mt-0.5">{user?.email || "admin@lazpe.com"}</span>
+
+            {/* Dropdown Menu */}
+            <div className={`absolute right-0 top-full pt-1 w-56 origin-top-right z-50 before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 transition-all duration-150 ${
+              isUserDropdownOpen 
+                ? "opacity-100 pointer-events-auto scale-100" 
+                : "opacity-0 pointer-events-none scale-95"
+            }`}>
+              <div className="bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden py-1">
+                <div className="p-1 space-y-0.5">
+                  <Link
+                    href="/admin/profile"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <span className="material-symbols-outlined text-base">account_circle</span>
+                    Hồ sơ của tôi
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsUserDropdownOpen(false);
+                      setShowLogoutConfirm(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors text-left"
+                  >
+                    <span className="material-symbols-outlined text-base">logout</span>
+                    Đăng xuất
+                  </button>
+                </div>
+              </div>
             </div>
-          </Link>
+          </div>
         </div>
       </header>
 
@@ -722,14 +761,6 @@ export default function AdminLayout({
                   {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">IP Bị Chặn</span>}
                 </Link>
               )}
-              <Link
-                href="/admin/profile"
-                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/profile") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                title={!isSidebarExpanded ? "Hồ sơ của tôi" : undefined}
-              >
-                <span className="material-symbols-outlined text-[22px] flex-shrink-0">account_circle</span>
-                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Hồ sơ của tôi</span>}
-              </Link>
             </div>
 
             {/* TƯƠNG TÁC HỆ THỐNG */}
@@ -769,20 +800,11 @@ export default function AdminLayout({
           </nav>
           
           <div className={`mt-auto pb-md pt-md space-y-2 ${isSidebarExpanded ? "px-4" : "px-0 flex flex-col items-center"}`}>
-
-            <button 
-              onClick={handleLogout}
-              className={`flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-[8px] transition-all cursor-pointer ${isSidebarExpanded ? "w-full py-3 px-4" : "w-[44px] h-[44px] mx-auto px-0 rounded-[8px] mt-2"}`}
-              title={!isSidebarExpanded ? "Đăng xuất" : undefined}
-            >
-              <span className="material-symbols-outlined text-[20px] flex-shrink-0">logout</span>
-              {isSidebarExpanded && <span className="whitespace-nowrap animate-in fade-in duration-300">Đăng xuất</span>}
-            </button>
           </div>
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(133.33vh-5rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(117.647vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>

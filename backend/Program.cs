@@ -215,6 +215,7 @@ try
     builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyProfileService, PolyBabyAPI.Services.BabyProfileService>();
 
     // Core business services
     builder.Services.AddScoped<INotificationService, NotificationService>();

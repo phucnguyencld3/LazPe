@@ -6,79 +6,44 @@ import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MessagesSquare, X } from 'lucide-react';
-
+import { useRouter } from "next/navigation";
 const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
-  const [adding, setAdding] = useState(false);
-  
-  const handleAddToCart = async () => {
-    try {
-      setAdding(true);
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token) {
-        toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
-        return;
-      }
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL
-        ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "")
-        : "http://localhost:5101";
-        
-      const res = await fetch(`${API_BASE}/api/cart/add`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          variantID: data.variantId || data.productId,
-          quantity: 1
-        })
-      });
-      const result = await res.json();
-      if (result.success || res.ok) {
-        toast.success(`Đã thêm ${data.name} vào giỏ hàng!`);
-        window.dispatchEvent(new Event("cart_updated"));
-      } else {
-        toast.error(result.message || "Không thể thêm vào giỏ hàng");
-      }
-    } catch (e) {
-      toast.error("Lỗi khi thêm vào giỏ hàng");
-    } finally {
-      setAdding(false);
+  const router = useRouter();
+
+  const handleProductClick = () => {
+    if (data.productId || data.variantId || data.id) {
+      const id = data.productId || data.variantId || data.id;
+      // In case it's a slug, we can use it. But id is usually used in routing.
+      router.push(`/products/${id}`);
     }
   };
 
   return (
-    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full">
+    <div 
+      className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full cursor-pointer hover:border-primary/50 group"
+      onClick={handleProductClick}
+    >
       <div 
-        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px] cursor-pointer hover:opacity-80 transition-opacity"
-        onClick={() => onZoomImage && onZoomImage(data.imageUrl || '/assets/img/products/default-product.jpg')}
-        title="Phóng to ảnh"
+        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px]"
+        title="Xem chi tiết"
       >
-        <img src={data.imageUrl || '/assets/img/products/default-product.jpg'} alt={data.name} className="max-h-[60px] max-w-full object-contain mix-blend-multiply" />
+        <img 
+          src={data.imageUrl || '/assets/img/products/default-product.jpg'} 
+          alt={data.name} 
+          className="max-h-[60px] max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform" 
+        />
       </div>
       <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
         <h4 
-          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words" 
+          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words group-hover:text-primary transition-colors" 
           title={data.name}
         >
           {data.name}
         </h4>
-        <div className="flex items-center justify-between">
-          <span className="text-primary font-bold text-[13px] truncate pr-1">
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-rose-600 font-bold text-[13px] truncate pr-1">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
           </span>
-          <button 
-            onClick={handleAddToCart}
-            disabled={adding}
-            className="bg-primary/10 hover:bg-primary text-primary hover:text-white disabled:bg-slate-100 disabled:text-slate-400 p-1.5 rounded-lg transition-colors flex items-center justify-center shrink-0 active:scale-95"
-            title="Thêm giỏ hàng"
-          >
-            {adding ? (
-              <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
-            ) : (
-              <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-            )}
-          </button>
         </div>
       </div>
     </div>
@@ -151,6 +116,7 @@ export default function CustomerChatWidget() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
   const [isAiMode, setIsAiMode] = useState(true);
+  const [modeSelected, setModeSelected] = useState(false);
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
@@ -188,6 +154,12 @@ export default function CustomerChatWidget() {
     const initSession = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       let savedSessionId = localStorage.getItem("chat_session_id");
+      let savedMode = localStorage.getItem("chatMode");
+
+      if (savedMode) {
+        setIsAiMode(savedMode === "AI");
+        setModeSelected(true);
+      }
 
       if (token) {
         // Authenticated user: verify/retrieve active session
@@ -291,6 +263,14 @@ export default function CustomerChatWidget() {
       }
     });
 
+    connection.on("SupportEnded", (closedId: string) => {
+      if (closedId === sid) {
+        setIsAiMode(true);
+        localStorage.setItem("chatMode", "AI");
+        toast.info("Nhân viên CSKH đã rời khỏi cuộc trò chuyện.");
+      }
+    });
+
     connection.on("CartUpdated", () => {
       // Dispatch a custom event so header cart updates if listening
       window.dispatchEvent(new Event("cart_updated"));
@@ -341,6 +321,35 @@ export default function CustomerChatWidget() {
       }
     } catch (e) {
       toast.error("Có lỗi xảy ra khi kết nối máy chủ.");
+    }
+  };
+
+  const selectMode = (mode: "AI" | "CSKH") => {
+    if (mode === "CSKH") {
+      requestCSKH();
+    } else {
+      setIsAiMode(true);
+      setModeSelected(true);
+      localStorage.setItem("chatMode", "AI");
+    }
+  };
+
+  const requestCSKH = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/session/${sessionId}/request-cskh`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        toast.success("Đã gửi yêu cầu kết nối với nhân viên hỗ trợ.");
+        setIsAiMode(false);
+        setModeSelected(true);
+        localStorage.setItem("chatMode", "CSKH");
+      } else {
+        toast.error("Không thể kết nối với CSKH.");
+      }
+    } catch (e) {
+      toast.error("Lỗi khi gửi yêu cầu.");
     }
   };
 
@@ -402,10 +411,15 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendMessage = async (textToSend: string) => {
     if (!sessionId && !isAiMode) return;
-    if (!inputText.trim()) return;
+    if (!textToSend.trim()) return;
+
+    const lowerText = textToSend.trim().toLowerCase();
+    if (lowerText === "yêu cầu gặp nhân viên cskh" || lowerText === "gặp cskh" || lowerText === "tôi muốn gặp nhân viên") {
+      requestCSKH();
+      return;
+    }
 
     const tempId = -(Date.now() + Math.random());
     const tempMsg: Message = {
@@ -414,21 +428,18 @@ export default function CustomerChatWidget() {
       senderId: null,
       senderName: guestName || "Khách hàng",
       isFromAdmin: false,
-      messageText: inputText.trim(),
+      messageText: textToSend,
       imageUrl: null,
       createdAt: new Date().toISOString()
     };
 
     setMessages((prev) => [...prev, tempMsg]);
 
-    const textToSend = inputText.trim();
-    setInputText("");
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
 
     if (isAiMode) {
-      // Cho vào hàng chờ, AI sẽ tự động xử lý tuần tự qua useEffect
       setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
       return;
     }
@@ -462,6 +473,14 @@ export default function CustomerChatWidget() {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       toast.error("Gửi tin nhắn thất bại. Vui lòng kiểm tra kết nối mạng.");
     }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputText.trim();
+    if (!text) return;
+    setInputText("");
+    await sendMessage(text);
   };
 
   const sendSticker = async (stickerUrl: string) => {
@@ -581,7 +600,7 @@ export default function CustomerChatWidget() {
       {/* FAB Button Premium Style */}
       <button
         onClick={toggleOpen}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden sm:flex" : "flex"}`}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
       >
         {isOpen ? (
           <X size={28} strokeWidth={2.5} />
@@ -593,7 +612,7 @@ export default function CustomerChatWidget() {
       {/* Chat Window Container Premium Style */}
       {isOpen && (
         <div
-          className="fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[85vh] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
+          className="fixed bottom-0 right-0 sm:bottom-[10px] sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[calc(100vh-100px)] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
         >
           {/* Premium Gradient Header */}
           <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
@@ -615,13 +634,6 @@ export default function CustomerChatWidget() {
 
             {/* Header Action Icons */}
             <div className="flex items-center gap-1.5 text-white/90 relative z-10">
-              <button
-                onClick={() => setIsAiMode(!isAiMode)}
-                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${isAiMode ? "bg-white text-primary border-white shadow-sm" : "bg-white/10 border-white/20 hover:bg-white/20"}`}
-                title="Chuyển đổi chế độ AI / Nhân viên"
-              >
-                {isAiMode ? "AI Mode" : "Human"}
-              </button>
               {isStarted && (
                 <button
                   onClick={() => setShowEndChatModal(true)}
@@ -669,21 +681,69 @@ export default function CustomerChatWidget() {
                   </button>
                 </form>
               </div>
+            ) : !modeSelected ? (
+              /* Select Mode */
+              <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
+                <div className="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-5">
+                  <span className="material-symbols-outlined text-on-primary-container text-4xl">support_agent</span>
+                </div>
+                <h4 className="font-extrabold text-slate-800 text-xl mb-6">Chọn người hỗ trợ</h4>
+                <div className="flex flex-col gap-4 w-full max-w-[260px]">
+                  <button onClick={() => selectMode("AI")} className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all shadow-md active:scale-[0.98]">
+                    Chat với Trợ lý AI
+                  </button>
+                  <button onClick={() => selectMode("CSKH")} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all shadow-md active:scale-[0.98]">
+                    Gặp nhân viên CSKH
+                  </button>
+                </div>
+              </div>
             ) : (
               /* Message Thread */
               <>
-                {messages.length === 0 ? (
-                  <div className="text-center text-slate-500 py-10 text-xs bg-white/50 rounded-xl p-4">
-                    Bắt đầu cuộc trò chuyện. Hãy gửi lời chào đến chúng tôi!
+                <div className="flex flex-col gap-3 py-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex flex-col items-start w-full">
+                    <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
+                      LazPe AI
+                    </span>
+                    <div className="max-w-[85%] rounded-[20px] px-4 py-3 text-[14px] leading-relaxed shadow-sm bg-white text-slate-700 rounded-tl-sm border border-slate-100/50">
+                      Chào bạn <span className="font-semibold text-primary">{guestName || "khách yêu"}</span> 👋, hôm nay bạn cần LazPe hỗ trợ về điều gì, hãy hỏi ngay để được giải đáp nhanh chóng nhé! ✨
+                    </div>
                   </div>
-                ) : (
-                  messages.map((msg) => {
+                  
+                  <div className="flex flex-col items-start w-full mt-1">
+                    <div className="max-w-[85%] bg-white border border-slate-200 rounded-[16px] overflow-hidden shadow-sm w-full">
+                      <div className="px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-[13px] bg-slate-50/50">
+                        Bạn muốn hỏi về:
+                      </div>
+                      <div className="flex flex-col w-full">
+                        {[
+                          "Thời gian giao hàng là bao lâu?",
+                          "Chính sách đổi trả hàng như thế nào?",
+                          "Kiểm tra trạng thái đơn hàng của tôi",
+                          "Tôi muốn thay đổi địa chỉ nhận hàng",
+                          "Shop có chương trình khuyến mãi nào không?",
+                          "Yêu cầu gặp nhân viên CSKH"
+                        ].map((faq, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => sendMessage(faq)}
+                            className="px-4 py-3 text-left text-[13px] text-primary hover:bg-primary/5 transition-all border-b border-slate-50 last:border-0 hover:pl-5 cursor-pointer font-medium"
+                          >
+                            {faq}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {messages.map((msg) => {
                     const isSystemMessage = msg.senderName === "Hệ thống";
 
                     if (isSystemMessage) {
                       return (
                         <div key={msg.id} className="w-full text-center my-2">
-                          <span className="bg-slate-200/80 text-slate-600 text-[11px] px-3 py-1 rounded-full inline-block shadow-sm">
+                          <span className="text-slate-500 text-[11px] italic">
                             {msg.messageText}
                           </span>
                         </div>
@@ -756,7 +816,7 @@ export default function CustomerChatWidget() {
                       </div>
                     );
                   })
-                )}
+                }
                 {isAdminTyping && (
                   <div className="flex items-center gap-1 text-xs text-slate-500 py-1.5 pl-2 bg-white/40 rounded-full w-fit px-3 shadow-sm">
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce"></span>

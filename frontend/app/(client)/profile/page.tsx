@@ -109,10 +109,6 @@ export default function ProfilePage() {
     email: "",
     phoneNumber: "",
     dateOfBirth: "",
-    momFavoriteColors: "",
-    childGender: "",
-    childAgeMonths: "" as string | number,
-    childWeightKg: "" as string | number,
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -188,10 +184,6 @@ export default function ProfilePage() {
           email: profileData.email,
           phoneNumber: profileData.phoneNumber || "",
           dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.split("T")[0] : "",
-          momFavoriteColors: profileData.momFavoriteColors || "",
-          childGender: profileData.childGender || "",
-          childAgeMonths: profileData.childAgeMonths !== undefined && profileData.childAgeMonths !== null ? profileData.childAgeMonths : "",
-          childWeightKg: profileData.childWeightKg !== undefined && profileData.childWeightKg !== null ? profileData.childWeightKg : "",
         });
         setNotificationSettings({
           emailNotifications: (profileData as any).receiveEmailNotifications ?? true,
@@ -237,10 +229,6 @@ export default function ProfilePage() {
         phoneNumber: profileForm.phoneNumber || undefined,
         dateOfBirth: profileForm.dateOfBirth ? new Date(profileForm.dateOfBirth).toISOString() : null,
         avatar: userProfile.avatar,
-        momFavoriteColors: profileForm.momFavoriteColors || undefined,
-        childGender: profileForm.childGender || undefined,
-        childAgeMonths: profileForm.childAgeMonths !== "" ? Number(profileForm.childAgeMonths) : null,
-        childWeightKg: profileForm.childWeightKg !== "" ? Number(profileForm.childWeightKg) : null,
       });
 
       if (result.success) {
@@ -251,10 +239,6 @@ export default function ProfilePage() {
           email: profileForm.email,
           phoneNumber: profileForm.phoneNumber,
           dateOfBirth: profileForm.dateOfBirth ? new Date(profileForm.dateOfBirth).toISOString() : undefined,
-          momFavoriteColors: profileForm.momFavoriteColors,
-          childGender: profileForm.childGender,
-          childAgeMonths: profileForm.childAgeMonths !== "" ? Number(profileForm.childAgeMonths) : undefined,
-          childWeightKg: profileForm.childWeightKg !== "" ? Number(profileForm.childWeightKg) : undefined,
         };
         setUserProfile(updatedProfile);
 
@@ -264,10 +248,7 @@ export default function ProfilePage() {
           userObj.fullName = profileForm.fullName;
           userObj.phoneNumber = profileForm.phoneNumber;
           userObj.email = profileForm.email;
-          userObj.momFavoriteColors = profileForm.momFavoriteColors;
-          userObj.childGender = profileForm.childGender;
-          userObj.childAgeMonths = profileForm.childAgeMonths !== "" ? Number(profileForm.childAgeMonths) : null;
-          userObj.childWeightKg = profileForm.childWeightKg !== "" ? Number(profileForm.childWeightKg) : null;
+
           if (localStorage.getItem("user")) {
             localStorage.setItem("user", JSON.stringify(userObj));
           } else {
@@ -785,10 +766,13 @@ export default function ProfilePage() {
       <EditBabyInfoModal
         isOpen={editBabyInfoOpen}
         onClose={() => setEditBabyInfoOpen(false)}
-        onSubmit={handleProfileUpdate}
-        profileForm={profileForm}
-        setProfileForm={setProfileForm}
-        profileError={profileError}
+        token={token}
+        userProfile={userProfile}
+        onRefreshProfile={() => {
+          if (userProfile && token) {
+            fetchData(userProfile.userId, token);
+          }
+        }}
       />
 
       <ChangePasswordModal

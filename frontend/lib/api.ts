@@ -331,11 +331,8 @@ export interface UserProfile {
   registerDate: string;
   emailConfirmed: boolean;
   status: boolean;
-  momFavoriteColors?: string | null;
-  childGender?: string | null;
-  childAgeMonths?: number | null;
-  childWeightKg?: number | null;
   isOnboarded?: boolean;
+  babyProfiles?: BabyProfileDto[];
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
@@ -369,10 +366,6 @@ export async function updateUserProfile(
     phoneNumber?: string;
     dateOfBirth?: string | null;
     avatar?: string;
-    momFavoriteColors?: string | null;
-    childGender?: string | null;
-    childAgeMonths?: number | null;
-    childWeightKg?: number | null;
     isOnboarded?: boolean;
   }
 ): Promise<{ success: boolean; message?: string }> {
@@ -2839,3 +2832,116 @@ export async function getSpendingDashboard(token: string): Promise<ApiResponse<a
     return null;
   }
 }
+
+// BABY PROFILE interfaces & APIs
+export interface BabyProfileDto {
+  babyProfileID: number;
+  userID: string;
+  name: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth: string;
+  weightKg?: number;
+  heightCm?: number;
+  favoriteColors?: string;
+  createdAt: string;
+}
+
+export interface CreateBabyProfileDto {
+  name: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth: string;
+  weightKg?: number;
+  heightCm?: number;
+  favoriteColors?: string;
+}
+
+export interface UpdateBabyProfileDto {
+  name: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth: string;
+  weightKg?: number;
+  heightCm?: number;
+  favoriteColors?: string;
+}
+
+export async function getBabyProfiles(token: string): Promise<ApiResponse<BabyProfileDto[]>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      return { success: false, data: [], message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting baby profiles:", error);
+    return { success: false, data: [], message: "Lỗi kết nối server." };
+  }
+}
+
+export async function addBabyProfile(token: string, data: CreateBabyProfileDto): Promise<ApiResponse<BabyProfileDto>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      return { success: false, data: {} as BabyProfileDto, message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding baby profile:", error);
+    return { success: false, data: {} as BabyProfileDto, message: "Lỗi kết nối server." };
+  }
+}
+
+export async function updateBabyProfile(token: string, id: number, data: UpdateBabyProfileDto): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      return { success: false, data: null, message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating baby profile:", error);
+    return { success: false, data: null, message: "Lỗi kết nối server." };
+  }
+}
+
+export async function deleteBabyProfile(token: string, id: number): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      return { success: false, data: null, message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting baby profile:", error);
+    return { success: false, data: null, message: "Lỗi kết nối server." };
+  }
+}
+

@@ -13,6 +13,10 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using PolyBabyAPI.Interfaces;
+using PolyBabyAPI.DTOs;
 
 namespace PolyBabyAPI.Controllers
 {
@@ -23,17 +27,26 @@ namespace PolyBabyAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly IEmailSender _emailSender;
         private readonly ILogger<ChatController> _logger;
 
         public ChatController(
             ApplicationDbContext context,
             ICloudinaryService cloudinaryService,
             IHubContext<ChatHub> hubContext,
+            UserManager<ApplicationUser> userManager,
+            INotificationService notificationService,
+            IEmailSender emailSender,
             ILogger<ChatController> logger)
         {
             _context = context;
             _cloudinaryService = cloudinaryService;
             _hubContext = hubContext;
+            _userManager = userManager;
+            _notificationService = notificationService;
+            _emailSender = emailSender;
             _logger = logger;
         }
 
@@ -441,6 +454,7 @@ namespace PolyBabyAPI.Controllers
                         s.CreatedAt,
                         s.UpdatedAt,
                         s.IsClosed,
+                        s.IsWaitingForSupport,
                         s.LastMessageText,
                         s.UnreadByAdmin,
                         s.UnreadByCustomer
@@ -527,6 +541,7 @@ namespace PolyBabyAPI.Controllers
                 session.AdminId = adminId;
                 session.AdminName = adminName;
                 session.UpdatedAt = DateTime.Now;
+                session.IsWaitingForSupport = false;
 
                 // Thêm tin nhắn hệ thống thông báo nhân viên đã tham gia cuộc chat
                 var systemMsg = new ChatMessage
@@ -565,6 +580,148 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Lỗi khi nhận hỗ trợ session {SessionId}", sessionId);
                 return StatusCode(500, new { message = "Có lỗi xảy ra: " + ex.Message });
+            }
+        }
+
+        [HttpPost("session/{sessionId}/request-cskh")]
+        public async Task<IActionResult> RequestCskh(string sessionId)
+        {
+            try
+            {
+                var session = await _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+                if (session == null) return NotFound(new { message = "Không tìm thấy phiên chat." });
+
+                var systemMsg = new ChatMessage
+                {
+                    ChatSessionId = sessionId,
+                    SenderId = null,
+                    SenderName = "Hệ thống",
+                    IsFromAdmin = true,
+                    MessageText = "Khách hàng yêu cầu kết nối với nhân viên CSKH. Xin vui lòng chờ trong giây lát...",
+                    CreatedAt = DateTime.Now
+                };
+                _context.ChatMessages.Add(systemMsg);
+                session.UpdatedAt = DateTime.Now;
+                session.UnreadByAdmin++;
+                session.LastMessageText = systemMsg.MessageText;
+                session.IsWaitingForSupport = true;
+
+                await _context.SaveChangesAsync();
+
+                var msgDto = new
+                {
+                    systemMsg.Id,
+                    systemMsg.ChatSessionId,
+                    systemMsg.SenderId,
+                    systemMsg.SenderName,
+                    systemMsg.IsFromAdmin,
+                    systemMsg.MessageText,
+                    systemMsg.ImageUrl,
+                    systemMsg.CreatedAt
+                };
+
+                await _hubContext.Clients.Group(sessionId).SendAsync("ReceiveMessage", msgDto);
+                await _hubContext.Clients.All.SendAsync("UpdateAdminSessions");
+
+                // Get Admins
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                foreach (var admin in admins)
+                {
+                    if (!string.IsNullOrEmpty(admin.Email))
+                    {
+                        try
+                        {
+                            await _emailSender.SendEmailAsync(admin.Email, "Yêu cầu hỗ trợ CSKH mới",
+                                $"Khách hàng {session.CustomerName} đang yêu cầu hỗ trợ CSKH trực tiếp tại phiên chat {sessionId}. Vui lòng kiểm tra mục quản lý tin nhắn.");
+                        } catch { /* ignore email error */ }
+                    }
+
+                    var notification = new Notification
+                    {
+                        Code = "CHAT-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
+                        Title = "Yêu cầu CSKH",
+                        ShortDescription = $"Khách hàng {session.CustomerName} đang cần hỗ trợ ngay lập tức.",
+                        Content = $"Khách hàng {session.CustomerName} đang yêu cầu kết nối với CSKH tại phiên chat {sessionId}.",
+                        Type = NotificationType.System,
+                        Priority = NotificationPriority.High,
+                        TargetType = TargetType.SpecificUsers,
+                        TargetValue = admin.Id,
+                        Status = NotificationStatus.Sent,
+                        CreatedAt = DateTime.Now,
+                        PublishedAt = DateTime.Now
+                    };
+                    _context.Notifications.Add(notification);
+                    await _context.SaveChangesAsync();
+
+                    var userNotif = new UserNotification
+                    {
+                        UserId = admin.Id,
+                        NotificationId = notification.Id,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.UserNotifications.Add(userNotif);
+                }
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Đã gửi yêu cầu kết nối." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi request CSKH");
+                return StatusCode(500, new { message = "Lỗi request CSKH." });
+            }
+        }
+
+        [HttpPost("session/{sessionId}/end-support")]
+        [Authorize]
+        public async Task<IActionResult> EndSupport(string sessionId)
+        {
+            try
+            {
+                var session = await _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+                if (session == null) return NotFound(new { message = "Không tìm thấy phiên chat." });
+
+                var adminName = session.AdminName;
+                session.AdminId = null;
+                session.AdminName = null;
+                session.UpdatedAt = DateTime.Now;
+
+                var systemMsg = new ChatMessage
+                {
+                    ChatSessionId = sessionId,
+                    SenderId = null,
+                    SenderName = "Hệ thống",
+                    IsFromAdmin = true,
+                    MessageText = $"Nhân viên {adminName} đã rời cuộc trò chuyện. Trợ lý AI sẽ tiếp quản.",
+                    CreatedAt = DateTime.Now
+                };
+                _context.ChatMessages.Add(systemMsg);
+                session.LastMessageText = systemMsg.MessageText;
+
+                await _context.SaveChangesAsync();
+
+                var msgDto = new
+                {
+                    systemMsg.Id,
+                    systemMsg.ChatSessionId,
+                    systemMsg.SenderId,
+                    systemMsg.SenderName,
+                    systemMsg.IsFromAdmin,
+                    systemMsg.MessageText,
+                    systemMsg.ImageUrl,
+                    systemMsg.CreatedAt
+                };
+
+                await _hubContext.Clients.Group(sessionId).SendAsync("ReceiveMessage", msgDto);
+                await _hubContext.Clients.Group(sessionId).SendAsync("SupportEnded");
+                await _hubContext.Clients.All.SendAsync("UpdateAdminSessions");
+
+                return Ok(new { success = true, message = "Đã kết thúc hỗ trợ." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi kết thúc hỗ trợ");
+                return StatusCode(500, new { message = "Lỗi kết thúc hỗ trợ." });
             }
         }
     }
