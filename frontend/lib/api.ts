@@ -502,6 +502,8 @@ export interface UserProfile {
   status: boolean;
   isOnboarded?: boolean;
   babyProfiles?: BabyProfileDto[];
+  walletBalance?: number;
+  coinsBalance?: number;
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {

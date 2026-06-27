@@ -62,7 +62,6 @@ export interface Product {
   isBundle?: boolean;
   variants?: Variant[];
   productOptions?: ProductOption[];
-  slug?: string;
 }
 
 export interface Category {

@@ -5,6 +5,7 @@ import * as signalR from "@microsoft/signalr";
 import { toast } from "@/lib/toast";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Link from 'next/link';
 import { MessagesSquare, X } from 'lucide-react';
 import { useRouter } from "next/navigation";
 const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
@@ -50,7 +51,7 @@ const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url:
   );
 };
 
-interface Message {
+export interface Message {
   id: number;
   chatSessionId: string;
   senderId: string | null;
@@ -59,7 +60,24 @@ interface Message {
   messageText: string | null;
   imageUrl: string | null;
   createdAt: string;
+  isRead?: boolean;
 }
+
+const ChatProductList = ({ products }: { products: any[] }) => {
+  return (
+    <div className="flex flex-col gap-2 mt-2">
+      {products.map((p, idx) => (
+        <Link key={idx} href={`/product/${p.slug || p.id}`} className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
+          <img src={p.image || p.imageUrl || '/placeholder.png'} alt={p.name} className="w-12 h-12 object-cover rounded-md border" />
+          <div className="flex flex-col">
+            <span className="text-sm font-medium line-clamp-1 text-slate-800">{p.name}</span>
+            <span className="text-sm font-semibold text-primary">{p.price?.toLocaleString('vi-VN')} ₫</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+};
 
 const normalizeMessage = (msg: any): Message => {
   if (!msg) return msg;
