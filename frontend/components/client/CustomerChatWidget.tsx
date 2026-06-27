@@ -137,6 +137,7 @@ export default function CustomerChatWidget() {
   const [isAiMode, setIsAiMode] = useState(true);
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [pendingAutoSendMsg, setPendingAutoSendMsg] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
@@ -147,6 +148,24 @@ export default function CustomerChatWidget() {
     : "http://localhost:5101";
 
   // Auto-scroll to bottom of chat
+  useEffect(() => {
+    const handleOpenChatWithMsg = (e: any) => {
+      setIsOpen(true);
+      const msg = e.detail;
+      if (msg) {
+        setPendingAutoSendMsg(msg);
+        setInputText(msg);
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          }
+        }, 100);
+      }
+    };
+    window.addEventListener('open_chat_with_msg', handleOpenChatWithMsg);
+    return () => window.removeEventListener('open_chat_with_msg', handleOpenChatWithMsg);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -407,18 +426,43 @@ export default function CustomerChatWidget() {
       });
 
       if (res.ok) {
-        // Backend broadcasts the user message and AI message via SignalR.
-        // We remove the tempId in case it wasn't replaced by SignalR yet to prevent orphaned temp messages.
-        setMessages((prev) => prev.filter(m => m.id !== tempId));
+        const data = await res.json().catch(() => null);
+        
+        setMessages((prev) => {
+          // Keep the user message in UI and remove the 'Đang gửi...' status by assigning a positive ID.
+          const prevUpdated = prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m);
+          
+          if (data && data.message) {
+            const aiMsg = normalizeMessage(data.message);
+            // Prevent duplicate if SignalR was faster
+            if (!prevUpdated.some(m => m.id === aiMsg.id)) {
+              return [...prevUpdated, aiMsg];
+            }
+          } else if (data && data.text) {
+            // Fallback for old backend that only returns text
+            const aiMsg: Message = {
+              id: Date.now() + Math.random(),
+              chatSessionId: sessionId || "ai-session",
+              senderId: null,
+              senderName: "LazPe AI Assistant",
+              isFromAdmin: true,
+              messageText: data.text,
+              imageUrl: null,
+              createdAt: new Date().toISOString()
+            };
+            return [...prevUpdated, aiMsg];
+          }
+          return prevUpdated;
+        });
       } else {
         const errData = await res.json().catch(() => null);
         const errMsg = errData?.error || "AI không thể phản hồi lúc này.";
         toast.error(errMsg);
-        setMessages((prev) => prev.filter(m => m.id !== tempId));
+        setMessages((prev) => prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m));
       }
     } catch (e) {
       toast.error("Lỗi kết nối AI.");
-      setMessages((prev) => prev.filter(m => m.id !== tempId));
+      setMessages((prev) => prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m));
     } finally {
       setIsAdminTyping(false);
       setAiMessageQueue(prev => prev.slice(1));
@@ -498,6 +542,14 @@ export default function CustomerChatWidget() {
       toast.error("Gửi tin nhắn thất bại. Vui lòng kiểm tra kết nối mạng.");
     }
   };
+
+  useEffect(() => {
+    if (pendingAutoSendMsg && isStarted && sessionId) {
+      sendMessage(pendingAutoSendMsg);
+      setPendingAutoSendMsg(null);
+      setInputText("");
+    }
+  }, [pendingAutoSendMsg, isStarted, sessionId]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

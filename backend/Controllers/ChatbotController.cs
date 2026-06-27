@@ -99,19 +99,19 @@ namespace PolyBabyAPI.Controllers
                 // Broadcast AI message via SignalR
                 var aiMsgDto = new
                 {
-                    aiMsg.Id,
-                    aiMsg.ChatSessionId,
-                    aiMsg.SenderId,
-                    aiMsg.SenderName,
-                    aiMsg.IsFromAdmin,
-                    aiMsg.MessageText,
-                    aiMsg.ImageUrl,
-                    aiMsg.CreatedAt
+                    Id = aiMsg.Id,
+                    ChatSessionId = aiMsg.ChatSessionId,
+                    SenderId = aiMsg.SenderId,
+                    SenderName = aiMsg.SenderName,
+                    IsFromAdmin = aiMsg.IsFromAdmin,
+                    MessageText = aiMsg.MessageText,
+                    ImageUrl = aiMsg.ImageUrl,
+                    CreatedAt = aiMsg.CreatedAt
                 };
                 await _hubContext.Clients.Group(request.SessionId).SendAsync("ReceiveMessage", aiMsgDto);
                 await _hubContext.Clients.All.SendAsync("UpdateAdminSessions");
 
-                return Ok(new { text = responseText });
+                return Ok(new { success = true, text = responseText, message = aiMsgDto });
             }
             catch (Exception ex)
             {
