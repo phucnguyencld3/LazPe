@@ -58,7 +58,7 @@ namespace PolyBabyAPI.Services
             int pageNumber,
             int pageSize)
         {
-            var query = _context.LoyaltyPointHistories.Where(h => h.UserID == userId);
+            var query = _context.LoyaltyPointHistories.Include(h => h.Invoice).Where(h => h.UserID == userId);
 
             // 1. Lọc theo loại giao dịch
             if (!string.IsNullOrEmpty(transactionType) && transactionType != "ALL")

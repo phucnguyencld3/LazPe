@@ -890,7 +890,7 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
-                var transactions = await _context.LoyaltyPointHistories
+                var rawTransactions = await _context.LoyaltyPointHistories
                     .Where(h => h.UserID == userId && (h.TransactionType == "EARN" || h.TransactionType == "BONUS") && h.Amount >= 0)
                     .OrderByDescending(h => h.CreatedAt)
                     .Select(h => new
@@ -900,10 +900,29 @@ namespace PolyBabyAPI.Controllers
                         h.TransactionType,
                         h.Amount,
                         h.InvoiceID,
+                        InvoiceCode = h.Invoice != null ? h.Invoice.InvoiceCode : null,
                         h.Description,
                         h.CreatedAt
                     })
                     .ToListAsync();
+
+                var transactions = rawTransactions.Select(h => {
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && !string.IsNullOrEmpty(h.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.InvoiceCode}");
+                    }
+                    return new {
+                        h.HistoryID,
+                        h.UserID,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.InvoiceCode,
+                        Description = desc,
+                        h.CreatedAt
+                    };
+                });
 
                 return Ok(new { success = true, data = transactions });
             }
@@ -975,7 +994,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var totalItems = await query.CountAsync();
-                var items = await query
+                var rawItems = await query
                     .OrderByDescending(h => h.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -989,10 +1008,32 @@ namespace PolyBabyAPI.Controllers
                         h.TransactionType,
                         h.Amount,
                         h.InvoiceID,
+                        InvoiceCode = h.Invoice != null ? h.Invoice.InvoiceCode : null,
                         h.Description,
                         h.CreatedAt
                     })
                     .ToListAsync();
+
+                var items = rawItems.Select(h => {
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && !string.IsNullOrEmpty(h.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.InvoiceCode}");
+                    }
+                    return new {
+                        h.HistoryID,
+                        h.UserID,
+                        h.FullName,
+                        h.Email,
+                        h.TierName,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.InvoiceCode,
+                        Description = desc,
+                        h.CreatedAt
+                    };
+                });
 
                 return Ok(new
                 {

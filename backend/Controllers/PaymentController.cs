@@ -39,9 +39,9 @@ namespace PolyBabyAPI.Controllers
                 return NotFound(new { success = false, message = "Không tìm thấy hóa đơn." });
             }
 
-            var txnRef = request.InvoiceId.ToString();
+            var txnRef = invoice.InvoiceCode ?? request.InvoiceId.ToString();
             var orderInfo = string.IsNullOrWhiteSpace(request.OrderInfo)
-                ? $"Thanh toan don hang {request.InvoiceId}"
+                ? $"Thanh toan don hang {txnRef}"
                 : request.OrderInfo;
 
             var paymentUrl = _vnPayService.CreatePaymentUrl(
@@ -76,11 +76,20 @@ namespace PolyBabyAPI.Controllers
             {
                 var success = _vnPayService.ValidateReturn(Request.Query, out var responseCode, out var txnRef, out var transactionNo);
 
+                Invoice? invoice = null;
                 if (int.TryParse(txnRef, out var invoiceId))
                 {
-                    var invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
+                    invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
+                }
+                else
+                {
+                    invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceCode == txnRef && !x.IsDeleted);
+                }
+
+                if (invoice != null)
+                {
                     var tx = await _context.PaymentTransactions
-                        .Where(x => x.InvoiceID == invoiceId && x.TxnRef == txnRef)
+                        .Where(x => x.InvoiceID == invoice.InvoiceID && x.TxnRef == txnRef)
                         .OrderByDescending(x => x.PaymentTransactionId)
                         .FirstOrDefaultAsync();
 
@@ -105,7 +114,7 @@ namespace PolyBabyAPI.Controllers
                         }
                     }
 
-                    if (invoice != null && success && invoice.Status == OrderStatus.Pending)
+                    if (success && invoice.Status == OrderStatus.Pending)
                     {
                         invoice.Status = OrderStatus.Confirmed;
                         invoice.ConfirmedAt = DateTime.Now;

@@ -509,7 +509,7 @@ export function OrderDetailView({
           </div>
         )
       ) : (
-        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-4 md:py-5 md:px-8 rounded-2xl border border-slate-100 shadow-sm">
           {/* Progress Timeline Graphic */}
           <div className="relative flex justify-between items-center max-w-4xl mx-auto">
             {/* Background Line Connector */}
@@ -517,11 +517,13 @@ export function OrderDetailView({
               <div
                 className="h-full bg-primary/70 transition-all duration-500"
                 style={{
-                  width: (order.statusCode === 6 || order.statusCode === 7 || order.returnReason) ? (
+                  width: (order.statusCode === 6 || order.statusCode === 7 || order.statusCode === 9 || order.statusCode === 10 || order.returnReason) ? (
                     order.statusCode === 0 ? "0%" :
-                    order.statusCode === 1 ? "25%" :
-                    order.statusCode === 2 ? "50%" :
-                    order.statusCode === 3 ? "75%" : "100%"
+                    order.statusCode === 1 ? "20%" :
+                    order.statusCode === 2 ? "40%" :
+                    order.statusCode === 3 ? "60%" :
+                    [6, 9, 10].includes(order.statusCode) ? "80%" :
+                    order.statusCode === 7 ? "100%" : "60%"
                   ) : (
                     order.statusCode === 0 ? "0%" :
                     order.statusCode === 1 ? "33.33%" :
@@ -579,14 +581,14 @@ export function OrderDetailView({
 
             {/* Step 4: Completed */}
             <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${(order.statusCode >= 3 || order.statusCode === 6 || order.statusCode === 7)
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${(order.statusCode >= 3 || [6,7,9,10].includes(order.statusCode))
                 ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm"
                 : "bg-white text-slate-300 border-slate-200"
                 }`}>
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
               </div>
               <div className="text-center">
-                <p className={`text-xs font-bold ${(order.statusCode >= 3 || order.statusCode === 6 || order.statusCode === 7) ? "text-emerald-600" : "text-slate-400"}`}>Hoàn tất</p>
+                <p className={`text-xs font-bold ${(order.statusCode >= 3 || [6,7,9,10].includes(order.statusCode)) ? "text-emerald-600" : "text-slate-400"}`}>Hoàn tất</p>
                 <p className="text-[10px] text-slate-400 font-semibold">
                   {order.completedAt ? formatDate(order.completedAt).split(" ")[0] : "--/--"}
                 </p>
@@ -594,17 +596,39 @@ export function OrderDetailView({
             </div>
 
             {/* Step 5: Return (Conditional) */}
-            {(order.statusCode === 6 || order.statusCode === 7 || order.returnReason) && (
+            {([6,7,9,10].includes(order.statusCode) || order.returnReason) && (
               <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${(order.statusCode === 6 || order.statusCode === 7)
-                  ? "bg-orange-50 text-orange-500 border-orange-400 font-bold shadow-sm"
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all 
+                  ${order.statusCode === 10 ? "bg-red-50 text-red-500 border-red-400 font-bold shadow-sm" : 
+                    ([6,7,9].includes(order.statusCode)) ? "bg-orange-50 text-orange-500 border-orange-400 font-bold shadow-sm"
                   : "bg-white text-slate-300 border-slate-200"
                   }`}>
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>assignment_return</span>
+                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>{order.statusCode === 10 ? 'cancel' : 'assignment_return'}</span>
                 </div>
                 <div className="text-center">
-                  <p className={`text-xs font-bold ${(order.statusCode === 6 || order.statusCode === 7) ? "text-orange-600" : "text-slate-400"}`}>
-                    {order.statusCode === 7 ? "Đã hoàn tiền" : "Hoàn hàng"}
+                  <p className={`text-xs font-bold ${order.statusCode === 10 ? "text-red-600" : ([6,7,9].includes(order.statusCode)) ? "text-orange-600" : "text-slate-400"}`}>
+                    {order.statusCode === 10 ? "Từ chối hoàn hàng" : 
+                     (order.statusCode === 9 || order.statusCode === 7) ? "Đã duyệt trả hàng" : "Yêu cầu trả hàng"}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-semibold">
+                    {order.statusCode === 7 || order.statusCode === 9 ? formatDate(order.cancelledAt || order.completedAt || order.createdAt).split(" ")[0] : "--/--"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Refund (Conditional) */}
+            {([6,7,9,10].includes(order.statusCode) || order.returnReason) && (
+              <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all 
+                  ${order.statusCode === 7 ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm" : 
+                  "bg-white text-slate-300 border-slate-200"
+                  }`}>
+                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>paid</span>
+                </div>
+                <div className="text-center">
+                  <p className={`text-xs font-bold ${order.statusCode === 7 ? "text-emerald-600" : "text-slate-400"}`}>
+                    Đã hoàn tiền
                   </p>
                   <p className="text-[10px] text-slate-400 font-semibold">
                     {order.statusCode === 7 ? formatDate(order.cancelledAt || order.completedAt || order.createdAt).split(" ")[0] : "--/--"}
@@ -617,12 +641,16 @@ export function OrderDetailView({
       )}
 
       {/* Return Request Details */}
-      {order?.returnReason && (order.statusCode === 6 || order.statusCode === 7) && (
+      {order?.returnReason && ([6,7,9,10].includes(order.statusCode)) && (
         <div className="bg-white border border-orange-200 p-4 rounded-2xl shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="text-orange-500 shrink-0" size={20} />
             <h3 className="font-bold text-orange-800 text-sm md:text-base">
-              Yêu cầu hoàn trả đang được xử lý
+              Yêu cầu hoàn trả {
+                order.statusCode === 7 ? "đã được xử lý thành công" :
+                order.statusCode === 9 ? "đã được duyệt (Chờ nhận hàng hoàn)" :
+                order.statusCode === 10 ? "đã bị từ chối" : "đang được xem xét"
+              }
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">

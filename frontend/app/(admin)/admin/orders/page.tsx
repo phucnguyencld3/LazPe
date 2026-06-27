@@ -37,6 +37,12 @@ export default function AdminOrdersPage() {
     shipping: 0,
     completed: 0,
     cancelled: 0,
+    cancelRequested: 0,
+    returnRequested: 0,
+    returnedRefunded: 0,
+    cancelledRefunded: 0,
+    returnApproved: 0,
+    returnRejected: 0,
     todayRevenue: 0
   });
 
@@ -224,6 +230,12 @@ export default function AdminOrdersPage() {
       shipping: metrics.shipping,
       completed: metrics.completed,
       cancelled: metrics.cancelled,
+      cancelRequested: metrics.cancelRequested,
+      returnRequested: metrics.returnRequested,
+      returnedRefunded: metrics.returnedRefunded,
+      cancelledRefunded: metrics.cancelledRefunded,
+      returnApproved: metrics.returnApproved,
+      returnRejected: metrics.returnRejected,
     };
   }, [metrics]);
 

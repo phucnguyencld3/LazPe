@@ -5,6 +5,7 @@ interface ReturnOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (isRefundToCoins: boolean) => void;
+  onReject: (reason: string) => void;
   order: OrderInfo;
   processing: boolean;
 }
@@ -13,10 +14,13 @@ export const ReturnOrderModal: React.FC<ReturnOrderModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onReject,
   order,
   processing,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   if (!isOpen) return null;
 
@@ -73,34 +77,86 @@ export const ReturnOrderModal: React.FC<ReturnOrderModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {isRejecting && (
+                <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 animate-in fade-in zoom-in-95 duration-200">
+                  <label className="block text-sm font-bold text-red-900 mb-2">
+                    Lý do từ chối (bắt buộc):
+                  </label>
+                  <textarea
+                    className="w-full p-3 rounded-lg border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
+                    rows={3}
+                    placeholder="Nhập lý do chi tiết để thông báo cho khách hàng..."
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </div>
           
           {/* Footer */}
-          <div className="p-6 bg-slate-50 flex justify-end gap-4 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 rounded-[8px] font-bold text-slate-500 hover:bg-slate-200 transition-colors"
-              disabled={processing}
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="button"
-              onClick={() => onSubmit(order.refundMethod === 2)}
-              disabled={processing}
-              className="px-6 py-2.5 rounded-[8px] font-bold bg-orange-500 text-white hover:bg-orange-600 active:scale-95 shadow-md flex items-center gap-2"
-            >
-              {processing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Đang xử lý...
-                </>
+          <div className="p-6 bg-slate-50 flex justify-between items-center gap-4 border-t border-slate-100">
+            <div>
+              {!isRejecting ? (
+                <button
+                  type="button"
+                  onClick={() => setIsRejecting(true)}
+                  disabled={processing}
+                  className="px-6 py-2.5 rounded-[8px] font-bold text-red-600 border border-red-200 bg-white hover:bg-red-50 transition-colors"
+                >
+                  Từ chối
+                </button>
               ) : (
-                "Chấp nhận & Hoàn tiền"
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!rejectReason.trim()) return;
+                    onReject(rejectReason);
+                  }}
+                  disabled={processing || !rejectReason.trim()}
+                  className="px-6 py-2.5 rounded-[8px] font-bold bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Xác nhận Từ chối
+                </button>
               )}
-            </button>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isRejecting) {
+                    setIsRejecting(false);
+                    setRejectReason("");
+                  } else {
+                    onClose();
+                  }
+                }}
+                className="px-6 py-2.5 rounded-[8px] font-bold text-slate-500 hover:bg-slate-200 transition-colors"
+                disabled={processing}
+              >
+                Hủy bỏ
+              </button>
+              
+              {!isRejecting && (
+                <button
+                  type="button"
+                  onClick={() => onSubmit(order.refundMethod === 2)}
+                  disabled={processing}
+                  className="px-6 py-2.5 rounded-[8px] font-bold bg-orange-500 text-white hover:bg-orange-600 active:scale-95 shadow-md flex items-center gap-2"
+                >
+                  {processing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    "Duyệt (Chờ chuyển hoàn)"
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

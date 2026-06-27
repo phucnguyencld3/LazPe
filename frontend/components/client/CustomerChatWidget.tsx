@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MessagesSquare, X } from 'lucide-react';

@@ -117,6 +117,12 @@ namespace PolyBabyAPI.Controllers
                     shipping = invoices.Count(i => i.Status == OrderStatus.Shipped),
                     completed = invoices.Count(i => i.Status == OrderStatus.Completed),
                     cancelled = invoices.Count(i => i.Status == OrderStatus.Cancelled),
+                    cancelRequested = invoices.Count(i => i.Status == OrderStatus.CancelRequested),
+                    returnRequested = invoices.Count(i => i.Status == OrderStatus.ReturnRequested),
+                    returnedRefunded = invoices.Count(i => i.Status == OrderStatus.ReturnedRefunded),
+                    cancelledRefunded = invoices.Count(i => i.Status == OrderStatus.CancelledRefunded),
+                    returnApproved = invoices.Count(i => i.Status == OrderStatus.ReturnApproved),
+                    returnRejected = invoices.Count(i => i.Status == OrderStatus.ReturnRejected),
                     todayRevenue = invoices
                         .Where(i => i.CreatedAt.HasValue && i.CreatedAt.Value.Date == today && i.Status != OrderStatus.Cancelled)
                         .Sum(i => i.TotalPrice),
@@ -719,9 +725,9 @@ namespace PolyBabyAPI.Controllers
                     var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                     paymentUrl = _vnPayService.CreatePaymentUrl(
                         HttpContext,
-                        invoice.InvoiceID,
+                        invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                         amountToPay,
-                        $"Thanh toan don hang #{invoice.InvoiceID}");
+                        $"Thanh toan don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
                 }
  
                 try
@@ -985,14 +991,14 @@ namespace PolyBabyAPI.Controllers
                 var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                 var paymentUrl = _vnPayService.CreatePaymentUrl(
                     HttpContext,
-                    invoice.InvoiceID,
+                    invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                     amountToPay,
-                    $"Thanh toan lai don hang #{invoice.InvoiceID}");
+                    $"Thanh toan lai don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
 
                 _context.PaymentTransactions.Add(new PaymentTransaction
                 {
                     InvoiceID = invoice.InvoiceID,
-                    TxnRef = invoice.InvoiceID.ToString(),
+                    TxnRef = invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                     Status = PaymentTransactionStatus.Pending,
                     CreatedAt = DateTime.Now
                 });
@@ -1933,18 +1939,28 @@ namespace PolyBabyAPI.Controllers
             var success = await _invoiceService.ApproveReturnAsync(id, request.IsRefundToCoins);
             if (!success) return BadRequest(new { message = "Không thể duyệt hoàn trả đơn hàng này." });
 
-            return Ok(new { message = "Duyệt hoàn trả thành công." });
+            return Ok(new { message = "Duyệt hoàn trả thành công. Chờ khách gửi hàng về." });
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpPost("{id}/reject-return")]
+        public async Task<IActionResult> RejectReturn(int id, [FromBody] ReturnRejectionDto request)
+        {
+            var success = await _invoiceService.RejectReturnAsync(id, request.RejectReason);
+            if (!success) return BadRequest(new { message = "Không thể từ chối yêu cầu hoàn trả này." });
+
+            return Ok(new { message = "Từ chối trả hàng thành công." });
         }
 
         [Authorize(Roles = "Admin,Employee")]
         [HttpPost("{id}/confirm-return-received")]
-        public async Task<IActionResult> ConfirmReturnReceived(int id)
+        public async Task<IActionResult> ConfirmReturnReceived(int id, [FromBody] ConfirmReturnReceivedDto request)
         {
             try
             {
-                var success = await _invoiceService.ConfirmReturnReceivedAsync(id);
+                var success = await _invoiceService.ConfirmReturnReceivedAsync(id, request.IsRestockable);
                 if (!success) return BadRequest(new { message = "Không thể xác nhận nhận hàng hoặc đơn hàng chưa được hoàn trả." });
-                return Ok(new { message = "Đã xác nhận nhận hàng hoàn và cộng lại tồn kho." });
+                return Ok(new { message = "Đã xác nhận nhận hàng hoàn và hoàn tiền cho khách." });
             }
             catch (Exception ex)
             {

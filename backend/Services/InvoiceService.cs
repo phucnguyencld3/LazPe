@@ -403,7 +403,7 @@ namespace PolyBabyAPI.Services
                     _context.PaymentTransactions.Add(new PaymentTransaction
                     {
                         InvoiceID = invoice.InvoiceID,
-                        TxnRef = invoice.InvoiceID.ToString(),
+                        TxnRef = invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                         Status = invoice.AmountToPay == 0 ? PaymentTransactionStatus.Success : PaymentTransactionStatus.Pending,
                         Amount = invoice.AmountToPay,
                         Provider = invoice.AmountToPay == 0 ? "SystemWallet" : "VNPay",
@@ -968,14 +968,48 @@ namespace PolyBabyAPI.Services
         public async Task<bool> ApproveReturnAsync(int invoiceId, bool isRefundToCoins)
         {
             var invoice = await _context.Invoices
-                .Include(i => i.User)
-                .Include(i => i.PaymentTransactions)
                 .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
             if (invoice == null || invoice.Status != OrderStatus.ReturnRequested) return false;
+
+            invoice.Status = OrderStatus.ReturnApproved;
+            if (isRefundToCoins)
+            {
+                invoice.RefundMethod = RefundMethod.LazPeCoins;
+            }
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ======== Từ chối hoàn trả (Admin) ========
+        public async Task<bool> RejectReturnAsync(int invoiceId, string rejectReason)
+        {
+            var invoice = await _context.Invoices
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+            if (invoice == null || invoice.Status != OrderStatus.ReturnRequested) return false;
+
+            invoice.Status = OrderStatus.ReturnRejected;
+            invoice.CancelReason = $"Từ chối trả hàng: {rejectReason}";
+            
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ======== Xác nhận đã nhận hàng hoàn (Admin) ========
+        public async Task<bool> ConfirmReturnReceivedAsync(int invoiceId, bool isRestockable)
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.User)
+                .Include(i => i.PaymentTransactions)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle).ThenInclude(b => b.BundleItems).ThenInclude(bi => bi.Variant)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+
+            if (invoice == null || invoice.Status != OrderStatus.ReturnApproved || invoice.IsReturnReceived) return false;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                invoice.IsReturnReceived = true;
                 invoice.Status = OrderStatus.ReturnedRefunded;
                 invoice.CancelledAt = DateTime.Now;
                 invoice.RefundedAt = DateTime.Now;
@@ -983,43 +1017,20 @@ namespace PolyBabyAPI.Services
                 await HandleLoyaltyOnCancelAsync(invoice);
                 await RefundOrderBalancesAsync(invoice);
 
+                if (isRestockable)
+                {
+                    await RestoreStockAsync(invoice, restoreFlashSale: false);
+                }
+                
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                
-                Hangfire.BackgroundJob.Schedule<IInvoiceService>(s => s.AutoRestockAfterReturnAsync(invoiceId), TimeSpan.FromDays(14));
                 return true;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Lỗi khi duyệt hoàn trả đơn hàng {InvoiceId}", invoiceId);
+                _logger.LogError(ex, "Lỗi khi xác nhận nhận hàng và hoàn tiền {InvoiceId}", invoiceId);
                 return false;
-            }
-        }
-
-        // ======== Xác nhận đã nhận hàng hoàn (Admin) ========
-        public async Task<bool> ConfirmReturnReceivedAsync(int invoiceId)
-        {
-            var invoice = await _context.Invoices
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant)
-                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle).ThenInclude(b => b.BundleItems).ThenInclude(bi => bi.Variant)
-                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
-
-            if (invoice == null || invoice.Status != OrderStatus.ReturnedRefunded || invoice.IsReturnReceived) return false;
-
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                invoice.IsReturnReceived = true;
-                await RestoreStockAsync(invoice);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
             }
         }
 
@@ -1034,7 +1045,7 @@ namespace PolyBabyAPI.Services
             if (invoice == null || invoice.Status != OrderStatus.ReturnedRefunded || invoice.IsReturnReceived) return;
 
             invoice.IsReturnReceived = true;
-            await RestoreStockAsync(invoice);
+            await RestoreStockAsync(invoice, restoreFlashSale: false);
             await _context.SaveChangesAsync();
         }
 
@@ -1158,7 +1169,7 @@ namespace PolyBabyAPI.Services
         }
 
         // ======== PRIVATE: HOÀN TRẢ SẢN PHẨM VỀ KHO ========
-        private async Task RestoreStockAsync(Invoice invoice)
+        private async Task RestoreStockAsync(Invoice invoice, bool restoreFlashSale = true)
         {
             if (invoice.InvoiceDetails == null || !invoice.InvoiceDetails.Any())
             {
@@ -1176,7 +1187,10 @@ namespace PolyBabyAPI.Services
                         detail.Quantity, detail.Variant.VariantID, oldStock, detail.Variant.Stock);
 
                     // Khôi phục số lượng Flash Sale đã bán
-                    await RestoreFlashSaleSoldQuantityAsync(detail.VariantID.Value, null, detail.Quantity, invoice.CreatedAt ?? DateTime.Now);
+                    if (restoreFlashSale)
+                    {
+                        await RestoreFlashSaleSoldQuantityAsync(detail.VariantID.Value, null, detail.Quantity, invoice.CreatedAt ?? DateTime.Now);
+                    }
                 }
                 else if (detail.BundleID.HasValue && detail.Bundle != null)
                 {
@@ -1190,7 +1204,10 @@ namespace PolyBabyAPI.Services
                     }
 
                     // Khôi phục số lượng Flash Sale Bundle đã bán
-                    await RestoreFlashSaleSoldQuantityAsync(null, detail.BundleID.Value, detail.Quantity, invoice.CreatedAt ?? DateTime.Now);
+                    if (restoreFlashSale)
+                    {
+                        await RestoreFlashSaleSoldQuantityAsync(null, detail.BundleID.Value, detail.Quantity, invoice.CreatedAt ?? DateTime.Now);
+                    }
                 }
             }
  

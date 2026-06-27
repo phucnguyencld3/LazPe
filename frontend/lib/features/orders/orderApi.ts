@@ -23,6 +23,8 @@ export interface OrderInfo {
   status: string;
   statusCode: number;
   createdAt: string;
+  confirmedAt?: string;
+  shippedAt?: string;
   completedAt?: string;
   cancelReason?: string;
   cancelledAt?: string;
@@ -68,6 +70,10 @@ export const getStatusBadgeColor = (statusCode: number) => {
       return 'bg-pink-50 text-pink-600 border border-pink-100'; // Returned
     case 8:
       return 'bg-red-50 text-red-700 border border-red-200'; // CancelledRefunded
+    case 9:
+      return 'bg-blue-50 text-blue-600 border border-blue-100'; // ReturnApproved
+    case 10:
+      return 'bg-red-50 text-red-600 border border-red-100'; // ReturnRejected
     default:
       return 'bg-slate-50 text-slate-600 border border-slate-100';
   }
@@ -84,6 +90,8 @@ export const getStatusLabel = (statusCode: number) => {
     case 6: return 'Yêu cầu trả hàng';
     case 7: return 'Đã hoàn tiền';
     case 8: return 'Đã hủy & hoàn tiền';
+    case 9: return 'Đã duyệt trả hàng';
+    case 10: return 'Từ chối hoàn hàng';
     default: return 'Không rõ';
   }
 };
@@ -300,12 +308,26 @@ export const approveReturnOrder = async (token: string, id: string, isRefundToCo
   return res.json();
 };
 
-export const confirmReturnReceived = async (token: string, id: string): Promise<any> => {
+export const confirmReturnReceived = async (token: string, id: string, isRestockable: boolean): Promise<any> => {
   const res = await fetch(`${API_BASE_URL}/Invoice/${id}/confirm-return-received`, {
     method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
-    }
+    },
+    body: JSON.stringify({ isRestockable })
+  });
+  return res.json();
+};
+
+export const rejectReturnOrder = async (token: string, id: string, rejectReason: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/reject-return`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ rejectReason })
   });
   return res.json();
 };

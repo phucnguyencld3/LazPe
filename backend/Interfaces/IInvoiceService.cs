@@ -52,7 +52,8 @@ namespace PolyBabyAPI.Interface
         Task<bool> RequestReturnAsync(int invoiceId, string userId, string reason, string description, string imageUrls, RefundMethod refundMethod);
         Task<bool> CancelReturnRequestAsync(int invoiceId, string userId);
         Task<bool> ApproveReturnAsync(int invoiceId, bool isRefundToCoins);
-        Task<bool> ConfirmReturnReceivedAsync(int invoiceId);
+        Task<bool> RejectReturnAsync(int invoiceId, string rejectReason);
+        Task<bool> ConfirmReturnReceivedAsync(int invoiceId, bool isRestockable);
         Task AutoRestockAfterReturnAsync(int invoiceId);
 
         Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken);

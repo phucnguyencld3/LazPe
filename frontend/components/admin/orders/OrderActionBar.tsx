@@ -6,6 +6,7 @@ interface OrderActionBarProps {
   onUpdateStatus: (action: string) => void;
   onShowCancelModal: () => void;
   onShowReturnModal?: () => void;
+  onShowConfirmReturnModal?: () => void;
   onPrintOrder: () => void;
 }
 
@@ -14,6 +15,7 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
   onUpdateStatus,
   onShowCancelModal,
   onShowReturnModal,
+  onShowConfirmReturnModal,
   onPrintOrder,
 }) => {
   return (
@@ -74,6 +76,16 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
           >
             <span className="material-symbols-outlined">assignment_return</span>
             Xử lý hoàn hàng
+          </button>
+        )}
+
+        {order.statusCode === 9 && onShowConfirmReturnModal && (
+          <button 
+            onClick={onShowConfirmReturnModal}
+            className="px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-[8px] shadow-md transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined">inventory_2</span>
+            Đã nhận hàng hoàn
           </button>
         )}
       </div>

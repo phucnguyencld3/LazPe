@@ -1396,7 +1396,7 @@ export async function createInvoiceFromCart(
   }
 }
 
-export async function getInvoiceDetail(token: string, invoiceId: number): Promise<any | null> {
+export async function getInvoiceDetail(token: string, invoiceId: string | number): Promise<any | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/Invoice/${invoiceId}`, {
       method: "GET",
@@ -1936,6 +1936,7 @@ export interface LoyaltyPointHistoryItem {
   transactionType: string;
   amount: number;
   invoiceID?: number;
+  invoiceCode?: string;
   description: string;
   createdAt: string;
 }

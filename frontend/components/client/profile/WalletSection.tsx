@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader, Wallet, Coins, ArrowDownToLine, History, Clock, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Loader, Wallet, Coins, ArrowDownToLine, History, Clock, CheckCircle2, XCircle, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { 
   getUserProfile, 
@@ -22,6 +22,8 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
   
   const [transactions, setTransactions] = useState<BalanceTransaction[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawRequest[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [withdrawPage, setWithdrawPage] = useState(1);
   
   // Modal state
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -240,62 +242,202 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
 
         <div className="p-0">
           {activeTab === "history" && (
-            <div className="divide-y divide-slate-100">
-              {transactions.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                  <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-                  <p>Chưa có lịch sử giao dịch nào</p>
-                </div>
-              ) : (
-                transactions.map((tx) => (
-                  <div key={tx.transactionID || Math.random()} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-full ${tx.direction === 2 ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}>
-                        <Wallet className="h-4 w-4" />
+            <div>
+              <div className="divide-y divide-slate-100">
+                {transactions.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">
+                    <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                    <p>Chưa có lịch sử giao dịch nào</p>
+                  </div>
+                ) : (
+                  transactions
+                    .slice((historyPage - 1) * 5, historyPage * 5)
+                    .map((tx) => (
+                      <div key={tx.transactionID || Math.random()} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-full ${tx.direction === 2 ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}>
+                            <Wallet className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-800 text-sm">{tx.reason}</p>
+                            <p className="text-xs text-slate-500 mt-1">{formatDate(tx.createdAt)} • Nguồn: {tx.sourceType === 1 ? "Ví LazPe" : "LazPe Coins"}</p>
+                          </div>
+                        </div>
+                        <div className={`font-black ${tx.direction === 2 ? "text-emerald-500" : "text-rose-500"}`}>
+                          {tx.direction === 2 ? "+" : "-"}{tx.sourceType === 2 ? `${tx.amount.toLocaleString("vi-VN")} xu` : formatVND(tx.amount)}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-slate-800 text-sm">{tx.reason}</p>
-                        <p className="text-xs text-slate-500 mt-1">{formatDate(tx.createdAt)} • Nguồn: {tx.sourceType === 1 ? "Ví LazPe" : "LazPe Coins"}</p>
-                      </div>
+                    ))
+                )}
+              </div>
+              {transactions.length > 5 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-white">
+                  <div className="flex flex-1 justify-between sm:hidden">
+                    <button
+                      onClick={() => setHistoryPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={historyPage === 1}
+                      className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Trang trước
+                    </button>
+                    <button
+                      onClick={() => setHistoryPage((prev) => Math.min(prev + 1, Math.ceil(transactions.length / 5)))}
+                      disabled={historyPage === Math.ceil(transactions.length / 5)}
+                      className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Trang sau
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs text-slate-700 font-semibold">
+                        Hiển thị <span className="font-bold">{(historyPage - 1) * 5 + 1}</span> đến{" "}
+                        <span className="font-bold">
+                          {Math.min(historyPage * 5, transactions.length)}
+                        </span>{" "}
+                        trong tổng số <span className="font-bold">{transactions.length}</span> giao dịch
+                      </p>
                     </div>
-                    <div className={`font-black ${tx.direction === 2 ? "text-emerald-500" : "text-rose-500"}`}>
-                      {tx.direction === 2 ? "+" : "-"}{tx.sourceType === 2 ? `${tx.amount.toLocaleString("vi-VN")} xu` : formatVND(tx.amount)}
+                    <div>
+                      <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                        <button
+                          onClick={() => setHistoryPage((prev) => Math.max(prev - 1, 1))}
+                          disabled={historyPage === 1}
+                          className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        {Array.from({ length: Math.ceil(transactions.length / 5) }).map((_, idx) => {
+                          const pageNum = idx + 1;
+                          const isCurrent = pageNum === historyPage;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setHistoryPage(pageNum)}
+                              className={`relative inline-flex items-center px-3.5 py-2 text-xs font-semibold focus:z-20 cursor-pointer ${
+                                isCurrent
+                                  ? "z-10 bg-emerald-600 text-white"
+                                  : "text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        <button
+                          onClick={() => setHistoryPage((prev) => Math.min(prev + 1, Math.ceil(transactions.length / 5)))}
+                          disabled={historyPage === Math.ceil(transactions.length / 5)}
+                          className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </nav>
                     </div>
                   </div>
-                ))
+                </div>
               )}
             </div>
           )}
 
           {activeTab === "withdraw" && (
-            <div className="divide-y divide-slate-100">
-              {withdrawals.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                  <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-                  <p>Chưa có yêu cầu rút tiền nào</p>
-                </div>
-              ) : (
-                withdrawals.map((req) => (
-                  <div key={req.requestID} className="p-4 hover:bg-slate-50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-bold text-slate-800">
-                        {formatVND(req.amount)}
+            <div>
+              <div className="divide-y divide-slate-100">
+                {withdrawals.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">
+                    <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                    <p>Chưa có yêu cầu rút tiền nào</p>
+                  </div>
+                ) : (
+                  withdrawals
+                    .slice((withdrawPage - 1) * 5, withdrawPage * 5)
+                    .map((req) => (
+                      <div key={req.requestID} className="p-4 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-bold text-slate-800">
+                            {formatVND(req.amount)}
+                          </div>
+                          <div>
+                            {req.status === "Pending" && <span className="flex items-center gap-1 text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded"><Clock className="h-3 w-3"/> Đang chờ</span>}
+                            {req.status === "Approved" && <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded"><CheckCircle2 className="h-3 w-3"/> Đã duyệt</span>}
+                            {req.status === "Rejected" && <span className="flex items-center gap-1 text-xs font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded"><XCircle className="h-3 w-3"/> Từ chối</span>}
+                          </div>
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          Ngân hàng: <span className="font-semibold">{req.bankName}</span> - {req.bankAccount} ({req.bankOwnerName})
+                        </div>
+                        <div className="text-xs text-slate-500 mt-2 flex justify-between">
+                          <span>Ngày tạo: {formatDate(req.createdAt)}</span>
+                          {req.adminNote && <span className="text-rose-500">Ghi chú: {req.adminNote}</span>}
+                        </div>
                       </div>
-                      <div>
-                        {req.status === "Pending" && <span className="flex items-center gap-1 text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded"><Clock className="h-3 w-3"/> Đang chờ</span>}
-                        {req.status === "Approved" && <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded"><CheckCircle2 className="h-3 w-3"/> Đã duyệt</span>}
-                        {req.status === "Rejected" && <span className="flex items-center gap-1 text-xs font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded"><XCircle className="h-3 w-3"/> Từ chối</span>}
-                      </div>
+                    ))
+                )}
+              </div>
+              {withdrawals.length > 5 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-white">
+                  <div className="flex flex-1 justify-between sm:hidden">
+                    <button
+                      onClick={() => setWithdrawPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={withdrawPage === 1}
+                      className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Trang trước
+                    </button>
+                    <button
+                      onClick={() => setWithdrawPage((prev) => Math.min(prev + 1, Math.ceil(withdrawals.length / 5)))}
+                      disabled={withdrawPage === Math.ceil(withdrawals.length / 5)}
+                      className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-750 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Trang sau
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs text-slate-700 font-semibold">
+                        Hiển thị <span className="font-bold">{(withdrawPage - 1) * 5 + 1}</span> đến{" "}
+                        <span className="font-bold">
+                          {Math.min(withdrawPage * 5, withdrawals.length)}
+                        </span>{" "}
+                        trong tổng số <span className="font-bold">{withdrawals.length}</span> yêu cầu
+                      </p>
                     </div>
-                    <div className="text-sm text-slate-600">
-                      Ngân hàng: <span className="font-semibold">{req.bankName}</span> - {req.bankAccount} ({req.bankOwnerName})
-                    </div>
-                    <div className="text-xs text-slate-500 mt-2 flex justify-between">
-                      <span>Ngày tạo: {formatDate(req.createdAt)}</span>
-                      {req.adminNote && <span className="text-rose-500">Ghi chú: {req.adminNote}</span>}
+                    <div>
+                      <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                        <button
+                          onClick={() => setWithdrawPage((prev) => Math.max(prev - 1, 1))}
+                          disabled={withdrawPage === 1}
+                          className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        {Array.from({ length: Math.ceil(withdrawals.length / 5) }).map((_, idx) => {
+                          const pageNum = idx + 1;
+                          const isCurrent = pageNum === withdrawPage;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setWithdrawPage(pageNum)}
+                              className={`relative inline-flex items-center px-3.5 py-2 text-xs font-semibold focus:z-20 cursor-pointer ${
+                                isCurrent
+                                  ? "z-10 bg-emerald-600 text-white"
+                                  : "text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        <button
+                          onClick={() => setWithdrawPage((prev) => Math.min(prev + 1, Math.ceil(withdrawals.length / 5)))}
+                          disabled={withdrawPage === Math.ceil(withdrawals.length / 5)}
+                          className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </nav>
                     </div>
                   </div>
-                ))
+                </div>
               )}
             </div>
           )}

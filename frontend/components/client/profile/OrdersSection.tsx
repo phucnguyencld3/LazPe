@@ -176,6 +176,18 @@ export function OrdersSection({
             Đã hủy & hoàn tiền
           </span>
         );
+      case 9:
+        return (
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-orange-700 bg-orange-50 border border-orange-300/60 rounded-[4px]">
+            Đã duyệt hoàn hàng
+          </span>
+        );
+      case 10:
+        return (
+          <span className="px-2 py-0.5 text-[9px] font-black uppercase text-red-700 bg-red-50 border border-red-200/60 rounded-[4px]">
+            Từ chối hoàn hàng
+          </span>
+        );
       default:
         return (
           <span className="px-2 py-0.5 text-[9px] font-black uppercase text-slate-700 bg-slate-50 border border-slate-200/60 rounded-[4px]">

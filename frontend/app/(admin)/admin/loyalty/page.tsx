@@ -107,6 +107,7 @@ interface TransactionHistory {
   transactionType: string;
   amount: number;
   invoiceID?: number;
+  invoiceCode?: string;
   description: string;
   createdAt: string;
 }
@@ -2079,7 +2080,7 @@ export default function AdminLoyaltyPage() {
                                   <div className="p-4 rounded-[8px] border border-slate-100 bg-white shadow-sm mt-2">
                                     <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-semibold">
                                       <span>Thời gian: {new Date(h.createdAt).toLocaleString("vi-VN")}</span>
-                                      {h.invoiceID && <span>Hóa đơn: #{h.invoiceID}</span>}
+                                      {(h.invoiceCode || h.invoiceID) && <span>Hóa đơn: #{h.invoiceCode || h.invoiceID}</span>}
                                       <span>Loại: {h.transactionType}</span>
                                     </div>
                                     <p className="mt-2 text-sm font-bold text-on-surface">Mô tả</p>

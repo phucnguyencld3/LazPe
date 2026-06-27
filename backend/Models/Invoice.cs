@@ -47,7 +47,13 @@ namespace PolyBabyAPI.Models
         ReturnedRefunded = 7,
 
         [Display(Name = "Đã hủy & hoàn tiền")]
-        CancelledRefunded = 8
+        CancelledRefunded = 8,
+
+        [Display(Name = "Đã duyệt trả hàng")]
+        ReturnApproved = 9,
+
+        [Display(Name = "Từ chối trả hàng")]
+        ReturnRejected = 10
     }
 
     public enum RefundMethod

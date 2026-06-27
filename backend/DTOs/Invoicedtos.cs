@@ -150,4 +150,15 @@ namespace PolyBabyAPI.DTOs
     {
         public bool IsRefundToCoins { get; set; }
     }
+
+    public class ReturnRejectionDto
+    {
+        [Required]
+        public string RejectReason { get; set; } = null!;
+    }
+
+    public class ConfirmReturnReceivedDto
+    {
+        public bool IsRestockable { get; set; } = true;
+    }
 }

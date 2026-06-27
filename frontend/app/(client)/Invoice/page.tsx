@@ -67,14 +67,14 @@ function InvoiceContent() {
         });
         setLoading(false);
       } else {
-        fetchInvoiceDetails(parseInt(invoiceIdStr), savedToken);
+        fetchInvoiceDetails(invoiceIdStr, savedToken);
       }
     } else {
       setLoading(false);
     }
   }, [invoiceIdStr]);
 
-  const fetchInvoiceDetails = async (id: number, authToken: string) => {
+  const fetchInvoiceDetails = async (id: string | number, authToken: string) => {
     setLoading(true);
     try {
       const data = await getInvoiceDetail(authToken, id);
