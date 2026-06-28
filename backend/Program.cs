@@ -73,7 +73,7 @@ try
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && 
-                    (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub")))
+                    (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub") || path.StartsWithSegments("/directMessageHub")))
                 {
                     context.Token = accessToken;
                 }
@@ -432,6 +432,7 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
     }
 
     app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
+    app.MapHub<PolyBabyAPI.Hubs.DirectMessageHub>("/directMessageHub");
     app.MapHub<PolyBabyAPI.Hubs.NotificationHub>("/notificationHub");
     app.MapHub<PolyBabyAPI.Hubs.BannerHub>("/bannerHub");
     app.MapControllers();

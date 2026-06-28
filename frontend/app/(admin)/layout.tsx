@@ -840,13 +840,13 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname === "/admin/chats" ? "h-[calc(117.647vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname?.includes("/chat") ? "h-[calc(117.647vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
           
           {/* Footer Shell */}
-          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${pathname === "/admin/chats" ? "py-2 mt-2" : "py-md mt-lg"}`}>
+          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${pathname?.includes("/chat") ? "py-2 mt-2 text-xs" : "py-md mt-lg"}`}>
             <p>© 2024 Hệ thống quản lý LazPe. Bảo lưu mọi quyền.</p>
             <div className="flex gap-md">
               <a className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a>

@@ -71,13 +71,13 @@ namespace PolyBabyAPI.Controllers
                     if (!request.ForceNew)
                     {
                         session = await _context.ChatSessions
-                            .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsClosed);
+                            .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsClosed && !s.Id.StartsWith("DM_"));
                     }
                     else
                     {
                         // Đóng tất cả các phiên chat cũ nếu yêu cầu tạo phiên mới
                         var oldSessions = await _context.ChatSessions
-                            .Where(s => s.UserId == userId && !s.IsClosed)
+                            .Where(s => s.UserId == userId && !s.IsClosed && !s.Id.StartsWith("DM_"))
                             .ToListAsync();
                         foreach (var s in oldSessions)
                         {
@@ -442,7 +442,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var sessions = await _context.ChatSessions
-                    .Where(s => s.Messages.Any() || !string.IsNullOrEmpty(s.LastMessageText))
+                    .Where(s => (s.Messages.Any() || !string.IsNullOrEmpty(s.LastMessageText)) && !s.Id.StartsWith("DM_"))
                     .OrderByDescending(s => s.UpdatedAt)
                     .Select(s => new
                     {

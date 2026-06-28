@@ -101,6 +101,10 @@ export default function AdminUsersPage() {
     router.push(`/admin/users/${id}`);
   };
 
+  const goToChat = (id: string) => {
+    router.push(`/admin/users/${id}/chat`);
+  };
+
   return (
     <div className="w-full">
       {/* Header Section */}
@@ -134,6 +138,7 @@ export default function AdminUsersPage() {
           totalCount={totalCount}
           onPageChange={setPage}
           onRowClick={goToDetails}
+          onChatClick={goToChat}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           statusFilter={statusFilter}

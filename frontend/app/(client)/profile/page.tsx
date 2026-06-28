@@ -32,6 +32,7 @@ import { AddressList } from "@/components/client/profile/AddressList";
 import { SecurityAndSettings } from "@/components/client/profile/SecurityAndSettings";
 import { EditProfileModal } from "@/components/client/profile/modals/EditProfileModal";
 import { EditBabyInfoModal } from "@/components/client/profile/modals/EditBabyInfoModal";
+import { ProfileMessages } from "@/components/client/profile/ProfileMessages";
 import { ChangePasswordModal } from "@/components/client/profile/modals/ChangePasswordModal";
 import { ProfileAddressModal } from "@/components/client/profile/modals/ProfileAddressModal";
 import { VoucherSection } from "@/components/client/profile/VoucherSection";
@@ -619,6 +620,7 @@ export default function ProfilePage() {
                       { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                       { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
                       { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
@@ -652,6 +654,7 @@ export default function ProfilePage() {
                       { id: "address", label: "Địa chỉ", icon: "location_on" },
                       { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "messages", label: "Tin nhắn", icon: "chat" },
                       { id: "alerts", label: "Báo giá", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá", icon: "reviews" },
@@ -702,6 +705,10 @@ export default function ProfilePage() {
                   onNotificationToggle={handleNotificationToggle}
                 />
               </div>
+            )}
+            
+            {activeTab === "messages" && (
+              <ProfileMessages token={token} />
             )}
 
             {activeTab === "address" && (
