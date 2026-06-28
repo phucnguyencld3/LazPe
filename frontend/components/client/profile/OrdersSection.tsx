@@ -10,6 +10,7 @@ interface OrdersSectionProps {
   initialOrderId?: number | null;
   onClearInitialOrderId?: () => void;
   onChangeTab?: (tabId: string) => void;
+  onSupportOrder?: (order: any) => void;
 }
 
 export function OrdersSection({
@@ -17,7 +18,8 @@ export function OrdersSection({
   token,
   initialOrderId,
   onClearInitialOrderId,
-  onChangeTab
+  onChangeTab,
+  onSupportOrder
 }: OrdersSectionProps) {
   const [activeTab, setActiveTab] = useState<"all" | "0" | "2" | "3" | "5">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -270,6 +272,7 @@ export function OrdersSection({
         onBack={() => setSelectedOrderId(null)}
         onStatusUpdated={loadOrders}
         onChangeTab={onChangeTab}
+        onSupportOrder={onSupportOrder}
       />
     );
   }

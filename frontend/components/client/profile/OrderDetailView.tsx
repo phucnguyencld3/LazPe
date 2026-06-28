@@ -17,6 +17,7 @@ interface OrderDetailViewProps {
   onBack: () => void;
   onStatusUpdated?: () => void;
   onChangeTab?: (tabId: string) => void;
+  onSupportOrder?: (order: any) => void;
 }
 
 export function OrderDetailView({
@@ -24,7 +25,8 @@ export function OrderDetailView({
   token,
   onBack,
   onStatusUpdated,
-  onChangeTab
+  onChangeTab,
+  onSupportOrder
 }: OrderDetailViewProps) {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -447,6 +449,13 @@ export function OrderDetailView({
               Hủy yêu cầu hoàn hàng
             </button>
           )}
+          <button
+            onClick={() => onSupportOrder?.(order)}
+            className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-sky-600 hover:bg-sky-50 border border-sky-200 rounded-xl transition-all flex items-center justify-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">support_agent</span>
+            Khiếu nại / CSKH
+          </button>
         </div>
       </div>
 

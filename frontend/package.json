@@ -19,6 +19,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "apexcharts": "^5.13.0",
     "canvas-confetti": "^1.9.4",
+    "emoji-picker-react": "^4.19.1",
     "html2canvas": "npm:html2canvas-pro@^2.0.4",
     "html2canvas-pro": "^2.0.4",
     "html2pdf.js": "^0.14.0",

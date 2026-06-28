@@ -54,6 +54,46 @@ namespace PolyBabyAPI.Controllers
             return Ok(result);
         }
 
+        // GET: api/vouchers/exclusive-direct
+        [HttpGet("exclusive-direct")]
+        [Authorize]
+        public async Task<IActionResult> GetExclusiveDirectVouchers()
+        {
+            var now = DateTime.Now;
+
+            var query = _context.Vouchers
+                .Where(v => v.Status
+                    && v.VisibilityType == VoucherVisibilityType.Exclusive
+                    && v.ExclusiveType == ExclusiveDistributionType.DirectAssign
+                    && v.EndDate >= now
+                    && v.UsedQuantity < v.TotalQuantity)
+                .OrderByDescending(v => v.StartDate)
+                .AsQueryable();
+
+            var vouchers = await query.Select(v => new
+            {
+                v.VoucherID,
+                v.Code,
+                v.Name,
+                v.DiscountType,
+                v.DiscountValue,
+                v.MinOrderValue,
+                v.MaxDiscount,
+                v.TotalQuantity,
+                v.UsedQuantity,
+                v.StartDate,
+                v.EndDate,
+                RemainingQuantity = v.TotalQuantity - v.UsedQuantity,
+                VisibilityType = v.VisibilityType.ToString(),
+                VoucherType = (int)v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
+            }).ToListAsync();
+
+            return Ok(vouchers);
+        }
+
         // GET: api/vouchers/public
         [HttpGet("public")]
         public async Task<IActionResult> GetPublicVouchers()

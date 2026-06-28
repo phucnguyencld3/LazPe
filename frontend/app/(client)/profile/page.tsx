@@ -60,6 +60,7 @@ export default function ProfilePage() {
   const [districts, setDistricts] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
   const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
+  const [pendingSupportOrder, setPendingSupportOrder] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -708,7 +709,11 @@ export default function ProfilePage() {
             )}
             
             {activeTab === "messages" && (
-              <ProfileMessages token={token} />
+              <ProfileMessages 
+                token={token} 
+                pendingSupportOrder={pendingSupportOrder}
+                clearPendingSupportOrder={() => setPendingSupportOrder(null)}
+              />
             )}
 
             {activeTab === "address" && (
@@ -742,6 +747,10 @@ export default function ProfilePage() {
                 initialOrderId={initialNotifId}
                 onClearInitialOrderId={handleClearInitialId}
                 onChangeTab={handleTabChange}
+                onSupportOrder={(order) => {
+                  setPendingSupportOrder(order);
+                  handleTabChange("messages");
+                }}
               />
             )}
 

@@ -149,6 +149,51 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [HttpPost("chat-image")]
+        public async Task<IActionResult> UploadChatImage([FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "Không có file được chọn" });
+                }
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh JPG, PNG, GIF, WebP" });
+                }
+
+                const long maxFileSize = 10 * 1024 * 1024;
+                if (file.Length > maxFileSize)
+                {
+                    return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
+                }
+
+                var uploadResult = await _cloudinaryService.ReplaceImageAsync(null, file, "chat_images");
+
+                if (!string.IsNullOrEmpty(uploadResult))
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        url = uploadResult,
+                        message = "Upload ảnh chat thành công!"
+                    });
+                }
+
+                return BadRequest(new { success = false, message = "Không thể upload file lên Cloudinary" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading chat image");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi upload ảnh chat" });
+            }
+        }
+
         /// <summary>
         /// Xóa ảnh trên Cloudinary
         /// </summary>

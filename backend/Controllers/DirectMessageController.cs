@@ -75,7 +75,7 @@ namespace PolyBabyAPI.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var senderName = User.FindFirstValue("FullName") ?? User.FindFirstValue(ClaimTypes.Name) ?? "Khách hàng";
-            return await ProcessSendMessage(userId, userId, senderName, false, input.MessageText);
+            return await ProcessSendMessage(userId, userId, senderName, false, input.MessageText, input.ImageUrl);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace PolyBabyAPI.Controllers
             if (!IsAdmin()) return Forbid();
             var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var adminName = User.FindFirstValue("FullName") ?? User.FindFirstValue(ClaimTypes.Name) ?? "Quản trị viên";
-            return await ProcessSendMessage(userId, adminId, adminName, true, input.MessageText);
+            return await ProcessSendMessage(userId, adminId, adminName, true, input.MessageText, input.ImageUrl);
         }
 
         private bool IsAdmin()
@@ -146,9 +146,9 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
-        private async Task<IActionResult> ProcessSendMessage(string sessionUserId, string senderId, string senderName, bool isFromAdmin, string messageText)
+        private async Task<IActionResult> ProcessSendMessage(string sessionUserId, string senderId, string senderName, bool isFromAdmin, string? messageText, string? imageUrl)
         {
-            if (string.IsNullOrWhiteSpace(messageText))
+            if (string.IsNullOrWhiteSpace(messageText) && string.IsNullOrWhiteSpace(imageUrl))
             {
                 return BadRequest(new { message = "Tin nhắn không được để trống" });
             }
@@ -163,13 +163,15 @@ namespace PolyBabyAPI.Controllers
                     SenderId = senderId,
                     SenderName = senderName,
                     IsFromAdmin = isFromAdmin,
-                    MessageText = messageText,
+                    MessageText = messageText ?? "",
+                    ImageUrl = imageUrl,
                     CreatedAt = DateTime.Now
                 };
 
                 _context.ChatMessages.Add(chatMessage);
 
-                session.LastMessageText = messageText.Length > 400 ? messageText.Substring(0, 400) : messageText;
+                string lastMessage = string.IsNullOrWhiteSpace(messageText) ? "[Hình ảnh]" : messageText;
+                session.LastMessageText = lastMessage.Length > 400 ? lastMessage.Substring(0, 400) : lastMessage;
                 session.UpdatedAt = DateTime.Now;
 
                 if (isFromAdmin)
@@ -210,6 +212,7 @@ namespace PolyBabyAPI.Controllers
 
     public class DMRequestDto
     {
-        public string MessageText { get; set; }
+        public string? MessageText { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }
