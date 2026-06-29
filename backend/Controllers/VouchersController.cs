@@ -200,6 +200,7 @@ namespace PolyBabyAPI.Controllers
         // GET: api/vouchers/checkout-available
         [Authorize]
         [HttpGet("checkout-available")]
+        [HttpGet("wallet/checkout-available")]
         public async Task<IActionResult> GetCheckoutAvailableVouchers()
         {
             var now = DateTime.Now;
@@ -508,8 +509,8 @@ namespace PolyBabyAPI.Controllers
             voucher.MaxDiscount = request.MaxDiscount;
             voucher.TotalQuantity = request.TotalQuantity;
             voucher.Status = request.Status;
-            voucher.StartDate = (DateTime)request.StartDate;
-            voucher.EndDate = (DateTime)request.EndDate;
+            voucher.StartDate = request.StartDate ?? voucher.StartDate;
+            voucher.EndDate = request.EndDate ?? voucher.EndDate;
             voucher.VisibilityType = Enum.IsDefined(typeof(VoucherVisibilityType), request.VisibilityType)
                 ? (VoucherVisibilityType)request.VisibilityType
                 : voucher.VisibilityType;

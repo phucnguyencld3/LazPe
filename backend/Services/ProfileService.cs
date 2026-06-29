@@ -51,6 +51,8 @@ namespace PolyBabyAPI.Service
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
                     IsOnboarded = user.IsOnboarded,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance,
                     BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
                     {
                         BabyProfileID = b.BabyProfileID,
@@ -304,6 +306,8 @@ namespace PolyBabyAPI.Service
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
                     IsOnboarded = user.IsOnboarded,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance,
                     BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
                     {
                         BabyProfileID = b.BabyProfileID,

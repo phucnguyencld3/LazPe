@@ -297,7 +297,7 @@ namespace PolyBabyAPI.Services
                                 p.ProductName,
                                 Category = p.Category != null ? p.Category.CategoryName : "",
                                 Description = p.Description != null && p.Description.Length > 200 ? p.Description.Substring(0, 200) + "..." : p.Description,
-                                p.Price,
+                                Price = p.Price * (1m - (p.ProductDiscountPercent / 100m)),
                                 Stock = p.Stock,
                                 // Ưu tiên ảnh sản phẩm gốc trước, nếu không có thì dùng ảnh biến thể
                                 ImageUrl = p.Images
@@ -313,7 +313,7 @@ namespace PolyBabyAPI.Services
                                 {
                                     v.VariantID,
                                     v.VariantName,
-                                    v.UnitPrice,
+                                    UnitPrice = v.UnitPrice * (1m - ((v.VariantDiscountPercent > 0 ? v.VariantDiscountPercent : p.ProductDiscountPercent) / 100m)),
                                     v.Stock,
                                     // Nếu biến thể không có ảnh, fallback về ảnh sản phẩm gốc
                                     ImageUrl = (v.ImageUrl != null && v.ImageUrl != "")

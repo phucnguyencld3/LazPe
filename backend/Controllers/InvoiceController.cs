@@ -1616,7 +1616,7 @@ namespace PolyBabyAPI.Controllers
                 var currentYear = DateTime.Now.Year;
                 var monthlySpending = invoices
                     .Where(i => i.CreatedAt.HasValue && i.CreatedAt.Value.Year == currentYear)
-                    .GroupBy(i => i.CreatedAt.Value.Month)
+                    .GroupBy(i => i.CreatedAt!.Value.Month)
                     .Select(g => new InvoiceDtos.MonthlySpendingDto
                     {
                         Month = g.Key,

@@ -42,7 +42,7 @@ namespace PolyBabyAPI.Services
                 var rawData = await _context.InvoiceDetails
                     .Include(od => od.Invoice)
                     .Where(od => od.Invoice.CreatedAt >= startDate && od.Invoice.Status == PolyBabyAPI.Models.OrderStatus.Completed && od.Invoice.CreatedAt.HasValue)
-                    .GroupBy(od => od.Invoice.CreatedAt.Value.Date)
+                    .GroupBy(od => od.Invoice.CreatedAt!.Value.Date)
                     .Select(g => new
                     {
                         Date = g.Key,
