@@ -1666,6 +1666,42 @@ namespace PolyBabyAPI.Services
                     }
                 }
             }
+            else if (invoice.PayMethod == null && invoice.AmountToPay > 0 && invoice.Status == OrderStatus.ReturnedRefunded)
+            {
+                // Đối với đơn hàng COD đã nhận hàng (Completed) và nay được duyệt hoàn trả thành công (ReturnedRefunded)
+                bool refundToCoins = invoice.RefundMethod == RefundMethod.LazPeCoins;
+                
+                if (refundToCoins)
+                {
+                    invoice.User.CoinsBalance += invoice.AmountToPay;
+                    _context.BalanceTransactions.Add(new BalanceTransaction
+                    {
+                        UserID = invoice.UserID,
+                        InvoiceID = invoice.InvoiceID,
+                        Amount = invoice.AmountToPay,
+                        Direction = BalanceTransactionDirection.Credit,
+                        SourceType = BalanceSourceType.Coins,
+                        Reason = $"Hoàn xu từ đơn hàng COD #{invoice.InvoiceCode} hoàn trả",
+                        IdempotencyKey = idempotencyKey + "_COD_COINS",
+                        HashSignature = "" 
+                    });
+                }
+                else
+                {
+                    invoice.User.WalletBalance += invoice.AmountToPay;
+                    _context.BalanceTransactions.Add(new BalanceTransaction
+                    {
+                        UserID = invoice.UserID,
+                        InvoiceID = invoice.InvoiceID,
+                        Amount = invoice.AmountToPay,
+                        Direction = BalanceTransactionDirection.Credit,
+                        SourceType = BalanceSourceType.Wallet, 
+                        Reason = $"Hoàn tiền từ đơn hàng COD #{invoice.InvoiceCode} hoàn trả",
+                        IdempotencyKey = idempotencyKey + "_COD_WALLET",
+                        HashSignature = "" 
+                    });
+                }
+            }
         }
     }
 }
