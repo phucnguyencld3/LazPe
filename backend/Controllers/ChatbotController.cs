@@ -5,6 +5,11 @@ using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Models;
 using System.Text;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 using Microsoft.AspNetCore.SignalR;
 using PolyBabyAPI.Hubs;
@@ -18,12 +23,14 @@ namespace PolyBabyAPI.Controllers
         private readonly IGeminiService _geminiService;
         private readonly ApplicationDbContext _dbContext;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IConfiguration _configuration;
 
-        public ChatbotController(IGeminiService geminiService, ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext)
+        public ChatbotController(IGeminiService geminiService, ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, IConfiguration configuration)
         {
             _geminiService = geminiService;
             _dbContext = dbContext;
             _hubContext = hubContext;
+            _configuration = configuration;
         }
 
         [HttpPost("ask")]
@@ -151,6 +158,71 @@ namespace PolyBabyAPI.Controllers
                 await Response.WriteAsync(errorData);
                 await Response.Body.FlushAsync();
             }
+        }
+
+        [HttpGet("tts")]
+        public async Task<IActionResult> GetTts([FromQuery] string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return BadRequest("Text cannot be empty.");
+            }
+
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                    
+                    // Split text into chunks of <= 150 chars to avoid Translate API limits
+                    var chunks = SplitTextIntoChunks(text, 150);
+                    var allAudioBytes = new List<byte>();
+
+                    foreach (var chunk in chunks)
+                    {
+                        var encodedText = Uri.EscapeDataString(chunk);
+                        var url = $"https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q={encodedText}";
+                        var responseBytes = await client.GetByteArrayAsync(url);
+                        allAudioBytes.AddRange(responseBytes);
+                    }
+
+                    return File(allAudioBytes.ToArray(), "audio/mpeg");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi tạo giọng nói", error = ex.Message });
+            }
+        }
+
+        private List<string> SplitTextIntoChunks(string text, int maxLen)
+        {
+            var chunks = new List<string>();
+            if (string.IsNullOrEmpty(text)) return chunks;
+
+            var words = text.Split(' ');
+            var currentChunk = new StringBuilder();
+
+            foreach (var word in words)
+            {
+                if (currentChunk.Length + word.Length + 1 > maxLen)
+                {
+                    chunks.Add(currentChunk.ToString());
+                    currentChunk.Clear();
+                }
+                if (currentChunk.Length > 0)
+                {
+                    currentChunk.Append(" ");
+                }
+                currentChunk.Append(word);
+            }
+
+            if (currentChunk.Length > 0)
+            {
+                chunks.Add(currentChunk.ToString());
+            }
+
+            return chunks;
         }
     }
 

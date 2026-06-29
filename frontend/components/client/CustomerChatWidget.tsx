@@ -138,6 +138,138 @@ export default function CustomerChatWidget() {
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [pendingAutoSendMsg, setPendingAutoSendMsg] = useState<string | null>(null);
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
+  const voiceOutputEnabledRef = useRef(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const spokenMessagesRef = useRef<Set<string | number>>(new Set());
+
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("voiceOutputEnabled");
+    if (saved !== null) {
+      setVoiceOutputEnabled(saved === "true");
+      voiceOutputEnabledRef.current = saved === "true";
+    }
+  }, []);
+
+  const handleToggleVoiceOutput = () => {
+    const newVal = !voiceOutputEnabled;
+    setVoiceOutputEnabled(newVal);
+    voiceOutputEnabledRef.current = newVal;
+    localStorage.setItem("voiceOutputEnabled", String(newVal));
+    if (!newVal && currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+  };
+
+  const speakText = (text: string, msgId: string | number) => {
+    if (typeof window === 'undefined') return;
+    if (spokenMessagesRef.current.has(msgId)) return;
+    spokenMessagesRef.current.add(msgId);
+
+    // Stop current audio if playing
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+
+    // Clean markdown and emojis for better TTS
+    const cleanText = text
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/[*#_~]/g, "")
+      .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "")
+      .trim();
+
+    if (!cleanText) return;
+
+    // Use our backend proxy GET /api/chatbot/tts?text=...
+    const audioUrl = `${API_BASE}/api/chatbot/tts?text=${encodeURIComponent(cleanText)}`;
+    const audio = new Audio(audioUrl);
+    audio.playbackRate = 1.25; // Speed up voice playback to 1.25x
+    currentAudioRef.current = audio;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        if (err.name !== "AbortError") {
+          console.error("Audio playback failed", err);
+        }
+      });
+    }
+  };
+
+  const toggleListening = () => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    if (!recognitionRef.current) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = "vi-VN";
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInputText((prev) => {
+            const next = prev ? prev.trim() + " " + transcript : transcript;
+            setTimeout(() => {
+              if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+                textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+              }
+            }, 50);
+            return next;
+          });
+        }
+      };
+
+      rec.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        if (event.error === "not-allowed") {
+          toast.error("Quyền truy cập Micro bị từ chối.");
+        } else {
+          toast.error("Lỗi nhận diện giọng nói: " + event.error);
+        }
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+
+    try {
+      recognitionRef.current.start();
+    } catch (e) {
+      console.error(e);
+      setIsListening(false);
+    }
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
@@ -234,6 +366,10 @@ export default function CustomerChatWidget() {
       if (hubConnectionRef.current) {
         hubConnectionRef.current.stop();
       }
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
     };
   }, []);
 
@@ -292,6 +428,9 @@ export default function CustomerChatWidget() {
       });
       if (isOpen && !normalized.isFromAdmin) {
         markAsRead(sid);
+      }
+      if (voiceOutputEnabledRef.current && normalized.isFromAdmin && normalized.messageText) {
+        speakText(normalized.messageText, normalized.id);
       }
     });
 
@@ -436,6 +575,9 @@ export default function CustomerChatWidget() {
             const aiMsg = normalizeMessage(data.message);
             // Prevent duplicate if SignalR was faster
             if (!prevUpdated.some(m => m.id === aiMsg.id)) {
+              if (voiceOutputEnabledRef.current && aiMsg.messageText) {
+                speakText(aiMsg.messageText, aiMsg.id);
+              }
               return [...prevUpdated, aiMsg];
             }
           } else if (data && data.text) {
@@ -450,6 +592,9 @@ export default function CustomerChatWidget() {
               imageUrl: null,
               createdAt: new Date().toISOString()
             };
+            if (voiceOutputEnabledRef.current && aiMsg.messageText) {
+              speakText(aiMsg.messageText, aiMsg.id);
+            }
             return [...prevUpdated, aiMsg];
           }
           return prevUpdated;
@@ -629,6 +774,10 @@ export default function CustomerChatWidget() {
   };
 
   const handleResetChat = async () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
     setShowEndChatModal(false);
     localStorage.removeItem("chat_session_id");
     localStorage.removeItem("chatMode");
@@ -935,10 +1084,43 @@ export default function CustomerChatWidget() {
                     placeholder="Gửi tin nhắn..."
                     className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
                   />
+                  
+                  {/* Nút Mic Nhập Giọng Nói (STT) */}
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`p-2 flex items-center justify-center cursor-pointer transition-all rounded-full shrink-0 ${
+                      isListening 
+                        ? "bg-red-50 text-red-500 animate-pulse hover:bg-red-100" 
+                        : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                    }`}
+                    title={isListening ? "Đang lắng nghe... Bấm để dừng" : "Nói để nhập tin nhắn"}
+                  >
+                    <span className="material-symbols-outlined text-[22px]">
+                      {isListening ? "mic" : "mic_none"}
+                    </span>
+                  </button>
+
+                  {/* Nút Loa AI Trả Lời Giọng Nói (TTS) */}
+                  <button
+                    type="button"
+                    onClick={handleToggleVoiceOutput}
+                    className={`p-2 flex items-center justify-center cursor-pointer transition-all rounded-full shrink-0 ${
+                      voiceOutputEnabled 
+                        ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                        : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                    }`}
+                    title={voiceOutputEnabled ? "Tắt đọc câu trả lời AI" : "Bật đọc câu trả lời AI"}
+                  >
+                    <span className="material-symbols-outlined text-[22px]">
+                      {voiceOutputEnabled ? "volume_up" : "volume_off"}
+                    </span>
+                  </button>
+
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="text-primary hover:text-primary/80 disabled:text-slate-300 disabled:opacity-50 p-2 flex items-center justify-center cursor-pointer transition-colors"
+                    className="text-primary hover:text-primary/80 disabled:text-slate-300 disabled:opacity-50 p-2 flex items-center justify-center cursor-pointer transition-colors shrink-0"
                   >
                     <span className="material-symbols-outlined text-2xl font-bold">send</span>
                   </button>
