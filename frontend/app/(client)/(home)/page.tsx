@@ -7,6 +7,7 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Heart, Phone, Info, ShieldCheck, Pill, Gift, Video, FileText, RotateCcw, Flame, Sparkles, Tag, LayoutGrid, Package, Search, Ticket, Calendar } from 'lucide-react';
 import ProductCard from '@/components/client/common/ProductCard';
 import ProductCarousel from '@/components/client/products/ProductCarousel';
+import { RecentlyViewedProducts } from '@/components/client/products/RecentlyViewedProducts';
 import { getProducts, getCurrentFlashSales, getRecommendations, getBundlesAsProducts, getPublicVouchers, collectVoucher } from '@/lib/api';
 import { Product, FlashSaleCampaign, Voucher } from '@/types';
 import { toast } from 'sonner';
@@ -370,6 +371,11 @@ export default function HomePageV2() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Sản phẩm đã xem */}
+      <div className="mb-6">
+        <RecentlyViewedProducts limit={10} />
       </div>
     </>
   );
