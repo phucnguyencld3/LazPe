@@ -55,8 +55,10 @@ namespace PolyBabyAPI.Services
 
                 // Các mức độ: Unknown, VeryUnlikely, Unlikely, Possible, Likely, VeryLikely
                 var unsafeLikelihoods = new[] { Likelihood.Likely, Likelihood.VeryLikely };
+                var strictLikelihoods = new[] { Likelihood.Possible, Likelihood.Likely, Likelihood.VeryLikely };
 
-                if (Array.IndexOf(unsafeLikelihoods, safeSearchAnnotation.Adult) >= 0)
+                // 18+ phạt nặng, chỉ cần Possible là cấm
+                if (Array.IndexOf(strictLikelihoods, safeSearchAnnotation.Adult) >= 0)
                 {
                     return (false, "Hình ảnh chứa nội dung nhạy cảm (18+).");
                 }
@@ -66,9 +68,10 @@ namespace PolyBabyAPI.Services
                     return (false, "Hình ảnh chứa yếu tố bạo lực.");
                 }
                 
-                if (Array.IndexOf(unsafeLikelihoods, safeSearchAnnotation.Racy) >= 0)
+                // Gợi cảm (Bikini, đồ lót, hở hang), quét gắt gao (Possible)
+                if (Array.IndexOf(strictLikelihoods, safeSearchAnnotation.Racy) >= 0)
                 {
-                    return (false, "Hình ảnh chứa nội dung gợi cảm quá mức.");
+                    return (false, "Hình ảnh chứa nội dung gợi cảm, hở hang quá mức.");
                 }
 
                 if (Array.IndexOf(unsafeLikelihoods, safeSearchAnnotation.Medical) >= 0)
