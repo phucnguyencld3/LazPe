@@ -17,6 +17,7 @@
   "dependencies": {
     "@google/genai": "^2.8.0",
     "canvas-confetti": "^1.9.4",
+    "emoji-picker-react": "^4.19.1",
     "html5-qrcode": "^2.3.8",
     "node-fetch": "^2.7.0",
     "use-debounce": "^10.1.1",
