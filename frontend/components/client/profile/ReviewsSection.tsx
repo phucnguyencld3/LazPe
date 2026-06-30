@@ -178,24 +178,32 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
           body: formData
         });
 
-        if (!response.ok) {
-          throw new Error("Upload failed");
+        let result;
+        try {
+          result = await response.json();
+        } catch (e) {
+          result = null;
         }
 
-        const result = await response.json();
-        if (result.success && result.url) {
+        if (!response.ok) {
+          throw new Error(result?.message || "Upload failed");
+        }
+
+        if (result && result.success && result.url) {
           setAttachedMedia(prev => [...prev, {
             url: result.url,
             mediaType: result.mediaType || "IMAGE"
           }]);
         } else {
-          toast.error(result.message || `Lỗi tải lên file ${file.name}`);
+          toast.error(result?.message || `Lỗi tải lên file ${file.name}`);
         }
       }
       toast.success("Tải lên file đính kèm thành công!");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Không thể upload tệp tin. Vui lòng kiểm tra dung lượng hoặc kết nối mạng.");
+      toast.error(err.message && err.message !== "Upload failed" 
+        ? err.message 
+        : "Không thể upload tệp tin. Vui lòng kiểm tra dung lượng hoặc kết nối mạng.");
     } finally {
       setUploadingMedia(false);
       if (fileInputRef.current) {
@@ -292,7 +300,7 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
     }
   };
 
-  const canEditOrDelete = (review: ReviewItem) => {
+  const canEdit = (review: ReviewItem) => {
     if (review.isHidden || review.censorshipLogs.length > 0) {
       return false;
     }
@@ -302,6 +310,14 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
     const createdTime = new Date(review.createdAt).getTime();
     const timeLimitMs = loyaltySettings.allowEditReviewTimeLimitMinutes * 60 * 1000;
     return (Date.now() - createdTime) < timeLimitMs;
+  };
+
+  const canDelete = (review: ReviewItem) => {
+    // Không giới hạn thời gian xóa. Chỉ cấm xóa nếu đã bị Admin kiểm duyệt (phạt ẩn).
+    if (review.isHidden || review.censorshipLogs.length > 0) {
+      return false;
+    }
+    return true;
   };
 
   const renderStarsSelector = (currentRating: number, onStarClick: (star: number) => void) => {
@@ -794,22 +810,26 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
                   )}
 
                   {/* Action buttons (Edit/Delete) */}
-                  {canEditOrDelete(item) && (
+                  {(canEdit(item) || canDelete(item)) && (
                     <div className="flex gap-2 justify-end pt-1">
-                      <button
-                        onClick={() => handleEditReviewClick(item)}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-primary bg-slate-100 hover:bg-slate-200/50 px-2.5 py-1.5 rounded transition-all"
-                      >
-                        <Edit3 size={12} />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDeleteReview(item.reviewID)}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded transition-all"
-                      >
-                        <Trash2 size={12} />
-                        Xóa
-                      </button>
+                      {canEdit(item) && (
+                        <button
+                          onClick={() => handleEditReviewClick(item)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-primary bg-slate-100 hover:bg-slate-200/50 px-2.5 py-1.5 rounded transition-all"
+                        >
+                          <Edit3 size={12} />
+                          Sửa
+                        </button>
+                      )}
+                      {canDelete(item) && (
+                        <button
+                          onClick={() => handleDeleteReview(item.reviewID)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded transition-all"
+                        >
+                          <Trash2 size={12} />
+                          Xóa
+                        </button>
+                      )}
                     </div>
                   )}
 
