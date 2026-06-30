@@ -29,6 +29,7 @@ import { AddressModal } from "@/components/client/checkout/AddressModal";
 import { VoucherModal } from "@/components/client/cart/VoucherModal";
 import { getPublicVouchers, applyVoucherToCart, autoApplyVouchersToCart, removeVoucherFromCart, getCheckoutAvailableVouchers} from "@/lib/api";
 import { Voucher } from "@/types";
+import { WalletSecurityModal } from "@/components/client/wallet/WalletSecurityModal";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -86,6 +87,11 @@ export default function CheckoutPage() {
   const [coinsBalance, setCoinsBalance] = useState(0);
   const [walletDiscount, setWalletDiscount] = useState(0);
   const [coinsDiscount, setCoinsDiscount] = useState(0);
+  const [isWalletLocked, setIsWalletLocked] = useState(false);
+
+  // Wallet Security states
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityMode, setSecurityMode] = useState<any>("input");
 
   // Check auth and init
   useEffect(() => {
@@ -323,6 +329,16 @@ export default function CheckoutPage() {
       } catch (e) {
         console.error("Error fetching user profile:", e);
       }
+
+      try {
+        const { getWalletSecurityStatus } = await import("@/lib/api");
+        const statusRes = await getWalletSecurityStatus(authToken);
+        if (statusRes && statusRes.isLocked) {
+          setIsWalletLocked(true);
+        }
+      } catch (e) {
+        console.error("Error fetching wallet security status:", e);
+      }
     } catch (error) {
       console.error("Initialization error:", error);
       toast.error("Không thể tải thông tin thanh toán. Vui lòng thử lại!");
@@ -510,6 +526,39 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (useWallet) {
+      setSubmitting(true);
+      try {
+        const { getWalletSecurityStatus } = await import("@/lib/api");
+        const statusRes = await getWalletSecurityStatus(token);
+        
+        if (statusRes.isLocked) {
+          setIsWalletLocked(true);
+          setUseWallet(false);
+          toast.error("Ví của bạn đang bị khóa. Vui lòng thử lại sau hoặc mở khóa trong trang quản lý Ví.");
+          return;
+        }
+
+        if (!statusRes.isPinSet) {
+          setSecurityMode("setup_request");
+          setIsSecurityModalOpen(true);
+        } else {
+          setSecurityMode("input");
+          setIsSecurityModalOpen(true);
+        }
+      } catch (error: any) {
+        toast.error("Lỗi kiểm tra bảo mật ví");
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      executeCheckout();
+    }
+  };
+
+  const executeCheckout = async (pin?: string) => {
+    if (!token || !cart || selectedItems.length === 0 || !selectedAddress) return;
+
     setSubmitting(true);
     const selectedIds = selectedItems.map((item) => item.cartDetailID);
 
@@ -524,13 +573,15 @@ export default function CheckoutPage() {
         useCoins,
         coinsDiscount,
         useWallet,
-        walletDiscount
+        walletDiscount,
+        pin
       );
 
       if (res.success && res.data) {
         const invoiceId = res.data.invoiceID ?? res.data.id;
         toast.success("Tạo đơn hàng thành công!");
         
+        setIsSecurityModalOpen(false);
         // Clear selected item IDs from localStorage
         localStorage.removeItem("selectedCartDetailIds");
 
@@ -629,6 +680,7 @@ export default function CheckoutPage() {
             coinsBalance={coinsBalance}
             walletDiscount={walletDiscount}
             coinsDiscount={coinsDiscount}
+            isWalletLocked={isWalletLocked}
           />
         </div>
 
@@ -660,6 +712,22 @@ export default function CheckoutPage() {
         cart={cart}
         handleRemoveVoucher={handleRemoveVoucher}
       />
+
+      {/* Wallet Security Modal */}
+      {token && (
+        <WalletSecurityModal
+          isOpen={isSecurityModalOpen}
+          onClose={() => setIsSecurityModalOpen(false)}
+          token={token}
+          initialMode={securityMode}
+          onSuccess={(pin) => {
+            setIsSecurityModalOpen(false);
+            if (securityMode === "input" || securityMode === "setup_confirm" || securityMode === "forgot_confirm" || securityMode === "setup_request") {
+              executeCheckout(pin);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

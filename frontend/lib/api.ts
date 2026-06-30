@@ -346,6 +346,80 @@ export async function getCheckoutAvailableVouchers(token: string): Promise<UserW
 }
 
 // ==========================================
+// ==========================================
+// WALLET SECURITY APIs
+// ==========================================
+
+export interface WalletSecurityStatus {
+  success: boolean;
+  isPinSet: boolean;
+  isValidSignature: boolean;
+  isLocked?: boolean;
+  lockoutEnd?: string;
+  walletBalance: number;
+}
+
+export async function getWalletSecurityStatus(token: string): Promise<WalletSecurityStatus> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/status`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to get wallet security status");
+  return res.json();
+}
+
+export async function setupWalletPinRequestOtp(token: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/setup-pin/request-otp`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+export async function setupWalletPinConfirm(token: string, pin: string, otp: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/setup-pin/confirm`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ pin, otp })
+  });
+  return res.json();
+}
+
+export async function changeWalletPin(token: string, oldPin: string, newPin: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/change-pin`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ oldPin, newPin })
+  });
+  return res.json();
+}
+
+export async function forgotWalletPinRequestOtp(token: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/forgot-pin/request-otp`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+export async function resetWalletPinWithOtp(token: string, otp: string, newPin: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/forgot-pin/reset`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ otp, newPin })
+  });
+  return res.json();
+}
+
+// ==========================================
 // WITHDRAW & BALANCE APIs
 // ==========================================
 
@@ -379,7 +453,7 @@ export interface BalanceTransaction {
 }
 
 export async function createWithdrawRequest(
-  data: { amount: number; bankName: string; bankAccount: string; bankOwnerName: string },
+  data: { amount: number; bankName: string; bankAccount: string; bankOwnerName: string; paymentPin: string },
   token: string
 ) {
   const response = await fetch(`${API_BASE_URL}/Withdraw`, {
@@ -1337,7 +1411,8 @@ export async function createInvoiceFromCart(
   useCoins: boolean = false,
   coinsToUse: number = 0,
   useWallet: boolean = false,
-  walletToUse: number = 0
+  walletToUse: number = 0,
+  paymentPin?: string
 ): Promise<{ success: boolean; message?: string; paymentUrl?: string; data?: any }> {
   try {
     const params = new URLSearchParams();
@@ -1372,7 +1447,8 @@ export async function createInvoiceFromCart(
         UseCoins: useCoins,
         CoinsToUse: coinsToUse,
         UseWallet: useWallet,
-        WalletToUse: walletToUse
+        WalletToUse: walletToUse,
+        PaymentPin: paymentPin
       }),
     });
 

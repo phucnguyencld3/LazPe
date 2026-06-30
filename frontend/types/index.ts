@@ -125,6 +125,8 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
+  isLocked?: boolean;
+  failedCount?: number;
 }
 
 export interface PaginatedResponse<T> {

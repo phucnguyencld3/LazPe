@@ -36,6 +36,14 @@ namespace PolyBabyAPI.Models
         [MaxLength(256)]
         public string? CoinsSignature { get; set; }
 
+        // MÃ PIN THANH TOÁN (Lưu dưới dạng băm)
+        [MaxLength(256)]
+        public string? PaymentPinHash { get; set; }
+
+        public int PaymentPinFailedCount { get; set; } = 0;
+        
+        public DateTimeOffset? PaymentPinLockoutEnd { get; set; }
+
         // THÊM TRƯỜNG AVATAR
         [Display(Name = "Ảnh đại diện")]
         [StringLength(500, ErrorMessage = "Đường dẫn ảnh không được vượt quá 500 ký tự")]

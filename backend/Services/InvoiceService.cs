@@ -16,8 +16,18 @@ namespace PolyBabyAPI.Services
         private readonly IVoucherService _voucherService;
         private readonly IRecommendationService _recommendationService;
         private readonly IAuditLogService _auditLogService;
+        private readonly ICartService _cartService;
+        private readonly IWalletSecurityService _walletSecurityService;
 
-        public InvoiceService(ApplicationDbContext context, ILogger<InvoiceService> logger, ILoyaltyService loyaltyService, IVoucherService voucherService, IRecommendationService recommendationService, IAuditLogService auditLogService)
+        public InvoiceService(
+            ApplicationDbContext context, 
+            ILogger<InvoiceService> logger, 
+            ILoyaltyService loyaltyService, 
+            IVoucherService voucherService, 
+            IRecommendationService recommendationService, 
+            IAuditLogService auditLogService, 
+            ICartService cartService,
+            IWalletSecurityService walletSecurityService)
         {
             _context = context;
             _logger = logger;
@@ -25,6 +35,8 @@ namespace PolyBabyAPI.Services
             _voucherService = voucherService;
             _recommendationService = recommendationService;
             _auditLogService = auditLogService;
+            _cartService = cartService;
+            _walletSecurityService = walletSecurityService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -183,8 +195,21 @@ namespace PolyBabyAPI.Services
             var remainingItems = cart.CartDetails.Except(itemsToCheckout).ToList();
             var isPartialCheckout = remainingItems.Count > 0;
 
-            // ✅ Tính SubTotal từ items checkout
-            decimal subTotal = itemsToCheckout.Sum(item => item.TotalPrice);
+            // ✅ Tính lại SubTotal từ các sản phẩm checkout dựa trên giá thực tế mới nhất
+            decimal subTotal = 0;
+            foreach (var item in itemsToCheckout)
+            {
+                decimal currentUnitPrice = await _cartService.GetEffectivePriceAsync(
+                    cart.UserID,
+                    item.VariantID,
+                    item.BundleID,
+                    item.Quantity
+                );
+
+                item.UnitPrice = currentUnitPrice;
+                item.TotalPrice = currentUnitPrice * item.Quantity;
+                subTotal += item.TotalPrice;
+            }
 
             // ✅ Tính DiscountAmount từ voucher của Cart
             decimal discountAmount = 0;
@@ -257,6 +282,18 @@ namespace PolyBabyAPI.Services
             {
                 if (cart.User.WalletBalance < request.WalletToUse)
                     throw new InvalidOperationException("Số dư ví không đủ.");
+
+                // BẢO MẬT VÍ: Kiểm tra mã PIN thanh toán
+                if (string.IsNullOrEmpty(request.PaymentPin))
+                    throw new InvalidOperationException("Vui lòng nhập mã PIN thanh toán để sử dụng Ví LazPe.");
+
+                var validationResult = await _walletSecurityService.ValidatePaymentPinWithLockoutAsync(cart.User, request.PaymentPin);
+                if (!validationResult.Success)
+                    throw new InvalidOperationException(validationResult.Message);
+
+                // BẢO MẬT VÍ: Kiểm tra toàn vẹn dữ liệu ví
+                if (!_walletSecurityService.ValidateSignature(cart.User))
+                    throw new InvalidOperationException("Dữ liệu ví không hợp lệ hoặc đã bị can thiệp. Vui lòng liên hệ CSKH.");
                 
                 walletDiscountAmount = Math.Min(request.WalletToUse, remainAfterCoins);
             }
@@ -402,6 +439,10 @@ namespace PolyBabyAPI.Services
                 if (coinsDiscountAmount > 0)
                 {
                     cart.User.CoinsBalance -= coinsDiscountAmount;
+                    
+                    // BẢO MẬT VÍ: Ký lại số dư sau khi trừ
+                    cart.User.WalletSignature = _walletSecurityService.GenerateSignature(cart.UserID, cart.User.WalletBalance, cart.User.CoinsBalance);
+                    
                     _context.BalanceTransactions.Add(new BalanceTransaction
                     {
                         UserID = cart.UserID,
@@ -418,6 +459,10 @@ namespace PolyBabyAPI.Services
                 if (walletDiscountAmount > 0)
                 {
                     cart.User.WalletBalance -= walletDiscountAmount;
+                    
+                    // BẢO MẬT VÍ: Ký lại số dư sau khi trừ
+                    cart.User.WalletSignature = _walletSecurityService.GenerateSignature(cart.UserID, cart.User.WalletBalance, cart.User.CoinsBalance);
+                    
                     _context.BalanceTransactions.Add(new BalanceTransaction
                     {
                         UserID = cart.UserID,
@@ -1702,6 +1747,9 @@ namespace PolyBabyAPI.Services
                     });
                 }
             }
+
+            // BẢO MẬT VÍ: Ký lại số dư sau khi hoàn tiền
+            invoice.User.WalletSignature = _walletSecurityService.GenerateSignature(invoice.User.Id, invoice.User.WalletBalance, invoice.User.CoinsBalance);
         }
     }
 }

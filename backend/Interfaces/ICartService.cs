@@ -19,5 +19,6 @@ namespace PolyBabyAPI.Interfaces
         Task<(bool Success, string Message, string AppliedCodes)> AutoApplyBestVouchersAsync(int cartId);
         Task RemoveVoucherAsync(int cartId, int? type = null);
         Task CalculateCartTotalAsync(int cartId);
+        Task<decimal> GetEffectivePriceAsync(string userId, int? variantId, int? bundleId, int quantity);
     }
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader, Wallet, Coins, ArrowDownToLine, History, Clock, CheckCircle2, XCircle, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader, Wallet, Coins, ArrowDownToLine, History, Clock, CheckCircle2, XCircle, FileText, ChevronLeft, ChevronRight, Shield, Settings } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { 
   getUserProfile, 
@@ -11,8 +11,10 @@ import {
   getBalanceHistory,
   createWithdrawRequest,
   WithdrawRequest,
-  BalanceTransaction
+  BalanceTransaction,
+  getWalletSecurityStatus
 } from "@/lib/api";
+import { WalletSecurityModal, WalletSecurityMode } from "../wallet/WalletSecurityModal";
 
 export function WalletSection({ token, uid }: { token: string; uid: string }) {
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,23 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
   const bankDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Security Modal state
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityMode, setSecurityMode] = useState<WalletSecurityMode>("input");
+  const [pendingAction, setPendingAction] = useState<"none" | "withdraw">("none");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const BANK_LIST = [
     "Agribank", "Vietcombank", "VietinBank", "BIDV", "MBBank", "Techcombank",
@@ -93,6 +112,11 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
       return;
     }
     
+    if (amount > 10000000) {
+      toast.error("Số tiền rút mỗi lần tối đa là 10.000.000đ");
+      return;
+    }
+    
     if (profile && amount > (profile.walletBalance || 0)) {
       toast.error("Số dư ví không đủ");
       return;
@@ -105,15 +129,43 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
 
     setSubmitting(true);
     try {
+      const statusRes = await getWalletSecurityStatus(token);
+      if (statusRes.isLocked) {
+        toast.error("Ví của bạn đang bị khóa. Vui lòng mở khóa trong phần quản lý Ví.");
+        setSubmitting(false);
+        return;
+      }
+      setPendingAction("withdraw");
+      if (!statusRes.isPinSet) {
+        setSecurityMode("setup_request");
+        setIsSecurityModalOpen(true);
+      } else {
+        setSecurityMode("input");
+        setIsSecurityModalOpen(true);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Lỗi khi kiểm tra bảo mật ví");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const executeWithdraw = async (pin: string) => {
+    if (!token) return;
+    setSubmitting(true);
+    try {
+      const amount = parseInt(withdrawForm.amount);
       await createWithdrawRequest({
         amount,
         bankName: withdrawForm.bankName,
         bankAccount: withdrawForm.bankAccount,
-        bankOwnerName: withdrawForm.bankOwnerName
+        bankOwnerName: withdrawForm.bankOwnerName,
+        paymentPin: pin
       }, token);
 
       toast.success("Yêu cầu rút tiền đã được gửi thành công");
       setIsWithdrawModalOpen(false);
+      setIsSecurityModalOpen(false);
       setWithdrawForm({ amount: "", bankName: "", bankAccount: "", bankOwnerName: "" });
 
       // Refresh data
@@ -171,16 +223,56 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg shadow-emerald-500/20 relative overflow-hidden">
           <div className="relative z-10 flex flex-col h-full justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-emerald-50 mb-1">
-                <Wallet className="h-5 w-5" />
-                <span className="font-semibold text-sm">Số dư Ví</span>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-50 mb-1">
+                  <Wallet className="h-5 w-5" />
+                  <span className="font-semibold text-sm">Số dư Ví</span>
+                </div>
+                <div className="text-3xl font-black mt-2">
+                  {formatVND(profile?.walletBalance || 0)}
+                </div>
               </div>
-              <div className="text-3xl font-black mt-2">
-                {formatVND(profile?.walletBalance || 0)}
+              <div className="relative" ref={settingsRef}>
+                <button 
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  className="bg-white text-emerald-600 font-bold p-2 rounded-lg shadow hover:bg-emerald-50 transition-colors flex items-center justify-center"
+                  title="Cài đặt ví"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+                
+                {isSettingsOpen && (
+                  <div className="absolute right-[calc(100%+8px)] top-0 w-44 bg-white rounded-[8px] shadow-xl py-1 z-50 border border-slate-100 animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                      onClick={async () => {
+                        setIsSettingsOpen(false);
+                        try {
+                          const statusRes = await getWalletSecurityStatus(token);
+                          if (statusRes.isLocked) {
+                            toast.error("Ví của bạn đang bị khóa do nhập sai 5 lần. Vui lòng đặt lại mã PIN.");
+                            setPendingAction("none");
+                            setSecurityMode("forgot_request");
+                            setIsSecurityModalOpen(true);
+                          } else {
+                            setPendingAction("none");
+                            setSecurityMode(statusRes.isPinSet ? "change" : "setup_request");
+                            setIsSecurityModalOpen(true);
+                          }
+                        } catch (err: any) {
+                          toast.error("Lỗi khi tải thông tin bảo mật");
+                        }
+                      }}
+                      className="w-full text-left px-3 py-2.5 text-[12px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-bold transition-colors"
+                    >
+                      <Shield className="w-4 h-4 text-primary" />
+                      Thiết lập mã PIN
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
               <button 
                 onClick={() => setIsWithdrawModalOpen(true)}
                 className="bg-white text-emerald-600 font-bold py-2 px-4 rounded-lg shadow hover:bg-emerald-50 transition-colors flex items-center gap-2 text-sm"
@@ -447,28 +539,32 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
       {/* Withdraw Modal */}
       {isWithdrawModalOpen && typeof document !== 'undefined' && (
         require('react-dom').createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-[12px] shadow-xl w-full max-w-2xl flex flex-col overflow-hidden relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
-              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 className="font-bold text-slate-800">Yêu cầu rút tiền</h3>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-[12px] shadow-xl w-full max-w-2xl flex flex-col overflow-hidden relative border border-slate-100">
+              <div className="flex justify-between items-center p-5 border-b border-slate-100/80 bg-white">
+                <h3 className="font-bold text-[15px] text-slate-800 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span> 
+                  Yêu cầu rút tiền
+                </h3>
                 <button 
+                  type="button"
                   onClick={() => setIsWithdrawModalOpen(false)}
-                  className="text-slate-400 hover:text-rose-500 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 hover:bg-slate-100 p-1.5 rounded-md flex items-center justify-center"
                 >
-                  <XCircle className="h-5 w-5" />
+                  <span className="material-symbols-outlined text-[18px]">close</span>
                 </button>
               </div>
               
               <form onSubmit={handleWithdrawSubmit} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Số tiền muốn rút (VNĐ)</label>
+                  <label className="font-bold text-[12px] text-slate-700 ml-1 mb-1.5 block">Số tiền muốn rút (VNĐ)</label>
                   <div className="relative">
                     <input
                       type="number"
                       value={withdrawForm.amount}
                       onChange={(e) => setWithdrawForm({...withdrawForm, amount: e.target.value})}
                       placeholder="Tối thiểu 10.000đ"
-                      className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                      className="w-full pl-3.5 pr-10 py-2.5 rounded-[8px] bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-[13px] transition-colors font-medium"
                       required
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">đ</span>
@@ -479,8 +575,8 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div ref={bankDropdownRef} className="relative">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Tên ngân hàng</label>
+                  <div ref={bankDropdownRef} className="relative space-y-1.5">
+                    <label className="font-bold text-[12px] text-slate-700 ml-1">Tên ngân hàng</label>
                     <input
                       type="text"
                       value={withdrawForm.bankName}
@@ -490,7 +586,7 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
                       }}
                       onFocus={() => setBankDropdownOpen(true)}
                       placeholder="Tìm hoặc chọn ngân hàng..."
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm"
+                      className="w-full px-3.5 py-2.5 rounded-[8px] bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-[13px] transition-colors"
                       required
                       autoComplete="off"
                     />
@@ -515,38 +611,45 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Tên chủ tài khoản</label>
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-[12px] text-slate-700 ml-1">Tên chủ tài khoản</label>
                     <input
                       type="text"
                       value={withdrawForm.bankOwnerName}
                       onChange={(e) => setWithdrawForm({...withdrawForm, bankOwnerName: e.target.value.toUpperCase()})}
                       placeholder="NGUYEN VAN A"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm uppercase"
+                      className="w-full px-3.5 py-2.5 rounded-[8px] bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-[13px] transition-colors uppercase"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Số tài khoản</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-[12px] text-slate-700 ml-1">Số tài khoản</label>
                   <input
                     type="text"
                     value={withdrawForm.bankAccount}
                     onChange={(e) => setWithdrawForm({...withdrawForm, bankAccount: e.target.value})}
                     placeholder="Nhập số tài khoản"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm"
+                    className="w-full px-3.5 py-2.5 rounded-[8px] bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-[13px] transition-colors"
                     required
                   />
                 </div>
 
-                <div className="pt-2">
+                <div className="flex gap-3 pt-5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsWithdrawModalOpen(false)}
+                    className="flex-1 py-2.5 border border-slate-200 rounded-[8px] font-bold text-slate-600 hover:bg-slate-50 transition-colors text-[13px]"
+                  >
+                    Hủy
+                  </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 bg-primary text-white rounded-[8px] font-bold hover:bg-primary/95 transition-all shadow-sm text-[13px] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {submitting ? <Loader className="animate-spin h-5 w-5" /> : <ArrowDownToLine className="h-5 w-5" />}
+                    {submitting ? <Loader className="animate-spin h-[18px] w-[18px]" /> : <span className="material-symbols-outlined text-[18px]">download</span>}
                     {submitting ? "Đang xử lý..." : "Xác nhận Rút tiền"}
                   </button>
                 </div>
@@ -556,6 +659,22 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
           document.getElementById('modal-root') || document.body
         )
       )}
+
+      <WalletSecurityModal
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
+        token={token}
+        initialMode={securityMode}
+        onSuccess={(pin) => {
+          setIsSecurityModalOpen(false);
+          if (pendingAction === "withdraw" && (securityMode === "input" || securityMode === "setup_confirm" || securityMode === "forgot_confirm" || securityMode === "setup_request")) {
+            // Because executeWithdraw accesses state, and we are in a callback,
+            // it will use the current state.
+            executeWithdraw(pin);
+            setPendingAction("none");
+          }
+        }}
+      />
     </div>
   );
 }

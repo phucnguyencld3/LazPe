@@ -36,6 +36,7 @@ interface OrderSummarySidebarProps {
   coinsBalance: number;
   walletDiscount: number;
   coinsDiscount: number;
+  isWalletLocked?: boolean;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
@@ -71,6 +72,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   coinsBalance,
   walletDiscount,
   coinsDiscount,
+  isWalletLocked = false,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
   const [isWalletExpanded, setIsWalletExpanded] = useState<boolean>(false);
@@ -361,13 +363,20 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                       id="useWallet"
                       checked={useWallet}
                       onChange={(e) => setUseWallet(e.target.checked)}
-                      disabled={walletBalance <= 0 || submitting}
+                      disabled={walletBalance <= 0 || submitting || isWalletLocked}
                       className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
-                  <label htmlFor="useWallet" className={`text-xs ${walletBalance <= 0 ? 'text-slate-400' : 'text-slate-600 cursor-pointer'}`}>
-                    Dùng số dư Ví để thanh toán
-                  </label>
+                  <div className="flex flex-col">
+                    <label htmlFor="useWallet" className={`text-xs ${walletBalance <= 0 || isWalletLocked ? 'text-slate-400' : 'text-slate-600 cursor-pointer'}`}>
+                      Dùng số dư Ví để thanh toán
+                    </label>
+                    {isWalletLocked && (
+                      <span className="text-[10px] text-rose-500 font-semibold mt-0.5">
+                        (Ví đang bị khóa 15 phút. Vui lòng mở khóa trong phần quản lý Ví)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

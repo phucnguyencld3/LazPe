@@ -19,6 +19,9 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Vui lòng nhập tên chủ tài khoản")]
         [MaxLength(100)]
         public string BankOwnerName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập mã PIN thanh toán")]
+        public string PaymentPin { get; set; } = string.Empty;
     }
 
     public class ProcessWithdrawRequestDto

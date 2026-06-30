@@ -20,7 +20,30 @@ namespace PolyBabyAPI.Services
 
         public async Task<Cart> GetCartByUserIdAsync(string userId)
         {
-            var cart = await _context.Carts
+            var cartId = await _context.Carts
+                .Where(c => c.UserID == userId && c.Status == true)
+                .Select(c => c.CartID)
+                .FirstOrDefaultAsync();
+
+            if (cartId == 0)
+            {
+                var newCart = new Cart
+                {
+                    UserID = userId,
+                    CreatedDate = DateTime.Now,
+                    Status = true,
+                    TotalAmount = 0
+                };
+                _context.Carts.Add(newCart);
+                await _context.SaveChangesAsync();
+                cartId = newCart.CartID;
+            }
+
+            // Gọi CalculateCartTotalAsync để tự động lấy lại giá mới nhất (GetEffectivePriceAsync) cho tất cả sản phẩm
+            await CalculateCartTotalAsync(cartId);
+
+            // Fetch lại giỏ hàng một lần nữa để đảm bảo DTO trả về chứa giá đã cập nhật và thông tin quà tặng mới nhất
+            return await _context.Carts
                 .AsSplitQuery()
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
@@ -35,24 +58,7 @@ namespace PolyBabyAPI.Services
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
                 .Include(c => c.ShippingVoucher)
-                .FirstOrDefaultAsync(c => c.UserID == userId && c.Status == true);
-
-            if (cart == null)
-            {
-                cart = new Cart
-                {
-                    UserID = userId,
-                    CreatedDate = DateTime.Now,
-                    Status = true,
-                    TotalAmount = 0
-                };
-                _context.Carts.Add(cart);
-                await _context.SaveChangesAsync();
-            }
-
-            await CalculateCartTotalAsync(cart.CartID);
-
-            return cart;
+                .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
 
 
@@ -689,7 +695,7 @@ namespace PolyBabyAPI.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task<decimal> GetEffectivePriceAsync(string userId, int? variantId, int? bundleId, int quantity)
+        public async Task<decimal> GetEffectivePriceAsync(string userId, int? variantId, int? bundleId, int quantity)
         {
             var now = DateTime.Now;
 

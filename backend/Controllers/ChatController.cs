@@ -631,8 +631,28 @@ namespace PolyBabyAPI.Controllers
                     {
                         try
                         {
-                            await _emailSender.SendEmailAsync(admin.Email, "Yêu cầu hỗ trợ CSKH mới",
-                                $"Khách hàng {session.CustomerName} đang yêu cầu hỗ trợ CSKH trực tiếp tại phiên chat {sessionId}. Vui lòng kiểm tra mục quản lý tin nhắn.");
+                            var emailHtml = $@"
+                                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 20px; border-radius: 12px;'>
+                                    <div style='text-align: center; margin-bottom: 20px;'>
+                                        <h1 style='color: #10b981; margin: 0; font-size: 28px;'>LazPe</h1>
+                                        <p style='color: #64748b; margin: 5px 0 0 0; font-size: 14px;'>Hệ thống Hỗ trợ Khách hàng</p>
+                                    </div>
+                                    <div style='background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>
+                                        <h2 style='color: #ef4444; margin-top: 0; font-size: 20px; text-align: center;'>Yêu cầu hỗ trợ khẩn cấp</h2>
+                                        <p style='color: #475569; font-size: 15px; line-height: 1.6;'>Xin chào Admin,</p>
+                                        <p style='color: #475569; font-size: 15px; line-height: 1.6;'>Khách hàng <strong>{System.Net.WebUtility.HtmlEncode(session.CustomerName ?? "")}</strong> đang yêu cầu kết nối với nhân viên CSKH ngay lập tức.</p>
+
+                                        <p style='color: #475569; font-size: 15px; line-height: 1.6;'>Vui lòng đăng nhập vào trang Quản trị và truy cập mục Quản lý tin nhắn để hỗ trợ khách hàng kịp thời.</p>
+                                        <div style='text-align: center; margin-top: 25px;'>
+                                            <a href='https://lazpe.store/admin' style='background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;'>Mở Trang Hỗ trợ</a>
+                                        </div>
+                                    </div>
+                                    <div style='text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;'>
+                                        <p>&copy; {DateTime.Now.Year} LazPe. All rights reserved.</p>
+                                        <p>Đây là email thông báo tự động từ hệ thống.</p>
+                                    </div>
+                                </div>";
+                            await _emailSender.SendEmailAsync(admin.Email, "[LazPe] Yêu cầu hỗ trợ CSKH mới", emailHtml);
                         } catch { /* ignore email error */ }
                     }
 

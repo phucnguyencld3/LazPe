@@ -29,6 +29,8 @@ namespace PolyBabyAPI.DTOs
 
             public bool UseWallet { get; set; }
             public decimal WalletToUse { get; set; }
+
+            public string? PaymentPin { get; set; }
         }
 
         /// <summary>

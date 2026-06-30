@@ -228,6 +228,8 @@ try
     builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
     builder.Services.AddScoped<IBannerService, BannerService>();
+    builder.Services.AddScoped<IWalletSecurityService, WalletSecurityService>();
+    builder.Services.AddScoped<IWithdrawEmailService, WithdrawEmailService>();
 
     // Product services
     builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -423,6 +425,22 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
             "ai-trend-model-training",
             job => job.ExecuteAsync(),
             "0 3 * * *", // Chạy lúc 3:00 AM
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 6. Job báo cáo rút tiền hàng ngày (Chạy lúc 10:00 sáng)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.WithdrawDailyReportJob>(
+            "withdraw-daily-report",
+            job => job.ExecuteAsync(),
+            "0 10 * * *", // 10:00 AM mỗi ngày
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 7. Job tự động hủy yêu cầu rút tiền quá hạn 3 ngày (Chạy mỗi giờ một lần)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.WithdrawAutoRejectJob>(
+            "withdraw-auto-reject-expired",
+            job => job.ExecuteAsync(),
+            "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }
