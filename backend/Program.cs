@@ -21,6 +21,17 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Tự động load file Credentials của Google Vision nếu đang chạy dưới Local Dev (thư mục mockups)
+var googleCredsEnv = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+if (string.IsNullOrEmpty(googleCredsEnv))
+{
+    var fallbackPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "mockups", "lazpe-store-ce230763f012.json"));
+    if (File.Exists(fallbackPath))
+    {
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fallbackPath);
+    }
+}
+
 // Load appsettings.Local.json for local development secrets (ignored by Git)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
