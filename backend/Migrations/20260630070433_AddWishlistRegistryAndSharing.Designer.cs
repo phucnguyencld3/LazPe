@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630070433_AddWishlistRegistryAndSharing")]
+    partial class AddWishlistRegistryAndSharing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -271,16 +274,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PaymentPinFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PaymentPinHash")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset?>("PaymentPinLockoutEnd")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(13)
@@ -690,6 +683,9 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<int>("CartID")
                         .HasColumnType("int");
+
+                    b.Property<string>("FromWishlistUserID")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsGift")
                         .HasColumnType("bit");
@@ -1157,6 +1153,9 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<int?>("BundleID")
                         .HasColumnType("int");
+
+                    b.Property<string>("FromWishlistUserID")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("InvoiceID")
                         .HasColumnType("int");
@@ -2942,6 +2941,18 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Priority")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuantityNeeded")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityPurchased")
+                        .HasColumnType("int");
 
                     b.HasKey("UserID", "ProductID");
 

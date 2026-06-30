@@ -1372,7 +1372,7 @@ export async function removeVoucherFromCart(
 
 export async function addToCart(
   token: string,
-  data: { variantID?: number; bundleID?: number; quantity: number; selectedGiftVariantId?: number }
+  data: { variantID?: number; bundleID?: number; quantity: number; selectedGiftVariantId?: number; fromWishlistUserId?: string }
 ): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
   try {
     const response = await fetch(`${API_BASE_URL}/Cart/add`, {
@@ -1386,6 +1386,7 @@ export async function addToCart(
         bundleID: data.bundleID || null,
         quantity: data.quantity,
         selectedGiftVariantId: data.selectedGiftVariantId || null,
+        fromWishlistUserId: data.fromWishlistUserId || null,
       }),
     });
 
@@ -3387,6 +3388,99 @@ export async function deleteBabyProfile(token: string, id: number): Promise<ApiR
   } catch (error) {
     console.error("Error deleting baby profile:", error);
     return { success: false, data: null, message: "Lỗi kết nối server." };
+  }
+}
+
+export interface WishlistShareSettings {
+  success: boolean;
+  isWishlistPublic: boolean;
+  wishlistShareToken: string | null;
+}
+
+export async function getWishlistShareSettings(token: string): Promise<WishlistShareSettings | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/share-settings`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting wishlist share settings:", error);
+    return null;
+  }
+}
+
+export async function toggleWishlistShare(
+  token: string,
+  isPublic: boolean
+): Promise<{ success: boolean; isWishlistPublic: boolean; wishlistShareToken: string | null; message: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/toggle-share`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isPublic }),
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error toggling wishlist share:", error);
+    return null;
+  }
+}
+
+export async function updateWishlistItemRegistry(
+  token: string,
+  productId: number,
+  data: { quantityNeeded?: number; note?: string | null; priority?: string }
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/update-item/${productId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "",
+    };
+  } catch (error) {
+    console.error("Error updating wishlist item registry:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export interface PublicWishlistResponse {
+  success: boolean;
+  ownerName: string;
+  ownerId: string;
+  data: any[];
+  message?: string;
+}
+
+export async function getPublicWishlist(shareToken: string): Promise<PublicWishlistResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/public/${shareToken}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting public wishlist:", error);
+    return null;
   }
 }
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PolyBabyAPI.Data;
+using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 
@@ -14,15 +15,18 @@ namespace PolyBabyAPI.Controllers
         private readonly IVnPayService _vnPayService;
         private readonly ApplicationDbContext _context;
         private readonly VnPayOptions _vnPayOptions;
+        private readonly IInvoiceService _invoiceService;
 
         public PaymentController(
             IVnPayService vnPayService,
             ApplicationDbContext context,
-            IOptions<VnPayOptions> vnPayOptions)
+            IOptions<VnPayOptions> vnPayOptions,
+            IInvoiceService invoiceService)
         {
             _vnPayService = vnPayService;
             _context = context;
             _vnPayOptions = vnPayOptions.Value;
+            _invoiceService = invoiceService;
         }
 
         [HttpPost("create-vnpay-url")]
@@ -114,13 +118,16 @@ namespace PolyBabyAPI.Controllers
                         }
                     }
 
-                    if (success && invoice.Status == OrderStatus.Pending)
+                    bool isPendingBefore = invoice.Status == OrderStatus.Pending;
+                    if (success && isPendingBefore)
                     {
                         invoice.Status = OrderStatus.Confirmed;
                         invoice.ConfirmedAt = DateTime.Now;
                     }
 
                     await _context.SaveChangesAsync();
+
+
                 }
 
                 var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)
