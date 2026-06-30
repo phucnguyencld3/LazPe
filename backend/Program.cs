@@ -21,19 +21,31 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Tự động load file Credentials của Google Vision nếu đang chạy dưới Local Dev (thư mục mockups)
+// Tự động load file Credentials của Google Vision nếu đang chạy dưới Local Dev (thư mục mockups hoặc Local)
 var googleCredsEnv = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
 if (string.IsNullOrEmpty(googleCredsEnv))
 {
-    var fallbackPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "mockups", "lazpe-store-ce230763f012.json"));
-    if (File.Exists(fallbackPath))
+    var fallbackPathMockups = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "mockups", "lazpe-store-ce230763f012.json"));
+    var fallbackPathLocal = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Local", "lazpe-store-ce230763f012.json"));
+    
+    if (File.Exists(fallbackPathLocal))
     {
-        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fallbackPath);
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fallbackPathLocal);
+    }
+    else if (File.Exists(fallbackPathMockups))
+    {
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fallbackPathMockups);
     }
 }
 
 // Load appsettings.Local.json for local development secrets (ignored by Git)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Tự động load thêm từ thư mục Local chung của dự án nếu có
+var globalLocalAppSettings = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Local", "appsettings.Local.json"));
+if (File.Exists(globalLocalAppSettings))
+{
+    builder.Configuration.AddJsonFile(globalLocalAppSettings, optional: true, reloadOnChange: true);
+}
 
 try
 {
