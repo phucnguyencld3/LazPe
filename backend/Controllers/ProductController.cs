@@ -91,6 +91,36 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Lấy chi tiết sản phẩm cho shop theo slug (public)
+        /// </summary>
+        [HttpGet("shop/slug/{slug}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductDetailBySlugForShop(string slug)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(slug))
+                    return BadRequest(new { success = false, message = "Slug sản phẩm không hợp lệ" });
+
+                var product = await _productService.GetProductBySlugAsync(slug);
+                if (product == null)
+                    return NotFound(new { success = false, message = "Không tìm thấy sản phẩm" });
+
+                return Ok(new
+                {
+                    success = true,
+                    data = product,
+                    message = "Lấy chi tiết sản phẩm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting shop product detail by slug {Slug}", slug);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
+            }
+        }
+
+        /// <summary>
         /// Lấy danh mục cho filter trên shop (public)
         /// </summary>
         [HttpGet("shop/categories")]
