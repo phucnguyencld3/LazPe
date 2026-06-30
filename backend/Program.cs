@@ -47,6 +47,10 @@ if (File.Exists(globalLocalAppSettings))
     builder.Configuration.AddJsonFile(globalLocalAppSettings, optional: true, reloadOnChange: true);
 }
 
+// Bắt buộc load lại EnvironmentVariables sau cùng để các biến môi trường trong Docker-Compose 
+// (như ConnectionString, VnPay__ReturnUrl) có độ ưu tiên cao nhất, đè lên appsettings.Local.json
+builder.Configuration.AddEnvironmentVariables();
+
 try
 {
     // Kết nối cơ sở dữ liệu
