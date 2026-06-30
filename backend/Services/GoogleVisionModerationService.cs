@@ -88,8 +88,9 @@ namespace PolyBabyAPI.Services
             {
                 _logger.LogError(ex, "Lỗi khi gọi Google Vision API kiểm duyệt ảnh.");
                 File.AppendAllText("vision_debug_log.txt", $"[{DateTime.Now}] ERROR: {ex.Message}\n{ex.StackTrace}\n");
-                // Tạm thời trả về lỗi luôn để xem có phải do cấu hình không
-                return (false, "Lỗi hệ thống AI: " + ex.Message);
+                
+                // Trả về thông báo thân thiện cho người dùng khi hệ thống AI gặp sự cố (như hết hạn ngạch, lỗi mạng...)
+                return (false, "Hệ thống kiểm duyệt hình ảnh tự động đang bảo trì. Vui lòng thử lại sau.");
             }
         }
     }
