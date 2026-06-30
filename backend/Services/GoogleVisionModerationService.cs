@@ -79,15 +79,17 @@ namespace PolyBabyAPI.Services
                     return (false, "Hình ảnh chứa nội dung y tế/máu me không phù hợp.");
                 }
 
+                // Ghi log kết quả ra file để debug
+                File.AppendAllText("vision_debug_log.txt", $"[{DateTime.Now}] SUCCESS: Adult={safeSearchAnnotation.Adult}, Racy={safeSearchAnnotation.Racy}, Violence={safeSearchAnnotation.Violence}\n");
+
                 return (true, string.Empty);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi gọi Google Vision API kiểm duyệt ảnh.");
-                // Trả về false nếu muốn chặt chẽ, hoặc true nếu hệ thống cho phép bypass khi API lỗi
-                // Để đảm bảo trải nghiệm người dùng khi API sập, ta trả về true (hoặc false tuỳ yêu cầu)
-                // Ở đây tôi chọn true để tránh block tính năng upload khi mất kết nối Google
-                return (true, string.Empty);
+                File.AppendAllText("vision_debug_log.txt", $"[{DateTime.Now}] ERROR: {ex.Message}\n{ex.StackTrace}\n");
+                // Tạm thời trả về lỗi luôn để xem có phải do cấu hình không
+                return (false, "Lỗi hệ thống AI: " + ex.Message);
             }
         }
     }
