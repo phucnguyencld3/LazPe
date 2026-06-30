@@ -60,6 +60,9 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Đã hoàn thành onboarding")]
         public bool IsOnboarded { get; set; } = false;
 
+        public bool IsWishlistPublic { get; set; } = false;
+        public string? WishlistShareToken { get; set; }
+
         // Refresh Token
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }

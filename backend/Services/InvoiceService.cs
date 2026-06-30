@@ -330,7 +330,8 @@ namespace PolyBabyAPI.Services
                     BundleID = item.BundleID,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    TotalPrice = item.TotalPrice
+                    TotalPrice = item.TotalPrice,
+                    FromWishlistUserID = item.FromWishlistUserID
                 };
                 invoice.InvoiceDetails.Add(detail);
 
@@ -848,6 +849,8 @@ namespace PolyBabyAPI.Services
             invoice.ConfirmedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
+            await ConfirmWishlistRegistryAsync(invoiceId);
+
             await _auditLogService.LogAsync("ApproveOrder", "Invoice", invoiceId.ToString(), "Pending", "Confirmed", "Xác nhận đơn hàng");
 
             _logger.LogInformation("Đơn hàng {InvoiceId} đã được xác nhận", invoiceId);
@@ -1342,6 +1345,9 @@ namespace PolyBabyAPI.Services
  
             try
             {
+                // Hoàn trả số lượng sản phẩm registry đã mua
+                await CancelWishlistRegistryAsync(invoice.InvoiceID);
+
                 // 1. Thu hồi điểm đã tích lũy (nếu có)
                 await _loyaltyService.RevokePointsAsync(invoice.UserID, invoice.InvoiceID);
  
@@ -1666,6 +1672,90 @@ namespace PolyBabyAPI.Services
                     }
                 }
             }
+        }
+
+        public async Task ConfirmWishlistRegistryAsync(int invoiceId)
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.InvoiceDetails)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+
+            if (invoice != null)
+            {
+                await HandleWishlistRegistryOnPaymentSuccessAsync(invoice);
+            }
+        }
+
+        public async Task CancelWishlistRegistryAsync(int invoiceId)
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.InvoiceDetails)
+                .FirstOrDefaultAsync(i => i.InvoiceID == invoiceId && !i.IsDeleted);
+
+            if (invoice != null)
+            {
+                await HandleWishlistRegistryOnCancelAsync(invoice);
+            }
+        }
+
+        private async Task HandleWishlistRegistryOnPaymentSuccessAsync(Invoice invoice)
+        {
+            if (invoice == null || invoice.InvoiceDetails == null) return;
+
+            foreach (var detail in invoice.InvoiceDetails)
+            {
+                if (!string.IsNullOrEmpty(detail.FromWishlistUserID) && detail.VariantID.HasValue)
+                {
+                    var productId = await _context.Variants
+                        .Where(v => v.VariantID == detail.VariantID.Value)
+                        .Select(v => v.ProductID)
+                        .FirstOrDefaultAsync();
+
+                    if (productId > 0)
+                    {
+                        var wishlistItem = await _context.Wishlists
+                            .FirstOrDefaultAsync(w => w.UserID == detail.FromWishlistUserID && w.ProductID == productId);
+
+                        if (wishlistItem != null)
+                        {
+                            wishlistItem.QuantityPurchased += detail.Quantity;
+                            _logger.LogInformation("Đã cập nhật số lượng đã mua {Qty} cho sản phẩm {ProductId} trong danh sách của {OwnerId}",
+                                detail.Quantity, productId, detail.FromWishlistUserID);
+                        }
+                    }
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task HandleWishlistRegistryOnCancelAsync(Invoice invoice)
+        {
+            if (invoice == null || invoice.InvoiceDetails == null) return;
+
+            foreach (var detail in invoice.InvoiceDetails)
+            {
+                if (!string.IsNullOrEmpty(detail.FromWishlistUserID) && detail.VariantID.HasValue)
+                {
+                    var productId = await _context.Variants
+                        .Where(v => v.VariantID == detail.VariantID.Value)
+                        .Select(v => v.ProductID)
+                        .FirstOrDefaultAsync();
+
+                    if (productId > 0)
+                    {
+                        var wishlistItem = await _context.Wishlists
+                            .FirstOrDefaultAsync(w => w.UserID == detail.FromWishlistUserID && w.ProductID == productId);
+
+                        if (wishlistItem != null)
+                        {
+                            wishlistItem.QuantityPurchased = Math.Max(0, wishlistItem.QuantityPurchased - detail.Quantity);
+                            _logger.LogInformation("Đã hoàn trả số lượng đã mua {Qty} cho sản phẩm {ProductId} trong danh sách của {OwnerId} do hủy đơn",
+                                detail.Quantity, productId, detail.FromWishlistUserID);
+                        }
+                    }
+                }
+            }
+            await _context.SaveChangesAsync();
         }
     }
 }

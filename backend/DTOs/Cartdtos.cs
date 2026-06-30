@@ -52,6 +52,7 @@ namespace PolyBabyAPI.DTOs
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
         public bool IsGift { get; set; }
+        public string? FromWishlistUserID { get; set; }
 
         /// <summary>Thông tin sản phẩm cha (chỉ có khi là Variant)</summary>
         public ProductCartDto? Product { get; set; }
@@ -140,6 +141,7 @@ namespace PolyBabyAPI.DTOs
         public int? VariantID { get; set; }
         public int? BundleID { get; set; }
         public int? SelectedGiftVariantId { get; set; }
+        public string? FromWishlistUserID { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0")]
         public int Quantity { get; set; } = 1;

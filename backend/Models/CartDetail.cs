@@ -25,6 +25,7 @@ namespace PolyBabyAPI.Models
         public decimal TotalPrice { get; set; }
 
         public bool IsGift { get; set; } = false;
+        public string? FromWishlistUserID { get; set; }
 
 
         // Navigation

@@ -52,7 +52,11 @@ namespace PolyBabyAPI.Controllers
                     categoryId = w.Product.CategoryID,
                     categoryName = w.Product.Category.CategoryName,
                     inStock = w.Product.Status && w.Product.Variants.Sum(v => v.Stock) > 0,
-                    quantity = w.Product.Variants.Sum(v => v.Stock)
+                    quantity = w.Product.Variants.Sum(v => v.Stock),
+                    quantityNeeded = w.QuantityNeeded,
+                    quantityPurchased = w.QuantityPurchased,
+                    note = w.Note,
+                    priority = w.Priority
                 })
                 .ToListAsync();
 
@@ -133,6 +137,149 @@ namespace PolyBabyAPI.Controllers
             }
 
             return Ok(new { success = true, message = "Đồng bộ danh sách yêu thích thành công" });
+        }
+
+        [HttpGet("share-settings")]
+        public async Task<IActionResult> GetShareSettings()
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "Người dùng không tồn tại" });
+
+            return Ok(new
+            {
+                success = true,
+                isWishlistPublic = user.IsWishlistPublic,
+                wishlistShareToken = user.WishlistShareToken
+            });
+        }
+
+        [HttpPost("toggle-share")]
+        public async Task<IActionResult> ToggleShare([FromBody] ToggleShareDto dto)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "Người dùng không tồn tại" });
+
+            user.IsWishlistPublic = dto.IsPublic;
+            if (dto.IsPublic)
+            {
+                if (string.IsNullOrEmpty(user.WishlistShareToken))
+                {
+                    user.WishlistShareToken = Guid.NewGuid().ToString("N").Substring(0, 12);
+                }
+            }
+            else
+            {
+                user.WishlistShareToken = null;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                isWishlistPublic = user.IsWishlistPublic,
+                wishlistShareToken = user.WishlistShareToken,
+                message = dto.IsPublic ? "Đã bật chia sẻ danh sách yêu thích" : "Đã tắt chia sẻ danh sách yêu thích"
+            });
+        }
+
+        public class ToggleShareDto
+        {
+            public bool IsPublic { get; set; }
+        }
+
+        [HttpPost("update-item/{productId}")]
+        public async Task<IActionResult> UpdateWishlistItem(int productId, [FromBody] UpdateWishlistItemDto dto)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var item = await _context.Wishlists.FindAsync(userId, productId);
+            if (item == null) return NotFound(new { success = false, message = "Sản phẩm không có trong danh sách yêu thích" });
+
+            if (dto.QuantityNeeded.HasValue)
+            {
+                if (dto.QuantityNeeded.Value < 1) return BadRequest(new { success = false, message = "Số lượng cần thiết phải từ 1 trở lên" });
+                item.QuantityNeeded = dto.QuantityNeeded.Value;
+            }
+
+            if (dto.Note != null)
+            {
+                item.Note = dto.Note;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Priority))
+            {
+                item.Priority = dto.Priority;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Cập nhật thông tin Registry thành công" });
+        }
+
+        public class UpdateWishlistItemDto
+        {
+            public int? QuantityNeeded { get; set; }
+            public string? Note { get; set; }
+            public string? Priority { get; set; }
+        }
+
+        [HttpGet("public/{shareToken}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicWishlist(string shareToken)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.WishlistShareToken == shareToken && u.IsWishlistPublic);
+
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "Danh sách yêu thích không tồn tại hoặc đã bị tắt chia sẻ" });
+            }
+
+            var wishlistItems = await _context.Wishlists
+                .AsNoTracking()
+                .Where(w => w.UserID == user.Id && w.Product.Status)
+                .Select(w => new
+                {
+                    id = w.Product.ProductID,
+                    name = w.Product.ProductName,
+                    description = w.Product.Description,
+                    price = w.Product.Price,
+                    discountPrice = w.Product.ProductDiscountPercent > 0 
+                        ? (w.Product.Price * (1m - w.Product.ProductDiscountPercent / 100m)) 
+                        : (decimal?)null,
+                    image = w.Product.Variants
+                        .Where(v => !string.IsNullOrEmpty(v.ImageUrl))
+                        .OrderBy(v => v.VariantID)
+                        .Select(v => v.ImageUrl)
+                        .FirstOrDefault() 
+                        ?? w.Product.Images.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).FirstOrDefault() 
+                        ?? w.Product.Variants.FirstOrDefault().ImageUrl ?? "",
+                    categoryId = w.Product.CategoryID,
+                    categoryName = w.Product.Category.CategoryName,
+                    inStock = w.Product.Status && w.Product.Variants.Sum(v => v.Stock) > 0,
+                    quantity = w.Product.Variants.Sum(v => v.Stock),
+                    quantityNeeded = w.QuantityNeeded,
+                    quantityPurchased = w.QuantityPurchased,
+                    note = w.Note,
+                    priority = w.Priority
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                success = true,
+                ownerName = user.FullName,
+                ownerId = user.Id,
+                data = wishlistItems
+            });
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -37,5 +37,7 @@ namespace PolyBabyAPI.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPrice { get; set; }
+
+        public string? FromWishlistUserID { get; set; }
     }
 }

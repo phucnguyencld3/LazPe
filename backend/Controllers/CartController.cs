@@ -77,7 +77,7 @@ namespace PolyBabyAPI.Controllers
                     return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
                 }
 
-                await _cartService.AddToCartAsync(userId, dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId);
+                await _cartService.AddToCartAsync(userId, dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId, dto.FromWishlistUserID);
 
                 var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
                 var cartDto = MapCartToDto(updatedCart);
@@ -409,6 +409,7 @@ namespace PolyBabyAPI.Controllers
                 UnitPrice = detail.UnitPrice,
                 TotalPrice = detail.TotalPrice,
                 IsGift = detail.IsGift,
+                FromWishlistUserID = detail.FromWishlistUserID,
                 Product = detail.Variant?.Product != null ? new ProductCartDto
                 {
                     ProductID = detail.Variant.Product.ProductID,

@@ -66,7 +66,7 @@ namespace PolyBabyAPI.Services
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
 
-        public async Task AddToCartAsync(string userId, int? variantId, int? bundleId, int quantity, int? selectedGiftVariantId = null)
+        public async Task AddToCartAsync(string userId, int? variantId, int? bundleId, int quantity, int? selectedGiftVariantId = null, string? fromWishlistUserId = null)
         {
             if (quantity <= 0) throw new ArgumentException("Số lượng phải lớn hơn 0");
 
@@ -130,6 +130,7 @@ namespace PolyBabyAPI.Services
 
             var existingDetail = await _context.CartDetails
                 .FirstOrDefaultAsync(cd => cd.CartID == cartId && cd.IsGift == false &&
+                    cd.FromWishlistUserID == fromWishlistUserId &&
                     ((variantId.HasValue && cd.VariantID == variantId.Value) || (bundleId.HasValue && cd.BundleID == bundleId.Value)));
 
             if (existingDetail != null)
@@ -170,7 +171,8 @@ namespace PolyBabyAPI.Services
                     VariantID = variantId,
                     BundleID = bundleId,
                     Quantity = quantity,
-                    IsGift = false
+                    IsGift = false,
+                    FromWishlistUserID = fromWishlistUserId
                 };
 
                 if (variantId.HasValue)
