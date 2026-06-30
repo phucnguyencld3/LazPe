@@ -236,9 +236,8 @@ export default function AdminLayout({
         const hasDashboardAccess = apiUser?.isAdmin || roles.includes("Admin") || permissions.includes("Admin.Access");
         
         if (data.success && !hasDashboardAccess) {
-          // Người dùng hợp lệ nhưng không có quyền truy cập Admin
-          clearAuth();
-          window.location.replace("/login");
+          // Người dùng hợp lệ nhưng không có quyền truy cập Admin -> Chuyển đến trang 404
+          window.location.replace("/404");
         } else if (data.success && apiUser) {
           setIsAuth(true);
           setUser(apiUser);
