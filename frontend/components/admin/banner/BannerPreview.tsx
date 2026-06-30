@@ -5,13 +5,15 @@ import { Banner } from '@/types/banner';
 
 interface BannerPreviewProps {
   formData: Partial<Banner>;
+  previewMode: 'desktop' | 'laptop' | 'tablet' | 'mobile';
+  setPreviewMode: (mode: 'desktop' | 'laptop' | 'tablet' | 'mobile') => void;
 }
 
-export function BannerPreview({ formData }: BannerPreviewProps) {
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+export function BannerPreview({ formData, previewMode, setPreviewMode }: BannerPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
 
   // Gửi dữ liệu qua iframe mỗi khi cấu hình thay đổi, có debounce 300ms để chống lag
   useEffect(() => {
@@ -55,6 +57,7 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
     if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
       setContainerWidth(entries[0].contentRect.width);
+      setContainerHeight(entries[0].contentRect.height);
     });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
@@ -77,10 +80,22 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
                 ? 'bg-primary/10 text-primary font-bold' 
                 : 'text-slate-600 hover:bg-slate-50 font-semibold'
             }`}
-            title="Máy tính (Desktop)"
+            title="Desktop (1920x1080)"
           >
             <span className="material-symbols-outlined text-[16px]">desktop_windows</span>
             PC
+          </button>
+          <button 
+            onClick={() => setPreviewMode('laptop')}
+            className={`px-3.5 py-2 text-xs flex items-center gap-1 border-l border-slate-200 transition-all ${
+              previewMode === 'laptop' 
+                ? 'bg-primary/10 text-primary font-bold' 
+                : 'text-slate-600 hover:bg-slate-50 font-semibold'
+            }`}
+            title="Laptop (1366x768)"
+          >
+            <span className="material-symbols-outlined text-[16px]">laptop_mac</span>
+            Laptop
           </button>
           <button 
             onClick={() => setPreviewMode('tablet')}
@@ -89,7 +104,7 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
                 ? 'bg-primary/10 text-primary font-bold' 
                 : 'text-slate-600 hover:bg-slate-50 font-semibold'
             }`}
-            title="Máy tính bảng (Tablet)"
+            title="Tablet (768x1024)"
           >
             <span className="material-symbols-outlined text-[16px]">tablet_mac</span>
             Tablet
@@ -101,7 +116,7 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
                 ? 'bg-primary/10 text-primary font-bold' 
                 : 'text-slate-600 hover:bg-slate-50 font-semibold'
             }`}
-            title="Điện thoại (Mobile)"
+            title="Mobile (390x844)"
           >
             <span className="material-symbols-outlined text-[16px]">smartphone</span>
             Mobile
@@ -114,48 +129,62 @@ export function BannerPreview({ formData }: BannerPreviewProps) {
         className="flex-1 border border-slate-200 rounded-[8px] shadow-inner overflow-hidden flex flex-col relative bg-slate-50 min-h-[600px] items-center justify-start py-8 px-4"
       >
         {(() => {
-          const targetWidth = previewMode === 'desktop' ? 1440 : previewMode === 'tablet' ? 768 : 375;
+          const targetWidth = previewMode === 'desktop' ? 1920 : previewMode === 'laptop' ? 1366 : previewMode === 'tablet' ? 768 : 390;
+          const targetHeight = previewMode === 'desktop' ? 1080 : previewMode === 'laptop' ? 768 : previewMode === 'tablet' ? 1024 : 844;
+          
+          // Calculate scale to fit both width and height within the container
           const availableWidth = containerWidth ? containerWidth - 32 : 1000;
-          const scale = Math.min(1, availableWidth / targetWidth);
+          const availableHeight = containerHeight ? containerHeight - 64 : 600; // Account for padding
+          
+          const scaleW = availableWidth / targetWidth;
+          const scaleH = availableHeight / targetHeight;
+          const scale = Math.min(1, scaleW, scaleH);
 
           return (
             <div 
-              className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[8px] overflow-hidden relative"
               style={{ 
-                width: `${targetWidth}px`,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top center',
-                height: `${100 / scale}%`,
-                marginBottom: `-${(1 - scale) * 100}%`
+                width: `${targetWidth * scale}px`, 
+                height: `${targetHeight * scale}px`,
+                position: 'relative'
               }}
+              className="transition-all duration-300"
             >
-              <iframe 
-                ref={iframeRef}
-                src={(() => {
-                  switch (formData.page) {
-                    case 'products': return '/products';
-                    case 'product_detail': return '/products/1';
-                    case 'cart': return '/cart';
-                    case 'checkout': return '/checkout';
-                    case 'profile': return '/profile';
-                    case 'combo': return '/bundles';
-                    default: return '/';
-                  }
-                })()}
-                className="w-full h-full border-none"
-                title="Client Live Preview"
-                onLoad={() => {
-                  if (iframeRef.current && iframeRef.current.contentWindow) {
-                    iframeRef.current.contentWindow.postMessage(
-                      {
-                        type: 'LIVE_PREVIEW_BANNER',
-                        banner: formData
-                      },
-                      '*'
-                    );
-                  }
+              <div 
+                className="bg-white shadow-md absolute top-0 left-0 overflow-hidden transition-all duration-300 origin-top-left"
+                style={{ 
+                  width: `${targetWidth}px`,
+                  height: `${targetHeight}px`,
+                  transform: `scale(${scale})`
                 }}
-              />
+              >
+                <iframe 
+                  ref={iframeRef}
+                  src={(() => {
+                    switch (formData.page) {
+                      case 'products': return '/products';
+                      case 'product_detail': return '/products/1';
+                      case 'cart': return '/cart';
+                      case 'checkout': return '/checkout';
+                      case 'profile': return '/profile';
+                      case 'combo': return '/bundles';
+                      default: return '/';
+                    }
+                  })()}
+                  className="w-full h-full border-none"
+                  title="Client Live Preview"
+                  onLoad={() => {
+                    if (iframeRef.current && iframeRef.current.contentWindow) {
+                      iframeRef.current.contentWindow.postMessage(
+                        {
+                          type: 'LIVE_PREVIEW_BANNER',
+                          banner: formData
+                        },
+                        '*'
+                      );
+                    }
+                  }}
+                />
+              </div>
             </div>
           );
         })()}

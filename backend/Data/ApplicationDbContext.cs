@@ -111,7 +111,11 @@ namespace PolyBabyAPI.Data
                         ib.OwnsOne(i => i.Redirect);
                     });
                     cb.OwnsOne(l => l.Responsive);
-                    cb.OwnsOne(l => l.FloatingConfig);
+                    cb.OwnsOne(l => l.FloatingConfig, fcb => {
+                        fcb.OwnsOne(f => f.DesktopPosition);
+                        fcb.OwnsOne(f => f.TabletPosition);
+                        fcb.OwnsOne(f => f.MobilePosition);
+                    });
                 });
                 entity.OwnsOne(b => b.DraftConfig, cb => 
                 {
@@ -120,7 +124,11 @@ namespace PolyBabyAPI.Data
                         ib.OwnsOne(i => i.Redirect);
                     });
                     cb.OwnsOne(l => l.Responsive);
-                    cb.OwnsOne(l => l.FloatingConfig);
+                    cb.OwnsOne(l => l.FloatingConfig, fcb => {
+                        fcb.OwnsOne(f => f.DesktopPosition);
+                        fcb.OwnsOne(f => f.TabletPosition);
+                        fcb.OwnsOne(f => f.MobilePosition);
+                    });
                 });
             });
 
@@ -138,7 +146,11 @@ namespace PolyBabyAPI.Data
                         ib.OwnsOne(i => i.Redirect);
                     });
                     cb.OwnsOne(l => l.Responsive);
-                    cb.OwnsOne(l => l.FloatingConfig);
+                    cb.OwnsOne(l => l.FloatingConfig, fcb => {
+                        fcb.OwnsOne(f => f.DesktopPosition);
+                        fcb.OwnsOne(f => f.TabletPosition);
+                        fcb.OwnsOne(f => f.MobilePosition);
+                    });
                 });
             });
 

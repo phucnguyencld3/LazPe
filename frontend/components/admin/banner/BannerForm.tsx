@@ -11,6 +11,7 @@ interface BannerFormProps {
   token?: string;
   onSave?: (banner: Partial<Banner>) => void;
   onOpenProductModal: (index: number) => void;
+  previewMode?: 'desktop' | 'laptop' | 'tablet' | 'mobile';
 }
 
 export function BannerForm({
@@ -19,7 +20,8 @@ export function BannerForm({
   existingBanners,
   token,
   onSave,
-  onOpenProductModal
+  onOpenProductModal,
+  previewMode = 'desktop'
 }: BannerFormProps) {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
 
@@ -98,13 +100,30 @@ export function BannerForm({
     });
   };
 
-  const handleFloatingConfigChange = (field: keyof BannerFloatingConfig, value: any) => {
-    const fc = formData.layoutConfig?.floatingConfig || { anchor: 'bottom-right' } as any;
+  const handleFloatingConfigChange = (field: string, value: any) => {
+    const fc = formData.layoutConfig?.floatingConfig || {} as any;
+    
+    // Check if we are modifying a device-specific position
+    if (['anchor', 'offsetX', 'offsetY'].includes(field)) {
+      // Map 'laptop' to 'desktop' config for simplicity
+      const modeKey = (previewMode === 'laptop' ? 'desktop' : previewMode) + 'Position';
+      
+      const currentPos = fc[modeKey] || {
+        anchor: fc.anchor || 'bottom-right',
+        offsetX: fc.offsetX || 20,
+        offsetY: fc.offsetY || 20
+      };
+      
+      fc[modeKey] = { ...currentPos, [field]: value };
+    } else {
+      fc[field] = value;
+    }
+    
     setFormData({
       ...formData,
       layoutConfig: {
         ...formData.layoutConfig!,
-        floatingConfig: { ...fc, [field]: value }
+        floatingConfig: fc
       }
     });
   };
@@ -285,52 +304,67 @@ export function BannerForm({
           <div className="mb-6 bg-rose-50/50 p-4 rounded-[8px] border border-rose-100">
             <h3 className="text-xs font-bold text-rose-800 mb-3 uppercase tracking-wider flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px]">layers</span>
-              Cấu hình Floating Overlay
+              Vị trí cho {previewMode === 'mobile' ? 'Điện thoại' : previewMode === 'tablet' ? 'Máy tính bảng' : 'Máy tính'}
             </h3>
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Vị trí neo (Anchor)</label>
-                <select 
-                  className="w-full px-3 py-2 rounded-[8px] bg-white border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
-                  value={formData.layoutConfig?.floatingConfig?.anchor || 'bottom-right'}
-                  onChange={(e) => handleFloatingConfigChange('anchor', e.target.value)}
-                >
-                  <option value="top-left">Top Left</option>
-                  <option value="top-right">Top Right</option>
-                  <option value="center">Center</option>
-                  <option value="bottom-left">Bottom Left</option>
-                  <option value="bottom-right">Bottom Right</option>
-                  <option value="custom">Tuỳ chỉnh (Custom Offset)</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2 mt-5">
-                <input 
-                  type="checkbox" 
-                  id="fc_closeable"
-                  checked={formData.layoutConfig?.floatingConfig?.closeable !== false}
-                  onChange={(e) => handleFloatingConfigChange('closeable', e.target.checked)}
-                  className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
-                />
-                <label htmlFor="fc_closeable" className="text-xs font-bold text-slate-700">Có nút Đóng [X]</label>
-              </div>
-            </div>
             
-            {formData.layoutConfig?.floatingConfig?.anchor === 'custom' && (
-              <div className="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Offset X (px)</label>
-                  <input type="number" className="w-full px-3 py-2 rounded-[8px] border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none" 
-                    value={formData.layoutConfig.floatingConfig.offsetX || 0}
-                    onChange={(e) => handleFloatingConfigChange('offsetX', parseInt(e.target.value))} />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Offset Y (px)</label>
-                  <input type="number" className="w-full px-3 py-2 rounded-[8px] border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none" 
-                    value={formData.layoutConfig.floatingConfig.offsetY || 0}
-                    onChange={(e) => handleFloatingConfigChange('offsetY', parseInt(e.target.value))} />
-                </div>
-              </div>
-            )}
+            {(() => {
+              const fc = formData.layoutConfig?.floatingConfig || {} as any;
+              const modeKey = (previewMode === 'laptop' ? 'desktop' : previewMode) + 'Position';
+              const pos = fc[modeKey] || {
+                anchor: fc.anchor || 'bottom-right',
+                offsetX: fc.offsetX || 20,
+                offsetY: fc.offsetY || 20
+              };
+              
+              return (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Vị trí neo (Anchor)</label>
+                      <select 
+                        className="w-full px-3 py-2 rounded-[8px] bg-white border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+                        value={pos.anchor}
+                        onChange={(e) => handleFloatingConfigChange('anchor', e.target.value)}
+                      >
+                        <option value="top-left">Top Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="center">Center</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="custom">Tùy chỉnh (Custom)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 mt-5">
+                      <input 
+                        type="checkbox" 
+                        id="fc_closeable"
+                        checked={fc.closeable !== false}
+                        onChange={(e) => handleFloatingConfigChange('closeable', e.target.checked)}
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
+                      />
+                      <label htmlFor="fc_closeable" className="text-xs font-bold text-slate-700">Có nút Đóng [X]</label>
+                    </div>
+                  </div>
+                  
+                  {pos.anchor !== 'center' && (
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">Khoảng cách X ({pos.anchor === 'custom' ? '%' : 'px'})</label>
+                        <input type="number" step="any" className="w-full px-3 py-2 rounded-[8px] border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none" 
+                          value={pos.offsetX || 0}
+                          onChange={(e) => handleFloatingConfigChange('offsetX', parseFloat(e.target.value) || 0)} />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">Khoảng cách Y ({pos.anchor === 'custom' ? '%' : 'px'})</label>
+                        <input type="number" step="any" className="w-full px-3 py-2 rounded-[8px] border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:outline-none" 
+                          value={pos.offsetY || 0}
+                          onChange={(e) => handleFloatingConfigChange('offsetY', parseFloat(e.target.value) || 0)} />
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             
             {formData.layoutConfig?.floatingConfig?.closeable !== false && (
               <div className="flex items-center gap-2">

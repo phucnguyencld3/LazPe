@@ -40,6 +40,7 @@ export function BannerConfigBuilder({
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'laptop' | 'tablet' | 'mobile'>('desktop');
 
   React.useEffect(() => {
     if (initialBanner) {
@@ -73,17 +74,23 @@ export function BannerConfigBuilder({
         });
       }
       
-      if (e.data?.type === 'UPDATE_FLOATING_OFFSET') {
-        console.log('Admin received UPDATE_FLOATING_OFFSET', e.data);
+      if (e.data?.type === 'UPDATE_FLOATING_DEVICE_OFFSET') {
+        const { deviceMode, position } = e.data;
+        console.log('Admin received UPDATE_FLOATING_DEVICE_OFFSET', deviceMode, position);
+        
         setFormData(prev => {
           const newLayout = { ...(prev.layoutConfig || { items: [] }) };
-          newLayout.floatingConfig = { 
-            ...(newLayout.floatingConfig || {}), 
-            anchor: 'custom', 
-            offsetX: e.data.offsetX, 
-            offsetY: e.data.offsetY 
-          };
-          console.log('New layout config:', newLayout);
+          const floatingConfig = { ...(newLayout.floatingConfig || {}) } as any;
+          
+          if (deviceMode === 'desktop') {
+            floatingConfig.desktopPosition = position;
+          } else if (deviceMode === 'tablet') {
+            floatingConfig.tabletPosition = position;
+          } else if (deviceMode === 'mobile') {
+            floatingConfig.mobilePosition = position;
+          }
+          
+          newLayout.floatingConfig = floatingConfig;
           return { ...prev, layoutConfig: newLayout };
         });
       }
@@ -129,9 +136,14 @@ export function BannerConfigBuilder({
         token={token}
         onSave={onSave}
         onOpenProductModal={handleOpenProductModal}
+        previewMode={previewMode}
       />
       
-      <BannerPreview formData={formData} />
+      <BannerPreview 
+        formData={formData} 
+        previewMode={previewMode} 
+        setPreviewMode={setPreviewMode} 
+      />
 
       {token && (
         <ProductSelectModal

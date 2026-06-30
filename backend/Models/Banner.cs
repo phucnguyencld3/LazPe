@@ -70,10 +70,23 @@ namespace PolyBabyAPI.Models
         public string Anchor { get; set; } = "bottom-right";
         public double? OffsetX { get; set; }
         public double? OffsetY { get; set; }
+        
+        public BannerFloatingPosition? DesktopPosition { get; set; }
+        public BannerFloatingPosition? TabletPosition { get; set; }
+        public BannerFloatingPosition? MobilePosition { get; set; }
+        
         public bool? Closeable { get; set; }
         public bool? CloseSession { get; set; }
         public string? Shadow { get; set; }
         public int? ZIndex { get; set; }
+    }
+
+    [Microsoft.EntityFrameworkCore.Owned]
+    public class BannerFloatingPosition
+    {
+        public string Anchor { get; set; } = string.Empty;
+        public double? OffsetX { get; set; }
+        public double? OffsetY { get; set; }
     }
 
     public class BannerItem

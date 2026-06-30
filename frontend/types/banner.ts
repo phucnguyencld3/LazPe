@@ -19,10 +19,23 @@ export interface BannerResponsiveConfig {
   mobileGridColumns?: number;
 }
 
-export interface BannerFloatingConfig {
+export interface BannerFloatingPosition {
   anchor: 'top-left' | 'top-right' | 'center' | 'bottom-left' | 'bottom-right' | 'custom';
   offsetX?: number;
   offsetY?: number;
+}
+
+export interface BannerFloatingConfig {
+  // Tương thích ngược với dữ liệu cũ
+  anchor?: 'top-left' | 'top-right' | 'center' | 'bottom-left' | 'bottom-right' | 'custom';
+  offsetX?: number;
+  offsetY?: number;
+  
+  // Cấu hình định vị riêng cho từng thiết bị
+  desktopPosition?: BannerFloatingPosition;
+  tabletPosition?: BannerFloatingPosition;
+  mobilePosition?: BannerFloatingPosition;
+
   closeable?: boolean;
   closeSession?: boolean;
   zIndex?: number;

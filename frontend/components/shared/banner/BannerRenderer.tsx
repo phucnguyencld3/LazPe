@@ -62,7 +62,7 @@ export function BannerRenderer({ banner }: BannerRendererProps) {
     return (
       <div 
         ref={rendererRef} 
-        className="relative ring-4 ring-primary ring-offset-2 rounded my-4 z-40 transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] scale-[1.01] cursor-pointer"
+        className="outline outline-2 outline-primary outline-offset-2 rounded my-4 transition-all duration-300 cursor-pointer"
         onClick={handleSelectPosition}
       >
         <div className="absolute -top-7 left-0 bg-primary text-white text-xs px-3 py-1.5 rounded-t shadow z-50 font-bold flex items-center gap-1">
@@ -75,12 +75,19 @@ export function BannerRenderer({ banner }: BannerRendererProps) {
   };
 
   // Render wrapper style
-  const wrapperStyle = `
+  let wrapperStyle = `
     ${containerStyle || ''}
     ${animation || ''}
     ${responsive?.mobileContainerStyle ? `max-md:${responsive.mobileContainerStyle}` : ''}
     ${responsive?.desktopContainerStyle ? `md:${responsive.desktopContainerStyle}` : ''}
   `.trim();
+
+  // Bypass visibility rules (e.g. max-md:hidden) for the banner currently being edited
+  if (isPreview) {
+    wrapperStyle = wrapperStyle.replace(/\b(max-md:)?hidden\b/g, '')
+                               .replace(/\b(md:)?hidden\b/g, '')
+                               .replace(/\bhidden\b/g, '');
+  }
 
   // ----- Slideshow Template -----
   if (type === 'slideshow') {
@@ -247,13 +254,14 @@ export function BannerLink({ item, isPreview, onClick, children }: { item: Banne
 function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: Banner, wrapperStyle: string, isPreview: boolean }) {
   const [isOpen, setIsOpen] = useState(true);
   const [dragPos, setDragPos] = useState<{ x: number, y: number } | null>(null);
-  const dragRef = React.useRef({ isDragging: false, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 });
+  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const dragRef = React.useRef({ isDragging: false, startX: 0, startY: 0, initialLeft: 0, initialTop: 0, width: 0, height: 0 });
 
   const layoutConfig = banner.layoutConfig || { items: [] };
   const items = layoutConfig.items || [];
   const item = items.length > 0 ? items[0] : null;
 
-  const fc = layoutConfig.floatingConfig || { anchor: 'bottom-right' };
+  const fc = layoutConfig.floatingConfig || {};
 
   useEffect(() => {
     if (isPreview) {
@@ -266,35 +274,103 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
     }
   }, [banner, isPreview, fc]);
 
-  // Reset drag position if props change
+  // Reset drag position if props change or window resizes
   useEffect(() => {
     setDragPos(null);
-  }, [fc.offsetX, fc.offsetY, fc.anchor]);
+  }, [fc.offsetX, fc.offsetY, fc.anchor, fc.desktopPosition, fc.tabletPosition, fc.mobilePosition]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDragPos(null);
+      const width = window.innerWidth;
+      if (width <= 480) setDeviceMode('mobile');
+      else if (width <= 1024) setDeviceMode('tablet');
+      else setDeviceMode('desktop');
+    };
+    handleResize(); // Init
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (!isOpen || !item) return null;
 
-  const anchorClasses: Record<string, string> = {
-    'top-left': 'top-4 left-4',
-    'top-right': 'top-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
-    'center': 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-    'custom': ''
+  const getActivePosition = () => {
+    let basePos;
+    if (deviceMode === 'mobile' && fc.mobilePosition) {
+      basePos = fc.mobilePosition;
+    } else if (deviceMode === 'tablet' && fc.tabletPosition) {
+      basePos = fc.tabletPosition;
+    } else {
+      // Backward compatibility fallback (Graceful Degradation)
+      if (fc.anchor === 'custom' && !fc.desktopPosition) {
+        return { isLegacy: true, offsetX: fc.offsetX, offsetY: fc.offsetY, anchor: 'custom' };
+      }
+      
+      // Lấy desktopPosition làm cấu hình gốc (hoặc fallback mặc định)
+      basePos = fc.desktopPosition || {
+        anchor: fc.anchor ? fc.anchor : 'bottom-right',
+        offsetX: fc.offsetX || 20,
+        offsetY: fc.offsetY || 20
+      };
+    }
+    
+    if (basePos.anchor === 'custom') {
+      let newOffsetX = basePos.offsetX;
+      let newOffsetY = basePos.offsetY;
+      
+      // Logic for Anchor updates inside the renderer/form context can be handled here
+      // Ensuring it stays as 'custom' and percentage based
+      return { ...basePos, isLegacy: true, anchor: 'custom' };
+    }
+
+    // Nếu đang view ở Mobile/Tablet nhưng lại fallback dùng cấu hình Desktop, 
+    // bắt buộc phải Clamp (giới hạn) pixel lại để không bị bắn ra khỏi màn hình.
+    if (deviceMode !== 'desktop') {
+      // Giả định viewport tối đa an toàn
+      const safeWidth = deviceMode === 'mobile' ? 390 : 768;
+      const safeHeight = deviceMode === 'mobile' ? 844 : 1024;
+      
+      // Chừa 100px để banner (thường rộng ~150px) không bị khuất hoàn toàn
+      return {
+        anchor: basePos.anchor,
+        offsetX: Math.min(basePos.offsetX || 0, safeWidth - 100),
+        offsetY: Math.min(basePos.offsetY || 0, safeHeight - 100)
+      };
+    }
+    
+    return basePos;
   };
+
+  const activePos = getActivePosition();
 
   const style: React.CSSProperties = {
     ...(fc.zIndex ? { zIndex: fc.zIndex } : {}),
   };
   
-  if (fc.anchor === 'custom' || dragPos) {
-    if (dragPos) {
-      style.left = `${dragPos.x}px`;
-      style.top = `${dragPos.y}px`;
+  if (dragPos) {
+    style.left = `${dragPos.x}px`;
+    style.top = `${dragPos.y}px`;
+    style.transform = 'translate(0px, 0px)';
+  } else {
+    const { anchor, offsetX = 0, offsetY = 0, isLegacy } = activePos as any;
+    
+    if (isLegacy || anchor === 'custom') {
+      // Retain the exact percentage for old banners so they scale perfectly across all devices
+      style.top = `${offsetY}%`;
+      style.left = `${offsetX}%`;
     } else {
-      style.left = `${fc.offsetX || 0}vw`;
-      style.top = `${fc.offsetY || 0}vh`;
+      // Use standard Anchor + Offset model with Mobile Safe Area awareness
+      if (anchor.includes('top')) style.top = `calc(${offsetY}px + env(safe-area-inset-top, 0px))`;
+      if (anchor.includes('bottom')) style.bottom = `calc(${offsetY}px + env(safe-area-inset-bottom, 0px))`;
+      if (anchor.includes('left')) style.left = `calc(${offsetX}px + env(safe-area-inset-left, 0px))`;
+      if (anchor.includes('right')) style.right = `calc(${offsetX}px + env(safe-area-inset-right, 0px))`;
+      
+      if (anchor === 'center') {
+        style.top = '50%';
+        style.left = '50%';
+        style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+      }
     }
-    style.transform = 'none'; // Overwrite default anchor transforms if any
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -314,7 +390,9 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
       startX: e.clientX,
       startY: e.clientY,
       initialLeft: startLeft,
-      initialTop: startTop
+      initialTop: startTop,
+      width: rect.width,
+      height: rect.height
     };
 
     const handlePointerMove = (ev: PointerEvent) => {
@@ -338,14 +416,36 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
       
       setDragPos({ x: finalX, y: finalY });
       
-      // Calculate responsive percentages
-      const vw = parseFloat(((finalX / window.innerWidth) * 100).toFixed(2));
-      const vh = parseFloat(((finalY / window.innerHeight) * 100).toFixed(2));
+      const rectWidth = dragRef.current.width || 200;
+      const rectHeight = dragRef.current.height || 100;
+      
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      
+      // Calculate distances to edges
+      const distTop = finalY;
+      const distBottom = H - (finalY + rectHeight);
+      const distLeft = finalX;
+      const distRight = W - (finalX + rectWidth);
+      
+      // Always use 'custom' (percentage based) when freely dragged by user
+      const newAnchor = 'custom';
+      let newOffsetX = (finalX / W) * 100;
+      let newOffsetY = (finalY / H) * 100;
+      // round to 2 decimals
+      newOffsetX = Math.round(newOffsetX * 100) / 100;
+      newOffsetY = Math.round(newOffsetY * 100) / 100;
+      
+      // Clamp to screen bounds
+      newOffsetX = Math.max(0, Math.min(100, newOffsetX));
+      newOffsetY = Math.max(0, Math.min(100, newOffsetY));
+      
+      const newPos = { anchor: newAnchor, offsetX: newOffsetX, offsetY: newOffsetY };
       
       window.parent.postMessage({ 
-        type: 'UPDATE_FLOATING_OFFSET', 
-        offsetX: vw, 
-        offsetY: vh 
+        type: 'UPDATE_FLOATING_DEVICE_OFFSET', 
+        deviceMode,
+        position: newPos
       }, '*');
 
       window.removeEventListener('pointermove', handlePointerMove);
@@ -360,7 +460,7 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
     <div className="fixed inset-0 pointer-events-none z-[9999]">
       <div 
         onPointerDown={isPreview ? handlePointerDown : undefined}
-        className={`absolute ${dragPos ? '' : anchorClasses[fc.anchor] || ''} ${wrapperStyle} ${isPreview ? 'ring-4 ring-rose-500 ring-offset-2 cursor-move' : ''} transition-all ${dragPos ? 'duration-0' : 'duration-300'} pointer-events-auto`}
+        className={`absolute ${isPreview ? 'ring-4 ring-rose-500 ring-offset-2 cursor-move' : ''} transition-all ${dragPos ? 'duration-0' : 'duration-300'} pointer-events-auto ${wrapperStyle}`}
         style={style}
       >
         {isPreview && (
@@ -386,7 +486,7 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
 
         <div className={`overflow-hidden rounded-lg ${fc.shadow ? fc.shadow : 'shadow-lg'} bg-transparent`}>
           <BannerLink item={item} isPreview={isPreview}>
-            <img src={item.imageUrl} alt={item.altText || 'Floating Banner'} className="w-full h-auto max-w-[200px]" draggable={false} />
+            <img src={item.imageUrl} alt={item.altText || 'Floating Banner'} className="w-[35vw] max-w-[200px] min-w-[80px] h-auto" draggable={false} />
           </BannerLink>
         </div>
       </div>
