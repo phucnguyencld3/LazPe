@@ -12,11 +12,13 @@ namespace PolyBabyAPI.Controllers
     public class UploadController : ControllerBase
     {
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IImageModerationService _imageModerationService;
         private readonly ILogger<UploadController> _logger;
 
-        public UploadController(ICloudinaryService cloudinaryService, ILogger<UploadController> logger)
+        public UploadController(ICloudinaryService cloudinaryService, IImageModerationService imageModerationService, ILogger<UploadController> logger)
         {
             _cloudinaryService = cloudinaryService;
+            _imageModerationService = imageModerationService;
             _logger = logger;
         }
 
@@ -54,6 +56,14 @@ namespace PolyBabyAPI.Controllers
                 if (file.Length > maxFileSize)
                 {
                     return BadRequest(new { success = false, message = "File không được vượt quá 5MB" });
+                }
+
+                // AI Moderation: Kiểm duyệt hình ảnh phản cảm
+                var moderationResult = await _imageModerationService.IsImageSafeAsync(file);
+                if (!moderationResult.IsSafe)
+                {
+                    _logger.LogWarning("Avatar upload rejected by AI Moderation for user {UserId}. Reason: {Reason}", userId, moderationResult.Message);
+                    return BadRequest(new { success = false, message = moderationResult.Message });
                 }
 
                 // ✅ Sửa: Sử dụng method UploadAvatarAsync có sẵn
@@ -173,6 +183,14 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
                 }
 
+                // AI Moderation: Kiểm duyệt hình ảnh phản cảm
+                var moderationResult = await _imageModerationService.IsImageSafeAsync(file);
+                if (!moderationResult.IsSafe)
+                {
+                    _logger.LogWarning("Chat image upload rejected by AI Moderation. Reason: {Reason}", moderationResult.Message);
+                    return BadRequest(new { success = false, message = moderationResult.Message });
+                }
+
                 var uploadResult = await _cloudinaryService.ReplaceImageAsync(null, file, "chat_images");
 
                 if (!string.IsNullOrEmpty(uploadResult))
@@ -253,6 +271,17 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var mediaType = new[] { ".mp4", ".mov", ".avi", ".mkv" }.Contains(fileExtension) ? "VIDEO" : "IMAGE";
+
+                // AI Moderation: Nếu là hình ảnh, kiểm duyệt nội dung phản cảm
+                if (mediaType == "IMAGE")
+                {
+                    var moderationResult = await _imageModerationService.IsImageSafeAsync(file);
+                    if (!moderationResult.IsSafe)
+                    {
+                        _logger.LogWarning("Review media upload rejected by AI Moderation. Reason: {Reason}", moderationResult.Message);
+                        return BadRequest(new { success = false, message = moderationResult.Message });
+                    }
+                }
                 var uploadResult = await _cloudinaryService.UploadImageAsync(file, "Reviews");
 
                 if (!string.IsNullOrEmpty(uploadResult))

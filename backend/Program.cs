@@ -259,6 +259,7 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
 
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddScoped<IImageModerationService, GoogleVisionModerationService>();
 
     // Đăng ký Chat & SignalR
     builder.Services.AddSignalR().AddJsonProtocol(options =>
