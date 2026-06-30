@@ -62,6 +62,9 @@ export interface Product {
   isBundle?: boolean;
   variants?: Variant[];
   productOptions?: ProductOption[];
+  quantityNeeded?: number;
+  note?: string | null;
+  priority?: string;
 }
 
 export interface Category {
