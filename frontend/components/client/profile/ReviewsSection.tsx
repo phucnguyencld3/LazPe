@@ -178,24 +178,32 @@ export function ReviewsSection({ userId, token }: ReviewsSectionProps) {
           body: formData
         });
 
-        if (!response.ok) {
-          throw new Error("Upload failed");
+        let result;
+        try {
+          result = await response.json();
+        } catch (e) {
+          result = null;
         }
 
-        const result = await response.json();
-        if (result.success && result.url) {
+        if (!response.ok) {
+          throw new Error(result?.message || "Upload failed");
+        }
+
+        if (result && result.success && result.url) {
           setAttachedMedia(prev => [...prev, {
             url: result.url,
             mediaType: result.mediaType || "IMAGE"
           }]);
         } else {
-          toast.error(result.message || `Lỗi tải lên file ${file.name}`);
+          toast.error(result?.message || `Lỗi tải lên file ${file.name}`);
         }
       }
       toast.success("Tải lên file đính kèm thành công!");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Không thể upload tệp tin. Vui lòng kiểm tra dung lượng hoặc kết nối mạng.");
+      toast.error(err.message && err.message !== "Upload failed" 
+        ? err.message 
+        : "Không thể upload tệp tin. Vui lòng kiểm tra dung lượng hoặc kết nối mạng.");
     } finally {
       setUploadingMedia(false);
       if (fileInputRef.current) {
