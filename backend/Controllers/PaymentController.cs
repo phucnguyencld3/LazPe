@@ -127,10 +127,7 @@ namespace PolyBabyAPI.Controllers
 
                     await _context.SaveChangesAsync();
 
-                    if (success && isPendingBefore)
-                    {
-                        await _invoiceService.ConfirmWishlistRegistryAsync(invoice.InvoiceID);
-                    }
+
                 }
 
                 var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)

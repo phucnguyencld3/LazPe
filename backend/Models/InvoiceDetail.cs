@@ -37,7 +37,5 @@ namespace PolyBabyAPI.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPrice { get; set; }
-
-        public string? FromWishlistUserID { get; set; }
     }
 }

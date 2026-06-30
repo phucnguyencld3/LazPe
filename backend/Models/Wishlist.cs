@@ -19,10 +19,5 @@ namespace PolyBabyAPI.Models
         public virtual Product Product { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        public int QuantityNeeded { get; set; } = 1;
-        public int QuantityPurchased { get; set; } = 0;
-        public string? Note { get; set; }
-        public string? Priority { get; set; } = "Medium";
     }
 }

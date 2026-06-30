@@ -2,25 +2,24 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, ChevronLeft, Share2, Copy, Check, Edit2, Lock, Globe, Trash2 } from "lucide-react";
+import { Heart, ChevronLeft, Copy, Check, Lock, Globe, Trash2, Search, Plus } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
-import { getWishlistShareSettings, toggleWishlistShare, updateWishlistItemRegistry } from "@/lib/api";
+import { getWishlistShareSettings, toggleWishlistShare, getPublicWishlist, syncWishlistApi, getWishlist } from "@/lib/api";
 import { toast } from "@/lib/toast";
 
 export default function WishlistPage() {
-  const { wishlist, loading, removeFromWishlist, updateWishlistItemRegistryState } = useWishlist();
+  const { wishlist, loading, addToWishlist, removeFromWishlist } = useWishlist();
   const [mounted, setMounted] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
 
-  // Modal State
-  const [editingProduct, setEditingProduct] = useState<any | null>(null);
-  const [quantityNeeded, setQuantityNeeded] = useState(1);
-  const [note, setNote] = useState("");
-  const [priority, setPriority] = useState("Medium");
-  const [isSavingRegistry, setIsSavingRegistry] = useState(false);
+  // Friend's Wishlist State
+  const [friendCodeInput, setFriendCodeInput] = useState("");
+  const [friendWishlist, setFriendWishlist] = useState<any[] | null>(null);
+  const [friendOwnerName, setFriendOwnerName] = useState("");
+  const [isLoadingFriend, setIsLoadingFriend] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -64,89 +63,101 @@ export default function WishlistPage() {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyCode = () => {
     if (!shareToken) return;
-    const origin = window.location.origin;
-    const shareUrl = `${origin}/wishlist/share/${shareToken}`;
-    
-    navigator.clipboard.writeText(shareUrl).then(() => {
+    navigator.clipboard.writeText(shareToken).then(() => {
       setCopied(true);
-      toast.success("Đã sao chép link chia sẻ!");
+      toast.success("Đã sao chép mã chia sẻ!");
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  // Open Edit Registry Modal
-  const openEditModal = (product: any) => {
-    setEditingProduct(product);
-    setQuantityNeeded(product.quantityNeeded || 1);
-    setNote(product.note || "");
-    setPriority(product.priority || "Medium");
-  };
-
-  // Close Edit Registry Modal
-  const closeEditModal = () => {
-    setEditingProduct(null);
-  };
-
-  // Save Registry Settings
-  const handleSaveRegistry = async (e: React.FormEvent) => {
+  // Fetch Friend's Wishlist
+  const handleFetchFriendWishlist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProduct) return;
-
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) {
-      toast.error("Vui lòng đăng nhập");
+    if (!friendCodeInput.trim()) {
+      toast.error("Vui lòng nhập mã chia sẻ");
       return;
     }
 
-    setIsSavingRegistry(true);
+    setIsLoadingFriend(true);
     try {
-      const res = await updateWishlistItemRegistry(token, editingProduct.id, {
-        quantityNeeded,
-        note: note || null,
-        priority
-      });
-
-      if (res.success) {
-        // Update context state
-        updateWishlistItemRegistryState(editingProduct.id, {
-          quantityNeeded,
-          note: note || null,
-          priority
-        });
-        toast.success("Đã cập nhật thông tin Registry thành công!");
-        closeEditModal();
+      const res = await getPublicWishlist(friendCodeInput.trim());
+      if (res && res.success) {
+        setFriendOwnerName(res.ownerName);
+        setFriendWishlist(res.data);
+        toast.success(`Đã tìm thấy danh sách của ${res.ownerName}!`);
       } else {
-        toast.error(res.message || "Cập nhật thất bại");
+        toast.error(res?.message || "Không tìm thấy danh sách với mã này");
+        setFriendWishlist(null);
       }
     } catch (error) {
       console.error(error);
-      toast.error("Lỗi kết nối mạng");
+      toast.error("Lỗi khi kết nối đến hệ thống");
     } finally {
-      setIsSavingRegistry(false);
+      setIsLoadingFriend(false);
     }
   };
 
-  const getPriorityColor = (pr: string) => {
-    switch (pr) {
-      case "High":
-        return "bg-rose-50 border-rose-200 text-rose-600";
-      case "Low":
-        return "bg-slate-50 border-slate-200 text-slate-600";
-      default:
-        return "bg-amber-50 border-amber-200 text-amber-600";
+  // Add Single Product from Friend to My Wishlist
+  const handleAddSingleToMyWishlist = (product: any) => {
+    const isAlreadyMine = wishlist.some((item) => item.id === product.id);
+    if (isAlreadyMine) {
+      toast.info("Sản phẩm này đã có trong danh sách yêu thích của bạn");
+      return;
     }
+    // Map friend product to Product type
+    addToWishlist({
+      id: product.id,
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      discountPrice: product.discountPrice,
+      image: product.image,
+      inStock: product.inStock,
+      categoryId: product.categoryId,
+      categoryName: product.categoryName
+    });
   };
 
-  const getPriorityLabel = (pr: string) => {
-    switch (pr) {
-      case "High":
-        return "Ưu tiên: Cao";
-      case "Low":
-        return "Ưu tiên: Thấp";
-      default:
-        return "Ưu tiên: Trung bình";
+  // Add All Products from Friend to My Wishlist
+  const handleAddAllToMyWishlist = async () => {
+    if (!friendWishlist || friendWishlist.length === 0) return;
+
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để đồng bộ danh sách");
+      return;
+    }
+
+    // Lọc ra các sản phẩm chưa có trong danh sách yêu thích của tôi
+    const myProductIds = wishlist.map((item) => item.id);
+    const productIdsToAdd = friendWishlist
+      .map((item) => item.id)
+      .filter((id) => !myProductIds.includes(id));
+
+    if (productIdsToAdd.length === 0) {
+      toast.info("Tất cả sản phẩm đã có sẵn trong danh sách yêu thích của bạn");
+      return;
+    }
+
+    try {
+      // Gộp danh sách hiện tại của tôi và các sản phẩm mới
+      const allProductIds = [...myProductIds, ...productIdsToAdd];
+      const res = await syncWishlistApi(token, allProductIds);
+      if (res && res.success) {
+        toast.success(`Đã thêm thành công ${productIdsToAdd.length} sản phẩm vào danh sách yêu thích của bạn!`);
+        // Refresh wishlist context
+        const dbWishlist = await getWishlist(token);
+        if (dbWishlist) {
+          window.location.reload();
+        }
+      } else {
+        toast.error("Có lỗi xảy ra khi đồng bộ danh sách.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -171,135 +182,143 @@ export default function WishlistPage() {
     );
   }
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const publicShareUrl = shareToken ? `${origin}/wishlist/share/${shareToken}` : "";
-
   return (
     <div className="w-full pb-12">
       <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-500 hover:text-rose-500 transition-colors">
         <ChevronLeft size={16} /> Quay lại trang chủ
       </Link>
       
-      {/* Header */}
-      <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 overflow-hidden relative mb-6">
-        <div className="bg-rose-50/50 py-5 px-6 md:py-6 md:px-8 border-b border-rose-100/50 relative flex flex-col items-center text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-rose-200 bg-white shadow-sm mb-3 text-rose-500">
-            <Heart className="w-5 h-5 fill-rose-500" />
+      {/* Configuration & Sharing Panel */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        {/* Wishlist General Header */}
+        <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 p-6 flex flex-col justify-between md:col-span-1">
+          <div>
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-rose-100 bg-rose-50/50 mb-3 text-rose-500">
+              <Heart className="w-5 h-5 fill-rose-500" />
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-800 mb-1">Danh Sách Của Tôi</h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Quản lý các sản phẩm bạn yêu thích và bật chia sẻ mã để bạn bè có thể xem và lưu sản phẩm.
+            </p>
           </div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-1">Sản Phẩm Yêu Thích</h2>
-          <p className="text-sm text-slate-500 max-w-[600px] mx-auto">
-            Lưu giữ và biến danh sách của bạn thành một Gift Registry công khai để bạn bè dễ dàng mua quà tặng bạn.
-          </p>
+          <div className="mt-4 pt-4 border-t border-slate-50">
+            <span className="text-xs text-slate-500 font-semibold bg-slate-50 border border-slate-100 px-3 py-1 rounded-full">
+              Tổng số: <strong className="text-rose-600">{wishlist.length}</strong> sản phẩm
+            </span>
+          </div>
         </div>
 
-        {/* Wishlist Sharing Control Panel */}
-        <div className="p-5 md:p-6 bg-slate-50/60 border-t border-slate-100 flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${isPublic ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                {isPublic ? <Globe size={20} /> : <Lock size={20} />}
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                  Chia sẻ danh sách công khai
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                    isPublic ? 'bg-emerald-100/70 border-emerald-200 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-500'
-                  }`}>
-                    {isPublic ? "Công khai" : "Riêng tư"}
-                  </span>
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Cho phép mọi người xem danh sách và mua tặng trực tiếp cho bạn.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleToggleShare}
-              disabled={isUpdatingSettings}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                isPublic ? 'bg-rose-500' : 'bg-slate-300'
-              } ${isUpdatingSettings ? 'opacity-65 cursor-not-allowed' : ''}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isPublic ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Share URL Output */}
-          {isPublic && shareToken && (
-            <div className="mt-2 p-3 bg-white border border-slate-200 rounded-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-sm animate-fadeIn">
-              <div className="flex items-center gap-2 overflow-hidden px-1">
-                <Share2 size={16} className="text-rose-500 shrink-0" />
-                <span className="text-xs font-semibold text-slate-600 truncate select-all">
-                  {publicShareUrl}
-                </span>
+        {/* Share Control Panel */}
+        <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 p-6 flex flex-col justify-between md:col-span-1">
+          <div>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${isPublic ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                  {isPublic ? <Globe size={18} /> : <Lock size={18} />}
+                </div>
+                <h3 className="text-sm font-bold text-slate-800">Chia sẻ danh sách</h3>
               </div>
               <button
-                onClick={handleCopyLink}
-                className="shrink-0 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold px-3 py-1.5 rounded-md text-xs border border-rose-200/50 transition-colors"
+                onClick={handleToggleShare}
+                disabled={isUpdatingSettings}
+                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${
+                  isPublic ? 'bg-rose-500' : 'bg-slate-300'
+                }`}
               >
-                {copied ? (
-                  <>
-                    <Check size={14} /> Đã chép
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} /> Sao chép link
-                  </>
-                )}
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-1'}`} />
               </button>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              {isPublic ? "Bất cứ ai có mã chia sẻ đều có thể xem danh sách sản phẩm yêu thích của bạn." : "Danh sách ở chế độ riêng tư, chỉ một mình bạn xem được."}
+            </p>
+          </div>
+
+          {isPublic && shareToken && (
+            <div className="mt-4 pt-4 border-t border-slate-50 flex flex-col gap-2">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mã chia sẻ của bạn</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-slate-50 border border-slate-100 px-3 py-2 rounded-md overflow-hidden">
+                  <p className="text-sm font-extrabold text-slate-700 font-mono tracking-wide truncate select-all">{shareToken}</p>
+                </div>
+                <button
+                  onClick={handleCopyCode}
+                  className="shrink-0 flex items-center gap-1.5 bg-white hover:bg-slate-100 text-rose-500 hover:text-rose-600 font-bold text-xs px-3 py-2 rounded-md border border-slate-200 transition-colors shadow-sm"
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? "Đã chép" : "Sao chép mã"}
+                </button>
+              </div>
             </div>
           )}
         </div>
-        
-        {/* Count */}
-        <div className="p-3 bg-white flex justify-center border-t border-slate-100">
-          <span className="text-xs text-slate-500 font-semibold bg-slate-50 px-4 py-1 rounded-full border border-slate-100">
-            Danh sách gồm <strong className="text-rose-600 font-bold">{wishlist.length}</strong> sản phẩm
-          </span>
+
+        {/* Friend Code Input Panel */}
+        <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 p-6 flex flex-col justify-between md:col-span-1">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Search size={18} className="text-rose-500" />
+              <h3 className="text-sm font-bold text-slate-800">Xem danh sách của bạn bè</h3>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Nhập mã chia sẻ của bạn bè để xem danh sách sản phẩm yêu thích của họ và lưu lại những sản phẩm bạn thích.
+            </p>
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-slate-50">
+            <form onSubmit={handleFetchFriendWishlist} className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Nhập mã chia sẻ..."
+                value={friendCodeInput}
+                onChange={(e) => setFriendCodeInput(e.target.value)}
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-mono tracking-wider transition-all"
+              />
+              <button
+                type="submit"
+                disabled={isLoadingFriend}
+                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2 rounded-md transition-colors shadow-sm shrink-0"
+              >
+                {isLoadingFriend ? "Đang tìm..." : "Xem"}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 min-h-[400px]">
-        {wishlist.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-            <Heart size={48} className="mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-bold text-slate-700 mb-1">Chưa có sản phẩm yêu thích nào</h3>
-            <p className="text-slate-500 text-sm">Bạn chưa lưu sản phẩm nào. Hãy khám phá cửa hàng và thả tim cho những sản phẩm bạn yêu thích nhé!</p>
+      {/* Friend's Wishlist Section */}
+      {friendWishlist && (
+        <div className="bg-white rounded-[10px] border border-rose-100 shadow-md p-6 mb-8 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-rose-50 pb-4 mb-6 gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-full bg-rose-50 text-rose-500">
+                <Heart className="w-5 h-5 fill-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-800">Sản phẩm yêu thích của {friendOwnerName}</h3>
+                <p className="text-xs text-slate-500">Mã chia sẻ: <strong className="font-mono text-rose-600">{friendCodeInput.trim()}</strong></p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={handleAddAllToMyWishlist}
+                className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm"
+              >
+                <Plus size={14} /> Thêm tất cả vào Yêu thích của tôi
+              </button>
+              <button
+                onClick={() => setFriendWishlist(null)}
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-lg border border-slate-200 transition-colors"
+              >
+                Đóng xem
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {wishlist.map((product) => {
-              const needed = product.quantityNeeded || 1;
-              const purchased = product.quantityPurchased || 0;
-              const progress = Math.min(100, Math.round((purchased / needed) * 100));
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {friendWishlist.map((product) => {
               return (
                 <div key={product.id} className="group bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full relative">
-                  
-                  {/* Delete heart action */}
-                  <button
-                    onClick={() => removeFromWishlist(product.id)}
-                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 hover:bg-white text-slate-400 hover:text-rose-500 shadow-sm border border-slate-100 hover:scale-105 transition-all"
-                    title="Xóa khỏi danh sách"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
-                  {/* Registry priority tag */}
-                  {product.priority && (
-                    <div className="absolute top-3 left-3 z-10">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border shadow-sm ${getPriorityColor(product.priority)}`}>
-                        {getPriorityLabel(product.priority)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Standard Product Info & Card Rendering */}
                   <div className="p-3 flex-1 flex flex-col">
                     <div className="w-full aspect-square relative bg-slate-50 rounded-lg overflow-hidden mb-3">
                       <img
@@ -326,37 +345,91 @@ export default function WishlistPage() {
                       )}
                     </div>
 
-                    {/* Registry details section */}
-                    <div className="mt-auto border-t border-slate-50 pt-3 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                      <div className="flex justify-between items-center text-xs text-slate-500 font-bold mb-1.5">
-                        <span>Đã mua:</span>
-                        <span className="text-rose-600 font-extrabold">{purchased} / {needed}</span>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2 border border-slate-200/50">
-                        <div
-                          className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-500"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-
-                      {product.note ? (
-                        <p className="text-[11px] text-slate-500 italic line-clamp-2 min-h-[32px] mb-2 leading-relaxed border-l-2 border-rose-300 pl-2">
-                          "{product.note}"
-                        </p>
-                      ) : (
-                        <p className="text-[11px] text-slate-400 italic line-clamp-2 min-h-[32px] mb-2 leading-relaxed pl-1">
-                          Chưa có ghi chú...
-                        </p>
-                      )}
-
-                      <button
-                        onClick={() => openEditModal(product)}
-                        className="w-full mt-1 flex items-center justify-center gap-1 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-800 font-bold text-xs py-1.5 rounded-md border border-slate-200 transition-colors shadow-sm"
+                    <div className="mt-auto pt-3 border-t border-slate-50 flex flex-col gap-1.5">
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="w-full text-center bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs py-2 rounded-md border border-slate-200 transition-colors shadow-sm"
                       >
-                        <Edit2 size={12} /> Cấu hình Registry
-                      </button>
+                        Xem chi tiết sản phẩm
+                      </Link>
+
+                      {!wishlist.some((item) => item.id === product.id) && (
+                        <button
+                          onClick={() => handleAddSingleToMyWishlist(product)}
+                          className="w-full flex items-center justify-center gap-1 bg-white hover:bg-slate-100 text-rose-600 font-bold text-xs py-2 rounded-md border border-rose-200 transition-colors shadow-sm"
+                        >
+                          <Plus size={14} /> Thêm vào Yêu thích
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Owner's Wishlist Items */}
+      <div className="bg-white rounded-[10px] shadow-sm p-6">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+          Danh sách yêu thích của tôi
+        </h3>
+
+        {wishlist.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+            <Heart size={48} className="mx-auto text-slate-300 mb-4" />
+            <h3 className="text-lg font-bold text-slate-700 mb-1">Chưa có sản phẩm yêu thích nào</h3>
+            <p className="text-slate-500 text-sm">Bạn chưa lưu sản phẩm nào. Hãy khám phá cửa hàng và thả tim nhé!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {wishlist.map((product) => {
+              return (
+                <div key={product.id} className="group bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full relative">
+                  
+                  {/* Delete heart action */}
+                  <button
+                    onClick={() => removeFromWishlist(product.id)}
+                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 hover:bg-white text-slate-400 hover:text-rose-500 shadow-sm border border-slate-100 hover:scale-105 transition-all"
+                    title="Xóa khỏi danh sách"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+
+                  <div className="p-3 flex-1 flex flex-col">
+                    <div className="w-full aspect-square relative bg-slate-50 rounded-lg overflow-hidden mb-3">
+                      <img
+                        src={product.image || "/assets/img/products/default-product.jpg"}
+                        alt={product.name}
+                        className="object-cover w-full h-full group-hover:scale-102 transition-transform duration-300"
+                      />
+                    </div>
+                    
+                    <h3 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 min-h-[40px] mb-1">
+                      {product.name}
+                    </h3>
+                    
+                    <div className="flex items-baseline gap-1.5 mb-3">
+                      <span className="text-sm font-extrabold text-rose-500">
+                        {product.discountPrice 
+                          ? `${product.discountPrice.toLocaleString('vi-VN')}đ` 
+                          : `${product.price.toLocaleString('vi-VN')}đ`}
+                      </span>
+                      {product.discountPrice && (
+                        <span className="text-xs text-slate-400 line-through">
+                          {product.price.toLocaleString('vi-VN')}đ
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-auto pt-3 border-t border-slate-50 flex flex-col">
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="w-full text-center bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs py-2 rounded-md border border-slate-200 transition-colors shadow-sm"
+                      >
+                        Xem chi tiết sản phẩm
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -365,114 +438,6 @@ export default function WishlistPage() {
           </div>
         )}
       </div>
-
-      {/* Edit Registry Modal */}
-      {editingProduct && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-100 animate-scaleUp">
-            
-            {/* Modal Header */}
-            <div className="bg-rose-50/50 border-b border-rose-100/50 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Heart className="text-rose-500 fill-rose-500" size={20} />
-                <h3 className="font-extrabold text-slate-800 text-lg">Cấu hình quà tặng</h3>
-              </div>
-              <button
-                onClick={closeEditModal}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm bg-white hover:bg-slate-100 p-1.5 rounded-full border border-slate-200/50 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <form onSubmit={handleSaveRegistry} className="p-6 flex flex-col gap-4">
-              <div className="flex gap-3 pb-3 border-b border-slate-100">
-                <img
-                  src={editingProduct.image || "/assets/img/products/default-product.jpg"}
-                  alt={editingProduct.name}
-                  className="w-14 h-14 object-cover rounded-md border border-slate-100"
-                />
-                <div>
-                  <h4 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight">{editingProduct.name}</h4>
-                  <p className="text-xs text-rose-500 font-bold mt-1">
-                    {editingProduct.discountPrice 
-                      ? `${editingProduct.discountPrice.toLocaleString('vi-VN')}đ` 
-                      : `${editingProduct.price.toLocaleString('vi-VN')}đ`}
-                  </p>
-                </div>
-              </div>
-
-              {/* Quantity Needed */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Số lượng cần tặng
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={quantityNeeded}
-                  onChange={(e) => setQuantityNeeded(parseInt(e.target.value) || 1)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold transition-all"
-                />
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mức độ ưu tiên
-                </label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold transition-all cursor-pointer"
-                >
-                  <option value="High">Cao (High)</option>
-                  <option value="Medium">Trung bình (Medium)</option>
-                  <option value="Low">Thấp (Low)</option>
-                </select>
-              </div>
-
-              {/* Note */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Ghi chú cho người mua tặng
-                </label>
-                <textarea
-                  placeholder="Ví dụ: Món này màu hồng cho bé gái nha..."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  maxLength={150}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all resize-none"
-                />
-                <span className="text-[10px] text-slate-400 float-right mt-1">
-                  Tối đa 150 ký tự
-                </span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 mt-4 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  onClick={closeEditModal}
-                  className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold py-2 rounded-lg border border-slate-200 text-sm transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingRegistry}
-                  className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-65"
-                >
-                  {isSavingRegistry ? "Đang lưu..." : "Lưu thay đổi"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
