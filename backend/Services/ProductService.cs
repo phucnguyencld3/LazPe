@@ -615,7 +615,7 @@ namespace PolyBabyAPI.Services
 
                 foreach (var sku in variantSkus)
                 {
-                    var skuExistsInDb = await _context.Variants.AnyAsync(v => v.SKU == sku);
+                    var skuExistsInDb = await _context.Variants.AnyAsync(v => v.SKU == sku && !v.IsDeleted);
                     if (skuExistsInDb)
                     {
                         return new ServiceResult<ProductDto>

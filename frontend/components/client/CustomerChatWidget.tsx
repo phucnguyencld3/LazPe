@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { MessagesSquare, X } from 'lucide-react';
 import { useRouter } from "next/navigation";
-const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
+const ChatProductCard = ({ data, onZoomImage, onClickProduct }: { data: any, onZoomImage?: (url: string) => void, onClickProduct?: () => void }) => {
   const router = useRouter();
 
   const handleProductClick = () => {
@@ -16,6 +16,7 @@ const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url:
       const id = data.productId || data.variantId || data.id;
       // In case it's a slug, we can use it.
       router.push(`/products/${data.slug || id}`);
+      if (onClickProduct) onClickProduct();
     }
   };
 
@@ -63,11 +64,18 @@ export interface Message {
   isRead?: boolean;
 }
 
-const ChatProductList = ({ products }: { products: any[] }) => {
+const ChatProductList = ({ products, onClickProduct }: { products: any[], onClickProduct?: () => void }) => {
   return (
     <div className="flex flex-col gap-2 mt-2">
       {products.map((p, idx) => (
-        <Link key={idx} href={`/product/${p.slug || p.id}`} className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
+        <Link 
+          key={idx} 
+          href={`/products/${p.slug || p.id}`} 
+          onClick={() => {
+            if (onClickProduct) onClickProduct();
+          }}
+          className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50 transition-colors bg-white"
+        >
           <img src={p.image || p.imageUrl || '/placeholder.png'} alt={p.name} className="w-12 h-12 object-cover rounded-md border" />
           <div className="flex flex-col">
             <span className="text-sm font-medium line-clamp-1 text-slate-800">{p.name}</span>
@@ -137,6 +145,7 @@ export default function CustomerChatWidget() {
   const [isAiMode, setIsAiMode] = useState(true);
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [pendingAutoSendMsg, setPendingAutoSendMsg] = useState<string | null>(null);
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
   const voiceOutputEnabledRef = useRef(false);
@@ -153,6 +162,20 @@ export default function CustomerChatWidget() {
       voiceOutputEnabledRef.current = saved === "true";
     }
   }, []);
+
+  // Ngăn cuộn trang nền khi modal đang mở full màn hình
+  useEffect(() => {
+    if (isOpen && isExpanded) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    // Dọn dẹp khi component unmount
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, isExpanded]);
 
   const handleToggleVoiceOutput = () => {
     const newVal = !voiceOutputEnabled;
@@ -824,7 +847,7 @@ export default function CustomerChatWidget() {
     <>
       <button
         onClick={toggleOpen}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
       >
         {isOpen ? (
           <X size={28} strokeWidth={2.5} />
@@ -835,20 +858,24 @@ export default function CustomerChatWidget() {
 
       {isOpen && (
         <div
-          className="fixed bottom-0 right-0 sm:bottom-[10px] sm:right-6 z-[60] w-full sm:w-[460px] h-[100dvh] sm:h-[600px] sm:max-h-[calc(100vh-100px)] bg-white sm:rounded-3xl sm:border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
+          className={`fixed z-[60] bg-white flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] transition-all ${
+            isExpanded
+              ? "inset-0 w-full h-[100dvh] rounded-none border-0"
+              : "bottom-0 right-0 sm:bottom-[15px] sm:right-6 w-full sm:w-[460px] h-[100dvh] sm:h-[calc(100vh_-_95px)] sm:rounded-2xl"
+          }`}
         >
-          <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-4 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
+          <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-4 py-2.5 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             <div className="flex items-center gap-3 relative z-10">
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-base text-white">
+              <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm text-white">
                 {isAiMode ? "AI" : "LP"}
               </div>
               <div>
-                <h3 className="font-semibold text-base leading-tight">
+                <h3 className="font-semibold text-sm leading-tight">
                   {isAiMode ? "LazPe AI Assistant" : "Hỗ trợ LazPe"}
                 </h3>
-                <span className="text-xs text-blue-100 flex items-center gap-1.5 mt-0.5">
-                  <span className="h-2 w-2 rounded-full bg-[#4eff8a] inline-block animate-pulse"></span>
+                <span className="text-[10px] text-blue-100 flex items-center gap-1.5 mt-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#4eff8a] inline-block animate-pulse"></span>
                   Trực tuyến
                 </span>
               </div>
@@ -865,6 +892,13 @@ export default function CustomerChatWidget() {
                 </button>
               )}
               <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl hidden sm:block"
+                title={isExpanded ? "Thu nhỏ" : "Phóng to"}
+              >
+                {isExpanded ? "close_fullscreen" : "open_in_full"}
+              </button>
+              <button
                 onClick={toggleOpen}
                 className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl"
               >
@@ -873,7 +907,7 @@ export default function CustomerChatWidget() {
             </div>
           </div>
 
-          <div className="flex-1 bg-slate-50/80 backdrop-blur-md flex flex-col min-h-0 overflow-y-auto p-4 space-y-5" style={{ scrollbarWidth: "thin" }}>
+          <div className="flex-1 bg-slate-50/80 backdrop-blur-md flex flex-col min-h-0 overflow-y-auto p-4 space-y-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {!isStarted ? (
               <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
                 <div className="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-5">
@@ -989,7 +1023,7 @@ export default function CustomerChatWidget() {
                                       if (!inline && match && match[1] === 'product_card') {
                                         try {
                                           const data = JSON.parse(String(children).replace(/\n$/, ''));
-                                          return <ChatProductCard data={data} onZoomImage={setZoomedImage} />;
+                                          return <ChatProductCard data={data} onZoomImage={setZoomedImage} onClickProduct={() => setIsExpanded(false)} />;
                                         } catch (e) {
                                           return <code className={className} {...props}>{children}</code>;
                                         }
@@ -998,7 +1032,7 @@ export default function CustomerChatWidget() {
                                         try {
                                           const data = JSON.parse(String(children).replace(/\n$/, ''));
                                           if (Array.isArray(data)) {
-                                            return <ChatProductList products={data} />;
+                                            return <ChatProductList products={data} onClickProduct={() => setIsExpanded(false)} />;
                                           }
                                         } catch (e) {
                                           // fallback
@@ -1082,7 +1116,7 @@ export default function CustomerChatWidget() {
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Gửi tin nhắn..."
-                    className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
+                    className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
                   />
                   
                   {/* Nút Mic Nhập Giọng Nói (STT) */}
