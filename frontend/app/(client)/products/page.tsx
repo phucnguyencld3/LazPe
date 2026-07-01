@@ -18,11 +18,11 @@ function ProductsContent() {
 
   // URL parameters
   const initialSearch = searchParams.get("search") || "";
-  const initialCategory = searchParams.get("categoryId") 
-    ? Number(searchParams.get("categoryId")) 
+  const initialCategory = searchParams.get("categoryId")
+    ? Number(searchParams.get("categoryId"))
     : searchParams.get("category")
-    ? Number(searchParams.get("category"))
-    : null;
+      ? Number(searchParams.get("category"))
+      : null;
   const sortParam = searchParams.get("sort");
   let initialSort = searchParams.get("sortBy") || "CreatedAt";
   let initialDir = searchParams.get("sortDirection") || "desc";
@@ -51,7 +51,7 @@ function ProductsContent() {
   // Quick Filters State
   const [filter4Star, setFilter4Star] = useState(false);
   const [filterSale, setFilterSale] = useState(false);
-  
+
   // Sort and Page State
   const [sortBy, setSortBy] = useState(initialSort);
   const [sortDirection, setSortDirection] = useState(initialDir);
@@ -118,10 +118,10 @@ function ProductsContent() {
     if (sortBy !== "CreatedAt") params.set("sortBy", sortBy);
     if (sortDirection !== "desc") params.set("sortDirection", sortDirection);
     if (currentPage !== 1) params.set("page", currentPage.toString());
-    
+
     // Preserve the sort parameter in the URL if it's there
     if (sortParam) params.set("sort", sortParam);
-    
+
     const newUrl = params.toString() ? `/products?${params.toString()}` : "/products";
     window.history.pushState({}, "", newUrl);
   }, [activeSearch, selectedCategory, sortBy, sortDirection, currentPage, sortParam]);
@@ -129,11 +129,11 @@ function ProductsContent() {
   // Listen to searchParams changes to update states when navigation tabs change
   useEffect(() => {
     const search = searchParams.get("search") || "";
-    const category = searchParams.get("categoryId") 
-      ? Number(searchParams.get("categoryId")) 
+    const category = searchParams.get("categoryId")
+      ? Number(searchParams.get("categoryId"))
       : searchParams.get("category")
-      ? Number(searchParams.get("category"))
-      : null;
+        ? Number(searchParams.get("category"))
+        : null;
     const sort = searchParams.get("sort");
     const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
 
@@ -167,7 +167,7 @@ function ProductsContent() {
       if (filter4Star && (product.rating === undefined || product.rating < 4)) {
         return false;
       }
-      
+
       if (filterSale) {
         if (!product.discountPrice || product.discountPrice >= product.price) {
           return false;
@@ -254,16 +254,16 @@ function ProductsContent() {
       <ProductsHero sortParam={sortParam} categoryName={currentCategoryName} />
 
       {/* Main Grid Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col gap-6">
-          
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex flex-col gap-4">
+
           {/* Top Random Banner */}
           {!loading && !error && products.length > 0 && (
             <TopRandomBanner products={products} />
           )}
-          
+
           {/* Filter and Control Bar Wrapper */}
-          <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 mb-6">
+          <div className="bg-white rounded-[10px] shadow-sm border border-slate-100">
             <HorizontalFilterBar
               categories={categories}
               selectedCategory={selectedCategory}
@@ -287,7 +287,7 @@ function ProductsContent() {
           </div>
 
           {/* Product Grid */}
-          <div className="flex-1">
+          <div className="flex-1 w-full min-w-0">
 
             <ProductGrid
               loading={loading}
@@ -316,7 +316,7 @@ function ProductsContent() {
             onClick={() => setShowMobileFilters(false)}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           ></div>
-          
+
           {/* Drawer sheet */}
           <div className="relative ml-auto w-full max-w-[20rem] bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
@@ -328,7 +328,7 @@ function ProductsContent() {
                 <X size={20} />
               </button>
             </div>
-            
+
             {/* Removed FilterSidebar from Mobile view as the HorizontalFilterBar is responsive */}
             <p className="text-slate-500 mb-4">Các bộ lọc đã được hiển thị trên thanh điều hướng ngang.</p>
             <div className="mt-4 pt-4 border-t border-slate-100">

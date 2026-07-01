@@ -55,19 +55,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     );
   }
 
-  // Inject the InlineGridBanner into the product cards grid
   const elements = filteredProducts.map((product) => (
     <ProductCard key={product.id} product={product} />
   ));
 
-  if (elements.length >= 3) {
-    elements.splice(3, 0, <InlineGridBanner key="inline-banner" products={filteredProducts} />);
-  } else if (elements.length > 0) {
-    elements.push(<InlineGridBanner key="inline-banner" products={filteredProducts} />);
+  if (filteredProducts.length > 0) {
+    elements.unshift(<InlineGridBanner key="inline-banner" products={filteredProducts} />);
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 grid-flow-row-dense">
       {elements}
     </div>
   );

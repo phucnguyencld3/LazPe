@@ -289,6 +289,27 @@ export default function ProductDetailPage() {
     return product?.image || (product?.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : undefined);
   }, [activeVariant, product, selectedOptions]);
 
+  const allImageUrls = useMemo(() => {
+    if (!product) return [];
+    
+    const urls = new Set<string>();
+    
+    // Add product image and imageUrls
+    if (product.image) urls.add(product.image);
+    if (product.imageUrls) {
+      product.imageUrls.forEach(url => urls.add(url));
+    }
+    
+    // Add variant images
+    if (product.variants) {
+      product.variants.forEach(v => {
+        if (v.imageUrl) urls.add(v.imageUrl);
+      });
+    }
+    
+    return Array.from(urls);
+  }, [product]);
+
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
   
   const displayDiscountPrice = useMemo(() => {
@@ -500,7 +521,7 @@ export default function ProductDetailPage() {
               hasDiscount={hasDiscount}
               displayPrice={displayPrice}
               displayDiscountPrice={displayDiscountPrice}
-              imageUrls={product?.imageUrls}
+              imageUrls={allImageUrls}
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
               compareAction={

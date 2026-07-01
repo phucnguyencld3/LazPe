@@ -48,6 +48,8 @@ namespace PolyBabyAPI.Models
         public string CreatedBy { get; set; }
 
         public bool Status { get; set; } = true;
+        
+        public bool IsDeleted { get; set; } = false;
 
         public virtual ICollection<VariantOptionValue> VariantOptionValues { get; set; } = new List<VariantOptionValue>();
         public virtual ICollection<BundleItem> BundleItems { get; set; } = new List<BundleItem>();
