@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
@@ -154,6 +155,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [Permission("System.Config")]
         [HttpPost("force-train")]
         public async Task<IActionResult> ForceTrainModel()
         {

@@ -111,6 +111,7 @@ namespace PolyBabyAPI.Controllers
         /// Xuất file Excel báo cáo thống kê doanh thu
         /// </summary>
         [HttpGet("export-excel")]
+        [Authorize(Roles = "Admin")]
         [Permission("Report.Read")]
         public async Task<IActionResult> ExportExcel([FromQuery] StatisticsFilterDto filter)
         {
