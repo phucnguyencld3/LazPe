@@ -552,6 +552,7 @@ export default function ProductDetailPage() {
               selectedGiftId={selectedGiftId}
               setSelectedGiftId={setSelectedGiftId}
               isAddingToCart={isAddingToCart}
+              onOpenAlertModal={() => setIsAlertModalOpen(true)}
             />
           </div>
         </div>

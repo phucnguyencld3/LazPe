@@ -164,7 +164,14 @@ namespace PolyBabyAPI.Services
                             <p>Hãy nhanh tay truy cập LazPe để xem chi tiết và đặt hàng: <a href='{frontendUrl}/products/{productId}'>Xem sản phẩm</a></p>
                             <p>Trân trọng,<br/>Đội ngũ LazPe</p>
                         ";
-                        await _emailSender.SendEmailAsync(user.Email, "LazPe - Sản phẩm bạn theo dõi đã giảm giá!", emailBody);
+                        try
+                        {
+                            await _emailSender.SendEmailAsync(user.Email, "LazPe - Sản phẩm bạn theo dõi đã giảm giá!", emailBody);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to send email to {user.Email}: {ex.Message}");
+                        }
                     }
                 }
             }
@@ -235,7 +242,15 @@ namespace PolyBabyAPI.Services
                             <p>Hãy nhanh tay truy cập LazPe để xem chi tiết và đặt hàng: <a href='{frontendUrl}/products/{productId}'>Xem sản phẩm</a></p>
                             <p>Trân trọng,<br/>Đội ngũ LazPe</p>
                         ";
-                        await _emailSender.SendEmailAsync(user.Email, "LazPe - Sản phẩm bạn theo dõi đã có hàng trở lại!", emailBody);
+                        try
+                        {
+                            await _emailSender.SendEmailAsync(user.Email, "LazPe - Sản phẩm bạn theo dõi đã có hàng trở lại!", emailBody);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log and continue so the system notification isn't duplicated by Hangfire retries
+                            Console.WriteLine($"Failed to send email to {user.Email}: {ex.Message}");
+                        }
                     }
                 }
             }

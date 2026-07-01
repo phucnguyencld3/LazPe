@@ -30,6 +30,7 @@ interface ProductDetailInfoProps {
   selectedGiftId?: number | null;
   setSelectedGiftId?: (id: number | null) => void;
   isAddingToCart?: boolean;
+  onOpenAlertModal?: () => void;
 }
 
 export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
@@ -59,6 +60,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   selectedGiftId = null,
   setSelectedGiftId = () => {},
   isAddingToCart = false,
+  onOpenAlertModal,
 }) => {
   const maxAllowedQuantity = useMemo(() => {
     let limit = displayStock;
@@ -453,30 +455,42 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
           </div>
 
           <div className="flex w-full gap-2">
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-10 sm:h-11 rounded-[8px] border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
-            >
-              {isAddingToCart ? (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  <span className="truncate">Thêm giỏ hàng</span>
-                </>
-              )}
-            </button>
+            {(!displayInStock || maxAllowedQuantity <= 0) ? (
+              <button
+                onClick={onOpenAlertModal}
+                className="w-full h-10 sm:h-11 rounded-[8px] bg-slate-800 text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-slate-700 active:scale-98 transition-all shadow-md"
+              >
+                <span className="material-symbols-outlined text-[18px]">event_available</span>
+                <span className="truncate">Đặt hàng trước (Nhận thông báo)</span>
+              </button>
+            ) : (
+              <>
+                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
+                  className="w-1/2 h-10 sm:h-11 rounded-[8px] border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+                >
+                  {isAddingToCart ? (
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
+                      <span className="truncate">Thêm giỏ hàng</span>
+                    </>
+                  )}
+                </button>
 
-            {/* Buy Now Button */}
-            <button
-              onClick={handleBuyNow}
-              disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-10 sm:h-11 rounded-[8px] bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
-            >
-              <span className="truncate">Mua ngay</span>
-            </button>
+                {/* Buy Now Button */}
+                <button
+                  onClick={handleBuyNow}
+                  disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
+                  className="w-1/2 h-10 sm:h-11 rounded-[8px] bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+                >
+                  <span className="truncate">Mua ngay</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
