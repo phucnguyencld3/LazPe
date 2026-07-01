@@ -190,7 +190,7 @@ export default function CustomerChatWidget() {
     // Use our backend proxy GET /api/chatbot/tts?text=...
     const audioUrl = `${API_BASE}/api/chatbot/tts?text=${encodeURIComponent(cleanText)}`;
     const audio = new Audio(audioUrl);
-    audio.playbackRate = 1.25; // Speed up voice playback to 1.25x
+    audio.playbackRate = 1.0; // Đưa về tốc độ 1.0 để giọng nghe truyền cảm và tự nhiên như người thật
     currentAudioRef.current = audio;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
