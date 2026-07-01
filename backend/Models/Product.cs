@@ -78,29 +78,6 @@ namespace PolyBabyAPI.Models
         [ForeignKey(nameof(SupplierID))]
         public virtual Supplier? Supplier { get; set; }
 
-        [NotMapped]
-        public int TotalStock => Variants?.Sum(v => v.Stock) ?? 0;
-
-        [NotMapped]
-        public decimal MinPrice
-        {
-            get
-            {
-                var activeVariants = Variants?.Where(v => v.Status).ToList();
-                return activeVariants?.Any() == true ? activeVariants.Min(v => v.UnitPrice) : 0;
-            }
-        }
-
-        [NotMapped]
-        public decimal MaxPrice
-        {
-            get
-            {
-                var activeVariants = Variants?.Where(v => v.Status).ToList();
-                return activeVariants?.Any() == true ? activeVariants.Max(v => v.UnitPrice) : 0;
-            }
-        }
-
 
         // ✅ Thêm navigation property thiếu
         public virtual ICollection<Variant>? Variants { get; set; } = new List<Variant>();
