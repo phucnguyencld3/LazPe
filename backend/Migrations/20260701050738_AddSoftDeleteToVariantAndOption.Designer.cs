@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260701050738_AddSoftDeleteToVariantAndOption")]
+    partial class AddSoftDeleteToVariantAndOption
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1987,10 +1990,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.HasIndex("CategoryID");
 
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
                     b.HasIndex("Slug")
                         .IsUnique()
                         .HasFilter("[Slug] IS NOT NULL");
@@ -2788,10 +2787,6 @@ namespace PolyBabyAPI.Migrations
                     b.HasKey("VariantID");
 
                     b.HasIndex("ProductID");
-
-                    b.HasIndex("SKU")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Variants");
                 });
