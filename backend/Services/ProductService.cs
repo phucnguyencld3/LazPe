@@ -1165,5 +1165,70 @@ namespace PolyBabyAPI.Services
             }
             return slug;
         }
+        public async Task<ServiceResult<object>> SyncSeoFieldsAsync()
+        {
+            try
+            {
+                var productsToUpdate = await _context.Products
+                    .Where(p => string.IsNullOrEmpty(p.Slug) || string.IsNullOrEmpty(p.MetaTitle) || string.IsNullOrEmpty(p.MetaDescription))
+                    .ToListAsync();
+
+                var updatedProductsList = new List<object>();
+                
+                foreach (var product in productsToUpdate)
+                {
+                    bool isUpdated = false;
+                    
+                    if (string.IsNullOrEmpty(product.Slug))
+                    {
+                        var baseSlug = GenerateSlug(product.ProductName);
+                        product.Slug = await GenerateUniqueSlugAsync(baseSlug, product.ProductID);
+                        isUpdated = true;
+                    }
+
+                    if (string.IsNullOrEmpty(product.MetaTitle))
+                    {
+                        var title = product.ProductName ?? "";
+                        product.MetaTitle = title.Length > 255 ? title.Substring(0, 255) : title;
+                        isUpdated = true;
+                    }
+
+                    if (string.IsNullOrEmpty(product.MetaDescription))
+                    {
+                        var plainTextDesc = System.Text.RegularExpressions.Regex.Replace(product.Description ?? "", "<.*?>", String.Empty);
+                        product.MetaDescription = plainTextDesc.Length > 500 ? plainTextDesc.Substring(0, 500) : plainTextDesc;
+                        isUpdated = true;
+                    }
+
+                    if (isUpdated)
+                    {
+                        _context.Products.Update(product);
+                        await _context.SaveChangesAsync();
+                        
+                        updatedProductsList.Add(new {
+                            id = product.ProductID,
+                            name = product.ProductName,
+                            slug = product.Slug,
+                            metaTitle = product.MetaTitle,
+                            metaDescription = product.MetaDescription
+                        });
+                    }
+                }
+
+                if (updatedProductsList.Count > 0)
+                {
+                    ClearProductCache();
+                }
+
+                return ServiceResult<object>.Ok(new {
+                    count = updatedProductsList.Count,
+                    products = updatedProductsList
+                }, "Đồng bộ SEO thành công");
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<object>.Fail($"Lỗi đồng bộ SEO: {ex.Message}");
+            }
+        }
     }
 }

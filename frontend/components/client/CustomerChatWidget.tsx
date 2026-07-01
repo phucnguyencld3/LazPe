@@ -14,8 +14,8 @@ const ChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url:
   const handleProductClick = () => {
     if (data.productId || data.variantId || data.id) {
       const id = data.productId || data.variantId || data.id;
-      // In case it's a slug, we can use it. But id is usually used in routing.
-      router.push(`/products/${id}`);
+      // In case it's a slug, we can use it.
+      router.push(`/products/${data.slug || id}`);
     }
   };
 

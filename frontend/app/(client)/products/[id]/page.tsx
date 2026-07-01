@@ -21,7 +21,7 @@ import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto, Fl
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const productId = Number(params.id);
+  const slugOrId = params.id as string;
   const router = useRouter();
 
   // Core Product State
@@ -51,12 +51,12 @@ export default function ProductDetailPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await getProductDetail(productId);
+        const data = await getProductDetail(slugOrId);
         if (data) {
           setProduct(data);
           
           // Log view
-          logProductView(productId);
+          logProductView(data.id);
           
           // Fetch related products in the same category
           const related = await getProducts(1, 10, undefined, data.categoryId);
@@ -75,10 +75,10 @@ export default function ProductDetailPage() {
       }
     };
 
-    if (productId) {
+    if (slugOrId) {
       fetchDetail();
     }
-  }, [productId]);
+  }, [slugOrId]);
 
   // Fetch active flash sale
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
           
           const saleContainsProduct = (sale: FlashSaleResponseDto) => {
             return sale.flashSaleItems.some(item => {
-              if (item.itemType === 1 && item.referenceId === productId) return true;
+              if (item.itemType === 1 && item.referenceId === product.id) return true;
               if (item.itemType === 2 && product.variants?.some(v => v.variantID === item.referenceId)) return true;
               return false;
             });
@@ -116,7 +116,7 @@ export default function ProductDetailPage() {
     if (product) {
       fetchFlashSale();
     }
-  }, [product, productId]);
+  }, [product]);
 
   // Define helper to check if a variant option value is out of stock
   const isOptionValueOutOfStock = (optionName: string, value: string) => {
@@ -480,20 +480,20 @@ export default function ProductDetailPage() {
   return (
     <div className="bg-slate-50 min-h-screen py-4 sm:py-6 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <div className="px-4 sm:px-0 mt-4 sm:mt-0">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 sm:mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-[8px] border border-slate-100 shadow-sm hover:shadow active:scale-95"
-          >
-            <ArrowLeft size={16} />
-            Quay lại danh sách
-          </button>
-        </div>
-
         {/* Product Container */}
         <div className="bg-white sm:rounded-[16px] sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-6 sm:mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8">
+          {/* Breadcrumb Navigation */}
+          <div className="px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-4 pb-0">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-3 py-1.5 rounded-[8px] border border-slate-200 shadow-sm hover:shadow active:scale-95"
+            >
+              <ArrowLeft size={16} />
+              Quay lại danh sách
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
             <ProductImageGallery
               displayImage={displayImage}
               productName={product.name}
@@ -565,7 +565,7 @@ export default function ProductDetailPage() {
           relatedProducts={relatedProducts}
         />
 
-        <ProductRecommendations limit={5} excludeProductId={productId} />
+        <ProductRecommendations limit={5} excludeProductId={product.id} />
       </div>
 
       <ProductAlertModal

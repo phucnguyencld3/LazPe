@@ -60,19 +60,51 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        // POST: api/Product/sync-seo
+        [HttpPost("sync-seo")]
+        // [Authorize(Roles = "Admin")] // Bạn có thể thêm quyền nếu cần
+        public async Task<IActionResult> SyncSeoFields()
+        {
+            var result = await _productService.SyncSeoFieldsAsync();
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data
+                });
+            }
+            return BadRequest(new
+            {
+                success = false,
+                message = result.Message
+            });
+        }
+
         /// <summary>
         /// Lấy chi tiết sản phẩm cho shop (public — chỉ sản phẩm active)
         /// </summary>
-        [HttpGet("shop/{id}")]
+        [HttpGet("shop/{slugOrId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetProductDetailForShop(int id)
+        public async Task<IActionResult> GetProductDetailForShop(string slugOrId)
         {
             try
             {
-                if (id <= 0)
-                    return BadRequest(new { success = false, message = "ID sản phẩm không hợp lệ" });
+                if (string.IsNullOrWhiteSpace(slugOrId))
+                    return BadRequest(new { success = false, message = "Thông tin không hợp lệ" });
 
-                var product = await _productService.GetProductDetailAsync(id);
+                ProductDetailDto product = null;
+
+                // Try getting by slug first
+                product = await _productService.GetProductBySlugAsync(slugOrId);
+
+                // If not found, try parsing as ID and get by ID
+                if (product == null && int.TryParse(slugOrId, out int id))
+                {
+                    product = await _productService.GetProductDetailAsync(id);
+                }
+
                 if (product == null)
                     return NotFound(new { success = false, message = "Không tìm thấy sản phẩm" });
 
@@ -85,7 +117,7 @@ namespace PolyBabyAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting shop product detail {ProductId}", id);
+                _logger.LogError(ex, "Error getting shop product detail {SlugOrId}", slugOrId);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
             }
         }
