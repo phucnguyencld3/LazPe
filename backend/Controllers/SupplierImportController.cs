@@ -12,7 +12,7 @@ namespace PolyBabyAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class SupplierImportController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -60,7 +60,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/SupplierImport/validate
         // ─────────────────────────────────────────────
         [HttpPost("validate")]
-        [Permission("Supplier.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ValidateImport(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -144,7 +144,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/SupplierImport/commit
         // ─────────────────────────────────────────────
         [HttpPost("commit")]
-        [Permission("Supplier.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CommitImport([FromBody] SupplierImportCommitRequestDto request)
         {
             if (request == null || !request.Suppliers.Any())

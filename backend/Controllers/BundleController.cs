@@ -182,6 +182,7 @@ namespace PolyBabyAPI.Controllers
         /// Xuất danh sách Combo sản phẩm ra Excel
         /// </summary>
         [HttpGet("export-excel")]
+        [Authorize(Roles = "Admin")]
         [Permission("Bundle.Read")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] string searchTerm = "",

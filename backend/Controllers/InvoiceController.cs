@@ -324,7 +324,8 @@ namespace PolyBabyAPI.Controllers
         /// Xuất danh sách hóa đơn ra Excel
         /// </summary>
         [HttpGet("export")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
+        [Permission("Order.Read")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] string? search,
             [FromQuery] OrderStatus? status,
