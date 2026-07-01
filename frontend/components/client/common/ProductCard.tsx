@@ -24,7 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <>
     <div 
-      onClick={() => router.push(product.isBundle ? `/bundles/${product.id}` : `/products/${product.id}`)} 
+      onClick={() => router.push(product.isBundle ? `/bundles/${product.slug || product.id}` : `/products/${product.slug || product.id}`)} 
       className="h-full flex flex-col"
     >
       <div className={`bg-white rounded-[10px] shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group flex flex-col flex-grow h-full justify-between ${product.limitExceeded || !product.inStock ? "opacity-60 grayscale-[50%]" : ""}`}>

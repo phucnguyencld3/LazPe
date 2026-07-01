@@ -347,7 +347,7 @@ export default function WishlistPage() {
 
                     <div className="mt-auto pt-3 border-t border-slate-50 flex flex-col gap-1.5">
                       <Link
-                        href={`/products/${product.id}`}
+                        href={`/products/${product.slug || product.id}`}
                         className="w-full text-center bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs py-2 rounded-md border border-slate-200 transition-colors shadow-sm"
                       >
                         Xem chi tiết sản phẩm
@@ -425,7 +425,7 @@ export default function WishlistPage() {
 
                     <div className="mt-auto pt-3 border-t border-slate-50 flex flex-col">
                       <Link
-                        href={`/products/${product.id}`}
+                        href={`/products/${product.slug || product.id}`}
                         className="w-full text-center bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs py-2 rounded-md border border-slate-200 transition-colors shadow-sm"
                       >
                         Xem chi tiết sản phẩm

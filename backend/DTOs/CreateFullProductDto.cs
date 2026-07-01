@@ -7,12 +7,17 @@ namespace PolyBabyAPI.DTOs
         [StringLength(50)]
         public string? Code { get; set; }
 
+        public string? Slug { get; set; }
+
         [Required(ErrorMessage = "Tên sản phẩm là bắt buộc")]
         [StringLength(200, ErrorMessage = "Tên không được vượt quá 200 ký tự")]
         public string ProductName { get; set; } = string.Empty;
 
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string Description { get; set; } = string.Empty;
+
+        public string? MetaTitle { get; set; }
+        public string? MetaDescription { get; set; }
 
         public string? Specifications { get; set; }
 

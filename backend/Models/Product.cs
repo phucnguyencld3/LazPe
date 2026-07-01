@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace PolyBabyAPI.Models
 {
+    [Index(nameof(Slug), IsUnique = true)]
     public class Product
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -44,6 +46,30 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Ngày tạo")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; }
+
+        // SEO Optimization
+        [StringLength(255)]
+        [Display(Name = "Đường dẫn thân thiện (Slug)")]
+        public string? Slug { get; set; }
+
+        [StringLength(255)]
+        [Display(Name = "Tiêu đề SEO")]
+        public string? MetaTitle { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Mô tả SEO")]
+        public string? MetaDescription { get; set; }
+
+        // Rating Cache
+        [Display(Name = "Điểm đánh giá trung bình")]
+        public double AverageRating { get; set; } = 0;
+
+        [Display(Name = "Số lượng đánh giá")]
+        public int ReviewCount { get; set; } = 0;
+
+        // Soft Delete
+        [Display(Name = "Đã xóa")]
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation
         [ForeignKey(nameof(CategoryID))]

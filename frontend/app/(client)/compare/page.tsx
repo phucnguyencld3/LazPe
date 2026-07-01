@@ -199,19 +199,18 @@ function ComparePageContent() {
                     <X size={14} />
                   </button>
                   <div className="flex items-start gap-3 text-left w-full pr-4">
-                    <Link href={`/products/${product.id}`} className="shrink-0 block">
-                      <div className="bg-slate-50 rounded-xl overflow-hidden relative w-16 h-16 sm:w-20 sm:h-20">
-                        <Image
-                          src={getProductImage(product)}
-                          alt={product.name}
-                          fill
-                          className="object-contain p-1.5 mix-blend-multiply group-hover:scale-105 transition-transform"
+                    <Link href={`/products/${product.slug || product.id}`} className="shrink-0 block">
+                      <div className="w-16 h-16 rounded-[8px] bg-slate-50 flex items-center justify-center p-2 border border-slate-100 group-hover:border-primary/30 transition-colors">
+                        <img 
+                          src={product.image || product.imageUrls?.[0] || "/assets/img/products/default-product.jpg"} 
+                          alt={product.name} 
+                          className="w-full h-full object-contain mix-blend-multiply"
                         />
                       </div>
                     </Link>
 
                     <div className="flex flex-col flex-1 min-w-0">
-                      <Link href={`/products/${product.id}`} className="block">
+                      <Link href={`/products/${product.slug || product.id}`} className="block">
                         <div className="text-[10px] text-primary font-bold uppercase tracking-wider mb-0.5 truncate">
                           {product.categoryName}
                         </div>

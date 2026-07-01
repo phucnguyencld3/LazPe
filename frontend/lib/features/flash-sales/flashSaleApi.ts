@@ -63,6 +63,7 @@ export interface FlashSaleItemResponseDto {
   itemType: FlashSaleItemType;
   referenceId: number;
   itemName: string;
+  slug?: string;
   sku?: string;
   imageUrl?: string;
   originalPrice: number;
