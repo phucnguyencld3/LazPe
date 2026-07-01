@@ -175,6 +175,7 @@ export interface AdminProductOption {
 export interface AdminProductDetailInfo {
   productID: number;
   code: string;
+  slug?: string;
   productName: string;
   description: string;
   specifications?: string;

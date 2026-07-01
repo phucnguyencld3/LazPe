@@ -194,7 +194,7 @@ export default function PublicWishlistPage() {
                     {/* Actions */}
                     <div className="mt-auto pt-3 border-t border-slate-50 flex flex-col gap-2">
                       <Link
-                        href={`/products/${product.id}`}
+                        href={`/products/${product.slug || product.id}`}
                         className="w-full text-center bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-2 rounded-md transition-colors shadow-sm"
                       >
                         Xem chi tiết sản phẩm

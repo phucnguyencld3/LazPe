@@ -124,7 +124,7 @@ export default function ProductCarousel({ products, showRank = false }: ProductC
                   e.stopPropagation();
                 } else {
                   // Navigate manually if not dragging
-                  router.push(`/products/${p.id}`);
+                  router.push(p.isBundle ? `/bundles/${p.slug || p.id}` : `/products/${p.slug || p.id}`);
                 }
               }}
             ></div>

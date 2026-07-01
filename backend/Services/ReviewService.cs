@@ -102,6 +102,8 @@ namespace PolyBabyAPI.Services
                 }
             }
 
+            await UpdateProductRatingCacheAsync(review.VariantID);
+
             return await GetReviewByIdAsync(review.ReviewID) ?? review;
         }
 
@@ -224,6 +226,8 @@ namespace PolyBabyAPI.Services
                 }
             }
 
+            await UpdateProductRatingCacheAsync(review.VariantID);
+
             return true;
         }
 
@@ -264,6 +268,9 @@ namespace PolyBabyAPI.Services
             _context.Reviews.Remove(review);
 
             await _context.SaveChangesAsync();
+
+            await UpdateProductRatingCacheAsync(review.VariantID);
+
             return true;
         }
 
@@ -530,6 +537,8 @@ namespace PolyBabyAPI.Services
                 }
             }
 
+            await UpdateProductRatingCacheAsync(review.VariantID);
+
             return await GetReviewByIdAsync(review.ReviewID) ?? review;
         }
 
@@ -734,6 +743,35 @@ namespace PolyBabyAPI.Services
                 query = query.Where(r => r.VariantID == variantId.Value);
 
             return await query.CountAsync();
+        }
+
+        private async Task UpdateProductRatingCacheAsync(int? variantId)
+        {
+            if (!variantId.HasValue || variantId.Value <= 0) return;
+
+            var variant = await _context.Variants.AsNoTracking().FirstOrDefaultAsync(v => v.VariantID == variantId.Value);
+            if (variant != null)
+            {
+                var productId = variant.ProductID;
+                
+                var stats = await _context.Reviews
+                    .Where(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == productId)
+                    .GroupBy(r => r.Variant!.ProductID)
+                    .Select(g => new
+                    {
+                        AverageRating = g.Average(r => (double)r.Rating),
+                        RatingCount = g.Count()
+                    })
+                    .FirstOrDefaultAsync();
+
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductID == productId);
+                if (product != null)
+                {
+                    product.AverageRating = stats != null ? Math.Round(stats.AverageRating, 1) : 0;
+                    product.ReviewCount = stats?.RatingCount ?? 0;
+                    await _context.SaveChangesAsync();
+                }
+            }
         }
 
         #endregion
@@ -944,6 +982,9 @@ namespace PolyBabyAPI.Services
 
             review.IsHidden = true;
             await _context.SaveChangesAsync();
+
+            await UpdateProductRatingCacheAsync(review.VariantID);
+
             return true;
         }
 
@@ -954,6 +995,9 @@ namespace PolyBabyAPI.Services
 
             review.IsHidden = false;
             await _context.SaveChangesAsync();
+
+            await UpdateProductRatingCacheAsync(review.VariantID);
+
             return true;
         }
 
@@ -1122,6 +1166,8 @@ namespace PolyBabyAPI.Services
             {
                 _logger.LogError(ex, "Lỗi khi gửi thông báo kiểm duyệt cho user {UserId}", review.UserID);
             }
+
+            await UpdateProductRatingCacheAsync(review.VariantID);
 
             return true;
         }

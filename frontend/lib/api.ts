@@ -42,8 +42,9 @@ export async function getRecommendations(limit: number = 24): Promise<Product[]>
     const json = await response.json();
     if (json.success && json.data) {
       return json.data.map((item: any) => ({
-        id: item.productId,
-        name: item.productName,
+        id: item.productID ?? item.productId ?? item.id,
+        slug: item.slug,
+        name: item.productName ?? item.name,
         price: item.price,
         discountPrice: item.discountPrice,
         image: item.imageUrl,
@@ -131,6 +132,7 @@ export async function getProducts(
       return {
         items: productsList.map((item: any) => ({
           id: item.productID ?? item.productId ?? item.id,
+          slug: item.slug,
           name: item.productName ?? item.name,
           description: item.description ?? "",
           price: item.price ?? 0,
@@ -191,7 +193,7 @@ export async function getCurrentFlashSales(): Promise<FlashSaleCampaign[] | null
 }
 
 
-export async function getProductDetail(id: number): Promise<Product | null> {
+export async function getProductDetail(id: number | string): Promise<Product | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/product/shop/${id}`, {
       method: "GET",
@@ -232,6 +234,7 @@ export async function getProductDetail(id: number): Promise<Product | null> {
 
       return {
         id: item.productID ?? item.productId ?? item.id,
+        slug: item.slug,
         name: item.productName ?? item.name,
         description: item.description ?? "",
         price: item.price ?? 0,

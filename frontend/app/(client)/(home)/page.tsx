@@ -265,7 +265,7 @@ export default function HomePageV2() {
         ) : null}
 
       {/* Sản phẩm Bán Chạy */}
-      <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 mb-6">
+      <div className="bg-white rounded-[10px] shadow-sm px-5 pt-5 pb-1 md:px-6 md:pt-6 md:pb-2 mb-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl text-slate-800">🔥 Top 10 Bán Chạy Nhất</h3>
         </div>
@@ -279,7 +279,7 @@ export default function HomePageV2() {
       </div>
 
       {/* Sản phẩm Được Yêu Thích Nhất */}
-      <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6 mb-6">
+      <div className="bg-white rounded-[10px] shadow-sm px-5 pt-5 pb-1 md:px-6 md:pt-6 md:pb-2 mb-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl text-slate-800">💖 Top Sản Phẩm Được Yêu Thích Nhất</h3>
         </div>
