@@ -11,10 +11,16 @@ namespace PolyBabyAPI.Services
     public class VnPayService : IVnPayService
     {
         private readonly VnPayOptions _options;
+        private readonly ILogger<VnPayService> _logger;
 
-        public VnPayService(IOptions<VnPayOptions> options)
+        public VnPayService(IOptions<VnPayOptions> options, ILogger<VnPayService> logger)
         {
             _options = options.Value;
+            _logger = logger;
+            
+            // Hardcode to bypass ghost environment variables
+            _options.TmnCode = "SN9SKB7O";
+            _options.HashSecret = "DJSHC6QYJKK1URBBE91KLB1A3U0PT42Y";
         }
 
         public string CreatePaymentUrl(HttpContext context, int invoiceId, decimal amount, string orderInfo)
