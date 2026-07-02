@@ -18,12 +18,12 @@ export const CompareFloatingBar = () => {
     return (
       <button 
         onClick={() => setIsCollapsed(false)}
-        className="fixed bottom-[168px] right-6 z-[45] w-14 h-14 bg-white text-slate-700 border border-slate-200 rounded-2xl shadow-lg flex items-center justify-center hover:text-primary hover:border-primary/50 hover:-translate-y-1 active:scale-95 transition-all duration-300 group"
+        className="fixed bottom-[168px] right-6 z-[45] w-14 h-14 bg-gradient-to-tr from-primary to-primary/80 text-white border-0 rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:from-primary/90 hover:to-primary/70 hover:-translate-y-1 active:scale-95 transition-all duration-300 group"
         title="Mở thanh so sánh"
       >
         <div className="relative flex items-center justify-center w-full h-full">
-          <Scale size={24} className="group-hover:scale-110 transition-transform text-slate-600 group-hover:text-primary" />
-          <span className="absolute top-1.5 right-1.5 min-w-[20px] h-[20px] px-1 bg-rose-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-sm">
+          <Scale size={24} className="group-hover:scale-110 transition-transform text-white group-hover:text-white" />
+          <span className="absolute top-1.5 right-1.5 min-w-[20px] h-[20px] px-1 bg-rose-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-sm border border-white">
             {compareItems.length}
           </span>
         </div>

@@ -294,6 +294,7 @@ namespace PolyBabyAPI.Services
                             .Select(p => new
                             {
                                 p.ProductID,
+                                p.Slug,
                                 p.ProductName,
                                 Category = p.Category != null ? p.Category.CategoryName : "",
                                 Description = p.Description != null && p.Description.Length > 200 ? p.Description.Substring(0, 200) + "..." : p.Description,
@@ -678,9 +679,9 @@ namespace PolyBabyAPI.Services
                                "Khi khách hàng hỏi xem CÁC VOUCHER/MÃ GIẢM GIÁ (ví dụ: 'có voucher nào', 'mã giảm giá trang chủ', 'voucher trong ví'), HÃY DÙNG get_active_vouchers cho voucher công khai và get_customer_vouchers cho voucher trong ví. " +
                                "LƯU Ý QUAN TRỌNG KHI THÊM GIỎ HÀNG: Khi khách yêu cầu thêm 1 sản phẩm cụ thể vào giỏ hàng (ví dụ: 'thêm bỉm size L', 'mua sữa này'), DO LỊCH SỬ CHAT KHÔNG LƯU MÃ VARIANT_ID, BẠN BẮT BUỘC PHẢI GỌI CÔNG CỤ search_products MỘT LẦN NỮA để tìm đúng sản phẩm đó và lấy được chính xác variantId của loại khách chọn, SAU ĐÓ mới dùng công cụ add_to_cart. TUYỆT ĐỐI KHÔNG TỰ ĐOÁN MÒ MÃ variantId hoặc dùng sai mã của sản phẩm khác.\n\n" +
                                "LƯU Ý QUAN TRỌNG VỀ HIỂN THỊ SẢN PHẨM:\n" +
-                               "1. BẤT CỨ KHI NÀO bạn nhắc đến, gợi ý, hoặc hiển thị thông tin sản phẩm (dù là 1 sản phẩm hay danh sách nhiều sản phẩm), BẠN BẮT BUỘC PHẢI DÙNG MARKDOWN CODE BLOCK với ngôn ngữ `product_card` CHO TỪNG SẢN PHẨM ĐÓ thay vì chỉ viết tên chay. Nội dung bên trong mỗi block phải là JSON CHUẨN chứa các trường: `productId`, `variantId`, `name`, `price`, `imageUrl`. Ví dụ:\n" +
+                               "1. BẤT CỨ KHI NÀO bạn nhắc đến, gợi ý, hoặc hiển thị thông tin sản phẩm (dù là 1 sản phẩm hay danh sách nhiều sản phẩm), BẠN BẮT BUỘC PHẢI DÙNG MARKDOWN CODE BLOCK với ngôn ngữ `product_card` CHO TỪNG SẢN PHẨM ĐÓ thay vì chỉ viết tên chay. Nội dung bên trong mỗi block phải là JSON CHUẨN chứa các trường: `productId`, `slug`, `variantId`, `name`, `price`, `imageUrl`. Ví dụ:\n" +
                                "```product_card\n" +
-                               "{ \"productId\": 1, \"variantId\": 10, \"name\": \"Sữa bột\", \"price\": 500000, \"imageUrl\": \"url_anh\" }\n" +
+                               "{ \"productId\": 1, \"slug\": \"sua-bot\", \"variantId\": 10, \"name\": \"Sữa bột\", \"price\": 500000, \"imageUrl\": \"url_anh\" }\n" +
                                "```\n" +
                                "Nếu hiển thị nhiều sản phẩm, hãy xuất ra nhiều block `product_card` riêng biệt.\n" +
                                "2. NẾU khách hàng CHỈ YÊU CẦU XEM HÌNH ẢNH (ví dụ: 'cho mình xem ảnh', 'hình sản phẩm đâu') và không cần thông tin mua sắm: có thể dùng Markdown `![Tên ảnh](URL)`.\n\n";

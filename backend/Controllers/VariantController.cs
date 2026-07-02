@@ -223,6 +223,11 @@ namespace PolyBabyAPI.Controllers
                 if (finalPrice < 0)
                     return BadRequest(new { message = "Giá biến thể không được âm" });
 
+                if (!string.IsNullOrWhiteSpace(dto.SKU) && await _context.Variants.AnyAsync(v => v.SKU == dto.SKU && !v.IsDeleted))
+                {
+                    return BadRequest(new { message = $"Mã SKU '{dto.SKU}' đã tồn tại" });
+                }
+
                 string sku = dto.SKU;
                 if (string.IsNullOrWhiteSpace(sku))
                 {
@@ -381,6 +386,12 @@ namespace PolyBabyAPI.Controllers
 
                         decimal calculatedPrice = product.Price + selectedOptionValues.Sum(v => v.Price);
                         decimal finalPrice = calculatedPrice;
+
+                        if (!string.IsNullOrWhiteSpace(dto.SKU) && await _context.Variants.AnyAsync(v => v.SKU == dto.SKU && !v.IsDeleted))
+                        {
+                            errors.Add($"Biến thể '{dto.Name}': Mã SKU '{dto.SKU}' đã tồn tại");
+                            continue;
+                        }
 
                         // Generate SKU if not provided
                         string sku = dto.SKU;

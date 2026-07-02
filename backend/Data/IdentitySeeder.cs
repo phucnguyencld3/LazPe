@@ -158,7 +158,11 @@ namespace PolyBabyAPI.Data
                 new { Resource = "FlashSale", Action = "Create", Description = "Tạo chiến dịch Flash Sale" },
                 new { Resource = "FlashSale", Action = "Read", Description = "Xem chiến dịch Flash Sale" },
                 new { Resource = "FlashSale", Action = "Update", Description = "Cập nhật chiến dịch Flash Sale" },
-                new { Resource = "FlashSale", Action = "Delete", Description = "Xóa chiến dịch Flash Sale" }
+                new { Resource = "FlashSale", Action = "Delete", Description = "Xóa chiến dịch Flash Sale" },
+                new { Resource = "Chat", Action = "Manage", Description = "Quản lý Chat" },
+                new { Resource = "Withdraw", Action = "Read", Description = "Xem yêu cầu rút tiền" },
+                new { Resource = "Withdraw", Action = "Update", Description = "Xử lý yêu cầu rút tiền" },
+                new { Resource = "System", Action = "Audit", Description = "Xem nhật ký hệ thống" }
             };
 
             var existingPermissions = await permissionService.GetAllPermissionsAsync();

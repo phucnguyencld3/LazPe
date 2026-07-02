@@ -13,7 +13,7 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
     <>
       {/* Related Products Grid */}
       {relatedProducts.length > 0 && (
-        <section className="mt-16">
+        <section className="mt-3">
           <h2 className="font-headline-lg text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2">
             Sản phẩm tương tự
           </h2>

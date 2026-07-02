@@ -327,7 +327,7 @@ export default function HeaderV2() {
                       {suggestions.map((product) => (
                         <li key={product.id}>
                           <Link
-                            href={`/products/${product.id}`}
+                            href={`/products/${product.slug || product.id}`}
                             className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors"
                             onClick={() => setShowSuggestions(false)}
                           >

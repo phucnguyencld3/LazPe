@@ -414,7 +414,7 @@ namespace PolyBabyAPI.Controllers
                     ProductID = detail.Variant.Product.ProductID,
                     Name = detail.Variant.Product.ProductName,
                     ImageUrl = GetProductImageUrl(detail.Variant.Product),
-                    Slug = GenerateProductSlug(detail.Variant.Product.ProductName)
+                    Slug = !string.IsNullOrEmpty(detail.Variant.Product.Slug) ? detail.Variant.Product.Slug : GenerateProductSlug(detail.Variant.Product.ProductName)
                 } : null,
                 Variant = detail.Variant != null ? new VariantCartDto
                 {

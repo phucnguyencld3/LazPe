@@ -89,7 +89,9 @@ export function useBanners(position: string) {
       .withAutomaticReconnect()
       .build();
 
-    connection.start()
+    const startPromise = connection.start();
+
+    startPromise
       .then(() => {
         console.log('Connected to BannerHub');
         connection.on('BannerUpdated', (updatedPosition: string) => {
@@ -102,14 +104,21 @@ export function useBanners(position: string) {
           }
         });
       })
-      .catch(err => console.error('SignalR BannerHub Connection Error: ', err));
+      .catch(err => {
+        if (err?.message?.includes('stopped during negotiation')) return;
+        console.error('SignalR BannerHub Connection Error: ', err);
+      });
 
     connectionRef.current = connection;
 
     return () => {
       if (connectionRef.current) {
         connectionRef.current.off('BannerUpdated');
-        connectionRef.current.stop();
+        // Wait for connection to finish starting before stopping 
+        // to prevent "stopped during negotiation" error in React Strict Mode
+        startPromise.then(() => {
+          connection.stop();
+        }).catch(() => {});
       }
     };
   }, [position]);

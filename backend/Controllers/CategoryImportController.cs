@@ -12,7 +12,7 @@ namespace PolyBabyAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class CategoryImportController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -65,7 +65,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/CategoryImport/validate
         // ─────────────────────────────────────────────
         [HttpPost("validate")]
-        [Permission("Category.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ValidateImport(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -195,7 +195,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/CategoryImport/commit
         // ─────────────────────────────────────────────
         [HttpPost("commit")]
-        [Permission("Category.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CommitImport([FromBody] CategoryImportCommitRequestDto request)
         {
             if (request == null || !request.Categories.Any())

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
@@ -52,6 +53,7 @@ namespace PolyBabyAPI.Controllers
                     .Select(p => new
                     {
                         p.ProductID,
+                        p.Slug,
                         p.ProductName,
                         p.Price,
                         DiscountPrice = p.ProductDiscountPercent > 0 ? (decimal?)(p.Price * (1 - p.ProductDiscountPercent / 100)) : null,
@@ -153,6 +155,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [Permission("System.Config")]
         [HttpPost("force-train")]
         public async Task<IActionResult> ForceTrainModel()
         {

@@ -13,6 +13,7 @@ using System.IO;
 
 using Microsoft.AspNetCore.SignalR;
 using PolyBabyAPI.Hubs;
+using Google.Cloud.TextToSpeech.V1;
 
 namespace PolyBabyAPI.Controllers
 {
@@ -170,59 +171,36 @@ namespace PolyBabyAPI.Controllers
 
             try
             {
-                using (var client = new HttpClient())
+                var credentialsPath = _configuration["GoogleCloud:CredentialsPath"];
+                if (string.IsNullOrEmpty(credentialsPath) || !System.IO.File.Exists(credentialsPath))
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                    
-                    // Split text into chunks of <= 150 chars to avoid Translate API limits
-                    var chunks = SplitTextIntoChunks(text, 150);
-                    var allAudioBytes = new List<byte>();
-
-                    foreach (var chunk in chunks)
-                    {
-                        var encodedText = Uri.EscapeDataString(chunk);
-                        var url = $"https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q={encodedText}";
-                        var responseBytes = await client.GetByteArrayAsync(url);
-                        allAudioBytes.AddRange(responseBytes);
-                    }
-
-                    return File(allAudioBytes.ToArray(), "audio/mpeg");
+                    return StatusCode(500, new { message = "Google Cloud Credentials not configured or file not found." });
                 }
+
+                var clientBuilder = new TextToSpeechClientBuilder
+                {
+                    CredentialsPath = credentialsPath
+                };
+                var client = await clientBuilder.BuildAsync();
+
+                var input = new SynthesisInput { Text = text };
+                var voice = new VoiceSelectionParams
+                {
+                    LanguageCode = "vi-VN",
+                    Name = "vi-VN-Neural2-A" // Sử dụng giọng Neural2 cao cấp, cực kỳ tự nhiên, ít "đậm chất AI" nhất
+                };
+                var audioConfig = new AudioConfig
+                {
+                    AudioEncoding = AudioEncoding.Mp3
+                };
+
+                var response = await client.SynthesizeSpeechAsync(input, voice, audioConfig);
+                return File(response.AudioContent.ToByteArray(), "audio/mpeg");
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi tạo giọng nói", error = ex.Message });
             }
-        }
-
-        private List<string> SplitTextIntoChunks(string text, int maxLen)
-        {
-            var chunks = new List<string>();
-            if (string.IsNullOrEmpty(text)) return chunks;
-
-            var words = text.Split(' ');
-            var currentChunk = new StringBuilder();
-
-            foreach (var word in words)
-            {
-                if (currentChunk.Length + word.Length + 1 > maxLen)
-                {
-                    chunks.Add(currentChunk.ToString());
-                    currentChunk.Clear();
-                }
-                if (currentChunk.Length > 0)
-                {
-                    currentChunk.Append(" ");
-                }
-                currentChunk.Append(word);
-            }
-
-            if (currentChunk.Length > 0)
-            {
-                chunks.Add(currentChunk.ToString());
-            }
-
-            return chunks;
         }
     }
 
