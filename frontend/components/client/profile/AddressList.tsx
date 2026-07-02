@@ -1,6 +1,7 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
 import { AddressItem } from "@/lib/api";
+import { formatLocationName } from "@/lib/utils/formatters";
 
 interface AddressListProps {
   addresses: AddressItem[];
@@ -17,12 +18,18 @@ export function AddressList({ addresses, onAddClick, onEditClick, onDeleteClick,
         <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-base">location_on</span> Địa chỉ giao hàng
         </h2>
-        <button
-          onClick={onAddClick}
-          className="bg-primary hover:bg-primary/90 text-white px-3.5 py-1.5 rounded-[6px] font-bold flex items-center gap-1.5 active:scale-95 shadow-sm text-[11px] transition-all"
-        >
-          <span className="material-symbols-outlined text-[13px] font-bold">add</span> Thêm địa chỉ mới
-        </button>
+        {addresses.length >= 4 ? (
+          <div className="bg-slate-50 text-slate-500 px-3.5 py-1.5 rounded-[6px] text-[11px] font-bold border border-slate-200 flex items-center gap-1.5 cursor-not-allowed" title="Mỗi tài khoản chỉ được tạo tối đa 4 địa chỉ">
+            <span className="material-symbols-outlined text-[13px] font-bold text-slate-400">lock</span> Đã đạt giới hạn (4/4)
+          </div>
+        ) : (
+          <button
+            onClick={onAddClick}
+            className="bg-primary hover:bg-primary/90 text-white px-3.5 py-1.5 rounded-[6px] font-bold flex items-center gap-1.5 active:scale-95 shadow-sm text-[11px] transition-all"
+          >
+            <span className="material-symbols-outlined text-[13px] font-bold">add</span> Thêm địa chỉ mới
+          </button>
+        )}
       </div>
 
       <div className="space-y-3 pt-1">
@@ -30,7 +37,7 @@ export function AddressList({ addresses, onAddClick, onEditClick, onDeleteClick,
           addresses.map((address) => (
             <div
               key={address.addressID}
-              className={`border rounded-[8px] p-3.5 flex flex-col md:flex-row justify-between gap-3 relative overflow-hidden transition-all duration-200 group ${address.isDefault
+              className={`border rounded-[8px] px-3.5 py-2 flex flex-col md:flex-row justify-between gap-3 relative overflow-hidden transition-all duration-200 group ${address.isDefault
                   ? "border-primary/30 bg-primary/5 shadow-sm"
                   : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm"
                 }`}
@@ -48,10 +55,10 @@ export function AddressList({ addresses, onAddClick, onEditClick, onDeleteClick,
                     {address.phoneNumber}
                   </span>
                 </div>
-                <p className="text-slate-500 text-[11px] font-medium leading-relaxed">
-                  {address.detailAddress}
+                <p className="text-slate-500 text-[11px] font-medium leading-relaxed mt-0.5">
+                  {[formatLocationName(address.ward), formatLocationName(address.district), formatLocationName(address.province)].filter(Boolean).join(', ')}
                   <br />
-                  {address.ward}, {address.district}, {address.province}
+                  {address.detailAddress}
                   {address.apiVersion === "v1" && (
                     <span className="ml-2 text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded uppercase font-bold">V1</span>
                   )}

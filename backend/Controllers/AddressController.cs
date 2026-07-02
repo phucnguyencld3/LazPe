@@ -214,19 +214,23 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi Ward
-                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
-                if (ward == null)
+                Ward? ward = null;
+                if (!string.IsNullOrEmpty(dto.WardCode))
                 {
-                    ward = new Ward
+                    ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
+                    if (ward == null)
                     {
-                        Code = dto.WardCode,
-                        Name = dto.WardName,
-                        DistrictID = district.DistrictID,
-                        IsActive = true,
-                        ApiVersion = dto.ApiVersion
-                    };
-                    _context.Wards.Add(ward);
-                    await _context.SaveChangesAsync();
+                        ward = new Ward
+                        {
+                            Code = dto.WardCode,
+                            Name = dto.WardName ?? "",
+                            DistrictID = district.DistrictID,
+                            IsActive = true,
+                            ApiVersion = dto.ApiVersion
+                        };
+                        _context.Wards.Add(ward);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 // Tạo địa chỉ mới
@@ -237,7 +241,7 @@ namespace PolyBabyAPI.Controllers
                     PhoneNumber = dto.PhoneNumber,
                     ProvinceID = province.ProvinceID,
                     DistrictID = district.DistrictID,
-                    WardID = ward.WardID,
+                    WardID = ward?.WardID,
                     StreetAddress = dto.DetailAddress,
                     IsDefault = dto.IsDefault,
                     CreatedAt = DateTime.Now
@@ -335,19 +339,23 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 // Tìm hoặc tự động tạo mới bản ghi Ward
-                var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
-                if (ward == null)
+                Ward? ward = null;
+                if (!string.IsNullOrEmpty(dto.WardCode))
                 {
-                    ward = new Ward
+                    ward = await _context.Wards.FirstOrDefaultAsync(w => w.Code == dto.WardCode && w.ApiVersion == dto.ApiVersion);
+                    if (ward == null)
                     {
-                        Code = dto.WardCode,
-                        Name = dto.WardName,
-                        DistrictID = district.DistrictID,
-                        IsActive = true,
-                        ApiVersion = dto.ApiVersion
-                    };
-                    _context.Wards.Add(ward);
-                    await _context.SaveChangesAsync();
+                        ward = new Ward
+                        {
+                            Code = dto.WardCode,
+                            Name = dto.WardName ?? "",
+                            DistrictID = district.DistrictID,
+                            IsActive = true,
+                            ApiVersion = dto.ApiVersion
+                        };
+                        _context.Wards.Add(ward);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 // Cập nhật thông tin
@@ -355,7 +363,7 @@ namespace PolyBabyAPI.Controllers
                 address.PhoneNumber = dto.PhoneNumber;
                 address.ProvinceID = province.ProvinceID;
                 address.DistrictID = district.DistrictID;
-                address.WardID = ward.WardID;
+                address.WardID = ward?.WardID;
                 address.StreetAddress = dto.DetailAddress;
                 address.IsDefault = dto.IsDefault;
 
@@ -593,11 +601,9 @@ namespace PolyBabyAPI.Controllers
 
         public string? DistrictName { get; set; }
 
-        [Required(ErrorMessage = "Mã phường/xã là bắt buộc")]
-        public string WardCode { get; set; } = "";
+        public string? WardCode { get; set; }
 
-        [Required(ErrorMessage = "Tên phường/xã là bắt buộc")]
-        public string WardName { get; set; } = "";
+        public string? WardName { get; set; }
 
         [Required(ErrorMessage = "Địa chỉ chi tiết là bắt buộc")]
         [MaxLength(500, ErrorMessage = "Địa chỉ chi tiết không được quá 500 ký tự")]

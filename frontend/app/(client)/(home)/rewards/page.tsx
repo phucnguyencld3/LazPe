@@ -7,6 +7,7 @@ import { getCheckInStatus, performCheckIn, DailyCheckInStatus } from "@/lib/api"
 import { Gift, CheckCircle, Calendar, Sparkles, AlertCircle, ChevronLeft } from "lucide-react";
 import confetti from "canvas-confetti";
 import Link from "next/link";
+import LuckyWheelWidget from "@/components/client/lucky-wheel/LuckyWheelWidget";
 
 export default function RewardsPage() {
   const router = useRouter();
@@ -161,12 +162,12 @@ export default function RewardsPage() {
           <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-orange-200 bg-white shadow-sm mb-2 text-orange-500">
             <Calendar className="w-4 h-4" />
           </div>
-          <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 mb-1">Điểm Danh Hàng Ngày</h2>
+          <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 mb-1">Trung Tâm Nhận Thưởng</h2>
           <p className="text-[13px] text-slate-500">
             Chuỗi điểm danh của bạn đang là <strong className="text-orange-500 text-sm mx-0.5">{status?.currentStreak || 0}</strong> ngày liên tiếp.
           </p>
           <p className="text-[11px] text-slate-400 mt-2 flex items-center justify-center gap-1 font-medium">
-            <AlertCircle size={13} /> Đừng bỏ lỡ ngày nào để nhận tối đa 100 xu vào ngày thứ 7 nhé!
+            <AlertCircle size={13} /> Đừng bỏ lỡ ngày nào để nhận tối đa 300 xu vào ngày thứ 7 nhé!
           </p>
         </div>
 
@@ -201,6 +202,17 @@ export default function RewardsPage() {
                 )}
               </span>
             </button>
+          </div>
+
+          {/* Lucky Wheel Banner */}
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            {token ? (
+              <LuckyWheelWidget token={token} />
+            ) : (
+              <div className="text-center py-10 bg-slate-50 rounded-xl">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+              </div>
+            )}
           </div>
         </div>
       </div>

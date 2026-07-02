@@ -8,6 +8,7 @@ import {
   removeFromCart as apiRemoveFromCart,
   clearCart as apiClearCart,
   applyVoucherToCart as apiApplyVoucherToCart,
+  autoApplyVouchersToCart as apiAutoApplyVouchersToCart,
   removeVoucherFromCart as apiRemoveVoucherFromCart,
   CartInfo
 } from "@/lib/api";
@@ -23,6 +24,7 @@ interface CartContextType {
   removeFromCart: (cartDetailId: number) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
   clearCart: () => Promise<{ success: boolean; message?: string }>;
   applyVoucher: (voucherCode: string) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
+  autoApplyVouchers: () => Promise<{ success: boolean; message?: string; data?: CartInfo; appliedCodes?: string }>;
   removeVoucher: (type?: number) => Promise<{ success: boolean; message?: string; data?: CartInfo }>;
 }
 
@@ -36,7 +38,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const calculateCount = (cartData: CartInfo | null) => {
     if (!cartData || !cartData.cartDetails) return 0;
-    return cartData.cartDetails.reduce((sum, item) => sum + item.quantity, 0);
+    return cartData.cartDetails.filter(item => !item.isGift).length;
   };
 
   const refreshCart = async () => {
@@ -189,6 +191,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const autoApplyVouchers = async () => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) {
+      return { success: false, message: "Chưa đăng nhập" };
+    }
+
+    setLoading(true);
+    try {
+      const res = await apiAutoApplyVouchersToCart(token);
+      if (res.success && res.data) {
+        setCart(res.data);
+        setCartCount(calculateCount(res.data));
+      }
+      return res;
+    } catch (err) {
+      console.error("Error in autoApplyVouchers context:", err);
+      return { success: false, message: "Lỗi kết nối đến server" };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const removeVoucher = async (type?: number) => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
@@ -223,6 +247,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeFromCart,
         clearCart,
         applyVoucher,
+        autoApplyVouchers,
         removeVoucher
       }}
     >

@@ -112,6 +112,7 @@ namespace PolyBabyAPI.DTOs
         public int TotalQuantity { get; set; }
         public int SoldQuantity { get; set; }
         public int MaxQuantityPerUser { get; set; }
+        public int UserPurchasedQuantity { get; set; }
         public int? ProductId { get; set; }
     }
 }

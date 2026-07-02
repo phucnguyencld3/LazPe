@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -268,6 +269,7 @@ namespace PolyBabyAPI.Controllers
         /// <summary>
         /// Tìm kiếm đánh giá
         /// </summary>
+        [Permission("Review.Read")]
         [HttpGet]
         public async Task<IActionResult> SearchReviews([FromQuery] ReviewSearchDto searchDto)
         {
@@ -532,6 +534,7 @@ namespace PolyBabyAPI.Controllers
 
         #region Admin & Censorship Endpoints
 
+        [Permission("Review.Update")]
         [HttpPost("censor")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CensorReview([FromBody] CensorReviewDto dto)
@@ -559,6 +562,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Read")]
         [HttpGet("admin/stats")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReviewAdminStats()
@@ -575,6 +579,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Read")]
         [HttpGet("{reviewId}/logs")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetCensorshipLogs(int reviewId)
@@ -591,6 +596,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Read")]
         [HttpGet("settings")]
         public async Task<IActionResult> GetReviewLoyaltySettings()
         {
@@ -606,6 +612,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Update")]
         [HttpPut("settings")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateReviewLoyaltySettings([FromBody] LoyaltySetting setting)
@@ -631,6 +638,7 @@ namespace PolyBabyAPI.Controllers
 
         #region Auto Moderation
 
+        [Permission("Review.Read")]
         [HttpGet("keywords")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetKeywords()
@@ -649,6 +657,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Update")]
         [HttpPost("keywords")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateKeyword([FromBody] CreateSensitiveKeywordDto dto)
@@ -680,6 +689,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Update")]
         [HttpPut("keywords/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateKeyword(int id, [FromBody] CreateSensitiveKeywordDto dto)
@@ -712,6 +722,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Update")]
         [HttpDelete("keywords/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteKeyword(int id)
@@ -736,6 +747,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Read")]
         [HttpGet("keywords/sample")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetSampleKeywordsExcel()
@@ -792,6 +804,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Update")]
         [HttpPost("keywords/import")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ImportKeywordsExcel([FromForm] IFormFile file)
@@ -926,6 +939,7 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [Permission("Review.Read")]
         [HttpGet("moderation/dashboard")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetModerationDashboard()
@@ -1059,3 +1073,5 @@ namespace PolyBabyAPI.Controllers
         #endregion
     }
 }
+
+

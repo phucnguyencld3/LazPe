@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Sparkles, ShieldCheck, Loader } from "lucide-react";
+import { FileText, Sparkles, ShieldCheck, Loader, ChevronDown, ChevronUp } from "lucide-react";
 import { CartInfo, CartDetailInfo, LoyaltyEarnPolicySummary, LoyaltyRedeemPolicySummary } from "@/lib/api";
 
 interface OrderSummarySidebarProps {
@@ -25,6 +25,18 @@ interface OrderSummarySidebarProps {
   earnPolicy: LoyaltyEarnPolicySummary | null;
   redeemPolicy: LoyaltyRedeemPolicySummary | null;
   estimatedEarnPoints: number;
+  handleOpenVoucherModal: () => void;
+  handleAutoApplyVouchers?: () => void;
+  handleRemoveVoucher: (type?: number) => Promise<void> | void;
+  useWallet: boolean;
+  setUseWallet: (val: boolean) => void;
+  useCoins: boolean;
+  setUseCoins: (val: boolean) => void;
+  walletBalance: number;
+  coinsBalance: number;
+  walletDiscount: number;
+  coinsDiscount: number;
+  isWalletLocked?: boolean;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
@@ -49,8 +61,21 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   earnPolicy,
   redeemPolicy,
   estimatedEarnPoints,
+  handleOpenVoucherModal,
+  handleAutoApplyVouchers,
+  handleRemoveVoucher,
+  useWallet,
+  setUseWallet,
+  useCoins,
+  setUseCoins,
+  walletBalance,
+  coinsBalance,
+  walletDiscount,
+  coinsDiscount,
+  isWalletLocked = false,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
+  const [isWalletExpanded, setIsWalletExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     setInputPoints(pointsToUse);
@@ -66,7 +91,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
 
   return (
     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Heading */}
         <div className="p-6 border-b border-slate-100">
@@ -76,15 +101,19 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
           </div>
 
           {/* List of checked items */}
-          <div className="max-h-[300px] overflow-y-auto pr-1 space-y-4 scrollbar-thin">
+          <div className="max-h-[300px] overflow-y-auto pr-3 pt-2 pb-2 space-y-4 scrollbar-thin -mt-2">
             {selectedItems.map((item) => {
               const isBundle = !!item.bundleID;
               const name = isBundle ? item.bundle?.name : item.product?.name;
               const image = isBundle ? item.bundle?.imageUrl : item.variant?.imageUrl || item.product?.imageUrl;
               
-              const variantText = isBundle
+              let variantText = isBundle
                 ? "Gói Combo"
                 : [item.variant?.color, item.variant?.size].filter(Boolean).join(" - ");
+              
+              if (variantText) {
+                variantText = variantText.replace(/\s*-\s*Xem chi ti[eế]t/gi, "").replace(/\s*Xem chi ti[eế]t/gi, "").trim();
+              }
 
               return (
                 <div key={item.cartDetailID} className={`flex gap-3 items-center ${item.isGift ? "opacity-90" : ""}`}>
@@ -132,128 +161,227 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
           </div>
         </div>
 
-        {/* Voucher apply indicator */}
-        {cart?.voucher && (
-          <div className="mx-6 mt-6 p-3 rounded-xl border border-dashed border-rose-200 bg-rose-500/[0.02] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-grow">
-              <div className="text-xs font-bold text-slate-800">
-                Đã áp dụng mã: <span className="text-rose-600 font-extrabold">{cart.voucher.code}</span>
-              </div>
-              <div className="text-[10px] text-slate-500 truncate">
-                {cart.voucher.name}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {cart?.shippingVoucher && (
-          <div className="mx-6 mt-4 p-3 rounded-xl border border-dashed border-sky-200 bg-sky-500/[0.02] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-base font-bold">local_shipping</span>
-            </div>
-            <div className="min-w-0 flex-grow">
-              <div className="text-xs font-bold text-slate-800">
-                Đã áp dụng mã ship: <span className="text-sky-600 font-extrabold">{cart.shippingVoucher.code}</span>
-              </div>
-              <div className="text-[10px] text-slate-500 truncate">
-                {cart.shippingVoucher.name}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Loyalty Points Widget */}
-        <div className="mx-6 mt-4 p-4 rounded-xl border border-slate-100 bg-slate-50/50 space-y-3">
+        {/* Vouchers Section */}
+        <div className="px-6 py-4 space-y-3 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-              <span className="material-symbols-outlined text-rose-500 text-base font-bold">military_tech</span>
-              <span>Dùng điểm tích lũy</span>
+              <span className="material-symbols-outlined text-rose-500 text-base font-bold">local_activity</span>
+              <span>Mã giảm giá LazPe</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-bold">
-              Có sẵn: <span className="text-rose-500 font-extrabold">{availablePoints.toLocaleString("vi-VN")}</span>
-            </span>
+            <div className="flex gap-3 items-center">
+              {handleAutoApplyVouchers && (
+                <button
+                  type="button"
+                  onClick={handleAutoApplyVouchers}
+                  disabled={submitting}
+                  className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  ✨ Tự động áp mã
+                </button>
+              )}
+              <button 
+                type="button"
+                onClick={handleOpenVoucherModal}
+                className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center cursor-pointer"
+              >
+                Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <div className="relative flex-grow">
+          {(cart?.voucher || cart?.shippingVoucher) && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {cart?.voucher && (
+                <div className="py-1 px-2 rounded-[4px] border border-dashed border-rose-200 bg-rose-50 flex items-center gap-1.5 w-fit">
+                  <Sparkles className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                  <span className="text-[11px] font-extrabold text-rose-600">{cart.voucher.code}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveVoucher(1)}
+                    className="text-slate-400 hover:text-rose-500 transition-colors flex items-center"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              )}
+              {cart?.shippingVoucher && (
+                <div className="py-1 px-2 rounded-[4px] border border-dashed border-sky-200 bg-sky-50 flex items-center gap-1.5 w-fit">
+                  <span className="material-symbols-outlined text-[14px] font-bold text-sky-500 shrink-0">local_shipping</span>
+                  <span className="text-[11px] font-extrabold text-sky-600">{cart.shippingVoucher.code}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveVoucher(2)}
+                    className="text-slate-400 hover:text-sky-500 transition-colors flex items-center"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Loyalty Points Widget */}
+        {availablePoints >= 1000 && (
+          <div className="px-6 py-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <div className="w-6 flex justify-center items-center shrink-0">
+                  <span className="material-symbols-outlined text-rose-500 text-[22px] font-bold">military_tech</span>
+                </div>
+                <span>Dùng điểm tích lũy</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-bold">
+                Có sẵn: <span className="text-rose-500 font-extrabold">{availablePoints.toLocaleString("vi-VN")}</span>
+              </span>
+            </div>
+
+            <div className="flex items-center bg-white rounded-[6px] border border-slate-200 p-1 focus-within:border-rose-400 focus-within:ring-1 focus-within:ring-rose-400/20 transition-all">
               <input
                 type="number"
-                placeholder="Nhập số điểm..."
+                placeholder="Tối thiểu 1.000đ"
                 value={inputPoints === 0 ? "" : inputPoints}
                 onChange={(e) => {
                   const val = Math.max(0, parseInt(e.target.value) || 0);
                   setInputPoints(val);
                 }}
                 disabled={isApplyingPoints || submitting}
-                className="w-full bg-white text-slate-800 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-rose-400 disabled:bg-slate-100 transition-colors placeholder:text-slate-400 placeholder:font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="flex-grow w-full bg-transparent text-slate-800 text-xs font-semibold px-2 outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              {availablePoints > 0 && (
+              {availablePoints > 0 && inputPoints !== Math.min(availablePoints, subTotal - discountAmount) && (
                 <button
                   type="button"
                   onClick={() => {
                     const maxPoints = Math.min(availablePoints, subTotal - discountAmount);
                     setInputPoints(maxPoints);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:underline active:scale-95 transition-all"
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-600 px-2 transition-colors whitespace-nowrap"
                   disabled={isApplyingPoints || submitting}
                 >
                   Tối đa
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => handleApplyPoints(inputPoints)}
+                disabled={isApplyingPoints || submitting || (inputPoints > 0 && inputPoints < 1000)}
+                className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white text-xs font-bold px-4 py-1.5 rounded-[4px] transition-colors flex items-center justify-center shrink-0 active:scale-95"
+              >
+                {isApplyingPoints ? (
+                  <Loader className="animate-spin h-3.5 w-3.5 text-white" />
+                ) : (
+                  "Áp dụng"
+                )}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => handleApplyPoints(inputPoints)}
-              disabled={isApplyingPoints || submitting}
-              className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center justify-center min-w-[70px] active:scale-95"
-            >
-              {isApplyingPoints ? (
-                <Loader className="animate-spin h-3.5 w-3.5 text-white" />
-              ) : (
-                "Áp dụng"
-              )}
-            </button>
-          </div>
-
-          {loyaltyMessage && (
-            <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>✓</span> {loyaltyMessage}
-            </p>
-          )}
-          {loyaltyError && (
-            <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1">
-              <span>⚠</span> {loyaltyError}
-            </p>
-          )}
-        </div>
-
-        {(earnPolicyText || redeemPolicyText) && (
-          <div className="mx-6 mt-4 p-4 rounded-xl border border-slate-100 bg-white space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              <span className="material-symbols-outlined text-rose-500 text-base font-bold">workspace_premium</span>
-              <span>Cơ chế Loyalty hiện tại</span>
-            </div>
-            {earnPolicyText && (
-              <div className="text-[11px] text-slate-600">
-                <span className="font-semibold text-slate-700">Tích điểm:</span> {earnPolicyText}
-                {earnPolicy?.isCampaign && earnPolicy.name ? (
-                  <span className="text-rose-500 font-semibold"> · {earnPolicy.name}</span>
-                ) : null}
-              </div>
+            
+            {inputPoints > 0 && inputPoints < 1000 && (
+              <p className="text-[10px] text-rose-500 font-semibold px-1 mt-1">Mức áp dụng tối thiểu là 1.000 điểm</p>
             )}
-            {redeemPolicyText && (
-              <div className="text-[11px] text-slate-600">
-                <span className="font-semibold text-slate-700">Đổi điểm:</span> {redeemPolicyText}
-              </div>
+
+            {loyaltyError && (
+              <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1">
+                <span>⚠</span> {loyaltyError}
+              </p>
             )}
-            <div className="text-[11px] text-slate-700 font-semibold">
-              Đơn hàng này tích được: <span className="text-rose-500 font-extrabold">{estimatedEarnPoints.toLocaleString("vi-VN")}</span> điểm
-            </div>
           </div>
         )}
+        {/* LazPe Wallet & Coins Toggle Section */}
+        <div className="border-t border-slate-100">
+          <button
+            onClick={() => setIsWalletExpanded(!isWalletExpanded)}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-6 flex justify-center items-center shrink-0">
+                <span className="material-symbols-outlined text-teal-600 text-[22px] font-bold">account_balance_wallet</span>
+              </div>
+              <span className="text-sm font-bold text-slate-800">Ví LazPe & Coins</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isWalletExpanded && (useCoins || useWallet) && (
+                <span className="text-[10px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded font-bold">
+                  Đang dùng
+                </span>
+              )}
+              {isWalletExpanded ? (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              )}
+            </div>
+          </button>
+          
+          <div className={`overflow-hidden transition-all duration-300 ${isWalletExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="bg-slate-50/50 pb-2">
+              {/* Coins Section */}
+              <div className="px-6 py-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <div className="w-6 flex justify-center items-center shrink-0">
+                      <span className="material-symbols-outlined text-orange-500 text-[22px] font-bold">monetization_on</span>
+                    </div>
+                    <span>Sử dụng LazPe Coins</span>
+                  </div>
+                  <span className="text-orange-500 font-extrabold text-xs">{formatVND(coinsBalance)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 flex justify-center items-center shrink-0">
+                    <input
+                      type="checkbox"
+                      id="useCoins"
+                      checked={useCoins}
+                      onChange={(e) => setUseCoins(e.target.checked)}
+                      disabled={coinsBalance <= 0 || submitting}
+                      className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <label htmlFor="useCoins" className={`text-xs ${coinsBalance <= 0 ? 'text-slate-400' : 'text-slate-600 cursor-pointer'}`}>
+                    Dùng LazPe Coins để thanh toán
+                  </label>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="mx-6 border-t border-slate-200 border-dashed"></div>
+
+              {/* Wallet Section */}
+              <div className="px-6 py-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <div className="w-6 flex justify-center items-center shrink-0">
+                      <span className="material-symbols-outlined text-emerald-500 text-[22px] font-bold">account_balance_wallet</span>
+                    </div>
+                    <span>Sử dụng Số dư Ví LazPe</span>
+                  </div>
+                  <span className="text-emerald-500 font-extrabold text-xs">{formatVND(walletBalance)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 flex justify-center items-center shrink-0">
+                    <input
+                      type="checkbox"
+                      id="useWallet"
+                      checked={useWallet}
+                      onChange={(e) => setUseWallet(e.target.checked)}
+                      disabled={walletBalance <= 0 || submitting || isWalletLocked}
+                      className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="useWallet" className={`text-xs ${walletBalance <= 0 || isWalletLocked ? 'text-slate-400' : 'text-slate-600 cursor-pointer'}`}>
+                      Dùng số dư Ví để thanh toán
+                    </label>
+                    {isWalletLocked && (
+                      <span className="text-[10px] text-rose-500 font-semibold mt-0.5">
+                        (Ví đang bị khóa 15 phút. Vui lòng mở khóa trong phần quản lý Ví)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Price Calculations */}
         <div className="p-6 space-y-4">
@@ -281,8 +409,6 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               </div>
             )}
 
-
-
             {/* Voucher Discount */}
             {discountAmount > 0 && (
               <div className="flex justify-between items-center text-rose-500">
@@ -296,6 +422,22 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               <div className="flex justify-between items-center text-rose-500">
                 <span>Giảm từ điểm tích lũy:</span>
                 <span className="font-bold">- {formatVND(loyaltyDiscount)}</span>
+              </div>
+            )}
+
+            {/* Coins Discount */}
+            {coinsDiscount > 0 && (
+              <div className="flex justify-between items-center text-orange-500">
+                <span>Sử dụng LazPe Coins:</span>
+                <span className="font-bold">- {formatVND(coinsDiscount)}</span>
+              </div>
+            )}
+
+            {/* Wallet Discount */}
+            {walletDiscount > 0 && (
+              <div className="flex justify-between items-center text-emerald-500">
+                <span>Sử dụng Số dư Ví:</span>
+                <span className="font-bold">- {formatVND(walletDiscount)}</span>
               </div>
             )}
 
@@ -322,7 +464,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             <button
               onClick={handlePlaceOrder}
               disabled={submitting}
-              className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white rounded-xl py-3.5 font-bold text-sm shadow-md hover:shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 bouncy-hover transition-all"
+              className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white rounded-[8px] py-3.5 font-bold text-sm shadow-md hover:shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 bouncy-hover transition-all"
             >
               {submitting ? (
                 <>

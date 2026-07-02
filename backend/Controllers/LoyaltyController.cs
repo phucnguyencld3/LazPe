@@ -149,14 +149,23 @@ namespace PolyBabyAPI.Controllers
 
                 var (items, totalCount) = await _loyaltyService.GetPointsHistoryAsync(userId, type, period, page, pageSize);
 
-                var dtoList = items.Select(h => new Loyaltydtos.LoyaltyPointHistoryResponse
+                var dtoList = items.Select(h => 
                 {
-                    HistoryID = h.HistoryID,
-                    TransactionType = h.TransactionType,
-                    Amount = h.Amount,
-                    InvoiceID = h.InvoiceID,
-                    Description = h.Description,
-                    CreatedAt = h.CreatedAt
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && h.Invoice != null && !string.IsNullOrEmpty(h.Invoice.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.Invoice.InvoiceCode}");
+                    }
+                    return new Loyaltydtos.LoyaltyPointHistoryResponse
+                    {
+                        HistoryID = h.HistoryID,
+                        TransactionType = h.TransactionType,
+                        Amount = h.Amount,
+                        InvoiceID = h.InvoiceID,
+                        InvoiceCode = h.Invoice?.InvoiceCode,
+                        Description = desc,
+                        CreatedAt = h.CreatedAt
+                    };
                 });
 
                 return Ok(new

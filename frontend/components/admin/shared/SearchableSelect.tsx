@@ -14,6 +14,7 @@ interface SearchableSelectProps {
   placeholder?: string;
   searchPlaceholder?: string;
   className?: string;
+  buttonClassName?: string;
 }
 
 export function SearchableSelect({
@@ -23,6 +24,7 @@ export function SearchableSelect({
   placeholder = "Chọn một mục",
   searchPlaceholder = "Tìm kiếm...",
   className = "",
+  buttonClassName = "",
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,7 +36,7 @@ export function SearchableSelect({
   );
 
   // Find the selected option to display its label
-  const selectedOption = options.find((opt) => opt.value.toString() === value.toString());
+  const selectedOption = options.find((opt) => opt.value?.toString() === value?.toString());
 
   // Handle clicking outside to close the dropdown
   useEffect(() => {
@@ -70,7 +72,7 @@ export function SearchableSelect({
       {/* Dropdown Toggle Button */}
       <div
         onClick={toggleDropdown}
-        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer flex justify-between items-center"
+        className={buttonClassName || "w-full px-4 py-3 bg-white border border-slate-200 rounded font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer flex justify-between items-center"}
       >
         <span className="truncate">
           {selectedOption ? selectedOption.label : placeholder}
@@ -82,7 +84,7 @@ export function SearchableSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           {/* Search Input */}
           <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
             <div className="relative">
@@ -91,7 +93,7 @@ export function SearchableSelect({
               </span>
               <input
                 type="text"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -109,13 +111,13 @@ export function SearchableSelect({
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
                   className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
-                    value.toString() === option.value.toString()
+                    (value ?? "").toString() === (option.value ?? "").toString()
                       ? "bg-primary/10 text-primary font-bold"
                       : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   }`}
                 >
                   <span className="truncate">{option.label}</span>
-                  {value.toString() === option.value.toString() && (
+                  {(value ?? "").toString() === (option.value ?? "").toString() && (
                     <span className="material-symbols-outlined text-[16px] text-primary font-bold">
                       check
                     </span>

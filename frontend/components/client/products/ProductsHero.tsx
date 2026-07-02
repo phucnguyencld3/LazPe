@@ -21,15 +21,15 @@ export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam, categoryN
   }
 
   return (
-    <section className="bg-gradient-to-br from-[#ffd9de]/30 via-white to-white border-b border-slate-100 py-12 md:py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto text-center relative z-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <section className="bg-gradient-to-br from-[#ffd9de]/30 via-white to-white border border-slate-100 shadow-sm rounded-[10px] py-12 md:py-16 px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <h1 className="font-headline-lg text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">
           {pageTitle}
         </h1>
         <p className="max-w-2xl mx-auto font-body-lg text-base md:text-lg text-slate-600 leading-relaxed">
           {pageSubtitle}
         </p>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };

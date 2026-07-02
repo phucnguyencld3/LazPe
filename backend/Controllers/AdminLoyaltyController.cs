@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
@@ -33,6 +34,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy tổng quan thống kê loyalty (điểm phát hành, điểm đã dùng, phân bố hạng, doanh thu, top khách hàng).
         /// </summary>
         [HttpGet("dashboard")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetDashboardStats()
         {
             try
@@ -140,6 +142,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách chính sách tích điểm (ưu tiên campaign, mới tạo trước).
         /// </summary>
         [HttpGet("earn-policies")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetEarnPolicies()
         {
             var policies = await _context.LoyaltyEarnPolicies
@@ -153,6 +156,7 @@ namespace PolyBabyAPI.Controllers
         /// Tạo chính sách tích điểm mới.
         /// </summary>
         [HttpPost("earn-policies")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> CreateEarnPolicy([FromBody] LoyaltyEarnPolicy policy)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -174,6 +178,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id chính sách tích điểm.</param>
         [HttpPut("earn-policies/{id}")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> UpdateEarnPolicy(int id, [FromBody] LoyaltyEarnPolicy request)
         {
             var policy = await _context.LoyaltyEarnPolicies.FindAsync(id);
@@ -203,6 +208,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id chính sách tích điểm.</param>
         [HttpPut("earn-policies/{id}/toggle")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> ToggleEarnPolicy(int id)
         {
             var policy = await _context.LoyaltyEarnPolicies.FindAsync(id);
@@ -227,6 +233,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id chính sách tích điểm.</param>
         [HttpDelete("earn-policies/{id}")]
+        [Permission("Loyalty.Delete")]
         public async Task<IActionResult> DeleteEarnPolicy(int id)
         {
             var policy = await _context.LoyaltyEarnPolicies.FindAsync(id);
@@ -251,6 +258,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách quy tắc đổi điểm (kèm thông tin hạng).
         /// </summary>
         [HttpGet("redeem-policies")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetRedeemPolicies()
         {
             var policies = await _context.LoyaltyRedeemPolicies
@@ -265,6 +273,7 @@ namespace PolyBabyAPI.Controllers
         /// Tạo quy tắc đổi điểm mới.
         /// </summary>
         [HttpPost("redeem-policies")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> CreateRedeemPolicy([FromBody] LoyaltyRedeemPolicy policy)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -286,6 +295,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id quy tắc đổi điểm.</param>
         [HttpPut("redeem-policies/{id}")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> UpdateRedeemPolicy(int id, [FromBody] LoyaltyRedeemPolicy request)
         {
             var policy = await _context.LoyaltyRedeemPolicies.FindAsync(id);
@@ -314,6 +324,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id quy tắc đổi điểm.</param>
         [HttpPut("redeem-policies/{id}/toggle")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> ToggleRedeemPolicy(int id)
         {
             var policy = await _context.LoyaltyRedeemPolicies.FindAsync(id);
@@ -338,6 +349,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id quy tắc đổi điểm.</param>
         [HttpDelete("redeem-policies/{id}")]
+        [Permission("Loyalty.Delete")]
         public async Task<IActionResult> DeleteRedeemPolicy(int id)
         {
             var policy = await _context.LoyaltyRedeemPolicies.FindAsync(id);
@@ -362,6 +374,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách hạng thành viên theo ngưỡng điểm tăng dần.
         /// </summary>
         [HttpGet("tiers")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetTiers()
         {
             var tiers = await _context.LoyaltyTiers
@@ -374,6 +387,7 @@ namespace PolyBabyAPI.Controllers
         /// Tạo hạng thành viên mới.
         /// </summary>
         [HttpPost("tiers")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> CreateTier([FromBody] LoyaltyTier tier)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -395,6 +409,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id hạng thành viên.</param>
         [HttpPut("tiers/{id}")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> UpdateTier(int id, [FromBody] LoyaltyTier request)
         {
             var tier = await _context.LoyaltyTiers.FindAsync(id);
@@ -422,6 +437,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id hạng thành viên.</param>
         [HttpPut("tiers/{id}/toggle")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> ToggleTier(int id)
         {
             var tier = await _context.LoyaltyTiers.FindAsync(id);
@@ -444,6 +460,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="tierId">Id hạng thành viên.</param>
         [HttpGet("privileges/tier/{tierId}")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetPrivileges(int tierId)
         {
             var privileges = await _context.LoyaltyTierPrivileges
@@ -456,6 +473,7 @@ namespace PolyBabyAPI.Controllers
         /// Tạo đặc quyền mới cho hạng thành viên.
         /// </summary>
         [HttpPost("privileges")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> CreatePrivilege([FromBody] LoyaltyTierPrivilege privilege)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -483,6 +501,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id đặc quyền.</param>
         [HttpPut("privileges/{id}")]
+        [Permission("Loyalty.Update")]
         public async Task<IActionResult> UpdatePrivilege(int id, [FromBody] LoyaltyTierPrivilege request)
         {
             var privilege = await _context.LoyaltyTierPrivileges.FindAsync(id);
@@ -514,6 +533,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id đặc quyền.</param>
         [HttpDelete("privileges/{id}")]
+        [Permission("Loyalty.Delete")]
         public async Task<IActionResult> DeletePrivilege(int id)
         {
             var privilege = await _context.LoyaltyTierPrivileges.FindAsync(id);
@@ -533,6 +553,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách cấu hình voucher phát hàng tháng theo hạng.
         /// </summary>
         [HttpGet("monthly-vouchers")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetMonthlyVoucherConfigs()
         {
             var configs = await _context.LoyaltyMonthlyVouchers
@@ -546,6 +567,7 @@ namespace PolyBabyAPI.Controllers
         /// Tạo hoặc cập nhật cấu hình voucher hàng tháng (có kiểm tra giới hạn đặc quyền).
         /// </summary>
         [HttpPost("monthly-vouchers")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> CreateOrUpdateMonthlyVoucherConfig([FromBody] LoyaltyMonthlyVoucher config)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -621,6 +643,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         /// <param name="id">Id cấu hình voucher.</param>
         [HttpDelete("monthly-vouchers/{id}")]
+        [Permission("Loyalty.Delete")]
         public async Task<IActionResult> DeleteMonthlyVoucherConfig(int id)
         {
             var config = await _context.LoyaltyMonthlyVouchers.FindAsync(id);
@@ -638,6 +661,7 @@ namespace PolyBabyAPI.Controllers
         /// Chạy thủ công job phát voucher hàng tháng.
         /// </summary>
         [HttpPost("trigger-monthly-voucher-job")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> TriggerMonthlyVoucherJob([FromServices] PolyBabyAPI.Services.LoyaltyMonthlyVoucherJob job)
         {
             try
@@ -649,6 +673,68 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Lỗi khi chạy thử nghiệm Job phát voucher");
                 return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi chạy Job: " + ex.Message });
+            }
+        }
+        #endregion
+
+        #region 8. Points Compensation
+        public class CompensatePointsRequest
+        {
+            public string UserID { get; set; } = string.Empty;
+            public int Amount { get; set; }
+            public string Reason { get; set; } = string.Empty;
+            public int InvoiceID { get; set; }
+        }
+
+        /// <summary>
+        /// Bồi thường điểm cho khách hàng liên quan đến một đơn hàng khiếu nại (tối đa 50% giá trị đơn hàng).
+        /// </summary>
+        [HttpPost("compensate-points")]
+        [Permission("Chat.Manage")]
+        public async Task<IActionResult> CompensatePoints([FromBody] CompensatePointsRequest request)
+        {
+            if (string.IsNullOrEmpty(request.UserID) || string.IsNullOrEmpty(request.Reason) || request.InvoiceID <= 0 || request.Amount <= 0)
+            {
+                return BadRequest(new { success = false, message = "Thông tin bồi thường không hợp lệ" });
+            }
+
+            var invoice = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceID == request.InvoiceID && i.UserID == request.UserID);
+            if (invoice == null)
+            {
+                return NotFound(new { success = false, message = "Không tìm thấy đơn hàng hợp lệ của khách hàng này" });
+            }
+
+            // Tỷ lệ quy đổi điểm bồi thường (giả sử 1 điểm = 1 VND để so sánh, hoặc tùy chỉnh)
+            // Yêu cầu: Không quá 50% giá trị đơn hàng
+            decimal maxCompensationValue = invoice.TotalPrice * 0.5m;
+            decimal pointValue = request.Amount; // Giả sử 1 điểm = 1 VND (Tuỳ policy)
+            
+            if (pointValue > maxCompensationValue)
+            {
+                return BadRequest(new { success = false, message = $"Số điểm bồi thường vượt quá giới hạn cho phép (Tối đa: {Math.Floor(maxCompensationValue)} điểm)." });
+            }
+
+            try
+            {
+                // Gọi method AddPointsAsync
+                bool result = await _loyaltyService.AddPointsAsync(request.UserID, request.Amount, "Compensation", $"Bồi thường sự cố đơn hàng #{request.InvoiceID}: {request.Reason}", request.InvoiceID);
+                
+                if (result)
+                {
+                    var profile = await _loyaltyService.GetProfileAsync(request.UserID);
+                    await LogAuditAsync("COMPENSATE_POINTS", "LoyaltyProfile", request.UserID, 
+                        null, request.Amount.ToString(), $"Bồi thường điểm theo đơn hàng #{request.InvoiceID}. Lý do: {request.Reason}");
+                    return Ok(new { success = true, message = "Bồi thường điểm thành công", data = profile });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = "Không thể cộng điểm bồi thường. Vui lòng thử lại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi bồi thường điểm");
+                return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi bồi thường điểm" });
             }
         }
         #endregion
@@ -666,6 +752,7 @@ namespace PolyBabyAPI.Controllers
         /// Thu hồi điểm thủ công cho thành viên (có ghi lịch sử và audit log).
         /// </summary>
         [HttpPost("revoke-points")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> RevokePoints([FromBody] ManualRevocationRequest request)
         {
             if (string.IsNullOrEmpty(request.UserID) || string.IsNullOrEmpty(request.Reason))
@@ -826,6 +913,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách voucher chưa sử dụng của một người dùng (hỗ trợ thu hồi).
         /// </summary>
         [HttpGet("users/{userId}/unused-vouchers")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetUserUnusedVouchers(string userId)
         {
             try
@@ -859,11 +947,12 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách giao dịch tích điểm (EARN/BONUS) của một người dùng để thu hồi.
         /// </summary>
         [HttpGet("users/{userId}/earn-transactions")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetUserEarnTransactions(string userId)
         {
             try
             {
-                var transactions = await _context.LoyaltyPointHistories
+                var rawTransactions = await _context.LoyaltyPointHistories
                     .Where(h => h.UserID == userId && (h.TransactionType == "EARN" || h.TransactionType == "BONUS") && h.Amount >= 0)
                     .OrderByDescending(h => h.CreatedAt)
                     .Select(h => new
@@ -873,10 +962,29 @@ namespace PolyBabyAPI.Controllers
                         h.TransactionType,
                         h.Amount,
                         h.InvoiceID,
+                        InvoiceCode = h.Invoice != null ? h.Invoice.InvoiceCode : null,
                         h.Description,
                         h.CreatedAt
                     })
                     .ToListAsync();
+
+                var transactions = rawTransactions.Select(h => {
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && !string.IsNullOrEmpty(h.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.InvoiceCode}");
+                    }
+                    return new {
+                        h.HistoryID,
+                        h.UserID,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.InvoiceCode,
+                        Description = desc,
+                        h.CreatedAt
+                    };
+                });
 
                 return Ok(new { success = true, data = transactions });
             }
@@ -900,6 +1008,7 @@ namespace PolyBabyAPI.Controllers
         /// <param name="page">Trang hiện tại.</param>
         /// <param name="pageSize">Số bản ghi mỗi trang.</param>
         [HttpGet("history")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetLoyaltyHistory(
             [FromQuery] string? search,
             [FromQuery] int? tierId,
@@ -947,7 +1056,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var totalItems = await query.CountAsync();
-                var items = await query
+                var rawItems = await query
                     .OrderByDescending(h => h.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -961,10 +1070,32 @@ namespace PolyBabyAPI.Controllers
                         h.TransactionType,
                         h.Amount,
                         h.InvoiceID,
+                        InvoiceCode = h.Invoice != null ? h.Invoice.InvoiceCode : null,
                         h.Description,
                         h.CreatedAt
                     })
                     .ToListAsync();
+
+                var items = rawItems.Select(h => {
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && !string.IsNullOrEmpty(h.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.InvoiceCode}");
+                    }
+                    return new {
+                        h.HistoryID,
+                        h.UserID,
+                        h.FullName,
+                        h.Email,
+                        h.TierName,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.InvoiceCode,
+                        Description = desc,
+                        h.CreatedAt
+                    };
+                });
 
                 return Ok(new
                 {
@@ -994,6 +1125,7 @@ namespace PolyBabyAPI.Controllers
         /// <param name="page">Trang hiện tại.</param>
         /// <param name="pageSize">Số bản ghi mỗi trang.</param>
         [HttpGet("audit-logs")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetAuditLogs(
             [FromQuery] string? action,
             [FromQuery] string? search,
@@ -1050,6 +1182,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy danh sách log nhận quà sinh nhật.
         /// </summary>
         [HttpGet("birthday-gift-logs")]
+        [Permission("Loyalty.Read")]
         public async Task<IActionResult> GetBirthdayGiftLogs([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 15)
         {
             try
@@ -1112,6 +1245,7 @@ namespace PolyBabyAPI.Controllers
         /// Phát quà sinh nhật thủ công cho thành viên.
         /// </summary>
         [HttpPost("issue-birthday-gift-manual")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> IssueBirthdayGiftManual([FromBody] ManualBirthdayGiftRequest request, [FromServices] PolyBabyAPI.Services.LoyaltyBirthdayGiftJob job)
         {
             try
@@ -1159,6 +1293,7 @@ namespace PolyBabyAPI.Controllers
         /// Kích hoạt chạy job sinh nhật ngày hôm nay thủ công.
         /// </summary>
         [HttpPost("trigger-birthday-gift-job")]
+        [Permission("Loyalty.Create")]
         public async Task<IActionResult> TriggerBirthdayGiftJob([FromServices] PolyBabyAPI.Services.LoyaltyBirthdayGiftJob job)
         {
             try
@@ -1396,3 +1531,4 @@ namespace PolyBabyAPI.Controllers
         #endregion
     }
 }
+

@@ -21,8 +21,35 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Tự động load file Credentials của Google Vision nếu đang chạy dưới Local Dev (thư mục mockups hoặc Local)
+var googleCredsEnv = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+if (string.IsNullOrEmpty(googleCredsEnv))
+{
+    var fallbackPathMockups = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "mockups", "lazpe-store-ce230763f012.json"));
+    var fallbackPathLocal = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Local", "lazpe-store-ce230763f012.json"));
+    
+    if (File.Exists(fallbackPathLocal))
+    {
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fallbackPathLocal);
+    }
+    else if (File.Exists(fallbackPathMockups))
+    {
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fallbackPathMockups);
+    }
+}
+
 // Load appsettings.Local.json for local development secrets (ignored by Git)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Tự động load thêm từ thư mục Local chung của dự án nếu có
+var globalLocalAppSettings = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Local", "appsettings.Local.json"));
+if (File.Exists(globalLocalAppSettings))
+{
+    builder.Configuration.AddJsonFile(globalLocalAppSettings, optional: true, reloadOnChange: true);
+}
+
+// Bắt buộc load lại EnvironmentVariables sau cùng để các biến môi trường trong Docker-Compose 
+// (như ConnectionString, VnPay__ReturnUrl) có độ ưu tiên cao nhất, đè lên appsettings.Local.json
+builder.Configuration.AddEnvironmentVariables();
 
 try
 {
@@ -73,7 +100,7 @@ try
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && 
-                    (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub")))
+                    (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub") || path.StartsWithSegments("/directMessageHub")))
                 {
                     context.Token = accessToken;
                 }
@@ -128,6 +155,7 @@ try
     );
     builder.Services.AddSingleton<PolyBabyAPI.Interfaces.IMongoDbService, PolyBabyAPI.Services.MongoDbService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IRecommendationService, PolyBabyAPI.Services.RecommendationService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IIpBlockService, PolyBabyAPI.Services.IpBlockService>();
 
     // Cấu hình Cloudinary
     builder.Services.Configure<CloudinarySettings>(
@@ -214,6 +242,8 @@ try
     builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyProfileService, PolyBabyAPI.Services.BabyProfileService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTrackerService, PolyBabyAPI.Services.BabyTrackerService>();
 
     // Core business services
     builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -226,11 +256,14 @@ try
     builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
     builder.Services.AddScoped<IBannerService, BannerService>();
+    builder.Services.AddScoped<IWalletSecurityService, WalletSecurityService>();
+    builder.Services.AddScoped<IWithdrawEmailService, WithdrawEmailService>();
 
     // Product services
     builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<ISupplierService, SupplierService>();
     builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<IProductAlertService, ProductAlertService>();
     builder.Services.AddScoped<IProductOptionService, ProductOptionService>();
     builder.Services.AddScoped<IVariantService, VariantService>(); 
 
@@ -256,6 +289,7 @@ try
 
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddScoped<IImageModerationService, GoogleVisionModerationService>();
 
     // Đăng ký Chat & SignalR
     builder.Services.AddSignalR().AddJsonProtocol(options =>
@@ -305,7 +339,7 @@ try
                 factory: partition => new FixedWindowRateLimiterOptions
                 {
                     AutoReplenishment = true,
-                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 100, // Tối đa 1000 request ở dev, 100 ở prod
+                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 1000, // Tăng lên 1000 request ở prod để tránh block Next.js SSR
                     QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
                     Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
                 }));
@@ -413,15 +447,31 @@ try
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.ModelTrainingJob>(
             "ai-model-training",
             job => job.ExecuteAsync(),
-            "*/15 * * * *", // Chạy mỗi 15 phút
+            "0 2,14 * * *", // Chạy lúc 2:00 AM và 2:00 PM
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
-        // 5. Job huấn luyện AI Trend Model (Chạy mỗi 15 phút)
+        // 5. Job huấn luyện AI Trend Model (Chạy lúc 3 giờ sáng)
         recurringJobManager.AddOrUpdate<TrendModelTrainingJob>(
             "ai-trend-model-training",
             job => job.ExecuteAsync(),
-            "*/15 * * * *", // Chạy mỗi 15 phút
+            "0 3 * * *", // Chạy lúc 3:00 AM
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 6. Job báo cáo rút tiền hàng ngày (Chạy lúc 10:00 sáng)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.WithdrawDailyReportJob>(
+            "withdraw-daily-report",
+            job => job.ExecuteAsync(),
+            "0 10 * * *", // 10:00 AM mỗi ngày
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 7. Job tự động hủy yêu cầu rút tiền quá hạn 3 ngày (Chạy mỗi giờ một lần)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.WithdrawAutoRejectJob>(
+            "withdraw-auto-reject-expired",
+            job => job.ExecuteAsync(),
+            "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }
@@ -431,6 +481,7 @@ try
     }
 
     app.MapHub<PolyBabyAPI.Hubs.ChatHub>("/chatHub");
+    app.MapHub<PolyBabyAPI.Hubs.DirectMessageHub>("/directMessageHub");
     app.MapHub<PolyBabyAPI.Hubs.NotificationHub>("/notificationHub");
     app.MapHub<PolyBabyAPI.Hubs.BannerHub>("/bannerHub");
     app.MapControllers();

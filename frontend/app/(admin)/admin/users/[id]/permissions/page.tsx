@@ -90,7 +90,10 @@ export default function UserPermissionsPage() {
         const allPermData = await allPermRes.json();
         const templatesData = await templatesRes.json();
         
-        if (allPermData.success) setAllPermissions(allPermData.data);
+        if (allPermData.success) {
+          const filteredPerms = allPermData.data.filter((p: any) => p.resource?.toLowerCase() !== "address");
+          setAllPermissions(filteredPerms);
+        }
         if (templatesData.success) setTemplates(templatesData.data);
       } catch (err) {
         console.error(err);

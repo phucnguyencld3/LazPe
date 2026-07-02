@@ -29,9 +29,9 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Card 1: Tổng đơn hàng */}
-      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-10 h-10 rounded-[6px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
             <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
           </div>
           <div className="flex flex-col">
@@ -48,9 +48,9 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
 
       {/* Card 2: Đang xử lý */}
-      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+          <div className="w-10 h-10 rounded-[6px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
             <span className="material-symbols-outlined text-[20px]">pending_actions</span>
           </div>
           <div className="flex flex-col">
@@ -64,9 +64,9 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
 
       {/* Card 3: Doanh thu hôm nay */}
-      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+          <div className="w-10 h-10 rounded-[6px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
             <span className="material-symbols-outlined text-[20px]">payments</span>
           </div>
           <div className="flex flex-col">
@@ -82,13 +82,13 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
 
       {/* Card 4: Đơn hàng bị hủy */}
-      <div className={`px-5 py-4 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+      <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
         cancelledCount > 0 
           ? 'bg-rose-50/50 border-rose-100' 
           : 'bg-white border-slate-100'
       }`}>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+          <div className={`w-10 h-10 rounded-[6px] flex items-center justify-center shrink-0 ${
             cancelledCount > 0 
               ? 'bg-rose-100 text-error' 
               : 'bg-slate-100 text-slate-500'

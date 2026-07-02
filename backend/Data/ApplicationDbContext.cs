@@ -61,6 +61,9 @@ namespace PolyBabyAPI.Data
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
 
+        public DbSet<BalanceTransaction> BalanceTransactions { get; set; }
+        public DbSet<WithdrawRequest> WithdrawRequests { get; set; }
+
         // ===== Loyalty Program =====
         public DbSet<LoyaltyProfile> LoyaltyProfiles { get; set; }
         public DbSet<LoyaltyPointHistory> LoyaltyPointHistories { get; set; }
@@ -83,13 +86,32 @@ namespace PolyBabyAPI.Data
         public DbSet<FlashSale> FlashSales { get; set; }
         public DbSet<FlashSaleItem> FlashSaleItems { get; set; }
 
+        // ===== Product Alerts =====
+        public DbSet<ProductAlert> ProductAlerts { get; set; }
+        
         // ===== Banner =====
         public DbSet<Banner> Banners { get; set; }
         public DbSet<BannerVersion> BannerVersions { get; set; }
 
+        // ===== Baby Profiles =====
+        public DbSet<BabyProfile> BabyProfiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ===== BabyProfile Configurations =====
+            builder.Entity<BabyProfile>()
+                .HasOne(bp => bp.User)
+                .WithMany(u => u.BabyProfiles)
+                .HasForeignKey(bp => bp.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<BabyProfile>()
+                .OwnsMany(bp => bp.GrowthRecords, gr => { gr.ToJson(); });
+                
+            builder.Entity<BabyProfile>()
+                .OwnsMany(bp => bp.VaccinationRecords, vr => { vr.ToJson(); });
 
             // ===== Flash Sale Relationships =====
             builder.Entity<FlashSaleItem>()
@@ -164,6 +186,17 @@ namespace PolyBabyAPI.Data
                 .WithMany()
                 .HasForeignKey(ua => ua.WardID)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ===== Product Unique Indexes =====
+            builder.Entity<Product>()
+                .HasIndex(p => p.Code)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            builder.Entity<Variant>()
+                .HasIndex(v => v.SKU)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             // ===== Product hierarchy =====
             builder.Entity<Variant>()
@@ -258,7 +291,7 @@ namespace PolyBabyAPI.Data
 
             // ===== Voucher =====
             builder.Entity<VoucherUsage>()
-                .HasKey(x => new { x.VoucherID, x.UserID });
+                .HasKey(x => x.Id);
 
             builder.Entity<VoucherUsage>()
                 .HasOne(vu => vu.User)
@@ -416,6 +449,29 @@ namespace PolyBabyAPI.Data
             {
                 entity.HasKey(nt => nt.Id);
                 entity.HasIndex(nt => nt.TemplateCode).IsUnique();
+            });
+
+            // ===== Product Alerts Configurations =====
+            builder.Entity<ProductAlert>(entity =>
+            {
+                entity.HasKey(pa => pa.Id);
+
+                entity.HasOne(pa => pa.User)
+                      .WithMany()
+                      .HasForeignKey(pa => pa.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pa => pa.Product)
+                      .WithMany()
+                      .HasForeignKey(pa => pa.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pa => pa.Variant)
+                      .WithMany()
+                      .HasForeignKey(pa => pa.VariantId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(pa => new { pa.ProductId, pa.IsActive });
             });
 
             // ===== Loyalty Settings Seed =====

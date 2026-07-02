@@ -38,11 +38,11 @@ namespace PolyBabyAPI.Services
             try
             {
                 // 1. Thu thập dữ liệu thực tế: Tổng số sản phẩm bán ra mỗi ngày trong 1 năm qua
-                var startDate = DateTime.UtcNow.AddYears(-1).Date;
+                var startDate = DateTime.Now.AddYears(-1).Date;
                 var rawData = await _context.InvoiceDetails
                     .Include(od => od.Invoice)
                     .Where(od => od.Invoice.CreatedAt >= startDate && od.Invoice.Status == PolyBabyAPI.Models.OrderStatus.Completed && od.Invoice.CreatedAt.HasValue)
-                    .GroupBy(od => od.Invoice.CreatedAt.Value.Date)
+                    .GroupBy(od => od.Invoice.CreatedAt!.Value.Date)
                     .Select(g => new
                     {
                         Date = g.Key,
@@ -114,7 +114,7 @@ namespace PolyBabyAPI.Services
             try
             {
                 // 1. Trả về dữ liệu quá khứ gần nhất (mặc định lấy 30 ngày)
-                var endDate = DateTime.UtcNow.Date;
+                var endDate = DateTime.Now.Date;
                 var startDate = endDate.AddDays(-30);
 
                 var rawData = await _context.InvoiceDetails

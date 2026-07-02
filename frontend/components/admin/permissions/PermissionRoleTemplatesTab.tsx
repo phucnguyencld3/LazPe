@@ -50,7 +50,10 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       const permData = await permRes.json();
 
       if (tplData.success) setTemplates(tplData.data);
-      if (permData.success) setPermissions(permData.data);
+      if (permData.success) {
+        const filteredPerms = permData.data.filter((p: any) => p.resource?.toLowerCase() !== "address");
+        setPermissions(filteredPerms);
+      }
     } catch (error) {
       toast.error("Lỗi khi tải dữ liệu gói quyền");
     } finally {

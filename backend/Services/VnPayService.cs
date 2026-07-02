@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -27,6 +27,12 @@ namespace PolyBabyAPI.Services
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
+            var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+            if (string.IsNullOrEmpty(ipAddress) || ipAddress == "::1" || ipAddress.Contains(":"))
+            {
+                ipAddress = "127.0.0.1";
+            }
+
             var vnpParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 ["vnp_Version"] = "2.1.0",
@@ -35,7 +41,7 @@ namespace PolyBabyAPI.Services
                 ["vnp_Amount"] = ((long)(amount * 100)).ToString(CultureInfo.InvariantCulture),
                 ["vnp_CreateDate"] = now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture),
                 ["vnp_CurrCode"] = "VND",
-                ["vnp_IpAddr"] = context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                ["vnp_IpAddr"] = ipAddress,
                 ["vnp_Locale"] = "vn",
                 ["vnp_OrderInfo"] = orderInfo,
                 ["vnp_OrderType"] = "other",
@@ -77,7 +83,7 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            var signData = string.Join("&", inputData.Select(x => $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
+            string signData = string.Join("&", inputData.Select(x => $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
             var signValue = ComputeHmacSha512(_options.HashSecret.Trim(), signData);
             var returnedHash = query["vnp_SecureHash"].ToString();
 

@@ -50,9 +50,16 @@ export default function PermissionCenterPage() {
         });
         const usersData = await usersRes.json();
         if (usersData.success) {
-          setUsers(usersData.data);
+          // Lọc bỏ các tài khoản có quyền Admin khỏi danh sách phân quyền
+          const filteredUsers = usersData.data.filter((u: any) => {
+            const hasAdminRole = u.roles?.some((r: string) => r.toLowerCase() === "admin" || r.toLowerCase() === "administrator");
+            const hasAdminTemplate = u.roleTemplateName?.toLowerCase() === "admin";
+            return !hasAdminRole && !hasAdminTemplate;
+          });
+          
+          setUsers(filteredUsers);
           setTotalPages(usersData.pagination.totalPages);
-          setTotalCount(usersData.pagination.totalCount);
+          setTotalCount(usersData.pagination.totalCount - (usersData.data.length - filteredUsers.length));
         }
       } catch (err) {
         console.error("Error fetching permission center data:", err);

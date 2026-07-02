@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
-import { OrderInfo, fetchOrdersPaginated, fetchOrderMetrics, bulkConfirmOrders, bulkMarkShippedOrders } from "@/lib/features/orders/orderApi";
+import { OrderInfo, fetchOrdersPaginated, fetchOrderMetrics, bulkConfirmOrders, bulkMarkShippedOrders, exportOrdersToExcel } from "@/lib/features/orders/orderApi";
 import { OrderSummaryCards } from "@/components/admin/orders/OrderSummaryCards";
 import { OrderFilters } from "@/components/admin/orders/OrderFilters";
 import { OrderTable } from "@/components/admin/orders/OrderTable";
@@ -20,7 +20,12 @@ export default function AdminOrdersPage() {
   const [sortValue, setSortValue] = useState("created_desc");
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState<string>("");
+  const searchParams = useSearchParams();
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = searchParams.get("page");
+    return p ? Math.max(1, parseInt(p)) : 1;
+  });
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
@@ -32,6 +37,12 @@ export default function AdminOrdersPage() {
     shipping: 0,
     completed: 0,
     cancelled: 0,
+    cancelRequested: 0,
+    returnRequested: 0,
+    returnedRefunded: 0,
+    cancelledRefunded: 0,
+    returnApproved: 0,
+    returnRejected: 0,
     todayRevenue: 0
   });
 
@@ -43,11 +54,52 @@ export default function AdminOrdersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  const prevFiltersRef = useRef({
+    statusFilter,
+    debouncedSearch,
+    sortValue,
+    minPrice,
+    maxPrice,
+    dateRange
+  });
+
   // Reset page to 1 when filters change
   useEffect(() => {
-    setCurrentPage(1);
-    setSelectedInvoiceIds([]);
-  }, [statusFilter, debouncedSearch, sortValue, minPrice, maxPrice]);
+    const prev = prevFiltersRef.current;
+    const hasChanged =
+      prev.statusFilter !== statusFilter ||
+      prev.debouncedSearch !== debouncedSearch ||
+      prev.sortValue !== sortValue ||
+      prev.minPrice !== minPrice ||
+      prev.maxPrice !== maxPrice ||
+      prev.dateRange !== dateRange;
+
+    if (hasChanged) {
+      setCurrentPage(1);
+      setSelectedInvoiceIds([]);
+      prevFiltersRef.current = {
+        statusFilter,
+        debouncedSearch,
+        sortValue,
+        minPrice,
+        maxPrice,
+        dateRange
+      };
+    }
+  }, [statusFilter, debouncedSearch, sortValue, minPrice, maxPrice, dateRange]);
+
+  // Synchronize currentPage to URL query params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (currentPage === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", currentPage.toString());
+    }
+    const newSearch = params.toString();
+    const newPath = `${window.location.pathname}${newSearch ? "?" + newSearch : ""}`;
+    window.history.replaceState(null, "", newPath);
+  }, [currentPage]);
 
   const loadMetrics = async (token: string) => {
     try {
@@ -73,7 +125,7 @@ export default function AdminOrdersPage() {
       if (sortValue === "total_desc") { sortBy = 'total'; desc = true; }
       if (sortValue === "total_asc") { sortBy = 'total'; desc = false; }
       
-      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter, sortBy, desc, minPrice, maxPrice);
+      const data = await fetchOrdersPaginated(token, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter, sortBy, desc, minPrice, maxPrice, dateRange);
       setOrders(data.items);
       setTotalCount(data.totalCount);
       setSelectedInvoiceIds([]);
@@ -96,7 +148,7 @@ export default function AdminOrdersPage() {
   // Fetch paginated data whenever dependencies change
   useEffect(() => {
     loadOrders();
-  }, [currentPage, statusFilter, debouncedSearch, sortValue, minPrice, maxPrice]);
+  }, [currentPage, statusFilter, debouncedSearch, sortValue, minPrice, maxPrice, dateRange]);
 
   const handleBulkConfirm = async () => {
     if (selectedInvoiceIds.length === 0) return;
@@ -136,6 +188,38 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+      
+      const toastId = toast.loading("Đang tạo file Excel...");
+      
+      let sortBy = 'created';
+      let desc = true;
+      if (sortValue === "created_asc") { sortBy = 'created'; desc = false; }
+      if (sortValue === "total_desc") { sortBy = 'total'; desc = true; }
+      if (sortValue === "total_asc") { sortBy = 'total'; desc = false; }
+
+      const blob = await exportOrdersToExcel(token, debouncedSearch, statusFilter, sortBy, desc, minPrice, maxPrice, dateRange);
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `DanhSachDonHang_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Xuất Excel thành công!", { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi khi xuất danh sách đơn hàng.");
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const counts = useMemo(() => {
@@ -146,6 +230,12 @@ export default function AdminOrdersPage() {
       shipping: metrics.shipping,
       completed: metrics.completed,
       cancelled: metrics.cancelled,
+      cancelRequested: metrics.cancelRequested,
+      returnRequested: metrics.returnRequested,
+      returnedRefunded: metrics.returnedRefunded,
+      cancelledRefunded: metrics.cancelledRefunded,
+      returnApproved: metrics.returnApproved,
+      returnRejected: metrics.returnRejected,
     };
   }, [metrics]);
 
@@ -158,7 +248,7 @@ export default function AdminOrdersPage() {
           <p className="text-body-lg font-body-lg text-on-surface-variant">Theo dõi và cập nhật trạng thái đơn hàng từ khách hàng của LazPe.</p>
         </div>
         <button
-          onClick={() => toast.info("Tính năng xuất Excel chưa khả dụng")}
+          onClick={handleExportExcel}
           className="flex items-center gap-2 px-6 py-3 bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-bold rounded-[8px] shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
         >
           <span className="material-symbols-outlined">ios_share</span>
@@ -196,6 +286,7 @@ export default function AdminOrdersPage() {
           }
           setMinPrice(min);
           setMaxPrice(max);
+          setDateRange(filters.dateRange);
         }}
       />
 

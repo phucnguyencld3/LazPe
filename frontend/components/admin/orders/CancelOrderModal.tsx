@@ -25,7 +25,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-      <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-8 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-4">
@@ -60,7 +60,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                         setOtherReason("");
                       }
                     }}
-                    className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-0 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer pr-10"
+                    className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-[8px] focus:border-primary focus:ring-0 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer pr-10"
                   >
                     <option value="Sản phẩm hết hàng">Sản phẩm hết hàng</option>
                     <option value="Khách hàng đổi ý / yêu cầu hủy">Khách hàng đổi ý / yêu cầu hủy</option>
@@ -99,7 +99,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-8 py-3 rounded-full font-bold text-slate-500 hover:bg-slate-200 transition-colors"
+            className="px-8 py-3 rounded-[8px] font-bold text-slate-500 hover:bg-slate-200 transition-colors"
             disabled={canceling}
           >
             Hủy bỏ
@@ -108,7 +108,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
             type="submit"
             form="cancelForm"
             disabled={canceling}
-            className="px-8 py-3 rounded-full font-bold bg-red-600 text-white hover:bg-red-700 active:scale-95 shadow-md flex items-center gap-2"
+            className="px-8 py-3 rounded-[8px] font-bold bg-red-600 text-white hover:bg-red-700 active:scale-95 shadow-md flex items-center gap-2"
           >
             {canceling ? (
               <>

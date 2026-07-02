@@ -70,6 +70,39 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Xuất danh sách tài khoản người dùng ra Excel
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Authorize(Roles = "Admin")]
+        [Permission("User.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string? search = null,
+            [FromQuery] bool onlyWithPermissions = false)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting users list to Excel...");
+                var fileContents = await _userService.ExportExcelAsync(search, onlyWithPermissions);
+                var fileName = $"DanhSachTaiKhoan_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error exporting users to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
+                });
+            }
+        }
+
+        /// <summary>
         /// Lấy thông tin chi tiết user - Yêu cầu quyền User.Read
         /// </summary>
         [HttpGet("{id}")]

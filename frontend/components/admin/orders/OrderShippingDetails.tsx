@@ -43,34 +43,34 @@ export const OrderShippingDetails: React.FC<OrderShippingDetailsProps> = ({ orde
   const errorMessage = hasPaymentError ? getVnPayErrorMessage(latestTx.responseCode) : null;
 
   return (
-    <div className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-          <span className="material-symbols-outlined">payments</span>
+    <div className="p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-[6px] bg-emerald-50 flex items-center justify-center text-emerald-600">
+          <span className="material-symbols-outlined text-xl">payments</span>
         </div>
-        <h3 className="text-xl font-bold text-slate-800">Phương thức thanh toán</h3>
+        <h3 className="text-base font-bold text-slate-800">Phương thức thanh toán</h3>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-          <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Loại thanh toán</p>
-          <p className="font-bold text-slate-700">{order.payMethod || "Thanh toán khi nhận hàng (COD)"}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+        <div>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">LOẠI THANH TOÁN</p>
+          <p className="text-sm font-bold text-slate-800">{order.payMethod || "Thanh toán khi nhận hàng (COD)"}</p>
         </div>
-        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-          <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Thời gian tạo</p>
-          <p className="font-bold text-slate-700">{formatDateTime(order.createdAt)}</p>
+        <div>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">THỜI GIAN TẠO</p>
+          <p className="text-sm font-bold text-slate-800">{formatDateTime(order.createdAt)}</p>
         </div>
-        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-          <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Mã tham chiếu</p>
-          <p className="font-bold text-slate-700 text-sm overflow-hidden text-ellipsis whitespace-nowrap" title={refCode}>
+        <div>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">MÃ THAM CHIẾU</p>
+          <p className="text-sm font-bold text-slate-800 overflow-hidden text-ellipsis whitespace-nowrap" title={refCode}>
             {refCode}
           </p>
         </div>
       </div>
 
       {hasPaymentError && errorMessage && (
-        <div className="mt-4 p-6 bg-rose-50 border border-rose-100 rounded-3xl flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+        <div className="mt-4 p-4 bg-rose-50 border border-rose-100 rounded-[8px] flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="w-10 h-10 rounded-[6px] bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
             <span className="material-symbols-outlined">error</span>
           </div>
           <div>

@@ -24,3 +24,11 @@ export const fetchUsers = async (token: string, search: string, page: number, pa
   if (!data.success) throw new Error(data.message || "Failed to fetch users");
   return data;
 };
+
+export const exportUsersExcel = async (token: string, search: string = ""): Promise<Blob> => {
+  const res = await fetch(`${API_BASE_URL}/Users/export-excel?search=${search}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to export users Excel");
+  return res.blob();
+};

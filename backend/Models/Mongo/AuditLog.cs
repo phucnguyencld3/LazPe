@@ -20,6 +20,6 @@ namespace PolyBabyAPI.Models.Mongo
         public string? IpAddress { get; set; }
         
         [BsonRepresentation(BsonType.DateTime)]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; set; } = DateTime.Now;
     }
 }

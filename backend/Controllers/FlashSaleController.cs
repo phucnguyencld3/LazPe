@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
@@ -63,6 +64,24 @@ namespace PolyBabyAPI.Controllers
 
             var responseList = new List<FlashSaleResponseDto>();
 
+            string? userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            List<InvoiceDetail> userPurchases = new List<InvoiceDetail>();
+
+            if (!string.IsNullOrEmpty(userId) && activeSales.Any())
+            {
+                var minStartTime = activeSales.Min(s => s.StartTime);
+                var maxEndTime = activeSales.Max(s => s.EndTime);
+
+                userPurchases = await _context.InvoiceDetails
+                    .Include(d => d.Invoice)
+                    .Include(d => d.Variant)
+                    .Where(d => d.Invoice.UserID == userId
+                                && d.Invoice.Status != OrderStatus.Cancelled
+                                && d.Invoice.CreatedAt >= minStartTime
+                                && d.Invoice.CreatedAt <= maxEndTime)
+                    .ToListAsync();
+            }
+
             foreach (var sale in activeSales)
             {
                 var response = new FlashSaleResponseDto
@@ -84,6 +103,19 @@ namespace PolyBabyAPI.Controllers
                 // Điền thông tin chi tiết tên, ảnh, giá gốc của từng item trong Flash Sale
                 foreach (var item in sale.FlashSaleItems)
                 {
+                    int userQty = 0;
+                    if (!string.IsNullOrEmpty(userId) && item.MaxQuantityPerUser > 0)
+                    {
+                        var relevantPurchases = userPurchases.Where(d => d.Invoice.CreatedAt >= sale.StartTime && d.Invoice.CreatedAt <= sale.EndTime);
+                        if (item.ItemType == FlashSaleItemType.Product) {
+                            userQty = relevantPurchases.Where(d => d.Variant != null && d.Variant.ProductID == item.ReferenceId).Sum(d => d.Quantity);
+                        } else if (item.ItemType == FlashSaleItemType.Variant) {
+                            userQty = relevantPurchases.Where(d => d.VariantID == item.ReferenceId).Sum(d => d.Quantity);
+                        } else if (item.ItemType == FlashSaleItemType.Bundle) {
+                            userQty = relevantPurchases.Where(d => d.BundleID == item.ReferenceId).Sum(d => d.Quantity);
+                        }
+                    }
+
                     var itemDto = new FlashSaleItemResponseDto
                     {
                         Id = item.Id,
@@ -96,7 +128,8 @@ namespace PolyBabyAPI.Controllers
                         GiftVariantIds = !string.IsNullOrEmpty(item.GiftVariantIds) ? item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList() : null,
                         TotalQuantity = item.TotalQuantity,
                         SoldQuantity = item.SoldQuantity,
-                        MaxQuantityPerUser = item.MaxQuantityPerUser
+                        MaxQuantityPerUser = item.MaxQuantityPerUser,
+                        UserPurchasedQuantity = userQty
                     };
 
                     if (item.ItemType == FlashSaleItemType.Product)
@@ -175,6 +208,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/flashsale/admin
         [HttpGet("admin")]
+        [Permission("FlashSale.Read")]
         public async Task<IActionResult> GetAdminFlashSales()
         {
             var sales = await _context.FlashSales
@@ -235,6 +269,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/flashsale/admin/5
         [HttpGet("admin/{id}")]
+        [Permission("FlashSale.Read")]
         public async Task<IActionResult> GetAdminFlashSaleById(int id)
         {
             var sale = await _context.FlashSales
@@ -342,6 +377,7 @@ namespace PolyBabyAPI.Controllers
 
         // POST: api/flashsale/admin
         [HttpPost("admin")]
+        [Permission("FlashSale.Create")]
         public async Task<IActionResult> CreateFlashSale([FromBody] CreateFlashSaleDto dto)
         {
             var now = DateTime.Now;
@@ -404,6 +440,7 @@ namespace PolyBabyAPI.Controllers
 
         // PUT: api/flashsale/admin/5
         [HttpPut("admin/{id}")]
+        [Permission("FlashSale.Update")]
         public async Task<IActionResult> UpdateFlashSale(int id, [FromBody] UpdateFlashSaleDto dto)
         {
             var sale = await _context.FlashSales
@@ -483,6 +520,7 @@ namespace PolyBabyAPI.Controllers
 
         // DELETE: api/flashsale/admin/5
         [HttpDelete("admin/{id}")]
+        [Permission("FlashSale.Delete")]
         public async Task<IActionResult> DeleteFlashSale(int id)
         {
             var sale = await _context.FlashSales
@@ -508,6 +546,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/flashsale/admin/{id}/purchasers
         [HttpGet("admin/{id}/purchasers")]
+        [Permission("FlashSale.Read")]
         public async Task<IActionResult> GetFlashSalePurchasers(int id)
         {
             var sale = await _context.FlashSales
@@ -629,3 +668,4 @@ namespace PolyBabyAPI.Controllers
         }
     }
 }
+

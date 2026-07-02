@@ -28,18 +28,58 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
 
   if (!voucherModalOpen) return null;
 
-  const filteredVouchers = vouchers.filter((v) => {
-    // Ẩn các voucher đã hết hạn hoặc hết lượt dùng
-    if (new Date(v.endDate).getTime() < Date.now() || v.usedQuantity >= v.totalQuantity) {
-      return false;
-    }
+  const filteredVouchers = vouchers
+    .filter((v) => {
+      // Ẩn các voucher đã hết hạn hoặc hết lượt dùng
+      if (new Date(v.endDate).getTime() < Date.now() || v.usedQuantity >= v.totalQuantity) {
+        return false;
+      }
 
-    if (activeTab === "product") {
-      return v.voucherType !== 2; // Voucher đơn hàng (product discount)
-    } else {
-      return v.voucherType === 2; // Voucher vận chuyển (shipping discount)
-    }
-  });
+      if (activeTab === "product") {
+        return v.voucherType !== 2; // Voucher đơn hàng (product discount)
+      } else {
+        return v.voucherType === 2; // Voucher vận chuyển (shipping discount)
+      }
+    })
+    .sort((a, b) => {
+      // 1. Có thể áp dụng được không?
+      const aEligible = subTotal >= a.minOrderValue;
+      const bEligible = subTotal >= b.minOrderValue;
+
+      if (aEligible && !bEligible) return -1;
+      if (!aEligible && bEligible) return 1;
+
+      // 2. Tính mức giảm giá ước tính
+      const getEstimatedDiscount = (v: Voucher) => {
+        if (v.voucherType !== 2) {
+          // Product discount
+          let discount = 0;
+          if (v.discountType === 1) { // %
+            discount = subTotal * (v.discountValue / 100);
+          } else { // Tiền mặt
+            discount = v.discountValue;
+          }
+          if (v.maxDiscount && v.maxDiscount > 0 && discount > v.maxDiscount) {
+            discount = v.maxDiscount;
+          }
+          return Math.min(discount, subTotal);
+        } else {
+          // Shipping discount
+          if (v.isFreeShipping) {
+            return v.maxShippingDiscount && v.maxShippingDiscount > 0 ? v.maxShippingDiscount : 999999;
+          }
+          if (v.discountType === 1) {
+            return v.maxShippingDiscount && v.maxShippingDiscount > 0 ? v.maxShippingDiscount : 30000 * (v.discountValue / 100); // Giả sử phí ship 30k
+          }
+          return v.discountValue;
+        }
+      };
+
+      const aDiscount = getEstimatedDiscount(a);
+      const bDiscount = getEstimatedDiscount(b);
+
+      return bDiscount - aDiscount; // Giảm nhiều nhất xếp trên
+    });
 
   const isVoucherApplied = (voucher: Voucher) => {
     if (!cart) return false;
@@ -52,12 +92,12 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-[500px] flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-[500px] flex flex-col bg-white rounded-[8px] shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
 
         {/* Header */}
         <div className="p-5 flex justify-between items-center border-b border-slate-100 bg-slate-50">
           <h3 className="font-bold text-lg text-slate-800 flex items-center gap-1">
-            <span className="material-symbols-outlined text-rose-500 text-base">confirmation_number</span> Chọn Voucher ưu đãi
+            <span className="material-symbols-outlined text-slate-800 text-base">confirmation_number</span> Chọn mã giảm giá
           </h3>
           <button
             onClick={() => setVoucherModalOpen(false)}
@@ -90,7 +130,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
         </div>
 
         {/* Voucher List Content */}
-        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto">
+        <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto overscroll-contain">
           {loadingVouchers ? (
             <div className="flex justify-center py-10">
               <Loader className="animate-spin text-rose-500" size={24} />
@@ -115,7 +155,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
               return (
                 <div
                   key={voucher.voucherID}
-                  className={`flex gap-4 p-4 border rounded-xl items-center relative overflow-hidden transition-all ${isApplied
+                  className={`flex gap-4 p-4 border rounded-[8px] items-center relative overflow-hidden transition-all ${isApplied
                     ? (voucher.voucherType === 2
                       ? "border-sky-300 bg-sky-50"
                       : "border-rose-300 bg-rose-50")
@@ -127,7 +167,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                     }`}
                 >
                   {/* Left Coupon Notch Column */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${voucher.voucherType === 2
+                  <div className={`w-12 h-12 rounded-[6px] flex items-center justify-center shrink-0 ${voucher.voucherType === 2
                     ? "bg-sky-50 text-sky-500 font-bold"
                     : "bg-rose-50 text-rose-500 font-bold"
                     }`}>
@@ -152,7 +192,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                     {isApplied ? (
                       <button
                         onClick={() => handleRemoveVoucher(voucher.voucherType === 2 ? 2 : 1)}
-                        className="py-1.5 px-4 rounded-[8px] font-bold text-xs shadow-md active:scale-95 transition-all bg-emerald-600 hover:bg-rose-600 text-white shadow-emerald-600/5 flex items-center gap-1 min-w-[90px] justify-center group"
+                        className="py-1.5 px-4 rounded-[6px] font-bold text-xs shadow-sm active:scale-95 transition-all bg-emerald-600 hover:bg-rose-600 text-white flex items-center gap-1 min-w-[90px] justify-center group"
                       >
                         <Check size={12} className="shrink-0 group-hover:hidden" />
                         <span className="group-hover:hidden">Đã chọn</span>
@@ -161,10 +201,11 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({
                     ) : isEligible ? (
                       <button
                         onClick={() => handleApplyVoucherFromModal(voucher.code)}
-                        className={`py-1.5 px-4 rounded-[8px] font-bold text-xs shadow-md active:scale-95 transition-all ${voucher.voucherType === 2
-                          ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/5"
-                          : "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/5"
-                          }`}
+                        className={`py-1.5 px-4 rounded-[6px] font-bold text-xs shadow-sm active:scale-95 transition-all ${
+                          voucher.voucherType === 2
+                            ? "bg-sky-500 hover:bg-sky-600 text-white"
+                            : "bg-rose-500 hover:bg-rose-600 text-white"
+                        } min-w-[90px] justify-center`}
                       >
                         Áp dụng
                       </button>

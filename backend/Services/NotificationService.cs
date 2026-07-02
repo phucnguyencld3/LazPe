@@ -68,14 +68,14 @@ namespace PolyBabyAPI.Services
                 TargetValue = dto.TargetValue,
                 IsPinned = dto.IsPinned,
                 CreatedBy = createdBy,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 PublishedAt = dto.PublishedAt,
                 ExpiredAt = dto.ExpiredAt,
                 Status = NotificationStatus.Draft
             };
 
             // Xác định trạng thái ban đầu dựa trên PublishedAt
-            if (dto.PublishedAt.HasValue && dto.PublishedAt.Value > DateTime.UtcNow)
+            if (dto.PublishedAt.HasValue && dto.PublishedAt.Value > DateTime.Now)
             {
                 notif.Status = NotificationStatus.Scheduled;
             }
@@ -86,7 +86,7 @@ namespace PolyBabyAPI.Services
             // Nếu là Scheduled, đăng ký Hangfire Job
             if (notif.Status == NotificationStatus.Scheduled && notif.PublishedAt.HasValue)
             {
-                var delay = notif.PublishedAt.Value - DateTime.UtcNow;
+                var delay = notif.PublishedAt.Value - DateTime.Now;
                 var jobId = _backgroundJobClient.Schedule<INotificationService>(
                     service => service.PublishNotificationAsync(notif.Id),
                     delay
@@ -94,7 +94,7 @@ namespace PolyBabyAPI.Services
                 notif.HangfireJobId = jobId;
                 await _context.SaveChangesAsync();
             }
-            else if (!dto.PublishedAt.HasValue || dto.PublishedAt.Value <= DateTime.UtcNow)
+            else if (!dto.PublishedAt.HasValue || dto.PublishedAt.Value <= DateTime.Now)
             {
                 // Gửi ngay lập tức
                 await PublishNotificationAsync(notif.Id);
@@ -127,10 +127,10 @@ namespace PolyBabyAPI.Services
             notif.TargetValue = dto.TargetValue;
             notif.IsPinned = dto.IsPinned;
             notif.ExpiredAt = dto.ExpiredAt;
-            notif.UpdatedAt = DateTime.UtcNow;
+            notif.UpdatedAt = DateTime.Now;
 
             // Xử lý lại lịch gửi Hangfire
-            if (dto.PublishedAt.HasValue && dto.PublishedAt.Value > DateTime.UtcNow)
+            if (dto.PublishedAt.HasValue && dto.PublishedAt.Value > DateTime.Now)
             {
                 // Hủy job cũ nếu có
                 if (!string.IsNullOrEmpty(notif.HangfireJobId))
@@ -141,7 +141,7 @@ namespace PolyBabyAPI.Services
                 notif.PublishedAt = dto.PublishedAt;
                 notif.Status = NotificationStatus.Scheduled;
 
-                var delay = dto.PublishedAt.Value - DateTime.UtcNow;
+                var delay = dto.PublishedAt.Value - DateTime.Now;
                 var jobId = _backgroundJobClient.Schedule<INotificationService>(
                     service => service.PublishNotificationAsync(notif.Id),
                     delay
@@ -156,7 +156,7 @@ namespace PolyBabyAPI.Services
                     _backgroundJobClient.Delete(notif.HangfireJobId);
                     notif.HangfireJobId = null;
                 }
-                notif.PublishedAt = DateTime.UtcNow;
+                notif.PublishedAt = DateTime.Now;
                 await PublishNotificationAsync(notif.Id);
             }
 
@@ -224,7 +224,7 @@ namespace PolyBabyAPI.Services
                 TemplateCode = dto.TemplateCode,
                 TemplateContent = dto.TemplateContent,
                 IsActive = dto.IsActive,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
 
             _context.NotificationTemplates.Add(temp);
@@ -241,7 +241,7 @@ namespace PolyBabyAPI.Services
             temp.TemplateCode = dto.TemplateCode;
             temp.TemplateContent = dto.TemplateContent;
             temp.IsActive = dto.IsActive;
-            temp.UpdatedAt = DateTime.UtcNow;
+            temp.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return MapToDto(temp);
@@ -283,7 +283,7 @@ namespace PolyBabyAPI.Services
                 notif.HangfireJobId = null;
             }
 
-            notif.PublishedAt = DateTime.UtcNow;
+            notif.PublishedAt = DateTime.Now;
             return await PublishNotificationAsync(notificationId);
         }
 
@@ -328,7 +328,7 @@ namespace PolyBabyAPI.Services
 
             // 2. Tạo UserNotifications bulk
             var userNotifications = new List<UserNotification>();
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             foreach (var userId in targetUserIds)
             {
@@ -468,7 +468,7 @@ namespace PolyBabyAPI.Services
                     }
                     else if (condition == "tierexpiring") // Sắp hết hạn hạng thành viên
                     {
-                        var expiryThreshold = DateTime.UtcNow.AddDays(-170);
+                        var expiryThreshold = DateTime.Now.AddDays(-170);
                         candidateUserIds = await userQuery
                             .Join(_context.LoyaltyProfiles, u => u.Id, lp => lp.UserID, (u, lp) => new { u.Id, lp.LastUpdated })
                             .Where(x => x.LastUpdated <= expiryThreshold)
@@ -557,7 +557,7 @@ namespace PolyBabyAPI.Services
             if (userNotif.IsRead) return true;
 
             userNotif.IsRead = true;
-            userNotif.ReadAt = DateTime.UtcNow;
+            userNotif.ReadAt = DateTime.Now;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -570,7 +570,7 @@ namespace PolyBabyAPI.Services
 
             if (!unreadList.Any()) return true;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             foreach (var un in unreadList)
             {
                 un.IsRead = true;
@@ -627,7 +627,7 @@ namespace PolyBabyAPI.Services
 
             // Tính số lượng gửi theo thời gian (7 ngày qua)
             var sentOverTime = new List<NotificationTimeSeriesStatDto>();
-            var now = DateTime.UtcNow.Date;
+            var now = DateTime.Now.Date;
 
             for (int i = 6; i >= 0; i--)
             {

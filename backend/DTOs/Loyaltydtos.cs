@@ -25,6 +25,7 @@ namespace PolyBabyAPI.DTOs
             public string TransactionType { get; set; } = string.Empty; // EARN, SPEND, REFUND, REVOKE, BONUS, RESET
             public int Amount { get; set; }
             public int? InvoiceID { get; set; }
+            public string? InvoiceCode { get; set; }
             public string Description { get; set; } = string.Empty;
             public DateTime CreatedAt { get; set; }
         }
