@@ -58,6 +58,8 @@ namespace PolyBabyAPI.Controllers
                 orderInfo,
                 request.ReturnUrl);
 
+            System.IO.File.AppendAllText("vnpay_debug.txt", $"[{DateTime.Now}] URL GENERATED:\n{paymentUrl}\n\n");
+
             var tx = new PaymentTransaction
             {
                 InvoiceID = request.InvoiceId,
