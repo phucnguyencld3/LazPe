@@ -20,7 +20,7 @@ export function BannerRenderer({ banner }: BannerRendererProps) {
 
   if (items.length === 0) {
     if (!isPreview) return null;
-    const count = type === 'grid' || type === 'double' ? 2 : type === 'multi_col' ? 3 : 1;
+    const count = type === 'grid' || type === 'double' ? 2 : type === 'multi_col' ? 3 : type === 'masonry' ? 5 : 1;
     items = Array(count).fill(null).map((_, i) => ({
       imageUrl: `https://placehold.co/800x400/f8fafc/94a3b8?text=Placeholder+${banner.position}+(${i+1})`,
       altText: 'Placeholder',
@@ -113,8 +113,8 @@ export function BannerRenderer({ banner }: BannerRendererProps) {
     );
   }
 
-  // ----- Grid / Double / Multi-col / Masonry Template -----
-  if (type === 'grid' || type === 'double' || type === 'multi_col' || type === 'masonry') {
+  // ----- Grid / Double / Multi-col Template -----
+  if (type === 'grid' || type === 'double' || type === 'multi_col') {
     const cols = type === 'double' ? 2 : type === 'multi_col' ? 3 : (layoutConfig.gridColumns || 2);
     const gap = layoutConfig.gridGap || 4;
     return (
@@ -131,6 +131,39 @@ export function BannerRenderer({ banner }: BannerRendererProps) {
             <div key={idx} className="relative aspect-video">
               <BannerLink item={item} isPreview={isPreview}>
                 <img src={item.imageUrl} alt={item.altText || ''} className="w-full h-full object-cover rounded" />
+              </BannerLink>
+            </div>
+          ))}
+        </div>
+      </PreviewWrapper>
+    );
+  }
+
+  // ----- Masonry Template -----
+  if (type === 'masonry') {
+    const cols = layoutConfig.gridColumns || 2;
+    const gap = layoutConfig.gridGap || 4;
+    return (
+      <PreviewWrapper>
+        <div 
+          className={`${wrapperStyle}`} 
+          style={{ 
+            columnCount: cols,
+            columnGap: `${gap}px`
+          }}
+        >
+          {items.map((item, idx) => (
+            <div key={idx} className="relative w-full overflow-hidden" style={{ breakInside: 'avoid', marginBottom: `${gap}px` }}>
+              <BannerLink item={item} isPreview={isPreview}>
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.altText || ''} 
+                  className="w-full h-auto object-cover rounded" 
+                  style={{ 
+                    // Tự động random height cho placeholder để ra dáng masonry
+                    minHeight: (!item.imageUrl || item.imageUrl.includes('placehold.co')) ? `${150 + (idx % 3) * 50}px` : 'auto' 
+                  }} 
+                />
               </BannerLink>
             </div>
           ))}
@@ -268,7 +301,7 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
       setIsOpen(true);
       return;
     }
-    if (fc.closeable && fc.closeSession) {
+    if (fc.closeable !== false && fc.closeSession) {
       const closed = sessionStorage.getItem(`floating_closed_${banner.id}`);
       if (closed) setIsOpen(false);
     }
@@ -469,7 +502,7 @@ function BannerFloatingRenderer({ banner, wrapperStyle, isPreview }: { banner: B
           </div>
         )}
         
-        {fc.closeable && (
+        {fc.closeable !== false && (
           <button 
             onClick={() => {
               if (isPreview) return; // Do not close or store session in preview mode

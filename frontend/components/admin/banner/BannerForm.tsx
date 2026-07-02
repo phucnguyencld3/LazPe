@@ -101,7 +101,7 @@ export function BannerForm({
   };
 
   const handleFloatingConfigChange = (field: string, value: any) => {
-    const fc = formData.layoutConfig?.floatingConfig || {} as any;
+    const fc = { ...(formData.layoutConfig?.floatingConfig || {}) } as any;
     
     // Check if we are modifying a device-specific position
     if (['anchor', 'offsetX', 'offsetY'].includes(field)) {
@@ -197,16 +197,16 @@ export function BannerForm({
           value={formData.type || 'slideshow'}
           onChange={handleTypeChange}
         >
+          <option value="slideshow">Carousel (Slideshow)</option>
           <option value="full_width">Full Width</option>
           <option value="grid">Grid (Lưới)</option>
-          <option value="slideshow">Carousel (Slideshow)</option>
           <option value="single">Banner đơn</option>
           <option value="double">Banner đôi</option>
           <option value="multi_col">Banner nhiều cột</option>
-          <option value="popup">Popup</option>
-          <option value="masonry">Masonry</option>
-          <option value="floating">Floating Promo Banner</option>
           <option value="stack">Stack dọc</option>
+          <option value="masonry">Masonry</option>
+          <option value="popup">Popup</option>
+          <option value="floating">Floating Promo Banner</option>
         </select>
       </div>
 
@@ -246,8 +246,9 @@ export function BannerForm({
         <div className="space-y-1">
           <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block ml-1">Vị trí hiển thị</label>
           <select 
-            className="w-full px-4 py-3 rounded-[8px] bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white focus:outline-none font-semibold text-sm transition-all cursor-pointer"
+            className="w-full px-4 py-3 rounded-[8px] bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white focus:outline-none font-semibold text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             value={formData.position || 'home'}
+            disabled={formData.type === 'popup' || formData.type === 'floating'}
             onChange={(e) => {
               const newPos = e.target.value;
               let newPage = formData.page;
@@ -276,11 +277,15 @@ export function BannerForm({
               setFormData({...formData, position: newPos, page: newPage});
             }}
           >
-            <option value="home">Banner chính (Top/Hero)</option>
-            <option value="left">Cột bên (Sidebar)</option>
-            <option value="footer">Chân trang (Footer)</option>
-            <option value="promo">Banner khuyến mãi chung</option>
-            <option value="flash_sale">Banner Flash Sale</option>
+            <optgroup label="Vị trí giao diện">
+              <option value="home">Banner chính (Top/Hero)</option>
+              <option value="left">Cột bên (Sidebar)</option>
+              <option value="footer">Chân trang (Footer)</option>
+            </optgroup>
+            <optgroup label="Khu vực nội dung">
+              <option value="promo">Banner khuyến mãi chung</option>
+              <option value="flash_sale">Banner Flash Sale</option>
+            </optgroup>
           </select>
         </div>
       </div>

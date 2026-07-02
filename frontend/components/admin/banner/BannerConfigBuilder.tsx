@@ -17,35 +17,40 @@ export function BannerConfigBuilder({
   onSave?: (banner: Partial<Banner>) => void;
   token?: string;
 }) {
-  const [formData, setFormData] = useState<Partial<Banner>>(initialBanner || {
-    name: '',
-    position: 'home',
-    type: 'slideshow',
-    page: 'global',
-    layoutConfig: {
-      items: [],
-      animation: '',
-      containerStyle: '',
-      gridColumns: 2,
-      gridGap: 4,
-      popupDelay: 1000,
-      showCloseButton: true,
-      responsive: {},
-      floatingConfig: {
-        anchor: 'bottom-right',
-        closeable: true
-      }
+  const getInitial = (): Partial<Banner> => {
+    if (!initialBanner || (!initialBanner.id && !initialBanner.type)) {
+      return {
+        name: '',
+        position: 'home',
+        type: 'slideshow',
+        page: 'global',
+        layoutConfig: {
+          items: [],
+          animation: '',
+          containerStyle: '',
+          gridColumns: 2,
+          gridGap: 4,
+          popupDelay: 1000,
+          showCloseButton: true,
+          responsive: {},
+          floatingConfig: {
+            anchor: 'bottom-right',
+            closeable: true
+          }
+        }
+      };
     }
-  });
+    return initialBanner;
+  };
+
+  const [formData, setFormData] = useState<Partial<Banner>>(getInitial());
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'laptop' | 'tablet' | 'mobile'>('desktop');
 
   React.useEffect(() => {
-    if (initialBanner) {
-      setFormData(initialBanner);
-    }
+    setFormData(getInitial());
   }, [initialBanner]);
 
   React.useEffect(() => {

@@ -18,7 +18,7 @@ export default function BannersPage() {
     try {
       setLoading(true);
       const token = getValidToken();
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api').replace(/\/api$/, '');
       const res = await fetch(`${baseUrl}/api/admin/banners`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -57,7 +57,7 @@ export default function BannersPage() {
 
     try {
       const token = getValidToken();
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api').replace(/\/api$/, '');
       
       const isEdit = !!draft.id;
       const url = isEdit ? `${baseUrl}/api/admin/banners/draft/${draft.id}` : `${baseUrl}/api/admin/banners/draft`;
@@ -104,7 +104,7 @@ export default function BannersPage() {
   const handlePublish = async (bannerId: number) => {
     try {
       const token = getValidToken();
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api').replace(/\/api$/, '');
       const res = await fetch(`${baseUrl}/api/admin/banners/publish`, {
         method: 'POST',
         headers: {
@@ -133,7 +133,7 @@ export default function BannersPage() {
         onClick: async () => {
           try {
             const token = getValidToken();
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+            const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api').replace(/\/api$/, '');
             const res = await fetch(`${baseUrl}/api/admin/banners/${bannerId}`, {
               method: 'DELETE',
               headers: { Authorization: `Bearer ${token}` }
