@@ -41,7 +41,7 @@ namespace PolyBabyAPI.Services
             {
                 if (!string.IsNullOrEmpty(kv.Value))
                 {
-                    data.Append(Utils.UrlEncode(kv.Key) + "=" + Utils.UrlEncode(kv.Value) + "&");
+                    data.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
                 }
             }
 
@@ -83,7 +83,7 @@ namespace PolyBabyAPI.Services
             {
                 if (!string.IsNullOrEmpty(kv.Value))
                 {
-                    data.Append(Utils.UrlEncode(kv.Key) + "=" + Utils.UrlEncode(kv.Value) + "&");
+                    data.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
                 }
             }
 
@@ -109,18 +109,6 @@ namespace PolyBabyAPI.Services
 
     public static class Utils
     {
-        public static string UrlEncode(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return "";
-            return WebUtility.UrlEncode(value)
-                .Replace("+", "%20")
-                .Replace("%21", "!")
-                .Replace("%27", "'")
-                .Replace("%28", "(")
-                .Replace("%29", ")")
-                .Replace("%2a", "*");
-        }
-
         public static string HmacSHA512(string key, string inputData)
         {
             var hash = new StringBuilder();
