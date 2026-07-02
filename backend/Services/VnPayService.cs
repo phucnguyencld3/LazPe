@@ -52,6 +52,13 @@ namespace PolyBabyAPI.Services
 
             var signData = string.Join("&", vnpParams.Where(x => !string.IsNullOrEmpty(x.Value)).Select(x => $"{x.Key}={VnpUrlEncode(x.Value)}"));
             var secureHash = ComputeHmacSha512(_options.HashSecret.Trim(), signData);
+            
+            Console.WriteLine("=== VNPAY DEBUG INFO ===");
+            Console.WriteLine($"TmnCode: {_options.TmnCode}");
+            Console.WriteLine($"HashSecret Length: {_options.HashSecret?.Length ?? 0}");
+            Console.WriteLine($"SignData: {signData}");
+            Console.WriteLine($"SecureHash: {secureHash}");
+            Console.WriteLine("========================");
 
             return $"{_options.BaseUrl}?{signData}&vnp_SecureHashType=HMACSHA512&vnp_SecureHash={secureHash}";
         }
