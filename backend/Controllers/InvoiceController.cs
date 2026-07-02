@@ -745,8 +745,6 @@ namespace PolyBabyAPI.Controllers
                         amountToPay,
                         $"ThanhToanDonHang_{txnRef}",
                         "");
-                        
-                    System.IO.File.AppendAllText("vnpay_debug.txt", $"[{DateTime.Now}] URL GENERATED (Invoice.Create):\n{paymentUrl}\n\n");
                 }
  
                 try
