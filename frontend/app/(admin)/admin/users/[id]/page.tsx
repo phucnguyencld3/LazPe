@@ -77,7 +77,8 @@ export default function UserDetailsPage() {
         });
         const allPermData = await allPermRes.json();
         if (allPermData.success) {
-          setAllPermissions(allPermData.data);
+          const filteredPerms = allPermData.data.filter((p: any) => p.resource?.toLowerCase() !== "address");
+          setAllPermissions(filteredPerms);
         }
       } catch (err) {
         console.error(err);

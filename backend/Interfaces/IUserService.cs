@@ -40,5 +40,10 @@ namespace PolyBabyAPI.Interfaces
         /// Lấy thống kê users
         /// </summary>
         Task<UserStatisticsDto> GetUserStatisticsAsync();
+
+        /// <summary>
+        /// Xuất danh sách users ra Excel
+        /// </summary>
+        Task<byte[]> ExportExcelAsync(string? search, bool onlyWithPermissions);
     }
 }

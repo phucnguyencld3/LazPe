@@ -6,7 +6,8 @@ export const fetchPermissions = async (token: string): Promise<any[]> => {
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.message || "Failed to fetch permissions");
-  return data.data;
+  // Lọc bỏ quyền "Address" vì đây là chức năng người dùng tự quản lý ở client, không cần gán quyền
+  return data.data.filter((p: any) => p.resource?.toLowerCase() !== "address");
 };
 
 export const fetchUserPermissions = async (token: string, userId: string): Promise<any[]> => {

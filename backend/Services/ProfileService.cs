@@ -27,7 +27,9 @@ namespace PolyBabyAPI.Service
         {
             try
             {
-                var user = await _userManager.FindByIdAsync(userId);
+                var user = await _userManager.Users
+                    .Include(u => u.BabyProfiles)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with ID: {UserId}", userId);
@@ -48,11 +50,22 @@ namespace PolyBabyAPI.Service
                     ReceiveEmailNotifications = user.ReceiveEmailNotifications,
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
-                    MomFavoriteColors = user.MomFavoriteColors,
-                    ChildGender = user.ChildGender,
-                    ChildAgeMonths = user.ChildAgeMonths,
-                    ChildWeightKg = user.ChildWeightKg,
-                    IsOnboarded = user.IsOnboarded
+                    IsOnboarded = user.IsOnboarded,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance,
+                    BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
+                    {
+                        BabyProfileID = b.BabyProfileID,
+                        UserID = b.UserID,
+                        Name = b.Name,
+                        Relationship = b.Relationship,
+                        Gender = b.Gender,
+                        DateOfBirth = b.DateOfBirth,
+                        WeightKg = b.WeightKg,
+                        HeightCm = b.HeightCm,
+                        FavoriteColors = b.FavoriteColors,
+                        CreatedAt = b.CreatedAt
+                    }).ToList() ?? new List<BabyProfileDto>()
                 };
             }
             catch (Exception ex)
@@ -99,10 +112,6 @@ namespace PolyBabyAPI.Service
                     user.ReceivePromotions = updateDto.ReceivePromotions.Value;
                 }
 
-                user.MomFavoriteColors = updateDto.MomFavoriteColors;
-                user.ChildGender = updateDto.ChildGender;
-                user.ChildAgeMonths = updateDto.ChildAgeMonths;
-                user.ChildWeightKg = updateDto.ChildWeightKg;
                 if (updateDto.IsOnboarded.HasValue)
                 {
                     user.IsOnboarded = updateDto.IsOnboarded.Value;
@@ -273,7 +282,9 @@ namespace PolyBabyAPI.Service
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(email);
+                var user = await _userManager.Users
+                    .Include(u => u.BabyProfiles)
+                    .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper());
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with email: {Email}", email);
@@ -294,11 +305,22 @@ namespace PolyBabyAPI.Service
                     ReceiveEmailNotifications = user.ReceiveEmailNotifications,
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
-                    MomFavoriteColors = user.MomFavoriteColors,
-                    ChildGender = user.ChildGender,
-                    ChildAgeMonths = user.ChildAgeMonths,
-                    ChildWeightKg = user.ChildWeightKg,
-                    IsOnboarded = user.IsOnboarded
+                    IsOnboarded = user.IsOnboarded,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance,
+                    BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
+                    {
+                        BabyProfileID = b.BabyProfileID,
+                        UserID = b.UserID,
+                        Name = b.Name,
+                        Relationship = b.Relationship,
+                        Gender = b.Gender,
+                        DateOfBirth = b.DateOfBirth,
+                        WeightKg = b.WeightKg,
+                        HeightCm = b.HeightCm,
+                        FavoriteColors = b.FavoriteColors,
+                        CreatedAt = b.CreatedAt
+                    }).ToList() ?? new List<BabyProfileDto>()
                 };
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
@@ -32,8 +32,19 @@ namespace PolyBabyAPI.Models
         [MaxLength(2000)]
         public string? RawQuery { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Amount { get; set; } = 0;
+
+        [MaxLength(50)]
+        public string Provider { get; set; } = "VNPay";
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? PaidAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public DateTime? FailedAt { get; set; }
+
+        [MaxLength(500)]
+        public string? FailureReason { get; set; }
 
         [ForeignKey(nameof(InvoiceID))]
         [ValidateNever]

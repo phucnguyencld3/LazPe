@@ -7,7 +7,7 @@ interface OrderNoteSectionProps {
 
 export const OrderNoteSection: React.FC<OrderNoteSectionProps> = ({ note, setNote }) => {
   return (
-    <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md">
+    <section className="bg-white rounded-[8px] p-6 shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-8 h-8 rounded-[8px] bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
           3

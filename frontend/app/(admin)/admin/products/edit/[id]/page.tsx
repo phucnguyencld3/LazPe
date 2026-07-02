@@ -124,12 +124,19 @@ export default function EditProductPage() {
       // If no specs exist, initialize with default slots
       if (parsedSpecsList.length === 0) {
         parsedSpecsList = [
+          { key: "Tên sản phẩm", value: productData.productName || "" },
           { key: "Thương hiệu", value: "LazPe" },
           { key: "Xuất xứ", value: "Việt Nam" },
           { key: "Chất liệu", value: "" },
           { key: "Độ tuổi phù hợp", value: "" },
           { key: "Tiêu chuẩn an toàn", value: "Đạt chuẩn chất lượng Châu Âu EN71 & Quy chuẩn quốc gia CR" }
         ];
+      } else {
+        // If specs exist but "Tên sản phẩm" is not in there, let's prepend it
+        const hasNameSpec = parsedSpecsList.some(s => s.key === "Tên sản phẩm");
+        if (!hasNameSpec) {
+          parsedSpecsList.unshift({ key: "Tên sản phẩm", value: productData.productName || "" });
+        }
       }
       setSpecifications(parsedSpecsList);
 
@@ -152,6 +159,46 @@ export default function EditProductPage() {
       loadProductAndMetadata();
     }
   }, [id]);
+
+  // Synchronize product name and brand to specifications
+  useEffect(() => {
+    setSpecifications(prev => {
+      const nameIndex = prev.findIndex(s => s.key === "Tên sản phẩm");
+      let newSpecs = [...prev];
+      if (nameIndex >= 0) {
+        if (newSpecs[nameIndex].value !== productName) {
+          newSpecs[nameIndex] = { ...newSpecs[nameIndex], value: productName };
+          return newSpecs;
+        }
+      } else {
+        return [{ key: "Tên sản phẩm", value: productName }, ...prev];
+      }
+      return prev;
+    });
+  }, [productName]);
+
+  useEffect(() => {
+    if (!supplierId) return;
+    const selectedSupplier = suppliers.find(s => s.supplierID === supplierId);
+    if (!selectedSupplier) return;
+    const supplierName = selectedSupplier.supplierName;
+
+    setSpecifications(prev => {
+      const brandIndex = prev.findIndex(s => s.key === "Thương hiệu");
+      let newSpecs = [...prev];
+      if (brandIndex >= 0) {
+        if (newSpecs[brandIndex].value !== supplierName) {
+          newSpecs[brandIndex] = { ...newSpecs[brandIndex], value: supplierName };
+          return newSpecs;
+        }
+      } else {
+        const insertIndex = prev.findIndex(s => s.key === "Tên sản phẩm") + 1;
+        newSpecs.splice(insertIndex, 0, { key: "Thương hiệu", value: supplierName });
+        return newSpecs;
+      }
+      return prev;
+    });
+  }, [supplierId, suppliers]);
 
   // Category change handler from child CategorySelector
   const handleCategoryChange = (catId: number | null, pathIds: number[]) => {

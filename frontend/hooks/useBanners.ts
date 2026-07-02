@@ -60,8 +60,11 @@ export function useBanners(position: string) {
   const fetchBanners = async () => {
     try {
       // In a real app, this URL should come from env config e.g., process.env.NEXT_PUBLIC_API_URL
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
-      const res = await fetch(`${baseUrl}/api/clientbanners/position/${position}?page=${page}`, { cache: 'no-store' });
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api';
+      
+      // Đảm bảo không bị lặp /api/api khi gọi fetch
+      const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+      const res = await fetch(`${apiUrl}/clientbanners/position/${position}?page=${page}`, { cache: 'no-store' });
       if (res.ok) {
         const data: Banner[] = await res.json();
         setFetchedBanners(data);
@@ -77,15 +80,18 @@ export function useBanners(position: string) {
     fetchBanners();
 
     // Setup SignalR connection to listen for realtime updates
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api';
+    const hubUrl = baseUrl.replace(/\/api\/?$/, ''); // Cắt bỏ /api ở cuối để trỏ thẳng tới domain gốc
+    
     const connection = new HubConnectionBuilder()
-      .withUrl(`${baseUrl}/bannerHub`)
+      .withUrl(`${hubUrl}/bannerHub`)
       .withAutomaticReconnect()
       .build();
 
     let fetchTimeout: NodeJS.Timeout;
+    const startPromise = connection.start();
 
-    connection.start()
+    startPromise
       .then(() => {
         console.log('Connected to BannerHub');
         connection.on('BannerUpdated', (updatedPosition: string) => {
@@ -97,14 +103,21 @@ export function useBanners(position: string) {
           }
         });
       })
-      .catch(err => console.error('SignalR BannerHub Connection Error: ', err));
+      .catch(err => {
+        if (err?.message?.includes('stopped during negotiation')) return;
+        console.error('SignalR BannerHub Connection Error: ', err);
+      });
 
     connectionRef.current = connection;
 
     return () => {
       if (connectionRef.current) {
         connectionRef.current.off('BannerUpdated');
-        connectionRef.current.stop();
+        // Wait for connection to finish starting before stopping 
+        // to prevent "stopped during negotiation" error in React Strict Mode
+        startPromise.then(() => {
+          connection.stop();
+        }).catch(() => {});
       }
     };
   }, [position]);

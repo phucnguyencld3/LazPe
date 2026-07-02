@@ -62,12 +62,20 @@ export async function getBundles(token: string): Promise<BundleResponse[]> {
   return result.data || [];
 }
 
-// Fetch single bundle with items
+// Fetch single bundle with items (Admin)
 export async function getBundleDetail(id: number, token: string): Promise<BundleResponse> {
   const response = await fetch(`${API_BASE_URL}/Bundle/${id}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!response.ok) throw new Error("Failed to fetch bundle detail");
+  if (!response.ok) throw new Error("Failed to fetch bundle detail (Admin)");
+  const result = await response.json();
+  return result.data;
+}
+
+// Fetch single bundle with items (Public)
+export async function getPublicBundleDetail(id: number): Promise<BundleResponse> {
+  const response = await fetch(`${API_BASE_URL}/Bundle/public/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch public bundle detail");
   const result = await response.json();
   return result.data;
 }
@@ -172,4 +180,23 @@ export async function updateBundleItemQuantity(bundleItemId: number, quantity: n
   });
   const result = await response.json();
   return result;
+}
+
+export async function exportCombosExcel(
+  token: string,
+  searchTerm: string = "",
+  status: boolean | null = null
+): Promise<Blob> {
+  const params = new URLSearchParams({
+    searchTerm: searchTerm
+  });
+  if (status !== null) {
+    params.append("status", status.toString());
+  }
+
+  const res = await fetch(`${API_BASE_URL}/Bundle/export-excel?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to export combos Excel");
+  return res.blob();
 }

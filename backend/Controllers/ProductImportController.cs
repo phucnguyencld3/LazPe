@@ -14,7 +14,7 @@ namespace PolyBabyAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class ProductImportController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -94,7 +94,7 @@ namespace PolyBabyAPI.Controllers
         // GET /api/ProductImport/export
         // ─────────────────────────────────────────────
         [HttpGet("export")]
-        [Permission("Product.View")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ExportData()
         {
             var products = await _context.Products
@@ -205,7 +205,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/ProductImport/validate
         // ─────────────────────────────────────────────
         [HttpPost("validate")]
-        [Permission("Product.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ValidateImport(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -217,10 +217,11 @@ namespace PolyBabyAPI.Controllers
             {
                 using var stream = new MemoryStream();
                 await file.CopyToAsync(stream);
+                stream.Position = 0;
                 using var workbook = new XLWorkbook(stream);
 
-                var productsSheet = workbook.Worksheet("Products");
-                var variantsSheet = workbook.Worksheet("Variants");
+                workbook.TryGetWorksheet("Products", out var productsSheet);
+                workbook.TryGetWorksheet("Variants", out var variantsSheet);
 
                 if (productsSheet == null || variantsSheet == null)
                     return BadRequest("File không đúng định dạng mẫu. Cần có 2 sheet 'Products' và 'Variants'.");
@@ -730,7 +731,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/ProductImport/commit
         // ─────────────────────────────────────────────
         [HttpPost("commit")]
-        [Permission("Product.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CommitImport([FromBody] ImportCommitRequestDto request)
         {
             if (request == null || !request.Products.Any())

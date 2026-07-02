@@ -9,6 +9,7 @@ interface UserTableProps {
   totalCount: number;
   onPageChange: (page: number) => void;
   onRowClick: (id: string) => void;
+  onChatClick?: (id: string, name: string) => void;
   searchTerm: string;
   onSearchChange: (value: string) => void;
   statusFilter: string;
@@ -24,6 +25,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   totalCount,
   onPageChange,
   onRowClick,
+  onChatClick,
   searchTerm,
   onSearchChange,
   statusFilter,
@@ -148,9 +150,14 @@ export const UserTable: React.FC<UserTableProps> = ({
                   </td>
                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => onRowClick(u.id)} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-colors cursor-pointer">
+                      <button onClick={() => onRowClick(u.id)} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Xem chi tiết">
                         <span className="material-symbols-outlined text-lg">visibility</span>
                       </button>
+                      {onChatClick && (
+                        <button onClick={() => onChatClick(u.id, u.fullName || u.userName || "Khách")} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Nhắn tin">
+                          <span className="material-symbols-outlined text-lg">chat</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

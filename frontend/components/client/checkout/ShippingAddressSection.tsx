@@ -1,6 +1,7 @@
 import React from "react";
 import { MapPin, Plus, Pencil } from "lucide-react";
 import { AddressItem } from "@/lib/api";
+import { formatLocationName } from "@/lib/utils/formatters";
 
 interface ShippingAddressSectionProps {
   selectedAddress: AddressItem | null;
@@ -51,7 +52,7 @@ export const ShippingAddressSection: React.FC<ShippingAddressSectionProps> = ({
               <p className="text-slate-600 text-sm flex items-start">
                 <MapPin className="h-4 w-4 text-rose-400 mr-2 flex-shrink-0 mt-0.5" />
                 <span>
-                  {selectedAddress.detailAddress}, {selectedAddress.ward}, {selectedAddress.district === selectedAddress.province ? selectedAddress.province : `${selectedAddress.district}, ${selectedAddress.province}`}
+                  {[selectedAddress.detailAddress, formatLocationName(selectedAddress.ward), selectedAddress.district === selectedAddress.province ? formatLocationName(selectedAddress.province) : `${formatLocationName(selectedAddress.district)}, ${formatLocationName(selectedAddress.province)}`].filter(Boolean).join(', ')}
                 </span>
               </p>
             </div>

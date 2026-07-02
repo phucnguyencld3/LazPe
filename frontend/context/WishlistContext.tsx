@@ -11,6 +11,7 @@ interface WishlistContextType {
   removeFromWishlist: (productId: number) => void;
   toggleWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
+  updateWishlistItemRegistryState: (productId: number, data: { quantityNeeded?: number; note?: string | null; priority?: string }) => void;
   loading: boolean;
 }
 
@@ -167,6 +168,25 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return wishlist.some((item) => item.id === productId);
   };
 
+  const updateWishlistItemRegistryState = (
+    productId: number,
+    data: { quantityNeeded?: number; note?: string | null; priority?: string }
+  ) => {
+    setWishlist((prev) =>
+      prev.map((item) => {
+        if (item.id === productId) {
+          return {
+            ...item,
+            quantityNeeded: data.quantityNeeded !== undefined ? data.quantityNeeded : item.quantityNeeded,
+            note: data.note !== undefined ? data.note : item.note,
+            priority: data.priority !== undefined ? data.priority : item.priority,
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   return (
     <WishlistContext.Provider
       value={{
@@ -175,6 +195,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         removeFromWishlist,
         toggleWishlist,
         isInWishlist,
+        updateWishlistItemRegistryState,
         loading,
       }}
     >

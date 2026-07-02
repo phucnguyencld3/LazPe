@@ -15,7 +15,8 @@ import {
   CartInfo,
   CartDetailInfo,
   LoyaltyPolicySummaryResponse,
-  normalizeName
+  normalizeName,
+  getUserProfile
 } from "@/lib/api";
 import { getCurrentFlashSale } from "@/lib/features/flash-sales/flashSaleApi";
 
@@ -25,6 +26,10 @@ import { PaymentMethodSection } from "@/components/client/checkout/PaymentMethod
 import { OrderNoteSection } from "@/components/client/checkout/OrderNoteSection";
 import { OrderSummarySidebar } from "@/components/client/checkout/OrderSummarySidebar";
 import { AddressModal } from "@/components/client/checkout/AddressModal";
+import { VoucherModal } from "@/components/client/cart/VoucherModal";
+import { getPublicVouchers, applyVoucherToCart, autoApplyVouchersToCart, removeVoucherFromCart, getCheckoutAvailableVouchers} from "@/lib/api";
+import { Voucher } from "@/types";
+import { WalletSecurityModal } from "@/components/client/wallet/WalletSecurityModal";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -52,6 +57,11 @@ export default function CheckoutPage() {
   // Address Modal state
   const [addressModalOpen, setAddressModalOpen] = useState(false);
 
+  // Voucher Modal state
+  const [voucherModalOpen, setVoucherModalOpen] = useState(false);
+  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
+
   // Pricing states
   const [subTotal, setSubTotal] = useState(0);
   const [shippingFee, setShippingFee] = useState(0);
@@ -69,6 +79,19 @@ export default function CheckoutPage() {
   const [isApplyingPoints, setIsApplyingPoints] = useState<boolean>(false);
   const [loyaltyPolicySummary, setLoyaltyPolicySummary] = useState<LoyaltyPolicySummaryResponse | null>(null);
   const [estimatedEarnPoints, setEstimatedEarnPoints] = useState<number>(0);
+
+  // Wallet & Coins states
+  const [useWallet, setUseWallet] = useState(false);
+  const [useCoins, setUseCoins] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [coinsBalance, setCoinsBalance] = useState(0);
+  const [walletDiscount, setWalletDiscount] = useState(0);
+  const [coinsDiscount, setCoinsDiscount] = useState(0);
+  const [isWalletLocked, setIsWalletLocked] = useState(false);
+
+  // Wallet Security states
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityMode, setSecurityMode] = useState<any>("input");
 
   // Check auth and init
   useEffect(() => {
@@ -176,8 +199,24 @@ export default function CheckoutPage() {
     }
     setShippingDiscountAmount(shipDiscount);
 
-    setTotalPrice(sum + ship - discount - currentLoyaltyDiscount - shipDiscount);
-  }, [selectedItems, cart, loyaltyDiscount]);
+    let totalAfterLoyalty = sum + ship - discount - currentLoyaltyDiscount - shipDiscount;
+
+    let cDiscount = 0;
+    if (useCoins) {
+      cDiscount = Math.min(coinsBalance, totalAfterLoyalty);
+      totalAfterLoyalty -= cDiscount;
+    }
+    setCoinsDiscount(cDiscount);
+
+    let wDiscount = 0;
+    if (useWallet) {
+      wDiscount = Math.min(walletBalance, totalAfterLoyalty);
+      totalAfterLoyalty -= wDiscount;
+    }
+    setWalletDiscount(wDiscount);
+
+    setTotalPrice(totalAfterLoyalty);
+  }, [selectedItems, cart, loyaltyDiscount, useCoins, useWallet, coinsBalance, walletBalance]);
 
   useEffect(() => {
     const policy = loyaltyPolicySummary?.earnPolicy;
@@ -186,7 +225,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    const netSubtotal = Math.max(subTotal - discountAmount - loyaltyDiscount, 0);
+    // Tính điểm tích lũy dựa trên giá trị gốc của sản phẩm (subTotal)
+    const netSubtotal = Math.max(subTotal, 0);
     const basePoints = Math.floor(netSubtotal / policy.vndAmount) * policy.pointsEarned;
     const multiplied = Math.floor(basePoints * (policy.multiplier || 1));
     setEstimatedEarnPoints(Math.max(0, multiplied));
@@ -277,6 +317,27 @@ export default function CheckoutPage() {
         }
       } catch (e) {
         console.error("Error fetching loyalty profile:", e);
+      }
+
+      // 4. Fetch User Profile for Wallet & Coins
+      try {
+        const userProfile = await getUserProfile(uid, authToken);
+        if (userProfile) {
+          setWalletBalance(userProfile.walletBalance || 0);
+          setCoinsBalance(userProfile.coinsBalance || 0);
+        }
+      } catch (e) {
+        console.error("Error fetching user profile:", e);
+      }
+
+      try {
+        const { getWalletSecurityStatus } = await import("@/lib/api");
+        const statusRes = await getWalletSecurityStatus(authToken);
+        if (statusRes && statusRes.isLocked) {
+          setIsWalletLocked(true);
+        }
+      } catch (e) {
+        console.error("Error fetching wallet security status:", e);
       }
     } catch (error) {
       console.error("Initialization error:", error);
@@ -383,6 +444,75 @@ export default function CheckoutPage() {
     }
   };
 
+  const loadVouchersList = async () => {
+    setLoadingVouchers(true);
+    try {
+      const voucherData = token 
+        ? await getCheckoutAvailableVouchers(token)
+        : await getPublicVouchers();
+      if (voucherData) {
+        setVouchers(voucherData);
+      }
+    } catch (error) {
+      console.error("Error loading vouchers:", error);
+    } finally {
+      setLoadingVouchers(false);
+    }
+  };
+
+  const handleOpenVoucherModal = () => {
+    setVoucherModalOpen(true);
+    loadVouchersList();
+  };
+
+  const handleApplyVoucherFromModal = async (code: string) => {
+    if (!token) return;
+    try {
+      const res = await applyVoucherToCart(token, code);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Áp dụng mã giảm giá thành công!");
+      } else {
+        toast.error(res.message || "Áp dụng voucher thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
+  const handleAutoApplyVouchers = async () => {
+    if (!token) return;
+    try {
+      const res = await autoApplyVouchersToCart(token);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Áp dụng mã giảm giá tốt nhất thành công!");
+      } else {
+        toast.error(res.message || "Không tìm thấy mã giảm giá phù hợp");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
+  const handleRemoveVoucher = async (type?: number) => {
+    if (!token) return;
+    try {
+      const res = await removeVoucherFromCart(token, type);
+      if (res.success && res.data) {
+        setCart(res.data);
+        toast.success(res.message || "Đã hủy áp dụng mã giảm giá");
+      } else {
+        toast.error(res.message || "Không thể hủy mã giảm giá");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi kết nối");
+    }
+  };
+
   const handleOpenNewAddressForm = () => {
     // This function can be passed down to open the modal and trigger new form logic
   };
@@ -396,6 +526,39 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (useWallet) {
+      setSubmitting(true);
+      try {
+        const { getWalletSecurityStatus } = await import("@/lib/api");
+        const statusRes = await getWalletSecurityStatus(token);
+        
+        if (statusRes.isLocked) {
+          setIsWalletLocked(true);
+          setUseWallet(false);
+          toast.error("Ví của bạn đang bị khóa. Vui lòng thử lại sau hoặc mở khóa trong trang quản lý Ví.");
+          return;
+        }
+
+        if (!statusRes.isPinSet) {
+          setSecurityMode("setup_request");
+          setIsSecurityModalOpen(true);
+        } else {
+          setSecurityMode("input");
+          setIsSecurityModalOpen(true);
+        }
+      } catch (error: any) {
+        toast.error("Lỗi kiểm tra bảo mật ví");
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      executeCheckout();
+    }
+  };
+
+  const executeCheckout = async (pin?: string) => {
+    if (!token || !cart || selectedItems.length === 0 || !selectedAddress) return;
+
     setSubmitting(true);
     const selectedIds = selectedItems.map((item) => item.cartDetailID);
 
@@ -406,13 +569,19 @@ export default function CheckoutPage() {
         payMethod,
         selectedAddress.addressID,
         selectedIds,
-        pointsToUse
+        pointsToUse,
+        useCoins,
+        coinsDiscount,
+        useWallet,
+        walletDiscount,
+        pin
       );
 
       if (res.success && res.data) {
         const invoiceId = res.data.invoiceID ?? res.data.id;
         toast.success("Tạo đơn hàng thành công!");
         
+        setIsSecurityModalOpen(false);
         // Clear selected item IDs from localStorage
         localStorage.removeItem("selectedCartDetailIds");
 
@@ -500,6 +669,18 @@ export default function CheckoutPage() {
             earnPolicy={loyaltyPolicySummary?.earnPolicy || null}
             redeemPolicy={loyaltyPolicySummary?.redeemPolicy || null}
             estimatedEarnPoints={estimatedEarnPoints}
+            handleOpenVoucherModal={() => setVoucherModalOpen(true)}
+            handleAutoApplyVouchers={handleAutoApplyVouchers}
+            handleRemoveVoucher={handleRemoveVoucher}
+            useWallet={useWallet}
+            setUseWallet={setUseWallet}
+            useCoins={useCoins}
+            setUseCoins={setUseCoins}
+            walletBalance={walletBalance}
+            coinsBalance={coinsBalance}
+            walletDiscount={walletDiscount}
+            coinsDiscount={coinsDiscount}
+            isWalletLocked={isWalletLocked}
           />
         </div>
 
@@ -519,6 +700,35 @@ export default function CheckoutPage() {
           normalizeName={normalizeName}
         />
       )}
+
+      {/* Voucher Selection Modal */}
+      <VoucherModal
+        voucherModalOpen={voucherModalOpen}
+        setVoucherModalOpen={setVoucherModalOpen}
+        loadingVouchers={loadingVouchers}
+        vouchers={vouchers}
+        subTotal={subTotal}
+        handleApplyVoucherFromModal={handleApplyVoucherFromModal}
+        cart={cart}
+        handleRemoveVoucher={handleRemoveVoucher}
+      />
+
+      {/* Wallet Security Modal */}
+      {token && (
+        <WalletSecurityModal
+          isOpen={isSecurityModalOpen}
+          onClose={() => setIsSecurityModalOpen(false)}
+          token={token}
+          initialMode={securityMode}
+          onSuccess={(pin) => {
+            setIsSecurityModalOpen(false);
+            if (securityMode === "input" || securityMode === "setup_confirm" || securityMode === "forgot_confirm" || securityMode === "setup_request") {
+              executeCheckout(pin);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
+

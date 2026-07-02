@@ -11,12 +11,12 @@ export default function HomeLayout({
   return (
     <div className="flex gap-6 relative">
       {/* Left Sidebar */}
-      <div className="hidden lg:block sticky top-28 h-fit z-30">
+      <div className="hidden lg:block sticky top-28 h-fit z-50">
         <SidebarMenuV2 />
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 w-full max-w-[calc(100vw-2rem)] lg:max-w-none flex flex-col gap-6 min-w-0">
+      <div className="flex-1 w-full max-w-[calc(100vw-2rem)] lg:max-w-none flex flex-col gap-1 min-w-0">
         
         <HomeBanner />
         

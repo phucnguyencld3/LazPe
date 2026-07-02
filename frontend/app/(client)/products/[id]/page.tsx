@@ -3,12 +3,14 @@
 import React, { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck } from "lucide-react";
+import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck, Bell } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
 import { getProductDetail, getProducts } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
+import { ProductAlertModal } from "@/components/client/products/ProductAlertModal";
+import { CompareButton } from "@/components/client/compare/CompareButton";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
 import { ProductRecommendations } from "@/components/client/products/ProductRecommendations";
@@ -19,7 +21,7 @@ import { getCurrentFlashSale, FlashSaleResponseDto, FlashSaleItemResponseDto, Fl
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const productId = Number(params.id);
+  const slugOrId = params.id as string;
   const router = useRouter();
 
   // Core Product State
@@ -41,6 +43,7 @@ export default function ProductDetailPage() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
 
   // Fetch product detail
   useEffect(() => {
@@ -48,12 +51,12 @@ export default function ProductDetailPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await getProductDetail(productId);
+        const data = await getProductDetail(slugOrId);
         if (data) {
           setProduct(data);
           
           // Log view
-          logProductView(productId);
+          logProductView(data.id);
           
           // Fetch related products in the same category
           const related = await getProducts(1, 10, undefined, data.categoryId);
@@ -72,10 +75,10 @@ export default function ProductDetailPage() {
       }
     };
 
-    if (productId) {
+    if (slugOrId) {
       fetchDetail();
     }
-  }, [productId]);
+  }, [slugOrId]);
 
   // Fetch active flash sale
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function ProductDetailPage() {
           
           const saleContainsProduct = (sale: FlashSaleResponseDto) => {
             return sale.flashSaleItems.some(item => {
-              if (item.itemType === 1 && item.referenceId === productId) return true;
+              if (item.itemType === 1 && item.referenceId === product.id) return true;
               if (item.itemType === 2 && product.variants?.some(v => v.variantID === item.referenceId)) return true;
               return false;
             });
@@ -113,7 +116,7 @@ export default function ProductDetailPage() {
     if (product) {
       fetchFlashSale();
     }
-  }, [product, productId]);
+  }, [product]);
 
   // Define helper to check if a variant option value is out of stock
   const isOptionValueOutOfStock = (optionName: string, value: string) => {
@@ -191,8 +194,19 @@ export default function ProductDetailPage() {
     
     // Find the tier that matches the current quantity
     const tier = matchedItems.find(item => quantity >= (item.requiredQuantity || 1));
+    const result = tier || matchedItems[matchedItems.length - 1];
     
-    return tier || matchedItems[matchedItems.length - 1];
+    // Nếu flash sale đã hết hàng hoặc người dùng đã hết lượt mua, ẩn hoàn toàn flash sale và hiển thị sản phẩm bình thường
+    if (result) {
+      if (result.soldQuantity >= result.totalQuantity) {
+        return null;
+      }
+      if (result.maxQuantityPerUser > 0 && (result.userPurchasedQuantity || 0) >= result.maxQuantityPerUser) {
+        return null;
+      }
+    }
+    
+    return result;
   }, [activeFlashSale, product, selectedOptions, quantity]);
 
   useEffect(() => {
@@ -275,6 +289,27 @@ export default function ProductDetailPage() {
     return product?.image || (product?.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : undefined);
   }, [activeVariant, product, selectedOptions]);
 
+  const allImageUrls = useMemo(() => {
+    if (!product) return [];
+    
+    const urls = new Set<string>();
+    
+    // Add product image and imageUrls
+    if (product.image) urls.add(product.image);
+    if (product.imageUrls) {
+      product.imageUrls.forEach(url => urls.add(url));
+    }
+    
+    // Add variant images
+    if (product.variants) {
+      product.variants.forEach(v => {
+        if (v.imageUrl) urls.add(v.imageUrl);
+      });
+    }
+    
+    return Array.from(urls);
+  }, [product]);
+
   const displayPrice = activeVariant ? activeVariant.unitPrice : product?.price || 0;
   
   const displayDiscountPrice = useMemo(() => {
@@ -298,7 +333,8 @@ export default function ProductDetailPage() {
       const remainingSaleQty = activeFlashSaleItem.totalQuantity - activeFlashSaleItem.soldQuantity;
       limit = Math.min(limit, remainingSaleQty);
       if (activeFlashSaleItem.maxQuantityPerUser > 0) {
-        limit = Math.min(limit, activeFlashSaleItem.maxQuantityPerUser);
+        const userLeft = activeFlashSaleItem.maxQuantityPerUser - (activeFlashSaleItem.userPurchasedQuantity || 0);
+        limit = Math.min(limit, Math.max(0, userLeft));
       }
     }
     return Math.max(0, limit);
@@ -465,29 +501,49 @@ export default function ProductDetailPage() {
   return (
     <div className="bg-slate-50 min-h-screen py-4 sm:py-6 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <div className="px-4 sm:px-0 mt-4 sm:mt-0">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 sm:mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-[8px] border border-slate-100 shadow-sm hover:shadow active:scale-95"
-          >
-            <ArrowLeft size={16} />
-            Quay lại danh sách
-          </button>
-        </div>
-
         {/* Product Container */}
         <div className="bg-white sm:rounded-[16px] sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-6 sm:mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8">
+          {/* Breadcrumb Navigation */}
+          <div className="px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-4 pb-0">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-3 py-1.5 rounded-[8px] border border-slate-200 shadow-sm hover:shadow active:scale-95"
+            >
+              <ArrowLeft size={16} />
+              Quay lại danh sách
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
             <ProductImageGallery
               displayImage={displayImage}
               productName={product.name}
               hasDiscount={hasDiscount}
               displayPrice={displayPrice}
               displayDiscountPrice={displayDiscountPrice}
-              imageUrls={product?.imageUrls}
+              imageUrls={allImageUrls}
               isWishlisted={isWishlisted}
               setIsWishlisted={setIsWishlisted}
+              compareAction={
+                <CompareButton 
+                  product={product} 
+                />
+              }
+              alertAction={
+                <button
+                  onClick={() => setIsAlertModalOpen(true)}
+                  className="group flex items-center h-10 px-2.5 rounded-[8px] border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 ease-out shrink-0 active:scale-90 shadow-sm"
+                >
+                  <Bell size={20} className="shrink-0 transition-all" />
+                  <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
+                    <div className="overflow-hidden">
+                      <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                        {displayInStock ? "Theo dõi giá" : "Nhận thông báo"}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              }
             />
 
             <ProductDetailInfo
@@ -530,8 +586,19 @@ export default function ProductDetailPage() {
           relatedProducts={relatedProducts}
         />
 
-        <ProductRecommendations limit={5} excludeProductId={productId} />
+        <ProductRecommendations limit={5} excludeProductId={product.id} />
       </div>
+
+      <ProductAlertModal
+        isOpen={isAlertModalOpen}
+        onClose={() => setIsAlertModalOpen(false)}
+        productId={product.id}
+        productName={product.name}
+        variantId={activeVariant?.variantID}
+        variantName={activeVariant?.variantName}
+        isOutOfStock={!displayInStock}
+        currentPrice={displayDiscountPrice || displayPrice}
+      />
     </div>
   );
 }

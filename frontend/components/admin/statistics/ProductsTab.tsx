@@ -83,7 +83,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Sellers chart */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
+      <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
         <h3 className="font-bold text-slate-800 text-base mb-6">Top 5 Sản phẩm Bán chạy</h3>
         {isChartReady && productChart ? (
           <Chart
@@ -102,7 +102,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
       {/* Product Inventory Tops: Low vs High Stocks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Highest Stock products */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
+        <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
           <h3 className="font-bold text-slate-800 text-base mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-indigo-500">warehouse</span>
             Sản phẩm Tồn kho cao nhất
@@ -134,7 +134,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         </div>
 
         {/* Lowest Stock products */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
+        <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
           <h3 className="font-bold text-rose-700 text-base mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-rose-500">warning</span>
             Sản phẩm Cảnh báo hết hàng
@@ -175,7 +175,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
       </div>
 
       {/* Paginated Product Sales breakdown Table */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
+      <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h3 className="font-bold text-slate-800 text-base">Báo cáo Sản phẩm Bán ra Chi tiết</h3>
@@ -193,7 +193,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                 setProductSearch(e.target.value);
                 setProductPage(1);
               }}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded font-semibold text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
         </div>

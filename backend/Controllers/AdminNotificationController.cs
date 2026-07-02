@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -25,6 +26,7 @@ namespace PolyBabyAPI.Controllers
         #region Campaigns Management
 
         [HttpGet("campaigns")]
+        [Permission("Notification.Read")]
         public async Task<IActionResult> GetAllCampaigns([FromQuery] string? searchTerm)
         {
             try
@@ -40,6 +42,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpGet("campaigns/{id}")]
+        [Permission("Notification.Read")]
         public async Task<IActionResult> GetCampaignById(int id)
         {
             try
@@ -59,6 +62,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpPost("campaigns")]
+        [Permission("Notification.Create")]
         public async Task<IActionResult> CreateCampaign([FromBody] CreateNotificationDto dto)
         {
             if (!ModelState.IsValid)
@@ -81,6 +85,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpPut("campaigns/{id}")]
+        [Permission("Notification.Update")]
         public async Task<IActionResult> UpdateCampaign(int id, [FromBody] UpdateNotificationDto dto)
         {
             if (!ModelState.IsValid)
@@ -109,6 +114,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpDelete("campaigns/{id}")]
+        [Permission("Notification.Delete")]
         public async Task<IActionResult> DeleteCampaign(int id)
         {
             try
@@ -128,6 +134,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpPost("campaigns/{id}/send-now")]
+        [Permission("Notification.Create")]
         public async Task<IActionResult> SendCampaignNow(int id)
         {
             try
@@ -147,6 +154,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpPost("campaigns/{id}/cancel")]
+        [Permission("Notification.Create")]
         public async Task<IActionResult> CancelCampaignSchedule(int id)
         {
             try
@@ -166,6 +174,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpGet("statistics")]
+        [Permission("Notification.Read")]
         public async Task<IActionResult> GetStatistics()
         {
             try
@@ -185,6 +194,7 @@ namespace PolyBabyAPI.Controllers
         #region Templates Management
 
         [HttpGet("templates")]
+        [Permission("Notification.Read")]
         public async Task<IActionResult> GetAllTemplates()
         {
             try
@@ -200,6 +210,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpGet("templates/{id}")]
+        [Permission("Notification.Read")]
         public async Task<IActionResult> GetTemplateById(int id)
         {
             try
@@ -219,6 +230,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpPost("templates")]
+        [Permission("Notification.Create")]
         public async Task<IActionResult> CreateTemplate([FromBody] NotificationTemplateDto dto)
         {
             if (!ModelState.IsValid)
@@ -239,6 +251,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpPut("templates/{id}")]
+        [Permission("Notification.Update")]
         public async Task<IActionResult> UpdateTemplate(int id, [FromBody] NotificationTemplateDto dto)
         {
             if (!ModelState.IsValid)
@@ -263,6 +276,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpDelete("templates/{id}")]
+        [Permission("Notification.Delete")]
         public async Task<IActionResult> DeleteTemplate(int id)
         {
             try
@@ -284,3 +298,4 @@ namespace PolyBabyAPI.Controllers
         #endregion
     }
 }
+

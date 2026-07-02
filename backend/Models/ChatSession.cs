@@ -22,6 +22,8 @@ namespace PolyBabyAPI.Models
 
         public bool IsClosed { get; set; } = false;
 
+        public bool IsWaitingForSupport { get; set; } = false;
+
         [StringLength(500)]
         public string? LastMessageText { get; set; }
 

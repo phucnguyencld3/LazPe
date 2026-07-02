@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interfaces
 {
@@ -27,5 +27,6 @@ namespace PolyBabyAPI.Interfaces
         // Utility
         Task<IEnumerable<Variant>> GetAvailableVariantsAsync();
         Task<Variant> GetVariantByIdAsync(int variantId);
+        Task<byte[]> ExportExcelAsync(string searchTerm, bool? status);
     }
 }

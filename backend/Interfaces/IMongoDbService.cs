@@ -8,5 +8,7 @@ namespace PolyBabyAPI.Interfaces
         IMongoCollection<UserInteraction> UserInteractions { get; }
         IMongoCollection<KnowledgeArticle> KnowledgeArticles { get; }
         IMongoCollection<AuditLog> AuditLogs { get; }
+        IMongoCollection<BlockedIp> BlockedIps { get; }
+        IMongoCollection<SecurityAuditLog> SecurityAuditLogs { get; }
     }
 }

@@ -63,6 +63,7 @@ export interface FlashSaleItemResponseDto {
   itemType: FlashSaleItemType;
   referenceId: number;
   itemName: string;
+  slug?: string;
   sku?: string;
   imageUrl?: string;
   originalPrice: number;
@@ -75,6 +76,7 @@ export interface FlashSaleItemResponseDto {
   totalQuantity: number;
   soldQuantity: number;
   maxQuantityPerUser: number;
+  userPurchasedQuantity?: number;
   productId?: number;
 }
 
@@ -156,8 +158,12 @@ export async function deleteFlashSale(id: number, token: string): Promise<any> {
 
 // Get current active flash sale (Client)
 export async function getCurrentFlashSale(): Promise<FlashSaleResponseDto[]> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") || sessionStorage.getItem("token") : null;
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const response = await fetch(`${API_BASE_URL}/FlashSale/current`, {
-    headers: { "Content-Type": "application/json" }
+    headers
   });
   if (!response.ok) return [];
   const text = await response.text();

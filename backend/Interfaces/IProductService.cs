@@ -12,6 +12,7 @@ namespace PolyBabyAPI.Interfaces
 
         Task<ProductDto?> GetProductByIdAsync(int id);
         Task<ProductDetailDto?> GetProductDetailAsync(int id);
+        Task<ProductDetailDto?> GetProductBySlugAsync(string slug);
         Task<ServiceResult<ProductDto>> CreateProductAsync(CreateProductDto dto);
         Task<ServiceResult<ProductDto>> CreateFullProductAsync(CreateFullProductDto dto);
         Task<ServiceResult<ProductDto>> UpdateProductAsync(int id, UpdateProductDto dto, string userId);
@@ -21,6 +22,7 @@ namespace PolyBabyAPI.Interfaces
         Task<List<SupplierSelectDto>> GetSuppliersForSelectAsync();
         Task<bool> IsProductCodeExistAsync(string code, int? excludeId = null);
         Task<object> GetProductStatsAsync();
+        Task<ServiceResult<object>> SyncSeoFieldsAsync();
         void ClearProductCache();
     }
 }

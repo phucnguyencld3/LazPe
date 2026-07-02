@@ -1,9 +1,27 @@
 import React from "react";
-import { OrderInfo } from "@/lib/features/orders/orderApi";
+import { OrderInfo, getStatusBadgeColor, getStatusLabel, formatDateTime } from "@/lib/features/orders/orderApi";
+import { formatAddress } from "@/lib/utils/formatters";
 
 interface OrderCustomerInfoProps {
   order: OrderInfo;
 }
+
+const getVnPayErrorMessage = (code: string | null | undefined) => {
+  if (!code) return "Lỗi thanh toán không xác định";
+  switch (code) {
+    case "07": return "Trừ tiền thành công nhưng giao dịch bị nghi ngờ (cần kiểm tra lại)";
+    case "09": return "Thẻ/Tài khoản chưa đăng ký dịch vụ Internet Banking";
+    case "10": return "Xác thực thông tin thẻ/tài khoản không đúng quá 3 lần";
+    case "11": return "Hết hạn chờ thanh toán";
+    case "12": return "Thẻ/Tài khoản bị khóa";
+    case "24": return "Khách hàng hủy giao dịch thanh toán";
+    case "51": return "Tài khoản không đủ số dư để thực hiện giao dịch";
+    case "65": return "Giao dịch vượt quá hạn mức trong ngày";
+    case "75": return "Ngân hàng thanh toán đang bảo trì";
+    case "99": return "Lỗi hệ thống cổng thanh toán VNPay";
+    default: return `Mã lỗi cổng thanh toán VNPay: ${code}`;
+  }
+};
 
 export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) => {
   const customerName = order.userFullName || order.userName || "Ẩn danh";
@@ -31,51 +49,107 @@ export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) =
     }
   };
 
+  const latestTx = order.paymentTransactions && order.paymentTransactions.length > 0
+    ? order.paymentTransactions[0]
+    : null;
+
+  const refCode = latestTx 
+    ? (latestTx.vnPayTransactionNo || latestTx.txnRef || "Không có")
+    : "N/A";
+
+  const hasPaymentError = latestTx && (
+    latestTx.status === "Failed" || 
+    latestTx.statusCode === 2 || 
+    (latestTx.responseCode && latestTx.responseCode !== "00")
+  );
+
+  const errorMessage = hasPaymentError ? getVnPayErrorMessage(latestTx.responseCode) : null;
+
   return (
-    <div className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
-      <div className="flex items-center gap-4 mb-8">
-        {order.userAvatar && order.userAvatar.trim() !== "" ? (
-          <img
-            src={order.userAvatar}
-            alt={customerName}
-            className="w-12 h-12 rounded-2xl object-cover shrink-0 border border-slate-100"
-          />
-        ) : (
-          <div
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 ${getAvatarColors(
-              customerName
-            )}`}
-          >
-            {getInitials(customerName)}
-          </div>
-        )}
-        <h3 className="text-xl font-bold text-slate-800">Thông tin khách hàng</h3>
+    <div className="p-5 relative">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          {order.userAvatar && order.userAvatar.trim() !== "" ? (
+            <img
+              src={order.userAvatar}
+              alt={customerName}
+              className="w-10 h-10 rounded-[6px] object-cover shrink-0 border border-slate-100"
+            />
+          ) : (
+            <div
+              className={`w-10 h-10 rounded-[6px] flex items-center justify-center text-xs font-bold shrink-0 ${getAvatarColors(
+                customerName
+              )}`}
+            >
+              {getInitials(customerName)}
+            </div>
+          )}
+          <h3 className="text-base font-bold text-slate-800">Thông tin khách hàng</h3>
+        </div>
+        <span className={`inline-flex px-3 py-1 rounded-[8px] text-sm font-bold items-center gap-1.5 ${getStatusBadgeColor(order.statusCode)}`}>
+          <span className="w-1.5 h-1.5 bg-current rounded-full"></span>
+          {getStatusLabel(order.statusCode)}
+        </span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">HỌ VÀ TÊN</p>
-            <p className="text-lg font-bold text-slate-800">{order.userFullName || order.userName}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">HỌ VÀ TÊN</p>
+            <p className="text-sm font-bold text-slate-800">{order.userFullName || order.userName}</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">SỐ ĐIỆN THOẠI</p>
-            <p className="text-lg font-bold text-slate-800">{order.userPhone || 'Không có'}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">SỐ ĐIỆN THOẠI</p>
+            <p className="text-sm font-bold text-slate-800">{order.userPhone || 'Không có'}</p>
+          </div>
+
+          <div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">LOẠI THANH TOÁN</p>
+            <p className="text-sm font-bold text-slate-800">{order.payMethod || "Thanh toán khi nhận hàng (COD)"}</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">EMAIL</p>
-            <p className="text-slate-600 font-medium">{order.userEmail || 'Không có'}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">THỜI GIAN TẠO</p>
+            <p className="text-sm font-bold text-slate-800">{formatDateTime(order.createdAt)}</p>
           </div>
         </div>
-        <div className="bg-rose-50 p-8 rounded-[2rem] border border-rose-100">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-rose-500 text-lg">local_shipping</span>
-            <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest">ĐỊA CHỈ NHẬN HÀNG</p>
+        <div className="space-y-4">
+          <div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">ĐỊA CHỈ NHẬN HÀNG</p>
+            <p className="text-sm font-bold text-slate-800 leading-relaxed">
+              {formatAddress(order.shippingAddress) || 'Chưa cập nhật địa chỉ'}
+            </p>
           </div>
-          <p className="text-slate-700 font-semibold leading-relaxed">
-            {order.shippingAddress || 'Chưa cập nhật địa chỉ'}
-          </p>
+          <div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">MÃ VẬN ĐƠN</p>
+            {order.trackingCode ? (
+              <p className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md w-fit border border-blue-100">{order.trackingCode}</p>
+            ) : (
+              <p className="text-sm font-medium text-slate-500 italic">Chưa có mã vận đơn</p>
+            )}
+          </div>
+          {(order.payMethod === "Ví điện tử" || order.payMethodCode === 2) && (
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">MÃ THAM CHIẾU (THANH TOÁN)</p>
+              <p className="text-sm font-bold text-slate-800 overflow-hidden text-ellipsis whitespace-nowrap" title={refCode}>
+                {refCode}
+              </p>
+            </div>
+          )}
         </div>
       </div>
+      {hasPaymentError && errorMessage && (
+        <div className="mt-4 p-4 bg-rose-50 border border-rose-100 rounded-[8px] flex items-start gap-4">
+          <div className="w-10 h-10 rounded-[6px] bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+            <span className="material-symbols-outlined">error</span>
+          </div>
+          <div>
+            <h4 className="font-bold text-rose-900 text-sm mb-1">Giao dịch thanh toán thất bại</h4>
+            <p className="text-xs text-rose-700 font-semibold">{errorMessage}</p>
+            {latestTx?.responseCode && (
+              <p className="text-[10px] text-rose-500 font-medium mt-1">Mã phản hồi từ ngân hàng: {latestTx.responseCode}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

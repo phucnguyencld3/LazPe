@@ -15,7 +15,7 @@ namespace PolyBabyAPI.Helpers
         {
             if (value.Kind == DateTimeKind.Unspecified)
             {
-                var localOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow);
+                var localOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
                 if (localOffset == TimeSpan.Zero)
                 {
                     value = DateTime.SpecifyKind(value, DateTimeKind.Utc);

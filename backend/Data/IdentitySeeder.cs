@@ -67,7 +67,7 @@ namespace PolyBabyAPI.Data
 
             var defaultPermissions = new[]
             {
-                // ✅ THÊM: Admin Access Permission
+                // THÊM: Admin Access Permission
                 new { Resource = "Admin", Action = "Access", Description = "Truy cập vào Admin Dashboard" },
                 new { Resource = "Admin", Action = "ViewUsers", Description = "Xem danh sách người dùng trong Admin" },
                 new { Resource = "Admin", Action = "ManagePermissions", Description = "Quản lý phân quyền hệ thống" },
@@ -134,7 +134,35 @@ namespace PolyBabyAPI.Data
                 new { Resource = "Address", Action = "Create", Description = "Tạo địa chỉ mới" },
                 new { Resource = "Address", Action = "Read", Description = "Xem địa chỉ" },
                 new { Resource = "Address", Action = "Update", Description = "Cập nhật địa chỉ" },
-                new { Resource = "Address", Action = "Delete", Description = "Xóa địa chỉ" }
+                new { Resource = "Address", Action = "Delete", Description = "Xóa địa chỉ" },
+
+                // Voucher Management
+                new { Resource = "Voucher", Action = "Create", Description = "Tạo mã giảm giá" },
+                new { Resource = "Voucher", Action = "Read", Description = "Xem mã giảm giá" },
+                new { Resource = "Voucher", Action = "Update", Description = "Cập nhật mã giảm giá" },
+                new { Resource = "Voucher", Action = "Delete", Description = "Xóa mã giảm giá" },
+
+                // Loyalty Management
+                new { Resource = "Loyalty", Action = "Create", Description = "Tạo thứ hạng thành viên" },
+                new { Resource = "Loyalty", Action = "Read", Description = "Xem thứ hạng thành viên" },
+                new { Resource = "Loyalty", Action = "Update", Description = "Cập nhật thứ hạng thành viên" },
+                new { Resource = "Loyalty", Action = "Delete", Description = "Xóa thứ hạng thành viên" },
+
+                // Notification Management
+                new { Resource = "Notification", Action = "Create", Description = "Tạo thông báo" },
+                new { Resource = "Notification", Action = "Read", Description = "Xem thông báo" },
+                new { Resource = "Notification", Action = "Update", Description = "Cập nhật thông báo" },
+                new { Resource = "Notification", Action = "Delete", Description = "Xóa thông báo" },
+
+                // Flash Sale Management
+                new { Resource = "FlashSale", Action = "Create", Description = "Tạo chiến dịch Flash Sale" },
+                new { Resource = "FlashSale", Action = "Read", Description = "Xem chiến dịch Flash Sale" },
+                new { Resource = "FlashSale", Action = "Update", Description = "Cập nhật chiến dịch Flash Sale" },
+                new { Resource = "FlashSale", Action = "Delete", Description = "Xóa chiến dịch Flash Sale" },
+                new { Resource = "Chat", Action = "Manage", Description = "Quản lý Chat" },
+                new { Resource = "Withdraw", Action = "Read", Description = "Xem yêu cầu rút tiền" },
+                new { Resource = "Withdraw", Action = "Update", Description = "Xử lý yêu cầu rút tiền" },
+                new { Resource = "System", Action = "Audit", Description = "Xem nhật ký hệ thống" }
             };
 
             var existingPermissions = await permissionService.GetAllPermissionsAsync();

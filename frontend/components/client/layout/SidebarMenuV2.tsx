@@ -64,12 +64,12 @@ export default function SidebarMenuV2() {
               >
                 <Link 
                   href={`/products?category=${cat.id}`} 
-                  className={`flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors
-                    ${activeMenu === cat.id ? 'bg-primary/5 text-primary' : 'text-slate-700 hover:bg-slate-50 hover:text-primary'}
+                  className={`flex items-center justify-between px-4 py-3 text-[13px] font-bold transition-all
+                    ${activeMenu === cat.id ? 'bg-gradient-to-r from-rose-50 to-white text-rose-600 border-l-[3px] border-rose-500' : 'text-slate-700 hover:bg-slate-50 hover:text-rose-600 border-l-[3px] border-transparent'}
                   `}
                 >
                   <span className="line-clamp-1">{cat.name}</span>
-                  {hasSub && <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />}
+                  {hasSub && <ChevronRight size={16} className={`transition-transform ${activeMenu === cat.id ? 'text-rose-500 translate-x-1' : 'text-slate-300'}`} />}
                 </Link>
               </li>
               );
@@ -80,28 +80,36 @@ export default function SidebarMenuV2() {
 
         {/* Mega Menu Overlay */}
         {activeMenu && !loading && subCats.length > 0 && (
-          <div className="absolute top-0 left-full w-[700px] min-h-full bg-white rounded-[10px] shadow-lg border border-slate-100 z-40 p-8 flex flex-col">
-            <div className="border-b border-slate-200 pb-4 mb-6">
-              <h3 className="font-extrabold text-2xl text-slate-800">
+          <div className="absolute top-0 left-[calc(100%-4px)] w-[800px] min-h-[450px] bg-white rounded-r-[12px] rounded-b-[12px] shadow-[10px_0_30px_rgba(0,0,0,0.08)] border border-slate-100 z-50 p-8 flex flex-col animate-[fadeIn_0.2s_ease-out]">
+            <div className="border-b border-rose-100 pb-4 mb-6 flex justify-between items-end">
+              <h3 className="font-black text-2xl text-slate-800 flex items-center gap-2.5 tracking-tight">
+                <span className="w-1.5 h-6 bg-gradient-to-b from-rose-400 to-rose-600 rounded-full"></span>
                 {displayCats.find(c => c.id === activeMenu)?.name}
               </h3>
+              <Link href={`/products?category=${activeMenu}`} className="text-rose-600 text-[13px] font-bold flex items-center hover:text-rose-700 transition-colors bg-rose-50 hover:bg-rose-100 px-3.5 py-1.5 rounded-full">
+                Xem tất cả <ChevronRight size={14} className="ml-0.5" />
+              </Link>
             </div>
             
-            <div className="grid grid-cols-2 gap-x-12 gap-y-8 mb-8 flex-grow">
+            <div className="grid grid-cols-3 gap-x-10 gap-y-8 mb-8 flex-grow content-start">
               {subCats.map(level2 => {
                 const level3Cats = allCategories.filter(c => c.parentId === level2.id);
                 return (
-                  <div key={level2.id}>
-                    <Link href={`/products?category=${level2.id}`}>
-                      <h4 className="font-bold text-[15px] mb-4 text-slate-800 hover:text-primary transition-colors">
+                  <div key={level2.id} className="group">
+                    <Link href={`/products?category=${level2.id}`} className="flex items-center justify-between mb-3 border-b border-transparent group-hover:border-rose-100 pb-1 transition-all">
+                      <h4 className="font-extrabold text-[14px] text-slate-800 group-hover:text-rose-600 transition-colors">
                         {level2.name}
                       </h4>
+                      <ChevronRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0" />
                     </Link>
                     {level3Cats.length > 0 && (
-                      <ul className="space-y-3 text-[14px] text-slate-600">
+                      <ul className="space-y-1">
                         {level3Cats.map(level3 => (
                           <li key={level3.id}>
-                            <Link href={`/products?category=${level3.id}`} className="hover:text-primary transition-colors block">
+                            <Link 
+                              href={`/products?category=${level3.id}`} 
+                              className="text-[13px] font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 -mx-2.5 rounded-[6px] transition-colors block"
+                            >
                               {level3.name}
                             </Link>
                           </li>
@@ -111,12 +119,6 @@ export default function SidebarMenuV2() {
                   </div>
                 );
               })}
-            </div>
-            
-            <div className="border-t border-slate-100 pt-5 mt-auto">
-              <Link href={`/products?category=${activeMenu}`} className="text-primary text-[15px] font-semibold flex items-center hover:underline w-fit">
-                Xem tất cả <ChevronRight size={18} className="ml-1" />
-              </Link>
             </div>
           </div>
         )}

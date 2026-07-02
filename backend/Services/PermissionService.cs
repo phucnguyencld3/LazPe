@@ -114,7 +114,7 @@ namespace PolyBabyAPI.Services
                 if (existing != null)
                 {
                     existing.IsGranted = isGranted;
-                    existing.GrantedAt = DateTime.UtcNow;
+                    existing.GrantedAt = DateTime.Now;
                     existing.GrantedBy = grantedBy;
                     await _context.SaveChangesAsync();
                     return true;
@@ -124,7 +124,7 @@ namespace PolyBabyAPI.Services
                 {
                     UserId = userId,
                     PermissionId = permissionId,
-                    GrantedAt = DateTime.UtcNow,
+                    GrantedAt = DateTime.Now,
                     GrantedBy = grantedBy,
                     IsGranted = isGranted
                 };
@@ -179,7 +179,7 @@ namespace PolyBabyAPI.Services
                 Description = description,
                 Resource = resource,
                 Action = action,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 IsActive = true
             };
 
@@ -237,7 +237,7 @@ namespace PolyBabyAPI.Services
             {
                 Name = name,
                 Description = description,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 IsActive = true
             };
 

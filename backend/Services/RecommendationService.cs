@@ -5,6 +5,8 @@ using MongoDB.Driver;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models.Mongo;
+using PolyBabyAPI.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace PolyBabyAPI.Services
 {
@@ -46,7 +48,7 @@ namespace PolyBabyAPI.Services
                     ProductId = productId,
                     InteractionType = interactionType,
                     Score = score,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
 
                 await _mongoDbService.UserInteractions.InsertOneAsync(interaction);
@@ -227,40 +229,45 @@ namespace PolyBabyAPI.Services
                     }
                 }
 
-                // 4. Merge & Boost (Trộn kết quả)
-                // Lấy xen kẽ ưu tiên Real-time trước để có trải nghiệm phản ứng nhanh
-                int realTimeIndex = 0;
-                int mlIndex = 0;
+                // 4. Merge, Boost & Rank (Trộn kết quả, tính điểm ưu tiên và xếp hạng)
+                var candidatePool = realTimeCandidates.Concat(mlCandidates).Distinct().ToList();
 
-                while (finalRecommendations.Count < topN && (realTimeIndex < realTimeCandidates.Count || mlIndex < mlCandidates.Count))
+                // Lấy thêm fallback nếu pool chưa đủ lớn để chọn lọc
+                if (candidatePool.Count < topN * 3)
                 {
-                    if (realTimeIndex < realTimeCandidates.Count)
-                    {
-                        var id = realTimeCandidates[realTimeIndex++];
-                        if (!finalRecommendations.Contains(id)) finalRecommendations.Add(id);
-                    }
-
-                    if (finalRecommendations.Count >= topN) break;
-
-                    if (mlIndex < mlCandidates.Count)
-                    {
-                        var id = mlCandidates[mlIndex++];
-                        if (!finalRecommendations.Contains(id)) finalRecommendations.Add(id);
-                    }
+                    var fallback = await GetTopSellingOrViewedAsync(topN * 3);
+                    candidatePool = candidatePool.Concat(fallback).Distinct().ToList();
                 }
 
-                // Fallback nếu vẫn thiếu
-                if (finalRecommendations.Count < topN)
+                // Lấy thông tin các bé của người dùng để tính điểm boost
+                List<BabyProfile> userBabies = new List<BabyProfile>();
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    var fallback = await GetTopSellingOrViewedAsync(topN);
-                    foreach (var id in fallback)
-                    {
-                        if (finalRecommendations.Count >= topN) break;
-                        if (!finalRecommendations.Contains(id)) finalRecommendations.Add(id);
-                    }
+                    userBabies = await _dbContext.BabyProfiles
+                        .AsNoTracking()
+                        .Where(b => b.UserID == userId)
+                        .ToListAsync();
                 }
 
-                return finalRecommendations;
+                // Lấy thông tin các sản phẩm trong pool để so khớp độ tuổi/giới tính
+                var productsInPool = await _dbContext.Products
+                    .AsNoTracking()
+                    .Where(p => candidatePool.Contains(p.ProductID))
+                    .ToListAsync();
+
+                var scoredCandidates = candidatePool.Select((productId, index) =>
+                {
+                    var product = productsInPool.FirstOrDefault(p => p.ProductID == productId);
+                    double initialScore = 100.0 - index; // Ưu tiên các sản phẩm xuất hiện sớm hơn
+                    double boostScore = product != null ? CalculateBabyBoostScore(product, userBabies) : 0.0;
+                    return new { ProductId = productId, FinalScore = initialScore + boostScore };
+                })
+                .OrderByDescending(x => x.FinalScore)
+                .Select(x => x.ProductId)
+                .Take(topN)
+                .ToList();
+
+                return scoredCandidates;
             }
             catch (Exception ex)
             {
@@ -268,6 +275,94 @@ namespace PolyBabyAPI.Services
                 var fallback = await GetTopSellingOrViewedAsync(topN);
                 return fallback.Take(topN).ToList();
             }
+        }
+
+        private double CalculateBabyBoostScore(Product product, List<BabyProfile> babies)
+        {
+            if (babies == null || !babies.Any()) return 0.0;
+
+            double totalBoost = 0.0;
+            string textToSearch = ((product.ProductName ?? "") + " " + (product.Description ?? "") + " " + (product.Specifications ?? "")).ToLower();
+
+            foreach (var baby in babies)
+            {
+                double babyBoost = 0.0;
+                var dob = baby.DateOfBirth;
+                var today = DateTime.Now;
+                int months = (today.Year - dob.Year) * 12 + today.Month - dob.Month;
+                if (today.Day < dob.Day) months--;
+                if (months < 0) months = 0;
+
+                // 1. Khớp giới tính
+                if (!string.IsNullOrEmpty(baby.Gender))
+                {
+                    bool isBoy = baby.Gender.Equals("Male", StringComparison.OrdinalIgnoreCase) || baby.Gender.Equals("Nam", StringComparison.OrdinalIgnoreCase);
+                    bool isGirl = baby.Gender.Equals("Female", StringComparison.OrdinalIgnoreCase) || baby.Gender.Equals("Nữ", StringComparison.OrdinalIgnoreCase);
+
+                    if (isBoy && (textToSearch.Contains("bé trai") || textToSearch.Contains("cho bé trai") || textToSearch.Contains("siêu nhân") || textToSearch.Contains("spiderman") || textToSearch.Contains("ô tô")))
+                    {
+                        babyBoost += 5.0;
+                    }
+                    else if (isGirl && (textToSearch.Contains("bé gái") || textToSearch.Contains("cho bé gái") || textToSearch.Contains("công chúa") || textToSearch.Contains("elsa") || textToSearch.Contains("búp bê") || textToSearch.Contains("váy")))
+                    {
+                        babyBoost += 5.0;
+                    }
+                }
+
+                // 2. Khớp độ tuổi (tháng tuổi)
+                if (months <= 6) // Sơ sinh nhỏ
+                {
+                    if (textToSearch.Contains("sơ sinh") || textToSearch.Contains("newborn") || textToSearch.Contains("0-6 tháng") || textToSearch.Contains("núm ty size s") || textToSearch.Contains("bỉm dán size s") || textToSearch.Contains("bỉm dán size nb"))
+                    {
+                        babyBoost += 8.0;
+                    }
+                }
+                else if (months <= 12) // Sơ sinh lớn
+                {
+                    if (textToSearch.Contains("sơ sinh") || textToSearch.Contains("6-12 tháng") || textToSearch.Contains("ăn dặm") || textToSearch.Contains("núm ty size m") || textToSearch.Contains("bỉm dán size m") || textToSearch.Contains("bỉm dán size l"))
+                    {
+                        babyBoost += 8.0;
+                    }
+                }
+                else if (months <= 36) // 1-3 tuổi
+                {
+                    if (textToSearch.Contains("1-3 tuổi") || textToSearch.Contains("12-36 tháng") || textToSearch.Contains("tập đi") || textToSearch.Contains("sữa công thức pha sẵn") || textToSearch.Contains("bỉm quần size l") || textToSearch.Contains("bỉm quần size xl"))
+                    {
+                        babyBoost += 8.0;
+                    }
+                }
+                else if (months <= 72) // 3-6 tuổi
+                {
+                    if (textToSearch.Contains("3-6 tuổi") || textToSearch.Contains("mẫu giáo") || textToSearch.Contains("đồ chơi vận động") || textToSearch.Contains("đồ chơi xếp hình") || textToSearch.Contains("bỉm quần size xxl") || textToSearch.Contains("bỉm quần size xxxl"))
+                    {
+                        babyBoost += 8.0;
+                    }
+                }
+                else // Trên 6 tuổi
+                {
+                    if (textToSearch.Contains("trên 6 tuổi") || textToSearch.Contains("tiểu học") || textToSearch.Contains("học sinh") || textToSearch.Contains("đồ dùng học tập") || textToSearch.Contains("xe đạp trẻ em"))
+                    {
+                        babyBoost += 8.0;
+                    }
+                }
+
+                // 3. Khớp màu sắc yêu thích
+                if (!string.IsNullOrEmpty(baby.FavoriteColors))
+                {
+                    var colors = baby.FavoriteColors.ToLower().Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var color in colors)
+                    {
+                        if (color.Length > 2 && textToSearch.Contains(color))
+                        {
+                            babyBoost += 3.0;
+                        }
+                    }
+                }
+
+                totalBoost += babyBoost;
+            }
+
+            return totalBoost;
         }
 
         private async Task<List<int>> GetTopSellingOrViewedAsync(int count)

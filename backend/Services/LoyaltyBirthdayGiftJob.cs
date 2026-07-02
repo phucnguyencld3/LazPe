@@ -317,7 +317,7 @@ namespace PolyBabyAPI.Services
                 UserId = userId,
                 NotificationId = masterNotification.Id,
                 IsRead = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
             _context.UserNotifications.Add(notification);
 
