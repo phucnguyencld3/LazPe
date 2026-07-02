@@ -37,6 +37,9 @@ namespace PolyBabyAPI.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        public List<BabyGrowthRecord> GrowthRecords { get; set; } = new();
+        public List<VaccinationRecord> VaccinationRecords { get; set; } = new();
+
         [ForeignKey(nameof(UserID))]
         public virtual ApplicationUser User { get; set; } = null!;
     }

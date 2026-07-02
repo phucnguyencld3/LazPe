@@ -3487,3 +3487,90 @@ export async function getPublicWishlist(shareToken: string): Promise<PublicWishl
   }
 }
 
+// ==========================================
+// BABY TRACKER API
+// ==========================================
+
+export interface GrowthRecord {
+  recordedDate: string;
+  weightKg: number;
+  heightCm: number;
+  notes?: string;
+}
+
+export interface VaccinationRecord {
+  vaccineName: string;
+  administeredDate?: string;
+  nextDueDate?: string;
+  status: string; // Pending, Completed, Skipped
+  notes?: string;
+}
+
+export interface BabyTrackerData {
+  babyProfileID: number;
+  name: string;
+  dateOfBirth: string;
+  gender: string;
+  weightKg?: number;
+  heightCm?: number;
+  growthRecords: GrowthRecord[];
+  vaccinationRecords: VaccinationRecord[];
+}
+
+export interface BabyTrackerResponse {
+  profile: BabyTrackerData;
+  growthStatus: string;
+  recommendations: any[];
+}
+
+export async function getBabyTrackerData(babyId: number, token: string): Promise<BabyTrackerResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyTracker/${babyId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    return json || null;
+  } catch (error) {
+    console.error("Error fetching baby tracker data:", error);
+    return null;
+  }
+}
+
+export async function addGrowthRecord(babyId: number, data: GrowthRecord, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyTracker/${babyId}/growth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error adding growth record:", error);
+    return false;
+  }
+}
+
+export async function addVaccinationRecord(babyId: number, data: VaccinationRecord, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyTracker/${babyId}/vaccinations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error adding vaccination record:", error);
+    return false;
+  }
+}

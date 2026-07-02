@@ -107,6 +107,12 @@ namespace PolyBabyAPI.Data
                 .HasForeignKey(bp => bp.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Entity<BabyProfile>()
+                .OwnsMany(bp => bp.GrowthRecords, gr => { gr.ToJson(); });
+                
+            builder.Entity<BabyProfile>()
+                .OwnsMany(bp => bp.VaccinationRecords, vr => { vr.ToJson(); });
+
             // ===== Flash Sale Relationships =====
             builder.Entity<FlashSaleItem>()
                 .HasOne(fsi => fsi.FlashSale)

@@ -44,6 +44,7 @@ import { NotificationsSection } from "@/components/client/profile/NotificationsS
 import { SpendingSection } from "@/components/client/profile/SpendingSection";
 import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
 import { WalletSection } from "@/components/client/profile/WalletSection";
+import { BabyTrackerSection } from "@/components/client/profile/BabyTrackerSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -61,6 +62,7 @@ export default function ProfilePage() {
   const [wards, setWards] = useState<any[]>([]);
   const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
   const [pendingSupportOrder, setPendingSupportOrder] = useState<any>(null);
+  const [activeBabyId, setActiveBabyId] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -698,6 +700,10 @@ export default function ProfilePage() {
                 <BabyInfo
                   userProfile={userProfile}
                   onEditClick={() => setEditBabyInfoOpen(true)}
+                  onOpenTracker={(id) => {
+                    setActiveBabyId(id);
+                    handleTabChange("baby-tracker");
+                  }}
                 />
                 <SecurityAndSettings
                   hasPassword={hasPassword}
@@ -770,6 +776,16 @@ export default function ProfilePage() {
               <ReviewsSection
                 userId={userProfile.userId}
                 token={token}
+              />
+            )}
+
+            {activeTab === "baby-tracker" && activeBabyId !== null && (
+              <BabyTrackerSection 
+                babyId={activeBabyId} 
+                onBack={() => handleTabChange("profile")} 
+                onUpdate={() => {
+                  if (userProfile && token) fetchData(userProfile.userId, token);
+                }}
               />
             )}
 
