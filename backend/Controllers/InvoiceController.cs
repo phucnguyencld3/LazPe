@@ -743,7 +743,7 @@ namespace PolyBabyAPI.Controllers
                         HttpContext,
                         txnRef,
                         amountToPay,
-                        $"Thanh toan don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
+                        $"Thanh toan don hang {invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
                 }
  
                 try
@@ -1010,7 +1010,7 @@ namespace PolyBabyAPI.Controllers
                     HttpContext,
                     txnRef,
                     amountToPay,
-                    $"Thanh toan lai don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
+                    $"Thanh toan lai don hang {invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
 
                 _context.PaymentTransactions.Add(new PaymentTransaction
                 {
