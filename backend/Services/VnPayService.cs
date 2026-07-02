@@ -17,15 +17,21 @@ namespace PolyBabyAPI.Services
         {
             _options = options.Value;
             _logger = logger;
+            
+            // Re-hardcoding to test user's hypothesis
+            _options.TmnCode = "D3SX3GYM";
+            _options.HashSecret = "T0LGAVOENTMGVTL3XKX06LNINQAKPAFG";
         }
 
         public string CreatePaymentUrl(HttpContext context, int invoiceId, decimal amount, string orderInfo)
         {
+            Console.WriteLine($"DEBUG CONFIG: TmnCode={_options.TmnCode}, HashSecret={_options.HashSecret}");
             return CreatePaymentUrl(context, invoiceId.ToString(CultureInfo.InvariantCulture), amount, orderInfo);
         }
 
         public string CreatePaymentUrl(HttpContext context, string txnRef, decimal amount, string orderInfo, string? returnUrl = null)
         {
+            Console.WriteLine($"DEBUG CONFIG OVERLOAD: TmnCode={_options.TmnCode}, HashSecret={_options.HashSecret}");
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
