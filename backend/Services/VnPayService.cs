@@ -17,6 +17,11 @@ namespace PolyBabyAPI.Services
         {
             _options = options.Value;
             _logger = logger;
+
+            // TODO: Xóa đoạn hardcode này khi đưa lên môi trường Production (Bảo vệ đồ án)
+            // Hardcode tạm thời để xử lý lỗi kẹt cấu hình (Ghost Config) trên máy Local
+            _options.TmnCode = "D3SX3GYM";
+            _options.HashSecret = "T0LGAVOENTMGVTL3XKX06LNINQAKPAFG";
         }
 
         public string CreatePaymentUrl(HttpContext context, int invoiceId, decimal amount, string orderInfo)
