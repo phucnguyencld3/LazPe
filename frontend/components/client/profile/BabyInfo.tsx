@@ -1,13 +1,15 @@
 import React from "react";
+import Link from "next/link";
 import { UserProfile } from "@/lib/api";
 import { Heart, Baby, Palette, Calendar, Scale, Ruler, Sparkles } from "lucide-react";
 
 interface BabyInfoProps {
   userProfile: UserProfile;
   onEditClick: () => void;
+  onOpenTracker?: (babyId: number) => void;
 }
 
-export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
+export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoProps) {
   const getGenderLabel = (g?: string | null) => {
     if (!g) return "Chưa cập nhật";
     if (g === "Boy" || g === "Male" || g === "Nam") return "Bé trai";
@@ -126,16 +128,16 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
                     <div className="flex items-center gap-2 text-slate-600">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <div>
-                        <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Tuổi</span>
-                        <span className="font-semibold">{getAgeDisplayFromDate(baby.dateOfBirth)}</span>
+                        <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Tuổi hiện tại</span>
+                        <span className="font-semibold text-indigo-700">{getAgeDisplayFromDate(baby.dateOfBirth)}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-600">
                       <Scale className="w-3.5 h-3.5 text-slate-400" />
                       <div>
-                        <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Cân nặng</span>
-                        <span className="font-semibold">
+                        <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Cân nặng (gần nhất)</span>
+                        <span className="font-semibold text-rose-600">
                           {baby.weightKg ? `${baby.weightKg.toFixed(1)} kg` : "Chưa có"}
                         </span>
                       </div>
@@ -144,8 +146,8 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
                     <div className="flex items-center gap-2 text-slate-600">
                       <Ruler className="w-3.5 h-3.5 text-slate-400" />
                       <div>
-                        <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Chiều cao</span>
-                        <span className="font-semibold">
+                        <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Chiều cao (gần nhất)</span>
+                        <span className="font-semibold text-emerald-600">
                           {baby.heightCm ? `${baby.heightCm.toFixed(0)} cm` : "Chưa có"}
                         </span>
                       </div>
@@ -160,6 +162,18 @@ export function BabyInfo({ userProfile, onEditClick }: BabyInfoProps) {
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Sổ tay sức khỏe Button */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                    <button
+                      onClick={() => onOpenTracker && onOpenTracker(baby.babyProfileID)}
+                      className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                        isBoy ? "bg-blue-500 hover:bg-blue-600" : "bg-pink-500 hover:bg-pink-600"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">medical_information</span> Sổ tay sức khỏe
+                    </button>
                   </div>
                 </div>
               );

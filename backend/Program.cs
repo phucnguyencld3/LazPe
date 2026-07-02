@@ -47,6 +47,10 @@ if (File.Exists(globalLocalAppSettings))
     builder.Configuration.AddJsonFile(globalLocalAppSettings, optional: true, reloadOnChange: true);
 }
 
+// Bắt buộc load lại EnvironmentVariables sau cùng để các biến môi trường trong Docker-Compose 
+// (như ConnectionString, VnPay__ReturnUrl) có độ ưu tiên cao nhất, đè lên appsettings.Local.json
+builder.Configuration.AddEnvironmentVariables();
+
 try
 {
     // Kết nối cơ sở dữ liệu
@@ -239,6 +243,7 @@ try
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyProfileService, PolyBabyAPI.Services.BabyProfileService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTrackerService, PolyBabyAPI.Services.BabyTrackerService>();
 
     // Core business services
     builder.Services.AddScoped<INotificationService, NotificationService>();

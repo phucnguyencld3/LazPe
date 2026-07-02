@@ -246,6 +246,19 @@ namespace PolyBabyAPI.Services
                                     { "unreadOnly", new GeminiSchema { Type = "STRING", Description = "True nếu chỉ muốn đếm thông báo chưa đọc" } }
                                 }
                             }
+                        },
+                        new GeminiFunctionDeclaration
+                        {
+                            Name = "check_baby_growth_status",
+                            Description = "Lấy dữ liệu tăng trưởng và tiêm chủng của bé, trả về tình trạng phát triển hiện tại (Underweight, Normal, Overweight).",
+                            Parameters = new GeminiSchema
+                            {
+                                Type = "OBJECT",
+                                Properties = new Dictionary<string, GeminiSchema>
+                                {
+                                    { "babyId", new GeminiSchema { Type = "STRING", Description = "ID của em bé" } }
+                                }
+                            }
                         }
                     }
                 }
@@ -346,6 +359,23 @@ namespace PolyBabyAPI.Services
                             b.ImageUrl
                         }).Take(10).ToListAsync();
                         return new { results = bundles, message = bundles.Any() ? $"Tìm thấy {bundles.Count} combo" : "Không tìm thấy combo" };
+
+                    case "check_baby_growth_status":
+                        var bIdStr = args.ContainsKey("babyId") ? args["babyId"].ToString() : "";
+                        if (int.TryParse(bIdStr, out int bId))
+                        {
+                            var trackerService = scope.ServiceProvider.GetRequiredService<IBabyTrackerService>();
+                            var data = await trackerService.GetTrackerDataAsync(bId);
+                            if (data == null) return new { error = "Không tìm thấy hồ sơ của bé." };
+                            
+                            var status = await trackerService.GetGrowthStatusAsync(bId);
+                            return new 
+                            { 
+                                message = $"Tình trạng phát triển của bé {data.Name} hiện tại là: {status}",
+                                data = data 
+                            };
+                        }
+                        return new { error = "ID bé không hợp lệ." };
 
                     case "check_order_status":
                         var orderIdStr = args.ContainsKey("orderCode") ? args["orderCode"].ToString() : "";
@@ -645,6 +675,7 @@ namespace PolyBabyAPI.Services
                 var session = await dbContext.ChatSessions
                     .Include(s => s.User)
                     .ThenInclude(u => u.BabyProfiles)
+                    .ThenInclude(b => b.GrowthRecords)
                     .FirstOrDefaultAsync(s => s.Id == sessionId);
 
                 if (session?.User != null && session.User.BabyProfiles != null && session.User.BabyProfiles.Count > 0)
@@ -660,7 +691,10 @@ namespace PolyBabyAPI.Services
                         if (months < 0) months = 0;
 
                         string genderStr = (baby.Gender == "Male" || baby.Gender == "Nam" || baby.Gender == "Boy") ? "bé trai" : ((baby.Gender == "Female" || baby.Gender == "Nữ" || baby.Gender == "Girl") ? "bé gái" : "bé");
-                        sb.AppendLine($"- Bé {baby.Name}: là {genderStr}, sinh ngày {dob:dd/MM/yyyy} ({months} tháng tuổi). Cân nặng: {baby.WeightKg}kg, Chiều cao: {baby.HeightCm}cm. Mối quan hệ với khách hàng: {baby.Relationship}. Màu sắc yêu thích của bé: {baby.FavoriteColors}.");
+                        var latestGrowth = baby.GrowthRecords?.OrderByDescending(gr => gr.RecordedDate).FirstOrDefault();
+                        double? w = latestGrowth != null ? latestGrowth.WeightKg : baby.WeightKg;
+                        double? h = latestGrowth != null ? latestGrowth.HeightCm : baby.HeightCm;
+                        sb.AppendLine($"- Bé {baby.Name} (ID: {baby.BabyProfileID}): là {genderStr}, sinh ngày {dob:dd/MM/yyyy} ({months} tháng tuổi). Cân nặng: {w}kg, Chiều cao: {h}cm. Mối quan hệ với khách hàng: {baby.Relationship}. Màu sắc yêu thích của bé: {baby.FavoriteColors}.");
                     }
                     babyContext = sb.ToString() + "\n";
                 }
