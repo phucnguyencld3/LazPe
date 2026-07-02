@@ -19,8 +19,8 @@ namespace PolyBabyAPI.Services
             _logger = logger;
             
             // Hardcode to bypass ghost environment variables
-            _options.TmnCode = "SN9SKB7O";
-            _options.HashSecret = "DJSHC6QYJKK1URBBE91KLB1A3U0PT42Y";
+            _options.TmnCode = "D3SX3GYM";
+            _options.HashSecret = "T0LGAVOENTMGVTL3XKX06LNINQAKPAFG";
         }
 
         public string CreatePaymentUrl(HttpContext context, int invoiceId, decimal amount, string orderInfo)
