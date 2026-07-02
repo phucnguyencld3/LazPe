@@ -161,8 +161,8 @@ export const FlashSaleSection: React.FC = () => {
             
             // Generate link to product detail page
             const targetId = item.productId || (item.itemType === 1 ? item.referenceId : null);
-            const itemLink = targetId ? `/products/${targetId}` : `/products`;
-
+          const itemLink = targetId ? `/products/${item.slug || targetId}` : `/products`;
+          
             return (
               <div 
                 key={item.id} 

@@ -1920,6 +1920,9 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductID"));
 
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("float");
+
                     b.Property<int>("CategoryID")
                         .HasColumnType("int");
 
@@ -1939,6 +1942,17 @@ namespace PolyBabyAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MetaDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MetaTitle")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
@@ -1949,6 +1963,13 @@ namespace PolyBabyAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Specifications")
                         .HasColumnType("nvarchar(max)");
@@ -1965,6 +1986,14 @@ namespace PolyBabyAPI.Migrations
                     b.HasKey("ProductID");
 
                     b.HasIndex("CategoryID");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasFilter("[Slug] IS NOT NULL");
 
                     b.HasIndex("SupplierID");
 
@@ -2092,6 +2121,9 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -2724,6 +2756,9 @@ namespace PolyBabyAPI.Migrations
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductID")
                         .HasColumnType("int");
 
@@ -2753,6 +2788,10 @@ namespace PolyBabyAPI.Migrations
                     b.HasKey("VariantID");
 
                     b.HasIndex("ProductID");
+
+                    b.HasIndex("SKU")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Variants");
                 });
@@ -3082,7 +3121,78 @@ namespace PolyBabyAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsMany("PolyBabyAPI.Models.BabyGrowthRecord", "GrowthRecords", b1 =>
+                        {
+                            b1.Property<int>("BabyProfileID")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<double>("HeightCm")
+                                .HasColumnType("float");
+
+                            b1.Property<string>("Notes")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<DateTime>("RecordedDate")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<double>("WeightKg")
+                                .HasColumnType("float");
+
+                            b1.HasKey("BabyProfileID", "Id");
+
+                            b1.ToTable("BabyProfiles");
+
+                            b1.ToJson("GrowthRecords");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BabyProfileID");
+                        });
+
+                    b.OwnsMany("PolyBabyAPI.Models.VaccinationRecord", "VaccinationRecords", b1 =>
+                        {
+                            b1.Property<int>("BabyProfileID")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<DateTime?>("AdministeredDate")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<DateTime?>("NextDueDate")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<string>("Notes")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Status")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("VaccineName")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.HasKey("BabyProfileID", "Id");
+
+                            b1.ToTable("BabyProfiles");
+
+                            b1.ToJson("VaccinationRecords");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BabyProfileID");
+                        });
+
+                    b.Navigation("GrowthRecords");
+
                     b.Navigation("User");
+
+                    b.Navigation("VaccinationRecords");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.BalanceTransaction", b =>

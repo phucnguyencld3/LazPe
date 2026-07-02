@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getBundleDetail, BundleResponse } from "@/lib/features/combo/comboApi";
+import { getPublicBundleDetail, BundleResponse } from "@/lib/features/combo/comboApi";
+import { getBundlesAsProducts, getRecommendations } from "@/lib/api";
+import { Product } from "@/types";
+import ProductCarousel from "@/components/client/products/ProductCarousel";
 import { useCart } from "@/context/CartContext";
-import { ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Minus, Plus, Sparkles, Package } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 export default function BundleDetailPage() {
@@ -16,16 +19,28 @@ export default function BundleDetailPage() {
   const [error, setError] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [similarBundles, setSimilarBundles] = useState<Product[]>([]);
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const { addToCart } = useCart();
 
   useEffect(() => {
     if (!bundleId) return;
-    const fetchBundle = async () => {
+    const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-        const data = await getBundleDetail(bundleId, token);
+        setLoading(true);
+        const data = await getPublicBundleDetail(bundleId);
         if (data) {
           setBundle(data);
+          
+          // Fetch additional data in parallel
+          const [bundlesRes, recommendedRes] = await Promise.all([
+            getBundlesAsProducts(),
+            getRecommendations(15)
+          ]);
+          
+          // Filter out the current bundle
+          setSimilarBundles(bundlesRes.filter(b => b.id !== bundleId).slice(0, 10));
+          setRecommendedProducts(recommendedRes.slice(0, 15));
         } else {
           setError("Không tìm thấy thông tin Combo.");
         }
@@ -36,7 +51,7 @@ export default function BundleDetailPage() {
         setLoading(false);
       }
     };
-    fetchBundle();
+    fetchData();
   }, [bundleId]);
 
   const handleDecreaseQuantity = () => {
@@ -131,24 +146,23 @@ export default function BundleDetailPage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen py-4 sm:py-8 px-0 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 min-h-screen py-4 sm:py-6 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="px-4 sm:px-0">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 sm:mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm hover:shadow active:scale-95"
-          >
-            <ArrowLeft size={16} />
-            Quay lại
-          </button>
-        </div>
-
-        <div className="bg-white sm:rounded-3xl sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-8 sm:mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 p-4 sm:p-8 lg:p-12">
+        <div className="bg-white sm:rounded-[16px] sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-3 sm:mb-3">
+          <div className="px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-4 pb-0">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-3 py-1.5 rounded-[8px] border border-slate-200 shadow-sm hover:shadow active:scale-95"
+            >
+              <ArrowLeft size={16} />
+              Quay lại danh sách
+            </button>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
             
             {/* Left: Image Gallery */}
             <div className="space-y-4">
-              <div className="relative aspect-square rounded-2xl bg-slate-100 overflow-hidden border border-slate-100">
+              <div className="relative aspect-square rounded-[12px] bg-slate-100 overflow-hidden border border-slate-100">
                 {bundle.imageUrl ? (
                   <img
                     src={bundle.imageUrl}
@@ -184,14 +198,23 @@ export default function BundleDetailPage() {
                 {bundle.name}
               </h1>
 
-              {/* Price */}
-              <div className="flex items-end gap-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <div className="text-3xl sm:text-4xl font-black text-rose-600 tracking-tight">
-                  {bundle.price.toLocaleString("vi-VN")} ₫
+              <div className="bg-slate-50/80 rounded-2xl p-4 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-xs text-slate-400 font-medium block mb-1">Giá combo</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-rose-600">
+                      ₫{bundle.price.toLocaleString("vi-VN")}
+                    </span>
+                    {bundle.originalPrice > bundle.price && (
+                      <span className="text-sm text-slate-400 line-through">
+                        ₫{bundle.originalPrice.toLocaleString("vi-VN")}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {bundle.originalPrice > bundle.price && (
-                  <div className="text-sm sm:text-base text-slate-400 font-medium line-through mb-1.5">
-                    {bundle.originalPrice.toLocaleString("vi-VN")} ₫
+                  <div className="text-xs font-bold text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-3 py-1.5 h-fit">
+                    Tiết kiệm {bundle.discountPercent}%
                   </div>
                 )}
               </div>
@@ -241,7 +264,7 @@ export default function BundleDetailPage() {
               <div className="space-y-4 pt-6 border-t border-slate-100 mt-auto">
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                   {/* Quantity */}
-                  <div className="flex items-center justify-between w-full sm:w-28 h-10 sm:h-11 bg-slate-50/80 rounded-full px-3 border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div className="flex items-center justify-between w-full sm:w-28 h-10 sm:h-11 bg-slate-50/80 rounded-[6px] px-3 border border-slate-200 hover:border-slate-300 transition-colors">
                     <button
                       onClick={handleDecreaseQuantity}
                       disabled={quantity <= 1 || (bundle.stock !== undefined && bundle.stock === 0)}
@@ -272,13 +295,13 @@ export default function BundleDetailPage() {
                     <button
                       onClick={handleAddToCart}
                       disabled={isAddingToCart || (bundle.stock !== undefined && bundle.stock === 0)}
-                      className="w-1/2 h-10 sm:h-11 rounded-full border border-primary text-primary font-bold flex items-center justify-center gap-1.5 text-[13px] sm:text-sm px-2 hover:bg-rose-50 active:scale-95 transition-all disabled:opacity-50 shadow-sm"
+                      className="w-1/2 h-10 sm:h-11 rounded-[8px] border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
                     >
                       {isAddingToCart ? (
                         <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         <>
-                          <ShoppingCart size={16} />
+                          <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
                           <span className="truncate">Thêm giỏ hàng</span>
                         </>
                       )}
@@ -286,7 +309,7 @@ export default function BundleDetailPage() {
                     <button
                       onClick={handleBuyNow}
                       disabled={isAddingToCart || (bundle.stock !== undefined && bundle.stock === 0)}
-                      className="w-1/2 h-10 sm:h-11 rounded-full bg-primary text-white font-bold flex items-center justify-center gap-1.5 text-[13px] sm:text-sm px-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+                      className="w-1/2 h-10 sm:h-11 rounded-[8px] bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
                     >
                       <span className="truncate">Mua ngay</span>
                     </button>
@@ -297,6 +320,28 @@ export default function BundleDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Similar Bundles Section */}
+        {similarBundles.length > 0 && (
+          <section className="mt-3">
+            <h2 className="font-headline-lg text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2">
+              <Package className="w-6 h-6 text-primary" />
+              Combo tương tự
+            </h2>
+            <ProductCarousel products={similarBundles} />
+          </section>
+        )}
+
+        {/* Recommended Products Section */}
+        {recommendedProducts.length > 0 && (
+          <section className="mt-3 pt-3 border-t border-slate-100">
+            <h2 className="font-headline-lg text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-yellow-500" />
+              Sản phẩm dành cho bạn
+            </h2>
+            <ProductCarousel products={recommendedProducts} />
+          </section>
+        )}
       </div>
     </div>
   );

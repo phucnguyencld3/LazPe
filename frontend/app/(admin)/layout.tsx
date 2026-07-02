@@ -29,6 +29,18 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    orders: false,
+    products: false,
+    marketing: false,
+    users: false,
+    interactions: false,
+  });
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
+  };
 
   useEffect(() => {
     const savedPin = localStorage.getItem("sidebarPinned");
@@ -566,270 +578,297 @@ export default function AdminLayout({
               )}
               <Link
                 href="/admin"
-                className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                className={`flex w-[calc(100%-1.5rem)] items-center py-2.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                 title={!isSidebarExpanded ? "Bảng điều khiển" : undefined}
               >
-                <span className="material-symbols-outlined text-[22px] flex-shrink-0">dashboard</span>
-                {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Bảng điều khiển</span>}
+                <span className="material-symbols-outlined text-[28px] flex-shrink-0">dashboard</span>
+                {isSidebarExpanded && <span className="text-[17.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Bảng điều khiển</span>}
               </Link>
               {hasPermission("Analytics.Read") && (
                 <Link
                   href="/admin/statistics"
-                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                  className={`flex w-[calc(100%-1.5rem)] items-center py-2.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/statistics") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
                   title={!isSidebarExpanded ? "Thống kê doanh thu" : undefined}
                 >
-                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">bar_chart</span>
-                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thống kê doanh thu</span>}
+                  <span className="material-symbols-outlined text-[28px] flex-shrink-0">bar_chart</span>
+                  {isSidebarExpanded && <span className="text-[17.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thống kê doanh thu</span>}
                 </Link>
               )}
             </div>
 
-            {/* QUẢN LÝ KINH DOANH */}
+            {/* ĐƠN HÀNG */}
             {(hasPermission("Order.Read") || hasPermission("Review.Read")) && (
-              <div className="space-y-1 pt-2">
+              <div className="pt-1">
                 {isSidebarExpanded ? (
-                  <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Quản lý kinh doanh</span>
+                  <button onClick={() => toggleGroup('orders')} className={`flex w-[calc(100%-1.5rem)] items-center justify-between mx-3 py-2.5 px-4 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.orders ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`material-symbols-outlined text-[28px] flex-shrink-0 transition-colors ${expandedGroups.orders ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>shopping_cart</span>
+                      <span className={`font-semibold text-[17.5px] whitespace-nowrap transition-colors ${expandedGroups.orders ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>Đơn hàng</span>
+                    </div>
+                    <span className={`material-symbols-outlined text-[24px] transition-transform duration-300 ${expandedGroups.orders ? 'rotate-180 text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>expand_more</span>
+                  </button>
                 ) : (
-                  <div className="flex justify-center mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                  </div>
+                  <button onClick={() => toggleGroup('orders')} className={`flex w-[calc(100%-1.5rem)] items-center justify-center mx-3 py-2.5 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.orders ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <span className={`material-symbols-outlined text-[28px] transition-colors ${expandedGroups.orders ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>shopping_cart</span>
+                  </button>
                 )}
-                {hasPermission("Order.Read") && (
-                  <>
-                    <Link
-                      href="/admin/orders"
-                      className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/orders", ["/admin/orders/batch-print"]) ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                      title={!isSidebarExpanded ? "Xử lý Đơn hàng" : undefined}
-                    >
-                      <span className="material-symbols-outlined text-[22px] flex-shrink-0">shopping_cart</span>
-                      {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Xử lý Đơn hàng</span>}
-                    </Link>
-                    <Link
-                      href="/admin/tracking"
-                      className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/tracking") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                      title={!isSidebarExpanded ? "Tra cứu Đơn hàng" : undefined}
-                    >
-                      <span className="material-symbols-outlined text-[22px] flex-shrink-0">barcode_scanner</span>
-                      {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tra cứu Đơn hàng</span>}
-                    </Link>
-                    <Link
-                      href="/admin/orders/batch-print"
-                      className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/orders/batch-print") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                      title={!isSidebarExpanded ? "In Đơn Hàng Loạt" : undefined}
-                    >
-                      <span className="material-symbols-outlined text-[22px] flex-shrink-0">print</span>
-                      {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">In Đơn Hàng Loạt</span>}
-                    </Link>
-                  </>
-                )}
-                {hasPermission("Review.Read") && (
-                  <Link
-                    href="/admin/reviews"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Kiểm duyệt Đánh giá" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">gavel</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Kiểm duyệt Đánh giá</span>}
-                  </Link>
-                )}
+                
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${!isSidebarExpanded || expandedGroups.orders ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                  {hasPermission("Order.Read") && (
+                    <>
+                      <Link
+                        href="/admin/orders"
+                        className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/orders", ["/admin/orders/batch-print"]) ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                      >
+                        <span className="material-symbols-outlined text-[26px] flex-shrink-0">inventory_2</span>
+                        <span className="text-[16.5px] font-medium whitespace-nowrap">Xử lý Đơn hàng</span>
+                      </Link>
+                      <Link
+                        href="/admin/tracking"
+                        className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/tracking") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                      >
+                        <span className="material-symbols-outlined text-[26px] flex-shrink-0">barcode_scanner</span>
+                        <span className="text-[16.5px] font-medium whitespace-nowrap">Tra cứu Đơn hàng</span>
+                      </Link>
+                      <Link
+                        href="/admin/orders/batch-print"
+                        className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/orders/batch-print") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                      >
+                        <span className="material-symbols-outlined text-[26px] flex-shrink-0">print</span>
+                        <span className="text-[16.5px] font-medium whitespace-nowrap">In Đơn Hàng Loạt</span>
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* KIỂM DUYỆT ĐÁNH GIÁ (Single Link) */}
+            {hasPermission("Review.Read") && (
+              <div className="pt-1">
+                <Link
+                  href="/admin/reviews"
+                  className={`flex w-[calc(100%-1.5rem)] items-center py-2.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/reviews") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                  title={!isSidebarExpanded ? "Kiểm duyệt Đánh giá" : undefined}
+                >
+                  <span className="material-symbols-outlined text-[28px] flex-shrink-0">gavel</span>
+                  {isSidebarExpanded && <span className="text-[17.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Đánh giá</span>}
+                </Link>
               </div>
             )}
 
             {/* DANH MỤC SẢN PHẨM */}
             {(hasPermission("Product.Read") || hasPermission("Bundle.Read") || hasPermission("Category.Read") || hasPermission("Supplier.Read")) && (
-              <div className="space-y-1 pt-2">
+              <div className="pt-1">
                 {isSidebarExpanded ? (
-                  <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Danh mục sản phẩm</span>
+                  <button onClick={() => toggleGroup('products')} className={`flex w-[calc(100%-1.5rem)] items-center justify-between mx-3 py-2.5 px-4 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.products ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`material-symbols-outlined text-[28px] flex-shrink-0 transition-colors ${expandedGroups.products ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>inventory_2</span>
+                      <span className={`font-semibold text-[17.5px] whitespace-nowrap transition-colors ${expandedGroups.products ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>Sản phẩm</span>
+                    </div>
+                    <span className={`material-symbols-outlined text-[24px] transition-transform duration-300 ${expandedGroups.products ? 'rotate-180 text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>expand_more</span>
+                  </button>
                 ) : (
-                  <div className="flex justify-center mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                  </div>
+                  <button onClick={() => toggleGroup('products')} className={`flex w-[calc(100%-1.5rem)] items-center justify-center mx-3 py-2.5 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.products ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <span className={`material-symbols-outlined text-[28px] transition-colors ${expandedGroups.products ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>inventory_2</span>
+                  </button>
                 )}
-                {hasPermission("Product.Read") && (
-                  <Link
-                    href="/admin/products"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/products") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Kho Sản phẩm" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">inventory_2</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Kho Sản phẩm</span>}
-                  </Link>
-                )}
-                {hasPermission("Bundle.Read") && (
-                  <Link
-                    href="/admin/combo"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Gói Combo" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">inventory</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Gói Combo</span>}
-                  </Link>
-                )}
-                {hasPermission("Category.Read") && (
-                  <Link
-                    href="/admin/categories"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Phân loại Danh mục" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">category</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Phân loại Danh mục</span>}
-                  </Link>
-                )}
-                {hasPermission("Supplier.Read") && (
-                  <Link
-                    href="/admin/brands"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Thương hiệu" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">verified</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thương hiệu</span>}
-                  </Link>
-                )}
+                
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${!isSidebarExpanded || expandedGroups.products ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                  {hasPermission("Product.Read") && (
+                    <Link
+                      href="/admin/products"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/products") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">inventory_2</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Kho Sản phẩm</span>
+                    </Link>
+                  )}
+                  {hasPermission("Bundle.Read") && (
+                    <Link
+                      href="/admin/combo"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/combo") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">inventory</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Gói Combo</span>
+                    </Link>
+                  )}
+                  {hasPermission("Category.Read") && (
+                    <Link
+                      href="/admin/categories"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/categories") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">category</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Phân loại Danh mục</span>
+                    </Link>
+                  )}
+                  {hasPermission("Supplier.Read") && (
+                    <Link
+                      href="/admin/brands"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/brands") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">verified</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Thương hiệu</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
 
             {/* MARKETING & ƯU ĐÃI */}
             {(hasPermission("Voucher.Read") || hasPermission("FlashSale.Read") || hasPermission("Loyalty.Read") || hasPermission("Banner.Read")) && (
-              <div className="space-y-1 pt-2">
+              <div className="pt-1">
                 {isSidebarExpanded ? (
-                  <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Marketing & Ưu đãi</span>
+                  <button onClick={() => toggleGroup('marketing')} className={`flex w-[calc(100%-1.5rem)] items-center justify-between mx-3 py-2.5 px-4 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.marketing ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`material-symbols-outlined text-[28px] flex-shrink-0 transition-colors ${expandedGroups.marketing ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>campaign</span>
+                      <span className={`font-semibold text-[17.5px] whitespace-nowrap transition-colors ${expandedGroups.marketing ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>Marketing</span>
+                    </div>
+                    <span className={`material-symbols-outlined text-[24px] transition-transform duration-300 ${expandedGroups.marketing ? 'rotate-180 text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>expand_more</span>
+                  </button>
                 ) : (
-                  <div className="flex justify-center mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                  </div>
+                  <button onClick={() => toggleGroup('marketing')} className={`flex w-[calc(100%-1.5rem)] items-center justify-center mx-3 py-2.5 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.marketing ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <span className={`material-symbols-outlined text-[28px] transition-colors ${expandedGroups.marketing ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>campaign</span>
+                  </button>
                 )}
-                {hasPermission("Voucher.Read") && (
-                  <Link
-                    href="/admin/vouchers"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Mã giảm giá (Voucher)" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">confirmation_number</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Mã giảm giá (Voucher)</span>}
-                  </Link>
-                )}
-                {hasPermission("FlashSale.Read") && (
-                  <Link
-                    href="/admin/flash-sales"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Chiến dịch Flash Sale" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">bolt</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chiến dịch Flash Sale</span>}
-                  </Link>
-                )}
-                {hasPermission("Loyalty.Read") && (
-                  <Link
-                    href="/admin/loyalty"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Chương trình Loyalty" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">loyalty</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Chương trình Loyalty</span>}
-                  </Link>
-                )}
-                <Link
-                  href="/admin/withdrawals"
-                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/withdrawals") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                  title={!isSidebarExpanded ? "Quản lý Rút tiền" : undefined}
-                >
-                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">account_balance</span>
-                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Quản lý Rút tiền</span>}
-                </Link>
-                {hasPermission("Banner.Read") && (
-                  <Link
-                    href="/admin/banners"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/banners") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Quản lý Banner" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">view_carousel</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Quản lý Banner</span>}
-                  </Link>
-                )}
+                
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${!isSidebarExpanded || expandedGroups.marketing ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                  {hasPermission("Voucher.Read") && (
+                    <Link
+                      href="/admin/vouchers"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/vouchers") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">confirmation_number</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Mã giảm giá</span>
+                    </Link>
+                  )}
+                  {hasPermission("FlashSale.Read") && (
+                    <Link
+                      href="/admin/flash-sales"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/flash-sales") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">bolt</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Flash Sale</span>
+                    </Link>
+                  )}
+                  {hasPermission("Loyalty.Read") && (
+                    <Link
+                      href="/admin/loyalty"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/loyalty") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">loyalty</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Loyalty</span>
+                    </Link>
+                  )}
+                  {hasPermission("Banner.Read") && (
+                    <Link
+                      href="/admin/banners"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/banners") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">view_carousel</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Quản lý Banner</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
 
+            {/* RÚT TIỀN (Single Link) */}
+            <div className="pt-1">
+              <Link
+                href="/admin/withdrawals"
+                className={`flex w-[calc(100%-1.5rem)] items-center py-2.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/withdrawals") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
+                title={!isSidebarExpanded ? "Quản lý Rút tiền" : undefined}
+              >
+                <span className="material-symbols-outlined text-[28px] flex-shrink-0">account_balance</span>
+                {isSidebarExpanded && <span className="text-[17.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tài chính</span>}
+              </Link>
+            </div>
+
             {/* NHÂN SỰ & NGƯỜI DÙNG */}
-            <div className="space-y-1 pt-2">
+            <div className="pt-1">
               {isSidebarExpanded ? (
-                <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Nhân sự & Người dùng</span>
+                <button onClick={() => toggleGroup('users')} className={`flex w-[calc(100%-1.5rem)] items-center justify-between mx-3 py-2.5 px-4 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.users ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`material-symbols-outlined text-[28px] flex-shrink-0 transition-colors ${expandedGroups.users ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>group</span>
+                    <span className={`font-semibold text-[17.5px] whitespace-nowrap transition-colors ${expandedGroups.users ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>Người dùng</span>
+                  </div>
+                  <span className={`material-symbols-outlined text-[24px] transition-transform duration-300 ${expandedGroups.users ? 'rotate-180 text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>expand_more</span>
+                </button>
               ) : (
-                <div className="flex justify-center mb-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                </div>
+                <button onClick={() => toggleGroup('users')} className={`flex w-[calc(100%-1.5rem)] items-center justify-center mx-3 py-2.5 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.users ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                  <span className={`material-symbols-outlined text-[28px] transition-colors ${expandedGroups.users ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>group</span>
+                </button>
               )}
-              {hasPermission("User.Read") && (
-                <Link
-                  href="/admin/users"
-                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/users") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                  title={!isSidebarExpanded ? "Tài khoản Hệ thống" : undefined}
-                >
-                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">group</span>
-                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tài khoản Hệ thống</span>}
-                </Link>
-              )}
-              {hasPermission("Permission.Read") && (
-                <Link
-                  href="/admin/permissions"
-                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                  title={!isSidebarExpanded ? "Phân quyền Truy cập" : undefined}
-                >
-                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">person</span>
-                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Phân quyền Truy cập</span>}
-                </Link>
-              )}
-              {hasPermission("Admin.Access") && (
-                <Link
-                  href="/admin/blocked-ips"
-                  className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/blocked-ips") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                  title={!isSidebarExpanded ? "IP Bị Chặn" : undefined}
-                >
-                  <span className="material-symbols-outlined text-[22px] flex-shrink-0">block</span>
-                  {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">IP Bị Chặn</span>}
-                </Link>
-              )}
+              
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out ${!isSidebarExpanded || expandedGroups.users ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                {hasPermission("User.Read") && (
+                  <Link
+                    href="/admin/users"
+                    className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/users") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                  >
+                    <span className="material-symbols-outlined text-[26px] flex-shrink-0">group</span>
+                    <span className="text-[16.5px] font-medium whitespace-nowrap">Tài khoản Hệ thống</span>
+                  </Link>
+                )}
+                {hasPermission("Permission.Read") && (
+                  <Link
+                    href="/admin/permissions"
+                    className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/permissions") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                  >
+                    <span className="material-symbols-outlined text-[26px] flex-shrink-0">person</span>
+                    <span className="text-[16.5px] font-medium whitespace-nowrap">Phân quyền Truy cập</span>
+                  </Link>
+                )}
+                {hasPermission("Admin.Access") && (
+                  <Link
+                    href="/admin/blocked-ips"
+                    className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/blocked-ips") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                  >
+                    <span className="material-symbols-outlined text-[26px] flex-shrink-0">block</span>
+                    <span className="text-[16.5px] font-medium whitespace-nowrap">IP Bị Chặn</span>
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* TƯƠNG TÁC HỆ THỐNG */}
             {(hasPermission("Chat.Manage") || hasPermission("Notification.Read")) && (
-              <div className="space-y-1 pt-2">
+              <div className="pt-1">
                 {isSidebarExpanded ? (
-                  <span className="font-label-sm text-[12px] text-on-surface-variant font-bold uppercase tracking-wider px-4 block whitespace-nowrap animate-in fade-in duration-300">Tương tác hệ thống</span>
+                  <button onClick={() => toggleGroup('interactions')} className={`flex w-[calc(100%-1.5rem)] items-center justify-between mx-3 py-2.5 px-4 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.interactions ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`material-symbols-outlined text-[28px] flex-shrink-0 transition-colors ${expandedGroups.interactions ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>support_agent</span>
+                      <span className={`font-semibold text-[17.5px] whitespace-nowrap transition-colors ${expandedGroups.interactions ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>Tương tác</span>
+                    </div>
+                    <span className={`material-symbols-outlined text-[24px] transition-transform duration-300 ${expandedGroups.interactions ? 'rotate-180 text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>expand_more</span>
+                  </button>
                 ) : (
-                  <div className="flex justify-center mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mx-0.5"></div>
-                  </div>
+                  <button onClick={() => toggleGroup('interactions')} className={`flex w-[calc(100%-1.5rem)] items-center justify-center mx-3 py-2.5 rounded-[8px] group focus:outline-none cursor-pointer transition-all duration-200 ${expandedGroups.interactions ? 'bg-primary-container/40' : 'hover:bg-secondary-container/50'}`}>
+                    <span className={`material-symbols-outlined text-[28px] transition-colors ${expandedGroups.interactions ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary'}`}>support_agent</span>
+                  </button>
                 )}
-                {hasPermission("Chat.Manage") && (
-                  <Link
-                    href="/admin/chats"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Tin nhắn Hỗ trợ" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">chat</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Tin nhắn Hỗ trợ</span>}
-                  </Link>
-                )}
-                {hasPermission("Notification.Read") && (
-                  <Link
-                    href="/admin/notifications"
-                    className={`flex items-center py-3.5 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary-container text-on-primary-container font-bold shadow-sm shadow-primary/20" : "text-on-surface-variant hover:bg-secondary-container/50"} ${isSidebarExpanded ? "px-4 gap-3" : "px-0 justify-center"}`}
-                    title={!isSidebarExpanded ? "Thông báo nội bộ" : undefined}
-                  >
-                    <span className="material-symbols-outlined text-[22px] flex-shrink-0">notifications</span>
-                    {isSidebarExpanded && <span className="text-[14.5px] font-semibold whitespace-nowrap animate-in fade-in duration-300">Thông báo nội bộ</span>}
-                  </Link>
-                )}
+                
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${!isSidebarExpanded || expandedGroups.interactions ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                  {hasPermission("Chat.Manage") && (
+                    <Link
+                      href="/admin/chats"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">chat</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Tin nhắn Hỗ trợ</span>
+                    </Link>
+                  )}
+                  {hasPermission("Notification.Read") && (
+                    <Link
+                      href="/admin/notifications"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/notifications") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">notifications</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Thông báo nội bộ</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
           </nav>

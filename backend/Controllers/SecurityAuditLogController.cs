@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using PolyBabyAPI.Interfaces;
@@ -9,6 +10,7 @@ namespace PolyBabyAPI.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")]
+    [Permission("System.Audit")]
     public class SecurityAuditLogController : ControllerBase
     {
         private readonly IMongoDbService _mongoDbService;

@@ -60,7 +60,7 @@ namespace PolyBabyAPI.Services
 
             try
             {
-                var query = _context.Products.AsNoTracking().AsQueryable();
+                var query = _context.Products.AsNoTracking().Where(p => !p.IsDeleted);
 
                 List<int>? meiliSortedIds = null;
                 // Apply filters
@@ -195,6 +195,7 @@ namespace PolyBabyAPI.Services
                         {
                             ProductID = p.ProductID,
                             Code = p.Code,
+                            Slug = p.Slug,
                             ProductName = p.ProductName,
                             Description = p.Description,
                             Specifications = p.Specifications,
@@ -284,7 +285,7 @@ namespace PolyBabyAPI.Services
                 var product = await _context.Products
                     .Include(p => p.Category)
                     .Include(p => p.Supplier)
-                    .FirstOrDefaultAsync(p => p.ProductID == id);
+                    .FirstOrDefaultAsync(p => p.ProductID == id && !p.IsDeleted);
 
                 if (product == null) return null;
 
@@ -303,8 +304,11 @@ namespace PolyBabyAPI.Services
                 {
                     ProductID = product.ProductID,
                     Code = product.Code,
+                    Slug = product.Slug,
                     ProductName = product.ProductName,
                     Description = product.Description,
+                    MetaTitle = product.MetaTitle,
+                    MetaDescription = product.MetaDescription,
                     Specifications = product.Specifications,
                     Price = product.Price,
                     ProductDiscountPercent = product.ProductDiscountPercent,
@@ -324,8 +328,8 @@ namespace PolyBabyAPI.Services
                         SupplierID = product.Supplier.SupplierID,
                         SupplierName = product.Supplier.SupplierName
                     } : null,
-                    Rating = reviewStats?.AverageRating ?? 0,
-                    RatingCount = reviewStats?.RatingCount ?? 0
+                    Rating = product.AverageRating > 0 ? product.AverageRating : (reviewStats?.AverageRating ?? 0),
+                    RatingCount = product.ReviewCount > 0 ? product.ReviewCount : (reviewStats?.RatingCount ?? 0)
                 };
             }
             catch (Exception ex)
@@ -351,7 +355,7 @@ namespace PolyBabyAPI.Services
                     .Include(p => p.ProductOptions)
                         .ThenInclude(po => po.ProductOptionValues)
                     .Include(p => p.Images)
-                    .FirstOrDefaultAsync(p => p.ProductID == id);
+                    .FirstOrDefaultAsync(p => p.ProductID == id && !p.IsDeleted);
 
                 if (product == null) return null;
 
@@ -370,8 +374,11 @@ namespace PolyBabyAPI.Services
                 {
                     ProductID = product.ProductID,
                     Code = product.Code,
+                    Slug = product.Slug,
                     ProductName = product.ProductName,
                     Description = product.Description,
+                    MetaTitle = product.MetaTitle,
+                    MetaDescription = product.MetaDescription,
                     Specifications = product.Specifications,
                     Price = product.Price,
                     ProductDiscountPercent = product.ProductDiscountPercent,
@@ -391,8 +398,8 @@ namespace PolyBabyAPI.Services
                         SupplierID = product.Supplier.SupplierID,
                         SupplierName = product.Supplier.SupplierName
                     } : null,
-                    Rating = reviewStats?.AverageRating ?? 0,
-                    RatingCount = reviewStats?.RatingCount ?? 0,
+                    Rating = product.AverageRating > 0 ? product.AverageRating : (reviewStats?.AverageRating ?? 0),
+                    RatingCount = product.ReviewCount > 0 ? product.ReviewCount : (reviewStats?.RatingCount ?? 0),
                     Variants = product.Variants.Select(v => new VariantDto
                     {
                         VariantID = v.VariantID,
@@ -467,9 +474,16 @@ namespace PolyBabyAPI.Services
                     dto.Code = await GenerateProductCodeAsync();
                 }
 
+                // Generate slug
+                var slugStr = !string.IsNullOrWhiteSpace(dto.Slug) ? dto.Slug : dto.ProductName;
+                var slug = await GenerateUniqueSlugAsync(GenerateSlug(slugStr));
+
                 var product = new Product
                 {
                     Code = dto.Code,
+                    Slug = slug,
+                    MetaTitle = dto.MetaTitle ?? dto.ProductName,
+                    MetaDescription = dto.MetaDescription ?? dto.Description,
                     ProductName = dto.ProductName,
                     Description = dto.Description,
                     Specifications = dto.Specifications,
@@ -601,7 +615,7 @@ namespace PolyBabyAPI.Services
 
                 foreach (var sku in variantSkus)
                 {
-                    var skuExistsInDb = await _context.Variants.AnyAsync(v => v.SKU == sku);
+                    var skuExistsInDb = await _context.Variants.AnyAsync(v => v.SKU == sku && !v.IsDeleted);
                     if (skuExistsInDb)
                     {
                         return new ServiceResult<ProductDto>
@@ -612,10 +626,17 @@ namespace PolyBabyAPI.Services
                     }
                 }
 
+                // Generate slug
+                var slugStr = !string.IsNullOrWhiteSpace(dto.Slug) ? dto.Slug : dto.ProductName;
+                var slug = await GenerateUniqueSlugAsync(GenerateSlug(slugStr));
+
                 // 8. Tạo Product
                 var product = new Product
                 {
                     Code = productCode,
+                    Slug = slug,
+                    MetaTitle = dto.MetaTitle ?? dto.ProductName,
+                    MetaDescription = dto.MetaDescription ?? dto.Description,
                     ProductName = dto.ProductName,
                     Description = dto.Description ?? "",
                     Specifications = dto.Specifications ?? "",
@@ -796,8 +817,14 @@ namespace PolyBabyAPI.Services
                 var oldDiscount = product.ProductDiscountPercent;
                 var oldFinalPrice = oldBasePrice * (1m - (oldDiscount / 100m));
 
+                var slugStr = !string.IsNullOrWhiteSpace(dto.Slug) ? dto.Slug : dto.ProductName;
+                var slug = await GenerateUniqueSlugAsync(GenerateSlug(slugStr), id);
+
                 // Update product
                 product.Code = dto.Code ?? product.Code;
+                product.Slug = slug;
+                product.MetaTitle = dto.MetaTitle ?? dto.ProductName;
+                product.MetaDescription = dto.MetaDescription ?? dto.Description;
                 product.ProductName = dto.ProductName;
                 product.Description = dto.Description;
                 product.Specifications = dto.Specifications;
@@ -933,124 +960,9 @@ namespace PolyBabyAPI.Services
                     };
                 }
 
-                if ((DateTime.Now - product.CreatedAt).TotalDays > 3)
-                {
-                    return new ServiceResult<bool>
-                    {
-                        Success = false,
-                        Message = "Chỉ cho phép xóa sản phẩm mới tạo trong vòng 3 ngày. Những sản phẩm cũ hơn vui lòng ẩn (chuyển trạng thái) thay vì xóa."
-                    };
-                }
+                product.IsDeleted = true;
+                product.Status = false;
 
-                var variantIds = await _context.Variants
-                    .Where(v => v.ProductID == id)
-                    .Select(v => v.VariantID)
-                    .ToListAsync();
-
-                if (variantIds.Count > 0)
-                {
-                    // 1. Kiểm tra đơn hàng (InvoiceDetail)
-                    var invoiceUsageCount = await _context.InvoiceDetails
-                        .CountAsync(i => i.VariantID.HasValue && variantIds.Contains(i.VariantID.Value));
-
-                    if (invoiceUsageCount > 0)
-                    {
-                        return new ServiceResult<bool>
-                        {
-                            Success = false,
-                            Message = $"Không thể xóa sản phẩm vì biến thể đã có {invoiceUsageCount} đơn đặt hàng liên quan trong hệ thống."
-                        };
-                    }
-
-                    // 2. Kiểm tra đánh giá (Review)
-                    var reviewUsageCount = await _context.Reviews
-                        .CountAsync(r => variantIds.Contains(r.VariantID));
-
-                    if (reviewUsageCount > 0)
-                    {
-                        return new ServiceResult<bool>
-                        {
-                            Success = false,
-                            Message = $"Không thể xóa sản phẩm vì đã có {reviewUsageCount} lượt đánh giá từ khách hàng."
-                        };
-                    }
-
-                    // 3. Kiểm tra Combo / Bundle (BundleItem)
-                    var bundleUsageCount = await _context.BundleItems
-                        .CountAsync(bi => variantIds.Contains(bi.VariantID));
-
-                    if (bundleUsageCount > 0)
-                    {
-                        return new ServiceResult<bool>
-                        {
-                            Success = false,
-                            Message = $"Không thể xóa sản phẩm vì có {bundleUsageCount} biến thể đang nằm trong gói Combo/Bundle."
-                        };
-                    }
-
-                    // Xóa giỏ hàng tạm (CartDetail)
-                    var cartDetails = await _context.CartDetails
-                        .Where(cd => cd.VariantID.HasValue && variantIds.Contains(cd.VariantID.Value))
-                        .ToListAsync();
-
-                    if (cartDetails.Count > 0)
-                        _context.CartDetails.RemoveRange(cartDetails);
-
-                    // Xóa liên kết thuộc tính biến thể (VariantOptionValue)
-                    var variantOptionValues = await _context.VariantOptionValues
-                        .Where(vov => variantIds.Contains(vov.VariantID))
-                        .ToListAsync();
-
-                    if (variantOptionValues.Count > 0)
-                        _context.VariantOptionValues.RemoveRange(variantOptionValues);
-
-                    // Xóa các biến thể
-                    var variants = await _context.Variants
-                        .Where(v => variantIds.Contains(v.VariantID))
-                        .ToListAsync();
-
-                    if (variants.Count > 0)
-                        _context.Variants.RemoveRange(variants);
-                }
-
-                // Xóa ảnh sản phẩm (ProductImage)
-                var productImages = await _context.ProductImages
-                    .Where(pi => pi.ProductID == id)
-                    .ToListAsync();
-
-                if (productImages.Count > 0)
-                    _context.ProductImages.RemoveRange(productImages);
-
-                // Xóa Wishlist (sản phẩm yêu thích)
-                var wishlists = await _context.Wishlists
-                    .Where(w => w.ProductID == id)
-                    .ToListAsync();
-                    
-                if (wishlists.Count > 0)
-                    _context.Wishlists.RemoveRange(wishlists);
-
-                // Xóa thuộc tính cấu hình (ProductOption) và giá trị của nó
-                var productOptions = await _context.ProductOptions
-                    .Where(po => po.ProductID == id)
-                    .ToListAsync();
-
-                if (productOptions.Count > 0)
-                {
-                    var optionIds = productOptions.Select(po => po.ProductOptionID).ToList();
-                    
-                    // Xóa ProductOptionValues
-                    var productOptionValues = await _context.ProductOptionValues
-                        .Where(pov => optionIds.Contains(pov.ProductOptionID))
-                        .ToListAsync();
-                        
-                    if (productOptionValues.Count > 0)
-                        _context.ProductOptionValues.RemoveRange(productOptionValues);
-
-                    // Xóa ProductOptions
-                    _context.ProductOptions.RemoveRange(productOptions);
-                }
-
-                _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 ClearProductCache();
@@ -1155,7 +1067,7 @@ namespace PolyBabyAPI.Services
         {
             if (string.IsNullOrWhiteSpace(code)) return false;
 
-            var query = _context.Products.Where(p => p.Code == code);
+            var query = _context.Products.Where(p => p.Code == code && !p.IsDeleted);
             
             if (excludeId.HasValue)
                 query = query.Where(p => p.ProductID != excludeId.Value);
@@ -1165,8 +1077,8 @@ namespace PolyBabyAPI.Services
 
         public async Task<object> GetProductStatsAsync()
         {
-            var totalProducts = await _context.Products.CountAsync();
-            var activeProducts = await _context.Products.CountAsync(p => p.Status);
+            var totalProducts = await _context.Products.CountAsync(p => !p.IsDeleted);
+            var activeProducts = await _context.Products.CountAsync(p => p.Status && !p.IsDeleted);
             // S\u1ea3n ph\u1ea9m \u0111\u01b0\u1ee3c coi l\u00e0 h\u1ebft h\u00e0ng khi:
             // - Kh\u00f4ng c\u00f3 bi\u1ebfn th\u1ec3: Stock g\u1ed1c == 0
             // - C\u00f3 bi\u1ebfn th\u1ec3: T\u1ed5ng t\u1ed3n kho bi\u1ebfn th\u1ec3 == 0
@@ -1191,6 +1103,132 @@ namespace PolyBabyAPI.Services
         {
             var count = await _context.Products.CountAsync();
             return $"SP{(count + 1):D6}"; // SP000001, SP000002, etc.
+        }
+
+        public async Task<ProductDetailDto?> GetProductBySlugAsync(string slug)
+        {
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Slug == slug && !p.IsDeleted);
+            if (product == null) return null;
+            return await GetProductDetailAsync(product.ProductID);
+        }
+
+        private string GenerateSlug(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+            var slug = input.ToLowerInvariant();
+
+            string[] vietnameseSigns = new string[] {
+                "aAeEoOuUiIdDyY",
+                "áàạảãâấầậẩẫăắằặẳẵ",
+                "ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
+                "éèẹẻẽêếềệểễ",
+                "ÉÈẸẺẼÊẾỀỆỂỄ",
+                "óòọỏõôốồộổỗơớờợởỡ",
+                "ÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠ",
+                "úùụủũưứừựửữ",
+                "ÚÙỤỦŨƯỨỪỰỬỮ",
+                "íìịỉĩ",
+                "ÍÌỊỈĨ",
+                "đ",
+                "Đ",
+                "ýỳỵỷỹ",
+                "ÝỲỴỶỸ"
+            };
+
+            for (int i = 1; i < vietnameseSigns.Length; i++)
+            {
+                for (int j = 0; j < vietnameseSigns[i].Length; j++)
+                {
+                    slug = slug.Replace(vietnameseSigns[i][j], vietnameseSigns[0][i - 1]);
+                }
+            }
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\s-]", "");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-").Trim('-');
+
+            return slug;
+        }
+
+        private async Task<string> GenerateUniqueSlugAsync(string baseSlug, int? excludeId = null)
+        {
+            var slug = baseSlug;
+            var counter = 1;
+            
+            var query = _context.Products.AsQueryable();
+            if (excludeId.HasValue)
+                query = query.Where(p => p.ProductID != excludeId.Value);
+
+            while (await query.AnyAsync(p => p.Slug == slug))
+            {
+                slug = $"{baseSlug}-{counter}";
+                counter++;
+            }
+            return slug;
+        }
+        public async Task<ServiceResult<object>> SyncSeoFieldsAsync()
+        {
+            try
+            {
+                var productsToUpdate = await _context.Products
+                    .Where(p => string.IsNullOrEmpty(p.Slug) || string.IsNullOrEmpty(p.MetaTitle) || string.IsNullOrEmpty(p.MetaDescription))
+                    .ToListAsync();
+
+                var updatedProductsList = new List<object>();
+                
+                foreach (var product in productsToUpdate)
+                {
+                    bool isUpdated = false;
+                    
+                    if (string.IsNullOrEmpty(product.Slug))
+                    {
+                        var baseSlug = GenerateSlug(product.ProductName);
+                        product.Slug = await GenerateUniqueSlugAsync(baseSlug, product.ProductID);
+                        isUpdated = true;
+                    }
+
+                    if (string.IsNullOrEmpty(product.MetaTitle))
+                    {
+                        var title = product.ProductName ?? "";
+                        product.MetaTitle = title.Length > 255 ? title.Substring(0, 255) : title;
+                        isUpdated = true;
+                    }
+
+                    if (string.IsNullOrEmpty(product.MetaDescription))
+                    {
+                        var plainTextDesc = System.Text.RegularExpressions.Regex.Replace(product.Description ?? "", "<.*?>", String.Empty);
+                        product.MetaDescription = plainTextDesc.Length > 500 ? plainTextDesc.Substring(0, 500) : plainTextDesc;
+                        isUpdated = true;
+                    }
+
+                    if (isUpdated)
+                    {
+                        _context.Products.Update(product);
+                        await _context.SaveChangesAsync();
+                        
+                        updatedProductsList.Add(new {
+                            id = product.ProductID,
+                            name = product.ProductName,
+                            slug = product.Slug,
+                            metaTitle = product.MetaTitle,
+                            metaDescription = product.MetaDescription
+                        });
+                    }
+                }
+
+                if (updatedProductsList.Count > 0)
+                {
+                    ClearProductCache();
+                }
+
+                return ServiceResult<object>.Ok(new {
+                    count = updatedProductsList.Count,
+                    products = updatedProductsList
+                }, "Đồng bộ SEO thành công");
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<object>.Fail($"Lỗi đồng bộ SEO: {ex.Message}");
+            }
         }
     }
 }

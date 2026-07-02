@@ -87,7 +87,7 @@ export default function MyAlertsPage() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <Link href={`/products/${alert.productId}`} className="font-bold text-slate-800 hover:text-primary transition-colors line-clamp-2 text-sm sm:text-base">
+                      <Link href={`/products/${(alert as any).productSlug || alert.productId}`} className="font-bold text-slate-800 hover:text-primary transition-colors line-clamp-2 text-sm sm:text-base">
                         {alert.productName}
                       </Link>
                     </div>
@@ -114,7 +114,7 @@ export default function MyAlertsPage() {
 
                   <div className="flex sm:flex-col gap-2 shrink-0 mt-2 sm:mt-0">
                     <Link 
-                      href={`/products/${alert.productId}`}
+                      href={`/products/${(alert as any).productSlug || alert.productId}`}
                       className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 hover:border-slate-300 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />

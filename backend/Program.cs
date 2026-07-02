@@ -243,6 +243,7 @@ try
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyProfileService, PolyBabyAPI.Services.BabyProfileService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTrackerService, PolyBabyAPI.Services.BabyTrackerService>();
 
     // Core business services
     builder.Services.AddScoped<INotificationService, NotificationService>();

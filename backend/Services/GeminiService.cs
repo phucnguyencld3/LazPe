@@ -246,6 +246,19 @@ namespace PolyBabyAPI.Services
                                     { "unreadOnly", new GeminiSchema { Type = "STRING", Description = "True nếu chỉ muốn đếm thông báo chưa đọc" } }
                                 }
                             }
+                        },
+                        new GeminiFunctionDeclaration
+                        {
+                            Name = "check_baby_growth_status",
+                            Description = "Lấy dữ liệu tăng trưởng và tiêm chủng của bé, trả về tình trạng phát triển hiện tại (Underweight, Normal, Overweight).",
+                            Parameters = new GeminiSchema
+                            {
+                                Type = "OBJECT",
+                                Properties = new Dictionary<string, GeminiSchema>
+                                {
+                                    { "babyId", new GeminiSchema { Type = "STRING", Description = "ID của em bé" } }
+                                }
+                            }
                         }
                     }
                 }
@@ -294,6 +307,7 @@ namespace PolyBabyAPI.Services
                             .Select(p => new
                             {
                                 p.ProductID,
+                                p.Slug,
                                 p.ProductName,
                                 Category = p.Category != null ? p.Category.CategoryName : "",
                                 Description = p.Description != null && p.Description.Length > 200 ? p.Description.Substring(0, 200) + "..." : p.Description,
@@ -345,6 +359,23 @@ namespace PolyBabyAPI.Services
                             b.ImageUrl
                         }).Take(10).ToListAsync();
                         return new { results = bundles, message = bundles.Any() ? $"Tìm thấy {bundles.Count} combo" : "Không tìm thấy combo" };
+
+                    case "check_baby_growth_status":
+                        var bIdStr = args.ContainsKey("babyId") ? args["babyId"].ToString() : "";
+                        if (int.TryParse(bIdStr, out int bId))
+                        {
+                            var trackerService = scope.ServiceProvider.GetRequiredService<IBabyTrackerService>();
+                            var data = await trackerService.GetTrackerDataAsync(bId);
+                            if (data == null) return new { error = "Không tìm thấy hồ sơ của bé." };
+                            
+                            var status = await trackerService.GetGrowthStatusAsync(bId);
+                            return new 
+                            { 
+                                message = $"Tình trạng phát triển của bé {data.Name} hiện tại là: {status}",
+                                data = data 
+                            };
+                        }
+                        return new { error = "ID bé không hợp lệ." };
 
                     case "check_order_status":
                         var orderIdStr = args.ContainsKey("orderCode") ? args["orderCode"].ToString() : "";
@@ -644,6 +675,7 @@ namespace PolyBabyAPI.Services
                 var session = await dbContext.ChatSessions
                     .Include(s => s.User)
                     .ThenInclude(u => u.BabyProfiles)
+                    .ThenInclude(b => b.GrowthRecords)
                     .FirstOrDefaultAsync(s => s.Id == sessionId);
 
                 if (session?.User != null && session.User.BabyProfiles != null && session.User.BabyProfiles.Count > 0)
@@ -659,7 +691,10 @@ namespace PolyBabyAPI.Services
                         if (months < 0) months = 0;
 
                         string genderStr = (baby.Gender == "Male" || baby.Gender == "Nam" || baby.Gender == "Boy") ? "bé trai" : ((baby.Gender == "Female" || baby.Gender == "Nữ" || baby.Gender == "Girl") ? "bé gái" : "bé");
-                        sb.AppendLine($"- Bé {baby.Name}: là {genderStr}, sinh ngày {dob:dd/MM/yyyy} ({months} tháng tuổi). Cân nặng: {baby.WeightKg}kg, Chiều cao: {baby.HeightCm}cm. Mối quan hệ với khách hàng: {baby.Relationship}. Màu sắc yêu thích của bé: {baby.FavoriteColors}.");
+                        var latestGrowth = baby.GrowthRecords?.OrderByDescending(gr => gr.RecordedDate).FirstOrDefault();
+                        double? w = latestGrowth != null ? latestGrowth.WeightKg : baby.WeightKg;
+                        double? h = latestGrowth != null ? latestGrowth.HeightCm : baby.HeightCm;
+                        sb.AppendLine($"- Bé {baby.Name} (ID: {baby.BabyProfileID}): là {genderStr}, sinh ngày {dob:dd/MM/yyyy} ({months} tháng tuổi). Cân nặng: {w}kg, Chiều cao: {h}cm. Mối quan hệ với khách hàng: {baby.Relationship}. Màu sắc yêu thích của bé: {baby.FavoriteColors}.");
                     }
                     babyContext = sb.ToString() + "\n";
                 }
@@ -678,9 +713,9 @@ namespace PolyBabyAPI.Services
                                "Khi khách hàng hỏi xem CÁC VOUCHER/MÃ GIẢM GIÁ (ví dụ: 'có voucher nào', 'mã giảm giá trang chủ', 'voucher trong ví'), HÃY DÙNG get_active_vouchers cho voucher công khai và get_customer_vouchers cho voucher trong ví. " +
                                "LƯU Ý QUAN TRỌNG KHI THÊM GIỎ HÀNG: Khi khách yêu cầu thêm 1 sản phẩm cụ thể vào giỏ hàng (ví dụ: 'thêm bỉm size L', 'mua sữa này'), DO LỊCH SỬ CHAT KHÔNG LƯU MÃ VARIANT_ID, BẠN BẮT BUỘC PHẢI GỌI CÔNG CỤ search_products MỘT LẦN NỮA để tìm đúng sản phẩm đó và lấy được chính xác variantId của loại khách chọn, SAU ĐÓ mới dùng công cụ add_to_cart. TUYỆT ĐỐI KHÔNG TỰ ĐOÁN MÒ MÃ variantId hoặc dùng sai mã của sản phẩm khác.\n\n" +
                                "LƯU Ý QUAN TRỌNG VỀ HIỂN THỊ SẢN PHẨM:\n" +
-                               "1. BẤT CỨ KHI NÀO bạn nhắc đến, gợi ý, hoặc hiển thị thông tin sản phẩm (dù là 1 sản phẩm hay danh sách nhiều sản phẩm), BẠN BẮT BUỘC PHẢI DÙNG MARKDOWN CODE BLOCK với ngôn ngữ `product_card` CHO TỪNG SẢN PHẨM ĐÓ thay vì chỉ viết tên chay. Nội dung bên trong mỗi block phải là JSON CHUẨN chứa các trường: `productId`, `variantId`, `name`, `price`, `imageUrl`. Ví dụ:\n" +
+                               "1. BẤT CỨ KHI NÀO bạn nhắc đến, gợi ý, hoặc hiển thị thông tin sản phẩm (dù là 1 sản phẩm hay danh sách nhiều sản phẩm), BẠN BẮT BUỘC PHẢI DÙNG MARKDOWN CODE BLOCK với ngôn ngữ `product_card` CHO TỪNG SẢN PHẨM ĐÓ thay vì chỉ viết tên chay. Nội dung bên trong mỗi block phải là JSON CHUẨN chứa các trường: `productId`, `slug`, `variantId`, `name`, `price`, `imageUrl`. Ví dụ:\n" +
                                "```product_card\n" +
-                               "{ \"productId\": 1, \"variantId\": 10, \"name\": \"Sữa bột\", \"price\": 500000, \"imageUrl\": \"url_anh\" }\n" +
+                               "{ \"productId\": 1, \"slug\": \"sua-bot\", \"variantId\": 10, \"name\": \"Sữa bột\", \"price\": 500000, \"imageUrl\": \"url_anh\" }\n" +
                                "```\n" +
                                "Nếu hiển thị nhiều sản phẩm, hãy xuất ra nhiều block `product_card` riêng biệt.\n" +
                                "2. NẾU khách hàng CHỈ YÊU CẦU XEM HÌNH ẢNH (ví dụ: 'cho mình xem ảnh', 'hình sản phẩm đâu') và không cần thông tin mua sắm: có thể dùng Markdown `![Tên ảnh](URL)`.\n\n";

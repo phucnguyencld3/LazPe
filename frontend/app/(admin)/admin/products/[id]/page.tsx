@@ -312,6 +312,24 @@ export default function AdminProductDetailPage() {
               </div>
               
               <div className="col-span-2">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Đường dẫn (Slug)</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100 font-mono flex-1 truncate" title={product.slug || "Không có slug"}>
+                    {product.slug || "Không có slug"}
+                  </span>
+                  {product.slug && (
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(product.slug || "")}
+                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                      title="Sao chép Slug"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="col-span-2">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Mô tả sản phẩm</p>
                 <div className="font-medium text-slate-600 text-sm leading-relaxed">
                   <p className="inline">{displayedDescription}</p>

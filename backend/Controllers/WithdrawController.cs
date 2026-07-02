@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PolyBabyAPI.Filters;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
@@ -183,6 +184,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpGet("admin/all")]
         [Authorize(Roles = "Admin")]
+        [Permission("Withdraw.Read")]
         public async Task<IActionResult> GetAllRequests([FromQuery] string? status)
         {
             var query = _context.WithdrawRequests.Include(w => w.User).AsQueryable();
@@ -201,6 +203,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpPost("admin/process/{id}")]
         [Authorize(Roles = "Admin")]
+        [Permission("Withdraw.Update")]
         public async Task<IActionResult> ProcessRequest(int id, [FromBody] ProcessWithdrawRequestDto request)
         {
             try

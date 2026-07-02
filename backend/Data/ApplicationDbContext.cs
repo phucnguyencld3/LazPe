@@ -107,6 +107,12 @@ namespace PolyBabyAPI.Data
                 .HasForeignKey(bp => bp.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Entity<BabyProfile>()
+                .OwnsMany(bp => bp.GrowthRecords, gr => { gr.ToJson(); });
+                
+            builder.Entity<BabyProfile>()
+                .OwnsMany(bp => bp.VaccinationRecords, vr => { vr.ToJson(); });
+
             // ===== Flash Sale Relationships =====
             builder.Entity<FlashSaleItem>()
                 .HasOne(fsi => fsi.FlashSale)
@@ -180,6 +186,17 @@ namespace PolyBabyAPI.Data
                 .WithMany()
                 .HasForeignKey(ua => ua.WardID)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ===== Product Unique Indexes =====
+            builder.Entity<Product>()
+                .HasIndex(p => p.Code)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            builder.Entity<Variant>()
+                .HasIndex(v => v.SKU)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             // ===== Product hierarchy =====
             builder.Entity<Variant>()

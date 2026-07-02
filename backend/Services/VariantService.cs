@@ -26,7 +26,7 @@ namespace PolyBabyAPI.Services
                 .Include(v => v.VariantOptionValues)
                     .ThenInclude(vov => vov.ProductOptionValue)
                         .ThenInclude(pov => pov.ProductOption)
-                .Where(v => v.ProductID == productId)
+                .Where(v => v.ProductID == productId && !v.IsDeleted)
                 .OrderBy(v => v.VariantName)
                 .ToListAsync();
         }
@@ -38,7 +38,7 @@ namespace PolyBabyAPI.Services
                 .Include(v => v.VariantOptionValues)
                     .ThenInclude(vov => vov.ProductOptionValue)
                         .ThenInclude(pov => pov.ProductOption)
-                .FirstOrDefaultAsync(v => v.VariantID == variantId);
+                .FirstOrDefaultAsync(v => v.VariantID == variantId && !v.IsDeleted);
         }
 
         public async Task<List<Variant>> SearchVariantsAsync(int productId, string searchTerm)
@@ -47,7 +47,7 @@ namespace PolyBabyAPI.Services
                 .Include(v => v.VariantOptionValues)
                     .ThenInclude(vov => vov.ProductOptionValue)
                         .ThenInclude(pov => pov.ProductOption)
-                .Where(v => v.ProductID == productId);
+                .Where(v => v.ProductID == productId && !v.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -66,6 +66,14 @@ namespace PolyBabyAPI.Services
             try
             {
                 _context.Variants.Add(variant);
+                
+                var product = await _context.Products.FindAsync(variant.ProductID);
+                if (product != null && variant.Stock > 0)
+                {
+                    product.Stock += variant.Stock;
+                    _context.Products.Update(product);
+                }
+                
                 await _context.SaveChangesAsync();
 
                 if (optionValueIds != null && optionValueIds.Any())
@@ -136,6 +144,7 @@ namespace PolyBabyAPI.Services
                     variantName += " - " + string.Join(" - ", currentCombination.Values);
 
                 var alreadyExists = product.Variants.Any(v =>
+                    !v.IsDeleted &&
                     v.VariantOptionValues != null &&
                     v.VariantOptionValues.Count == currentOptionValueIds.Count &&
                     v.VariantOptionValues.All(vov => currentOptionValueIds.Contains(vov.ProductOptionValueID)));
@@ -178,6 +187,22 @@ namespace PolyBabyAPI.Services
             {
                 var oldVariant = await _context.Variants.AsNoTracking().FirstOrDefaultAsync(v => v.VariantID == variant.VariantID);
                 _context.Variants.Update(variant);
+                
+                if (oldVariant != null)
+                {
+                    var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductID == variant.ProductID);
+                    if (product != null)
+                    {
+                        var stockDifference = variant.Stock - oldVariant.Stock;
+                        if (stockDifference != 0)
+                        {
+                            product.Stock += stockDifference;
+                            if (product.Stock < 0) product.Stock = 0;
+                            _context.Products.Update(product);
+                        }
+                    }
+                }
+                
                 await _context.SaveChangesAsync();
 
                 if (oldVariant != null)
@@ -216,7 +241,16 @@ namespace PolyBabyAPI.Services
             if (variant == null) return false;
             
             var oldStock = variant.Stock;
+            var stockDifference = newStock - oldStock;
             variant.Stock = newStock;
+            
+            var product = await _context.Products.FindAsync(variant.ProductID);
+            if (product != null)
+            {
+                product.Stock += stockDifference;
+                if (product.Stock < 0) product.Stock = 0;
+            }
+            
             await _context.SaveChangesAsync();
 
             if (oldStock == 0 && newStock > 0)
@@ -234,14 +268,37 @@ namespace PolyBabyAPI.Services
             {
                 var variant = await _context.Variants
                     .Include(v => v.VariantOptionValues)
+                    .Include(v => v.InvoiceDetails)
+                    .Include(v => v.CartDetails)
+                    .Include(v => v.BundleItems)
                     .FirstOrDefaultAsync(v => v.VariantID == variantId);
 
                 if (variant == null) return false;
+                
+                var product = await _context.Products.FindAsync(variant.ProductID);
 
-                if (variant.VariantOptionValues?.Any() == true)
-                    _context.VariantOptionValues.RemoveRange(variant.VariantOptionValues);
+                if ((variant.InvoiceDetails != null && variant.InvoiceDetails.Any()) || 
+                    (variant.CartDetails != null && variant.CartDetails.Any()) ||
+                    (variant.BundleItems != null && variant.BundleItems.Any()))
+                {
+                    variant.IsDeleted = true;
+                    _context.Variants.Update(variant);
+                }
+                else
+                {
+                    if (variant.VariantOptionValues?.Any() == true)
+                        _context.VariantOptionValues.RemoveRange(variant.VariantOptionValues);
 
-                _context.Variants.Remove(variant);
+                    _context.Variants.Remove(variant);
+                }
+                
+                if (product != null)
+                {
+                    product.Stock -= variant.Stock;
+                    if (product.Stock < 0) product.Stock = 0;
+                    _context.Products.Update(product);
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return true;
@@ -259,7 +316,7 @@ namespace PolyBabyAPI.Services
             if (optionValueIds == null || !optionValueIds.Any()) return false;
             return await _context.Variants
                 .Include(v => v.VariantOptionValues)
-                .Where(v => v.ProductID == productId)
+                .Where(v => v.ProductID == productId && !v.IsDeleted)
                 .AnyAsync(v =>
                     v.VariantOptionValues.Count == optionValueIds.Count &&
                     v.VariantOptionValues.All(vov => optionValueIds.Contains(vov.ProductOptionValueID)));
@@ -302,7 +359,18 @@ namespace PolyBabyAPI.Services
                     var oldVariant = oldVariants.FirstOrDefault(v => v.VariantID == update.VariantId);
                     if (oldVariant != null)
                     {
-                        var product = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductID == oldVariant.ProductID);
+                        var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductID == oldVariant.ProductID);
+                        if (product != null)
+                        {
+                            var stockDiff = update.Stock - oldVariant.Stock;
+                            if (stockDiff != 0)
+                            {
+                                product.Stock += stockDiff;
+                                if (product.Stock < 0) product.Stock = 0;
+                                _context.Products.Update(product);
+                            }
+                        }
+
                         var productDiscount = product?.ProductDiscountPercent ?? 0;
                         var discount = oldVariant.VariantDiscountPercent > 0 ? oldVariant.VariantDiscountPercent : productDiscount;
                         var oldFinalPrice = oldVariant.UnitPrice * (1m - (discount / 100m));
