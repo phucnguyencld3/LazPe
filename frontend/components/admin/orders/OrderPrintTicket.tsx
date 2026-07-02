@@ -49,7 +49,7 @@ export default function OrderPrintTicket({ order }: OrderPrintTicketProps) {
               background="transparent"
             />
             <div className="text-xs mt-1 font-bold print:text-[10px]">
-              Mã đơn hàng: #{order.invoiceCode || order.invoiceID}
+              Mã đơn hàng: #{order.invoiceCode}
             </div>
           </div>
         </div>

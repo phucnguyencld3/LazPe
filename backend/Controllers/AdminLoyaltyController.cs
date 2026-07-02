@@ -677,6 +677,68 @@ namespace PolyBabyAPI.Controllers
         }
         #endregion
 
+        #region 8. Points Compensation
+        public class CompensatePointsRequest
+        {
+            public string UserID { get; set; } = string.Empty;
+            public int Amount { get; set; }
+            public string Reason { get; set; } = string.Empty;
+            public int InvoiceID { get; set; }
+        }
+
+        /// <summary>
+        /// Bồi thường điểm cho khách hàng liên quan đến một đơn hàng khiếu nại (tối đa 50% giá trị đơn hàng).
+        /// </summary>
+        [HttpPost("compensate-points")]
+        [Permission("Chat.Manage")]
+        public async Task<IActionResult> CompensatePoints([FromBody] CompensatePointsRequest request)
+        {
+            if (string.IsNullOrEmpty(request.UserID) || string.IsNullOrEmpty(request.Reason) || request.InvoiceID <= 0 || request.Amount <= 0)
+            {
+                return BadRequest(new { success = false, message = "Thông tin bồi thường không hợp lệ" });
+            }
+
+            var invoice = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceID == request.InvoiceID && i.UserID == request.UserID);
+            if (invoice == null)
+            {
+                return NotFound(new { success = false, message = "Không tìm thấy đơn hàng hợp lệ của khách hàng này" });
+            }
+
+            // Tỷ lệ quy đổi điểm bồi thường (giả sử 1 điểm = 1 VND để so sánh, hoặc tùy chỉnh)
+            // Yêu cầu: Không quá 50% giá trị đơn hàng
+            decimal maxCompensationValue = invoice.TotalPrice * 0.5m;
+            decimal pointValue = request.Amount; // Giả sử 1 điểm = 1 VND (Tuỳ policy)
+            
+            if (pointValue > maxCompensationValue)
+            {
+                return BadRequest(new { success = false, message = $"Số điểm bồi thường vượt quá giới hạn cho phép (Tối đa: {Math.Floor(maxCompensationValue)} điểm)." });
+            }
+
+            try
+            {
+                // Gọi method AddPointsAsync
+                bool result = await _loyaltyService.AddPointsAsync(request.UserID, request.Amount, "Compensation", $"Bồi thường sự cố đơn hàng #{request.InvoiceID}: {request.Reason}", request.InvoiceID);
+                
+                if (result)
+                {
+                    var profile = await _loyaltyService.GetProfileAsync(request.UserID);
+                    await LogAuditAsync("COMPENSATE_POINTS", "LoyaltyProfile", request.UserID, 
+                        null, request.Amount.ToString(), $"Bồi thường điểm theo đơn hàng #{request.InvoiceID}. Lý do: {request.Reason}");
+                    return Ok(new { success = true, message = "Bồi thường điểm thành công", data = profile });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = "Không thể cộng điểm bồi thường. Vui lòng thử lại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi bồi thường điểm");
+                return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi bồi thường điểm" });
+            }
+        }
+        #endregion
+
         #region 7. Points Manual Revocation
         public class ManualRevocationRequest
         {
@@ -890,7 +952,7 @@ namespace PolyBabyAPI.Controllers
         {
             try
             {
-                var transactions = await _context.LoyaltyPointHistories
+                var rawTransactions = await _context.LoyaltyPointHistories
                     .Where(h => h.UserID == userId && (h.TransactionType == "EARN" || h.TransactionType == "BONUS") && h.Amount >= 0)
                     .OrderByDescending(h => h.CreatedAt)
                     .Select(h => new
@@ -900,10 +962,29 @@ namespace PolyBabyAPI.Controllers
                         h.TransactionType,
                         h.Amount,
                         h.InvoiceID,
+                        InvoiceCode = h.Invoice != null ? h.Invoice.InvoiceCode : null,
                         h.Description,
                         h.CreatedAt
                     })
                     .ToListAsync();
+
+                var transactions = rawTransactions.Select(h => {
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && !string.IsNullOrEmpty(h.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.InvoiceCode}");
+                    }
+                    return new {
+                        h.HistoryID,
+                        h.UserID,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.InvoiceCode,
+                        Description = desc,
+                        h.CreatedAt
+                    };
+                });
 
                 return Ok(new { success = true, data = transactions });
             }
@@ -975,7 +1056,7 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var totalItems = await query.CountAsync();
-                var items = await query
+                var rawItems = await query
                     .OrderByDescending(h => h.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -989,10 +1070,32 @@ namespace PolyBabyAPI.Controllers
                         h.TransactionType,
                         h.Amount,
                         h.InvoiceID,
+                        InvoiceCode = h.Invoice != null ? h.Invoice.InvoiceCode : null,
                         h.Description,
                         h.CreatedAt
                     })
                     .ToListAsync();
+
+                var items = rawItems.Select(h => {
+                    var desc = h.Description;
+                    if (h.InvoiceID.HasValue && !string.IsNullOrEmpty(h.InvoiceCode))
+                    {
+                        desc = desc.Replace($"#{h.InvoiceID.Value}", $"#{h.InvoiceCode}");
+                    }
+                    return new {
+                        h.HistoryID,
+                        h.UserID,
+                        h.FullName,
+                        h.Email,
+                        h.TierName,
+                        h.TransactionType,
+                        h.Amount,
+                        h.InvoiceID,
+                        h.InvoiceCode,
+                        Description = desc,
+                        h.CreatedAt
+                    };
+                });
 
                 return Ok(new
                 {

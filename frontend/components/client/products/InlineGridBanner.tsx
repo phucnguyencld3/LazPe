@@ -37,7 +37,7 @@ export const InlineGridBanner: React.FC<InlineGridBannerProps> = ({ products }) 
   if (!currentProduct) return null;
 
   return (
-    <div className="col-span-2 row-span-1 rounded-2xl overflow-hidden relative shadow-sm border border-slate-100 group bg-gradient-to-r from-blue-50 to-blue-100/50 hidden sm:block h-full min-h-[300px]">
+    <div className="row-start-1 col-span-2 sm:col-start-2 md:col-start-3 xl:col-start-4 rounded-2xl overflow-hidden relative shadow-sm border border-slate-100 group bg-white hidden sm:block h-full min-h-[300px]">
       {/* Background Image Layer */}
       {currentProduct.image && (
         <div className="absolute inset-0 w-full h-full">
@@ -45,10 +45,11 @@ export const InlineGridBanner: React.FC<InlineGridBannerProps> = ({ products }) 
             src={currentProduct.image.startsWith("http") ? currentProduct.image : `http://localhost:5101${currentProduct.image}`}
             alt={currentProduct.name}
             fill
-            className="object-contain opacity-90 transition-transform duration-700 group-hover:scale-105 p-4"
-            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-contain transition-transform duration-700 group-hover:scale-105 p-6"
+            sizes="(max-width: 1024px) 100vw, 320px"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          {/* Subtle gradient only at the bottom for text readability */}
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent"></div>
         </div>
       )}
 
@@ -60,7 +61,7 @@ export const InlineGridBanner: React.FC<InlineGridBannerProps> = ({ products }) 
         <h3 className="font-bold text-lg sm:text-xl line-clamp-2 mb-2 drop-shadow-md">
           {currentProduct.name}
         </h3>
-        
+
         {/* Navigation Dots */}
         <div className="flex gap-1.5 mt-4">
           {randomProducts.map((_, idx) => (
@@ -71,9 +72,8 @@ export const InlineGridBanner: React.FC<InlineGridBannerProps> = ({ products }) 
                 e.stopPropagation();
                 setCurrentIndex(idx);
               }}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === currentIndex ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"
-              }`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"
+                }`}
             />
           ))}
         </div>

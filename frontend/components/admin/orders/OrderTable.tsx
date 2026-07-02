@@ -95,6 +95,13 @@ export const OrderTable: React.FC<OrderTableProps> = ({
       case 4: // Cancel waiting
         return "text-rose-600";
       case 5: // Cancelled (Đã hủy)
+        return "text-red-600";
+      case 6: // Return requested
+        return "text-orange-600";
+      case 7: // Returned refunded
+        return "text-pink-600";
+      case 8: // Cancelled refunded
+        return "text-red-700";
       default:
         return "text-slate-500";
     }
@@ -189,7 +196,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-6 py-5">
-                      <span className="font-bold text-primary">#{order.invoiceCode || order.invoiceID.toString().padStart(6, "0")}</span>
+                      <span className="font-bold text-primary">#{order.invoiceCode}</span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -240,18 +247,11 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                     <td className="px-6 py-5 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => router.push(`/admin/orders/${order.invoiceID}`)}
+                          onClick={() => router.push(`/admin/orders/${order.invoiceID}?page=${currentPage}`)}
                           className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
                           title="Xem chi tiết"
                         >
                           <span className="material-symbols-outlined">visibility</span>
-                        </button>
-                        <button
-                          onClick={() => router.push(`/admin/orders/${order.invoiceID}`)}
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
-                          title="Chỉnh sửa đơn"
-                        >
-                          <span className="material-symbols-outlined">edit</span>
                         </button>
                       </div>
                     </td>

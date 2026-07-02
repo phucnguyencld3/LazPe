@@ -21,6 +21,8 @@ services:
     restart: always
     ports:
       - "5101:8080"
+    volumes:
+      - ./Local:/Local
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=LazPeDB;User Id=sa;Password=LazPeSecurePwd@2026!;TrustServerCertificate=True;

@@ -7,12 +7,14 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Heart, Phone, Info, ShieldCheck, Pill, Gift, Video, FileText, RotateCcw, Flame, Sparkles, Tag, LayoutGrid, Package, Search, Ticket, Calendar } from 'lucide-react';
 import ProductCard from '@/components/client/common/ProductCard';
 import ProductCarousel from '@/components/client/products/ProductCarousel';
+import { RecentlyViewedProducts } from '@/components/client/products/RecentlyViewedProducts';
 import { getProducts, getCurrentFlashSales, getRecommendations, getBundlesAsProducts, getPublicVouchers, collectVoucher } from '@/lib/api';
 import { Product, FlashSaleCampaign, Voucher } from '@/types';
 import { toast } from 'sonner';
 
 export default function HomePageV2() {
   const [bestSellerProducts, setBestSellerProducts] = useState<Product[]>([]);
+  const [topWishlistProducts, setTopWishlistProducts] = useState<Product[]>([]);
   const [flashSaleCampaigns, setFlashSaleCampaigns] = useState<FlashSaleCampaign[]>([]);
   const [publicVouchers, setPublicVouchers] = useState<Voucher[]>([]);
 
@@ -60,10 +62,14 @@ export default function HomePageV2() {
           setPublicVouchers(vouchersList.filter(v => !v.isCollected));
         }
 
-        // Fetch Best Sellers
-        const bestSellerData = await getProducts(1, 10, "", undefined, "RatingCount", "desc");
-        if (isMounted && bestSellerData?.items) {
-          setBestSellerProducts(bestSellerData.items);
+        // Fetch Best Sellers & Top Wishlist
+        const [bestSellerData, topWishlistData] = await Promise.all([
+          getProducts(1, 10, "", undefined, "BestSeller", "desc"),
+          getProducts(1, 10, "", undefined, "topwishlist", "desc")
+        ]);
+        if (isMounted) {
+          if (bestSellerData?.items) setBestSellerProducts(bestSellerData.items);
+          if (topWishlistData?.items) setTopWishlistProducts(topWishlistData.items);
         }
 
         // Fetch dữ liệu cho tab hiện tại (từ URL)
@@ -88,7 +94,7 @@ export default function HomePageV2() {
           dataItems = await getBundlesAsProducts();
         } else {
           let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
-          if (initialTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+          if (initialTab === 'bestseller') { sortBy = "BestSeller"; sortDir = "desc"; }
           if (initialTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
           if (initialTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
           if (initialTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
@@ -145,7 +151,7 @@ export default function HomePageV2() {
         dataItems = await getBundlesAsProducts();
       } else {
         let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
-        if (tab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+        if (tab === 'bestseller') { sortBy = "BestSeller"; sortDir = "desc"; }
         if (tab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
         if (tab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
         if (tab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
@@ -186,7 +192,7 @@ export default function HomePageV2() {
         newHasMore = false;
       } else {
         let sortBy = "CreatedAt", sortDir = "desc", hasDiscount = false;
-        if (activeTab === 'bestseller') { sortBy = "RatingCount"; sortDir = "desc"; }
+        if (activeTab === 'bestseller') { sortBy = "BestSeller"; sortDir = "desc"; }
         if (activeTab === 'newest') { sortBy = "CreatedAt"; sortDir = "desc"; }
         if (activeTab === 'discount') { sortBy = "Price"; sortDir = "asc"; hasDiscount = true; }
         if (activeTab === 'all') { sortBy = "CreatedAt"; sortDir = "desc"; }
@@ -259,7 +265,7 @@ export default function HomePageV2() {
         ) : null}
 
       {/* Sản phẩm Bán Chạy */}
-      <div className="bg-white rounded-[10px] shadow-sm p-5 md:p-6">
+      <div className="bg-white rounded-[10px] shadow-sm px-5 pt-5 pb-1 md:px-6 md:pt-6 md:pb-2 mb-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl text-slate-800">🔥 Top 10 Bán Chạy Nhất</h3>
         </div>
@@ -267,6 +273,20 @@ export default function HomePageV2() {
           <p className="text-slate-500 text-sm">Đang tải sản phẩm...</p>
         ) : bestSellerProducts.length > 0 ? (
           <ProductCarousel products={bestSellerProducts} />
+        ) : (
+          <p className="text-slate-500 text-sm">Chưa có sản phẩm nào.</p>
+        )}
+      </div>
+
+      {/* Sản phẩm Được Yêu Thích Nhất */}
+      <div className="bg-white rounded-[10px] shadow-sm px-5 pt-5 pb-1 md:px-6 md:pt-6 md:pb-2 mb-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-xl text-slate-800">💖 Top Sản Phẩm Được Yêu Thích Nhất</h3>
+        </div>
+        {loadingBest ? (
+          <p className="text-slate-500 text-sm">Đang tải sản phẩm...</p>
+        ) : topWishlistProducts.length > 0 ? (
+          <ProductCarousel products={topWishlistProducts} />
         ) : (
           <p className="text-slate-500 text-sm">Chưa có sản phẩm nào.</p>
         )}
@@ -351,6 +371,11 @@ export default function HomePageV2() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Sản phẩm đã xem */}
+      <div className="mb-6">
+        <RecentlyViewedProducts limit={10} />
       </div>
     </>
   );

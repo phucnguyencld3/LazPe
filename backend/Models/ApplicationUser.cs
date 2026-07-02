@@ -22,6 +22,28 @@ namespace PolyBabyAPI.Models
         [StringLength(13, ErrorMessage = "Số điện thoại không hợp lệ")]
         public override string? PhoneNumber { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        [ConcurrencyCheck]
+        public decimal WalletBalance { get; set; } = 0;
+
+        [MaxLength(256)]
+        public string? WalletSignature { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [ConcurrencyCheck]
+        public decimal CoinsBalance { get; set; } = 0;
+
+        [MaxLength(256)]
+        public string? CoinsSignature { get; set; }
+
+        // MÃ PIN THANH TOÁN (Lưu dưới dạng băm)
+        [MaxLength(256)]
+        public string? PaymentPinHash { get; set; }
+
+        public int PaymentPinFailedCount { get; set; } = 0;
+        
+        public DateTimeOffset? PaymentPinLockoutEnd { get; set; }
+
         // THÊM TRƯỜNG AVATAR
         [Display(Name = "Ảnh đại diện")]
         [StringLength(500, ErrorMessage = "Đường dẫn ảnh không được vượt quá 500 ký tự")]
@@ -42,21 +64,6 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Nhận thông báo khuyến mãi")]
         public bool ReceivePromotions { get; set; } = true;
 
-        [Display(Name = "Sở thích màu sắc của mẹ")]
-        [StringLength(200, ErrorMessage = "Sở thích màu sắc không được vượt quá 200 ký tự")]
-        public string? MomFavoriteColors { get; set; }
-
-        [Display(Name = "Giới tính của bé")]
-        [StringLength(20, ErrorMessage = "Giới tính không được vượt quá 20 ký tự")]
-        public string? ChildGender { get; set; }
-
-        [Display(Name = "Tuổi của bé (tháng)")]
-        [Range(0, 120, ErrorMessage = "Độ tuổi của bé phải từ 0 đến 120 tháng")]
-        public int? ChildAgeMonths { get; set; }
-
-        [Display(Name = "Cân nặng của bé (kg)")]
-        [Range(0, 100, ErrorMessage = "Cân nặng của bé phải từ 0 đến 100 kg")]
-        public double? ChildWeightKg { get; set; }
 
         [Display(Name = "Đã hoàn thành onboarding")]
         public bool IsOnboarded { get; set; } = false;
@@ -64,6 +71,9 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Mã giới thiệu")]
         [StringLength(20)]
         public string? ReferralCode { get; set; }
+        
+        public bool IsWishlistPublic { get; set; } = false;
+        public string? WishlistShareToken { get; set; }
 
         // Refresh Token
         public string? RefreshToken { get; set; }
@@ -89,6 +99,8 @@ namespace PolyBabyAPI.Models
         public int? RoleTemplateId { get; set; }
         [ForeignKey("RoleTemplateId")]
         public virtual RoleTemplate? RoleTemplate { get; set; }
+
+        public virtual ICollection<BabyProfile> BabyProfiles { get; set; } = new List<BabyProfile>();
     }
 }
 

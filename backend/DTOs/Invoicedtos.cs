@@ -15,11 +15,22 @@ namespace PolyBabyAPI.DTOs
         }
 
         /// <summary>
-        /// Dùng cho create-from-cart (chọn item cụ thể)
+        /// Dùng cho create-from-cart (chọn item cụ thể và các ví/điểm)
         /// </summary>
-        public class CreateFromCartRequest
+        public class CheckoutRequestDto
         {
             public List<int>? SelectedCartDetailIds { get; set; }
+
+            public bool UsePoints { get; set; }
+            public int PointsToUse { get; set; }
+
+            public bool UseCoins { get; set; }
+            public decimal CoinsToUse { get; set; }
+
+            public bool UseWallet { get; set; }
+            public decimal WalletToUse { get; set; }
+
+            public string? PaymentPin { get; set; }
         }
 
         /// <summary>
@@ -126,5 +137,30 @@ namespace PolyBabyAPI.DTOs
             public decimal TotalPrice { get; set; }
             public string? ImageUrl { get; set; }
         }
+    }
+
+    public class ReturnRequestDto
+    {
+        [Required]
+        public string Reason { get; set; } = null!;
+        public string? Description { get; set; }
+        public string? ImageUrls { get; set; }
+        public RefundMethod RefundMethod { get; set; }
+    }
+
+    public class ReturnApprovalDto
+    {
+        public bool IsRefundToCoins { get; set; }
+    }
+
+    public class ReturnRejectionDto
+    {
+        [Required]
+        public string RejectReason { get; set; } = null!;
+    }
+
+    public class ConfirmReturnReceivedDto
+    {
+        public bool IsRestockable { get; set; } = true;
     }
 }

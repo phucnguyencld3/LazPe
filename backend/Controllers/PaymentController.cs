@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PolyBabyAPI.Data;
+using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 
@@ -14,15 +15,18 @@ namespace PolyBabyAPI.Controllers
         private readonly IVnPayService _vnPayService;
         private readonly ApplicationDbContext _context;
         private readonly VnPayOptions _vnPayOptions;
+        private readonly IInvoiceService _invoiceService;
 
         public PaymentController(
             IVnPayService vnPayService,
             ApplicationDbContext context,
-            IOptions<VnPayOptions> vnPayOptions)
+            IOptions<VnPayOptions> vnPayOptions,
+            IInvoiceService invoiceService)
         {
             _vnPayService = vnPayService;
             _context = context;
             _vnPayOptions = vnPayOptions.Value;
+            _invoiceService = invoiceService;
         }
 
         [HttpPost("create-vnpay-url")]
@@ -39,9 +43,9 @@ namespace PolyBabyAPI.Controllers
                 return NotFound(new { success = false, message = "Không tìm thấy hóa đơn." });
             }
 
-            var txnRef = request.InvoiceId.ToString();
+            var txnRef = invoice.InvoiceCode ?? request.InvoiceId.ToString();
             var orderInfo = string.IsNullOrWhiteSpace(request.OrderInfo)
-                ? $"Thanh toan don hang {request.InvoiceId}"
+                ? $"Thanh toan don hang {txnRef}"
                 : request.OrderInfo;
 
             var paymentUrl = _vnPayService.CreatePaymentUrl(
@@ -76,11 +80,20 @@ namespace PolyBabyAPI.Controllers
             {
                 var success = _vnPayService.ValidateReturn(Request.Query, out var responseCode, out var txnRef, out var transactionNo);
 
+                Invoice? invoice = null;
                 if (int.TryParse(txnRef, out var invoiceId))
                 {
-                    var invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
+                    invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
+                }
+                else
+                {
+                    invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceCode == txnRef && !x.IsDeleted);
+                }
+
+                if (invoice != null)
+                {
                     var tx = await _context.PaymentTransactions
-                        .Where(x => x.InvoiceID == invoiceId && x.TxnRef == txnRef)
+                        .Where(x => x.InvoiceID == invoice.InvoiceID && x.TxnRef == txnRef)
                         .OrderByDescending(x => x.PaymentTransactionId)
                         .FirstOrDefaultAsync();
 
@@ -105,13 +118,16 @@ namespace PolyBabyAPI.Controllers
                         }
                     }
 
-                    if (invoice != null && success)
+                    bool isPendingBefore = invoice.Status == OrderStatus.Pending;
+                    if (success && isPendingBefore)
                     {
                         invoice.Status = OrderStatus.Confirmed;
                         invoice.ConfirmedAt = DateTime.Now;
                     }
 
                     await _context.SaveChangesAsync();
+
+
                 }
 
                 var baseUrl = string.IsNullOrWhiteSpace(_vnPayOptions.FrontendBaseUrl)

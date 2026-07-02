@@ -14,7 +14,7 @@ namespace PolyBabyAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class ProductImportController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -94,7 +94,7 @@ namespace PolyBabyAPI.Controllers
         // GET /api/ProductImport/export
         // ─────────────────────────────────────────────
         [HttpGet("export")]
-        [Permission("Product.View")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ExportData()
         {
             var products = await _context.Products
@@ -205,7 +205,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/ProductImport/validate
         // ─────────────────────────────────────────────
         [HttpPost("validate")]
-        [Permission("Product.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ValidateImport(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -731,7 +731,7 @@ namespace PolyBabyAPI.Controllers
         // POST /api/ProductImport/commit
         // ─────────────────────────────────────────────
         [HttpPost("commit")]
-        [Permission("Product.Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CommitImport([FromBody] ImportCommitRequestDto request)
         {
             if (request == null || !request.Products.Any())

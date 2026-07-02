@@ -14,7 +14,31 @@ export const OrderCostSummary: React.FC<OrderCostSummaryProps> = ({ order }) => 
           <span>Tạm tính</span>
           <span>{formatCurrency(order.subTotal)}</span>
         </div>
-        {order.discountAmount > 0 && (
+        {(order.voucherDiscountAmount || 0) > 0 && (
+          <div className="flex justify-between text-rose-500">
+            <span>Voucher giảm giá</span>
+            <span>-{formatCurrency(order.voucherDiscountAmount!)}</span>
+          </div>
+        )}
+        {(order.pointsDiscountAmount || 0) > 0 && (
+          <div className="flex justify-between text-amber-500">
+            <span>Điểm tích lũy</span>
+            <span>-{formatCurrency(order.pointsDiscountAmount!)}</span>
+          </div>
+        )}
+        {(order.coinsDiscountAmount || 0) > 0 && (
+          <div className="flex justify-between text-orange-500">
+            <span>LazPe Coins</span>
+            <span>-{formatCurrency(order.coinsDiscountAmount!)}</span>
+          </div>
+        )}
+        {(order.walletDiscountAmount || 0) > 0 && (
+          <div className="flex justify-between text-teal-600">
+            <span>Trừ Ví LazPe</span>
+            <span>-{formatCurrency(order.walletDiscountAmount!)}</span>
+          </div>
+        )}
+        {(order.discountAmount > 0 && !(order.voucherDiscountAmount || 0) && !(order.pointsDiscountAmount || 0) && !(order.coinsDiscountAmount || 0) && !(order.walletDiscountAmount || 0)) && (
           <div className="flex justify-between text-emerald-600">
             <span>Giảm giá</span>
             <span>-{formatCurrency(order.discountAmount)}</span>

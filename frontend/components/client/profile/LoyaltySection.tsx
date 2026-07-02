@@ -521,10 +521,10 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
               <table className="w-full text-left border-collapse text-[11px]">
                 <thead>
                   <tr className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-100/80">
-                    <th className="px-3 py-2">Thời gian</th>
-                    <th className="px-3 py-2">Loại giao dịch</th>
-                    <th className="px-3 py-2">Biến động</th>
-                    <th className="px-3 py-2">Mã đơn hàng</th>
+                    <th className="px-3 py-2 w-[130px]">Thời gian</th>
+                    <th className="px-3 py-2 w-[110px]">Loại giao dịch</th>
+                    <th className="px-3 py-2 w-[90px]">Biến động</th>
+                    <th className="px-3 py-2 w-[130px]">Mã đơn hàng</th>
                     <th className="px-3 py-2">Nội dung</th>
                   </tr>
                 </thead>
@@ -534,24 +534,24 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
                       <td className="px-3 py-2 text-slate-400 font-medium whitespace-nowrap">
                         {formatDate(item.createdAt)}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 whitespace-nowrap">
                         {getTransactionBadge(item.transactionType)}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 whitespace-nowrap">
                         <span className={"text-[13px] font-black " + (item.amount > 0 ? "text-emerald-500" : "text-rose-500")}>
                           {item.amount > 0 ? "+" + item.amount.toLocaleString("vi-VN") : item.amount.toLocaleString("vi-VN")}
                         </span>
                       </td>
-                      <td className="px-3 py-2">
-                        {item.invoiceID ? (
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {item.invoiceCode ? (
                           <span className="text-slate-800 bg-slate-100/80 px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold">
-                            #{item.invoiceID}
+                            #{item.invoiceCode}
                           </span>
                         ) : (
                           <span className="text-slate-300 font-normal">-</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-slate-600 font-medium max-w-[200px] truncate" title={item.description}>
+                      <td className="px-3 py-2 text-slate-600 font-medium max-w-[450px] truncate" title={item.description}>
                         {item.description}
                       </td>
                     </tr>

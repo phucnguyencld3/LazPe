@@ -205,7 +205,7 @@ export default async function AdminDashboardPage() {
                 {stats.recentOrders && stats.recentOrders.length > 0 ? (
                   stats.recentOrders.map((order: any) => (
                     <tr key={order.invoiceID} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-5 font-bold text-primary text-sm">#{order.invoiceCode || order.invoiceID}</td>
+                      <td className="px-6 py-5 font-bold text-primary text-sm">#{order.invoiceCode}</td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm">

@@ -14,7 +14,10 @@ namespace PolyBabyAPI.Models
         DebitCard = 2,
 
         [Display(Name = "Ví điện tử")]
-        MobilePayment = 3
+        MobilePayment = 3,
+
+        [Display(Name = "Ví nội bộ / Hệ thống")]
+        SystemWallet = 4
     }
 
     public enum OrderStatus
@@ -35,7 +38,29 @@ namespace PolyBabyAPI.Models
         CancelRequested = 4,
 
         [Display(Name = "Đã hủy")]
-        Cancelled = 5
+        Cancelled = 5,
+
+        [Display(Name = "Yêu cầu trả hàng")]
+        ReturnRequested = 6,
+
+        [Display(Name = "Đã trả hàng & hoàn tiền")]
+        ReturnedRefunded = 7,
+
+        [Display(Name = "Đã hủy & hoàn tiền")]
+        CancelledRefunded = 8,
+
+        [Display(Name = "Đã duyệt trả hàng")]
+        ReturnApproved = 9,
+
+        [Display(Name = "Từ chối trả hàng")]
+        ReturnRejected = 10
+    }
+
+    public enum RefundMethod
+    {
+        None = 0,
+        SystemWallet = 1,
+        LazPeCoins = 2
     }
 
     public class Invoice
@@ -73,8 +98,34 @@ namespace PolyBabyAPI.Models
         public decimal SubTotal { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "Tiền giảm giá")]
+        [Display(Name = "Tổng tiền giảm giá")]
         public decimal DiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Voucher")]
+        public decimal VoucherDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Điểm")]
+        public decimal PointsDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Xu")]
+        public decimal CoinsDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Ví")]
+        public decimal WalletDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Cần thanh toán")]
+        public decimal AmountToPay { get; set; } = 0;
+
+        public RefundMethod? CancelRefundMethod { get; set; }
+
+        public bool IsRefunded { get; set; } = false;
+
+        public DateTime? RefundedAt { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Chiết khấu hạng thẻ")]
@@ -150,7 +201,16 @@ namespace PolyBabyAPI.Models
         public string? PrintTicketUrl { get; set; }
 
         [ValidateNever]
-        public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+        public string? ReturnReason { get; set; }
+
+        [MaxLength(1000)]
+        public string? ReturnDescription { get; set; }
+        
+        public string? ReturnImageUrls { get; set; }
+        public RefundMethod? RefundMethod { get; set; }
+        public bool IsReturnReceived { get; set; }
+
+        public ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 
         // Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
         public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();

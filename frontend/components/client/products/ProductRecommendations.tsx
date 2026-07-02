@@ -44,7 +44,7 @@ export const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
 
   if (loading) {
     return (
-      <section className="mt-16 pt-16 border-t border-slate-100">
+      <section className="mt-3 pt-3 border-t border-slate-100">
         <h2 className="font-headline-lg text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-yellow-500" />
           {title}
@@ -61,7 +61,7 @@ export const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
   if (products.length === 0) return null;
 
   return (
-    <section className="mt-16 pt-16 border-t border-slate-100">
+    <section className="mt-3 pt-3 border-t border-slate-100">
       <h2 className="font-headline-lg text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2">
         <Sparkles className="w-6 h-6 text-yellow-500" />
         {title}

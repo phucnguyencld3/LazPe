@@ -39,6 +39,7 @@ export interface Variant {
 
 export interface Product {
   id: number;
+  slug?: string;
   name: string;
   description: string;
   specifications?: string;
@@ -61,6 +62,9 @@ export interface Product {
   isBundle?: boolean;
   variants?: Variant[];
   productOptions?: ProductOption[];
+  quantityNeeded?: number;
+  note?: string | null;
+  priority?: string;
 }
 
 export interface Category {
@@ -124,6 +128,8 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
+  isLocked?: boolean;
+  failedCount?: number;
 }
 
 export interface PaginatedResponse<T> {

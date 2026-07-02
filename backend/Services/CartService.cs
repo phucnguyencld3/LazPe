@@ -20,7 +20,30 @@ namespace PolyBabyAPI.Services
 
         public async Task<Cart> GetCartByUserIdAsync(string userId)
         {
-            var cart = await _context.Carts
+            var cartId = await _context.Carts
+                .Where(c => c.UserID == userId && c.Status == true)
+                .Select(c => c.CartID)
+                .FirstOrDefaultAsync();
+
+            if (cartId == 0)
+            {
+                var newCart = new Cart
+                {
+                    UserID = userId,
+                    CreatedDate = DateTime.Now,
+                    Status = true,
+                    TotalAmount = 0
+                };
+                _context.Carts.Add(newCart);
+                await _context.SaveChangesAsync();
+                cartId = newCart.CartID;
+            }
+
+            // Gọi CalculateCartTotalAsync để tự động lấy lại giá mới nhất (GetEffectivePriceAsync) cho tất cả sản phẩm
+            await CalculateCartTotalAsync(cartId);
+
+            // Fetch lại giỏ hàng một lần nữa để đảm bảo DTO trả về chứa giá đã cập nhật và thông tin quà tặng mới nhất
+            return await _context.Carts
                 .AsSplitQuery()
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
@@ -35,24 +58,7 @@ namespace PolyBabyAPI.Services
                     .ThenInclude(cd => cd.Bundle)
                 .Include(c => c.Voucher)
                 .Include(c => c.ShippingVoucher)
-                .FirstOrDefaultAsync(c => c.UserID == userId && c.Status == true);
-
-            if (cart == null)
-            {
-                cart = new Cart
-                {
-                    UserID = userId,
-                    CreatedDate = DateTime.Now,
-                    Status = true,
-                    TotalAmount = 0
-                };
-                _context.Carts.Add(cart);
-                await _context.SaveChangesAsync();
-            }
-
-            await CalculateCartTotalAsync(cart.CartID);
-
-            return cart;
+                .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
 
 
@@ -408,6 +414,105 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        public async Task<(bool Success, string Message, string AppliedCodes)> AutoApplyBestVouchersAsync(int cartId)
+        {
+            var cart = await _context.Carts
+                .Include(c => c.CartDetails)
+                .Include(c => c.Voucher)
+                .Include(c => c.ShippingVoucher)
+                .FirstOrDefaultAsync(c => c.CartID == cartId);
+
+            if (cart == null) return (false, "Giỏ hàng không tồn tại", "");
+
+            decimal subTotal = cart.CartDetails.Sum(cd => cd.Quantity * cd.UnitPrice);
+
+            var now = DateTime.Now;
+
+            // 1. Lấy tất cả voucher chưa sử dụng trong ví
+            var walletVoucherIds = await _context.UserVouchers
+                .Where(uv => uv.UserID == cart.UserID && uv.Status == UserVoucherStatus.Unused && uv.Voucher != null && uv.Voucher.EndDate >= now)
+                .Select(uv => uv.VoucherID)
+                .ToListAsync();
+
+            var walletVouchersQuery = _context.Vouchers
+                .Where(v => walletVoucherIds.Contains(v.VoucherID) && v.Status && v.UsedQuantity < v.TotalQuantity);
+
+            // 2. Lấy tất cả public vouchers chưa lưu
+            var publicVouchersQuery = _context.Vouchers
+                .Where(v => v.Status
+                    && v.VisibilityType == VoucherVisibilityType.Public
+                    && v.ExclusiveType != ExclusiveDistributionType.DirectAssign
+                    && v.StartDate <= now
+                    && v.EndDate >= now
+                    && v.UsedQuantity < v.TotalQuantity);
+
+            var combinedVouchers = await publicVouchersQuery.Union(walletVouchersQuery).ToListAsync();
+
+            // Lọc các voucher hợp lệ: đạt giá trị tối thiểu và chưa vượt quá giới hạn
+            var userVoucherUsages = await _context.VoucherUsages
+                .Where(vu => vu.UserID == cart.UserID)
+                .GroupBy(vu => vu.VoucherID)
+                .Select(g => new { VoucherID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.VoucherID, x => x.Count);
+
+            var validVouchers = combinedVouchers
+                .Where(v => v.MinOrderValue <= subTotal && v.StartDate <= now && v.EndDate >= now)
+                .Where(v => 
+                {
+                    userVoucherUsages.TryGetValue(v.VoucherID, out int usedCount);
+                    return v.UsageLimitPerUser <= 0 || usedCount < v.UsageLimitPerUser;
+                })
+                .ToList();
+
+            Voucher bestProductVoucher = null;
+            decimal maxProductDiscount = 0;
+
+            Voucher bestShippingVoucher = null;
+            decimal maxShippingDiscount = 0;
+
+            foreach (var v in validVouchers)
+            {
+                if (v.VoucherType == VoucherType.ProductDiscount)
+                {
+                    decimal discount = _voucherService.CalculateDiscount(v, subTotal);
+                    if (discount > maxProductDiscount)
+                    {
+                        maxProductDiscount = discount;
+                        bestProductVoucher = v;
+                    }
+                }
+                else if (v.VoucherType == VoucherType.ShippingDiscount)
+                {
+                    decimal discount = _voucherService.CalculateShippingDiscount(v, 25000); // Giả định phí ship cơ bản
+                    if (discount > maxShippingDiscount)
+                    {
+                        maxShippingDiscount = discount;
+                        bestShippingVoucher = v;
+                    }
+                }
+            }
+
+            if (bestProductVoucher == null && bestShippingVoucher == null)
+            {
+                return (false, "Không tìm thấy mã giảm giá nào phù hợp để áp dụng tự động.", "");
+            }
+
+            cart.VoucherID = bestProductVoucher?.VoucherID;
+            cart.Voucher = bestProductVoucher;
+            
+            cart.ShippingVoucherID = bestShippingVoucher?.VoucherID;
+            cart.ShippingVoucher = bestShippingVoucher;
+
+            await _context.SaveChangesAsync();
+            await CalculateCartTotalAsync(cartId);
+
+            var appliedCodes = new List<string>();
+            if (bestProductVoucher != null) appliedCodes.Add(bestProductVoucher.Code);
+            if (bestShippingVoucher != null) appliedCodes.Add(bestShippingVoucher.Code);
+
+            return (true, $"Đã tự động áp dụng {appliedCodes.Count} mã giảm giá tốt nhất!", string.Join(", ", appliedCodes));
+        }
+
         public async Task CalculateCartTotalAsync(int cartId)
         {
             var cart = await _context.Carts
@@ -590,7 +695,7 @@ namespace PolyBabyAPI.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task<decimal> GetEffectivePriceAsync(string userId, int? variantId, int? bundleId, int quantity)
+        public async Task<decimal> GetEffectivePriceAsync(string userId, int? variantId, int? bundleId, int quantity)
         {
             var now = DateTime.Now;
 

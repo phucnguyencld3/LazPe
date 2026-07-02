@@ -32,6 +32,7 @@ import { AddressList } from "@/components/client/profile/AddressList";
 import { SecurityAndSettings } from "@/components/client/profile/SecurityAndSettings";
 import { EditProfileModal } from "@/components/client/profile/modals/EditProfileModal";
 import { EditBabyInfoModal } from "@/components/client/profile/modals/EditBabyInfoModal";
+import { ProfileMessages } from "@/components/client/profile/ProfileMessages";
 import { ChangePasswordModal } from "@/components/client/profile/modals/ChangePasswordModal";
 import { ProfileAddressModal } from "@/components/client/profile/modals/ProfileAddressModal";
 import { VoucherSection } from "@/components/client/profile/VoucherSection";
@@ -42,6 +43,8 @@ import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
 import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 import { SpendingSection } from "@/components/client/profile/SpendingSection";
 import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
+import { WalletSection } from "@/components/client/profile/WalletSection";
+import { BabyTrackerSection } from "@/components/client/profile/BabyTrackerSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -58,6 +61,8 @@ export default function ProfilePage() {
   const [districts, setDistricts] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
   const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
+  const [pendingSupportOrder, setPendingSupportOrder] = useState<any>(null);
+  const [activeBabyId, setActiveBabyId] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -109,10 +114,6 @@ export default function ProfilePage() {
     email: "",
     phoneNumber: "",
     dateOfBirth: "",
-    momFavoriteColors: "",
-    childGender: "",
-    childAgeMonths: "" as string | number,
-    childWeightKg: "" as string | number,
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -188,10 +189,6 @@ export default function ProfilePage() {
           email: profileData.email,
           phoneNumber: profileData.phoneNumber || "",
           dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.split("T")[0] : "",
-          momFavoriteColors: profileData.momFavoriteColors || "",
-          childGender: profileData.childGender || "",
-          childAgeMonths: profileData.childAgeMonths !== undefined && profileData.childAgeMonths !== null ? profileData.childAgeMonths : "",
-          childWeightKg: profileData.childWeightKg !== undefined && profileData.childWeightKg !== null ? profileData.childWeightKg : "",
         });
         setNotificationSettings({
           emailNotifications: (profileData as any).receiveEmailNotifications ?? true,
@@ -237,10 +234,6 @@ export default function ProfilePage() {
         phoneNumber: profileForm.phoneNumber || undefined,
         dateOfBirth: profileForm.dateOfBirth ? new Date(profileForm.dateOfBirth).toISOString() : null,
         avatar: userProfile.avatar,
-        momFavoriteColors: profileForm.momFavoriteColors || undefined,
-        childGender: profileForm.childGender || undefined,
-        childAgeMonths: profileForm.childAgeMonths !== "" ? Number(profileForm.childAgeMonths) : null,
-        childWeightKg: profileForm.childWeightKg !== "" ? Number(profileForm.childWeightKg) : null,
       });
 
       if (result.success) {
@@ -251,10 +244,6 @@ export default function ProfilePage() {
           email: profileForm.email,
           phoneNumber: profileForm.phoneNumber,
           dateOfBirth: profileForm.dateOfBirth ? new Date(profileForm.dateOfBirth).toISOString() : undefined,
-          momFavoriteColors: profileForm.momFavoriteColors,
-          childGender: profileForm.childGender,
-          childAgeMonths: profileForm.childAgeMonths !== "" ? Number(profileForm.childAgeMonths) : undefined,
-          childWeightKg: profileForm.childWeightKg !== "" ? Number(profileForm.childWeightKg) : undefined,
         };
         setUserProfile(updatedProfile);
 
@@ -264,10 +253,7 @@ export default function ProfilePage() {
           userObj.fullName = profileForm.fullName;
           userObj.phoneNumber = profileForm.phoneNumber;
           userObj.email = profileForm.email;
-          userObj.momFavoriteColors = profileForm.momFavoriteColors;
-          userObj.childGender = profileForm.childGender;
-          userObj.childAgeMonths = profileForm.childAgeMonths !== "" ? Number(profileForm.childAgeMonths) : null;
-          userObj.childWeightKg = profileForm.childWeightKg !== "" ? Number(profileForm.childWeightKg) : null;
+
           if (localStorage.getItem("user")) {
             localStorage.setItem("user", JSON.stringify(userObj));
           } else {
@@ -631,11 +617,13 @@ export default function ProfilePage() {
                   {(
                     [
                       { id: "profile", label: "Thông tin tài khoản", icon: "person" },
+                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
                       { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
                       { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
                       { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                       { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
                       { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
@@ -663,11 +651,13 @@ export default function ProfilePage() {
                   {(
                     [
                       { id: "profile", label: "Tài khoản", icon: "person" },
+                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
                       { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
                       { id: "spending", label: "Chi tiêu", icon: "monitoring" },
                       { id: "address", label: "Địa chỉ", icon: "location_on" },
                       { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "messages", label: "Tin nhắn", icon: "chat" },
                       { id: "alerts", label: "Báo giá", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá", icon: "reviews" },
@@ -710,6 +700,10 @@ export default function ProfilePage() {
                 <BabyInfo
                   userProfile={userProfile}
                   onEditClick={() => setEditBabyInfoOpen(true)}
+                  onOpenTracker={(id) => {
+                    setActiveBabyId(id);
+                    handleTabChange("baby-tracker");
+                  }}
                 />
                 <SecurityAndSettings
                   hasPassword={hasPassword}
@@ -718,6 +712,14 @@ export default function ProfilePage() {
                   onNotificationToggle={handleNotificationToggle}
                 />
               </div>
+            )}
+            
+            {activeTab === "messages" && (
+              <ProfileMessages 
+                token={token} 
+                pendingSupportOrder={pendingSupportOrder}
+                clearPendingSupportOrder={() => setPendingSupportOrder(null)}
+              />
             )}
 
             {activeTab === "address" && (
@@ -731,6 +733,10 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "vouchers" && <VoucherSection token={token} />}
+
+            {activeTab === "wallet" && (
+              <WalletSection token={token} uid={userProfile.userId} />
+            )}
 
             {activeTab === "loyalty" && (
               <LoyaltySection token={token} />
@@ -747,6 +753,10 @@ export default function ProfilePage() {
                 initialOrderId={initialNotifId}
                 onClearInitialOrderId={handleClearInitialId}
                 onChangeTab={handleTabChange}
+                onSupportOrder={(order) => {
+                  setPendingSupportOrder(order);
+                  handleTabChange("messages");
+                }}
               />
             )}
 
@@ -769,6 +779,16 @@ export default function ProfilePage() {
               />
             )}
 
+            {activeTab === "baby-tracker" && activeBabyId !== null && (
+              <BabyTrackerSection 
+                babyId={activeBabyId} 
+                onBack={() => handleTabChange("profile")} 
+                onUpdate={() => {
+                  if (userProfile && token) fetchData(userProfile.userId, token);
+                }}
+              />
+            )}
+
             {activeTab === "privacy" && <PrivacySection />}
           </main>
         </div>
@@ -785,10 +805,13 @@ export default function ProfilePage() {
       <EditBabyInfoModal
         isOpen={editBabyInfoOpen}
         onClose={() => setEditBabyInfoOpen(false)}
-        onSubmit={handleProfileUpdate}
-        profileForm={profileForm}
-        setProfileForm={setProfileForm}
-        profileError={profileError}
+        token={token}
+        userProfile={userProfile}
+        onRefreshProfile={() => {
+          if (userProfile && token) {
+            fetchData(userProfile.userId, token);
+          }
+        }}
       />
 
       <ChangePasswordModal

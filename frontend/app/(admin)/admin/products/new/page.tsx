@@ -67,6 +67,7 @@ export default function CreateProductPage() {
   const [supplierId, setSupplierId] = useState<number | "">("");
   const [description, setDescription] = useState("");
   const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>([
+    { key: "Tên sản phẩm", value: "" },
     { key: "Thương hiệu", value: "LazPe" },
     { key: "Xuất xứ", value: "Việt Nam" },
     { key: "Chất liệu", value: "" },
@@ -128,6 +129,46 @@ export default function CreateProductPage() {
 
     loadInitialData();
   }, []);
+
+  // Synchronize product name and brand to specifications
+  useEffect(() => {
+    setSpecifications(prev => {
+      const nameIndex = prev.findIndex(s => s.key === "Tên sản phẩm");
+      let newSpecs = [...prev];
+      if (nameIndex >= 0) {
+        if (newSpecs[nameIndex].value !== productName) {
+          newSpecs[nameIndex] = { ...newSpecs[nameIndex], value: productName };
+          return newSpecs;
+        }
+      } else {
+        return [{ key: "Tên sản phẩm", value: productName }, ...prev];
+      }
+      return prev;
+    });
+  }, [productName]);
+
+  useEffect(() => {
+    if (!supplierId) return;
+    const selectedSupplier = suppliers.find(s => s.supplierID === supplierId);
+    if (!selectedSupplier) return;
+    const supplierName = selectedSupplier.supplierName;
+
+    setSpecifications(prev => {
+      const brandIndex = prev.findIndex(s => s.key === "Thương hiệu");
+      let newSpecs = [...prev];
+      if (brandIndex >= 0) {
+        if (newSpecs[brandIndex].value !== supplierName) {
+          newSpecs[brandIndex] = { ...newSpecs[brandIndex], value: supplierName };
+          return newSpecs;
+        }
+      } else {
+        const insertIndex = prev.findIndex(s => s.key === "Tên sản phẩm") + 1;
+        newSpecs.splice(insertIndex, 0, { key: "Thương hiệu", value: supplierName });
+        return newSpecs;
+      }
+      return prev;
+    });
+  }, [supplierId, suppliers]);
 
   // Option actions
   const handleAddOption = () => {

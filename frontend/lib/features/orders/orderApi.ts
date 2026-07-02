@@ -11,6 +11,10 @@ export interface OrderInfo {
   userPhone: string | null;
   subTotal: number;
   discountAmount: number;
+  voucherDiscountAmount?: number;
+  pointsDiscountAmount?: number;
+  coinsDiscountAmount?: number;
+  walletDiscountAmount?: number;
   totalPrice: number;
   shippingFee: number;
   shippingAddress: string | null;
@@ -19,6 +23,15 @@ export interface OrderInfo {
   status: string;
   statusCode: number;
   createdAt: string;
+  confirmedAt?: string;
+  shippedAt?: string;
+  completedAt?: string;
+  cancelReason?: string;
+  cancelledAt?: string;
+  returnReason?: string;
+  returnDescription?: string;
+  returnImageUrls?: string;
+  refundMethod?: number;
   hasVoucher: boolean;
   voucherCode: string | null;
   voucherName: string | null;
@@ -51,6 +64,16 @@ export const getStatusBadgeColor = (statusCode: number) => {
       return 'bg-rose-50 text-rose-600 border border-rose-100'; // Chờ duyệt hủy
     case 5:
       return 'bg-red-50 text-red-600 border border-red-100'; // Cancelled
+    case 6:
+      return 'bg-orange-50 text-orange-600 border border-orange-100'; // ReturnRequested
+    case 7:
+      return 'bg-pink-50 text-pink-600 border border-pink-100'; // Returned
+    case 8:
+      return 'bg-red-50 text-red-700 border border-red-200'; // CancelledRefunded
+    case 9:
+      return 'bg-blue-50 text-blue-600 border border-blue-100'; // ReturnApproved
+    case 10:
+      return 'bg-red-50 text-red-600 border border-red-100'; // ReturnRejected
     default:
       return 'bg-slate-50 text-slate-600 border border-slate-100';
   }
@@ -64,6 +87,11 @@ export const getStatusLabel = (statusCode: number) => {
     case 3: return 'Hoàn tất';
     case 4: return 'Chờ duyệt hủy';
     case 5: return 'Đã hủy';
+    case 6: return 'Yêu cầu trả hàng';
+    case 7: return 'Đã hoàn tiền';
+    case 8: return 'Đã hủy & hoàn tiền';
+    case 9: return 'Đã duyệt trả hàng';
+    case 10: return 'Từ chối hoàn hàng';
     default: return 'Không rõ';
   }
 };
@@ -227,29 +255,79 @@ export const exportOrdersToExcel = async (
   token: string,
   search?: string,
   status?: number | null,
-  sortBy: string = 'created',
-  desc: boolean = true,
+  sortBy?: string,
+  desc?: boolean,
   minPrice?: number | null,
   maxPrice?: number | null,
-  dateRange?: string
+  dateRange?: any
 ): Promise<Blob> => {
-  let url = `${API_BASE_URL}/Invoice/export?sortBy=${sortBy}&desc=${desc}`;
-  if (search) url += `&search=${encodeURIComponent(search)}`;
-  if (status !== undefined && status !== null) url += `&status=${status}`;
-  if (minPrice !== undefined && minPrice !== null) url += `&minPrice=${minPrice}`;
-  if (maxPrice !== undefined && maxPrice !== null) url += `&maxPrice=${maxPrice}`;
-  if (dateRange) url += `&dateRange=${encodeURIComponent(dateRange)}`;
+  const queryParams = new URLSearchParams();
+  if (search) queryParams.append('search', search);
+  if (status !== undefined && status !== null) queryParams.append('status', status.toString());
+  if (sortBy) queryParams.append('sortBy', sortBy);
+  if (desc !== undefined) queryParams.append('desc', desc.toString());
+  if (minPrice !== undefined && minPrice !== null) queryParams.append('minPrice', minPrice.toString());
+  if (maxPrice !== undefined && maxPrice !== null) queryParams.append('maxPrice', maxPrice.toString());
+  if (dateRange?.from) queryParams.append('startDate', dateRange.from.toISOString());
+  if (dateRange?.to) queryParams.append('endDate', dateRange.to.toISOString());
 
-  const response = await fetch(url, {
-    method: "GET",
+  const response = await fetch(`${API_BASE_URL}/AdminInvoice/export?${queryParams.toString()}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   });
 
   if (!response.ok) {
-    throw new Error("Lỗi khi xuất danh sách đơn hàng ra Excel");
+    throw new Error('Failed to export orders');
   }
 
   return await response.blob();
+};
+
+export const requestReturnOrder = async (token: string, id: string, reason: string, imageUrls: string, refundMethod: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/request-return`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ reason, imageUrls, refundMethod })
+  });
+  return res.json();
+};
+
+export const approveReturnOrder = async (token: string, id: string, isRefundToCoins: boolean): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/approve-return`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ isRefundToCoins })
+  });
+  return res.json();
+};
+
+export const confirmReturnReceived = async (token: string, id: string, isRestockable: boolean): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/confirm-return-received`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ isRestockable })
+  });
+  return res.json();
+};
+
+export const rejectReturnOrder = async (token: string, id: string, rejectReason: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/reject-return`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ rejectReason })
+  });
+  return res.json();
 };

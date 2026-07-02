@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Sparkles, ShieldCheck, Loader } from "lucide-react";
+import { FileText, Sparkles, ShieldCheck, Loader, ChevronDown, ChevronUp } from "lucide-react";
 import { CartInfo, CartDetailInfo, LoyaltyEarnPolicySummary, LoyaltyRedeemPolicySummary } from "@/lib/api";
 
 interface OrderSummarySidebarProps {
@@ -26,7 +26,17 @@ interface OrderSummarySidebarProps {
   redeemPolicy: LoyaltyRedeemPolicySummary | null;
   estimatedEarnPoints: number;
   handleOpenVoucherModal: () => void;
+  handleAutoApplyVouchers?: () => void;
   handleRemoveVoucher: (type?: number) => Promise<void> | void;
+  useWallet: boolean;
+  setUseWallet: (val: boolean) => void;
+  useCoins: boolean;
+  setUseCoins: (val: boolean) => void;
+  walletBalance: number;
+  coinsBalance: number;
+  walletDiscount: number;
+  coinsDiscount: number;
+  isWalletLocked?: boolean;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
@@ -52,9 +62,20 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   redeemPolicy,
   estimatedEarnPoints,
   handleOpenVoucherModal,
+  handleAutoApplyVouchers,
   handleRemoveVoucher,
+  useWallet,
+  setUseWallet,
+  useCoins,
+  setUseCoins,
+  walletBalance,
+  coinsBalance,
+  walletDiscount,
+  coinsDiscount,
+  isWalletLocked = false,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
+  const [isWalletExpanded, setIsWalletExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     setInputPoints(pointsToUse);
@@ -147,13 +168,25 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               <span className="material-symbols-outlined text-rose-500 text-base font-bold">local_activity</span>
               <span>Mã giảm giá LazPe</span>
             </div>
-            <button 
-              type="button"
-              onClick={handleOpenVoucherModal}
-              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center"
-            >
-              Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
+            <div className="flex gap-3 items-center">
+              {handleAutoApplyVouchers && (
+                <button
+                  type="button"
+                  onClick={handleAutoApplyVouchers}
+                  disabled={submitting}
+                  className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  ✨ Tự động áp mã
+                </button>
+              )}
+              <button 
+                type="button"
+                onClick={handleOpenVoucherModal}
+                className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center cursor-pointer"
+              >
+                Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
           </div>
 
           {(cart?.voucher || cart?.shippingVoucher) && (
@@ -192,8 +225,10 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
         {availablePoints >= 1000 && (
           <div className="px-6 py-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                <span className="material-symbols-outlined text-rose-500 text-base font-bold">military_tech</span>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <div className="w-6 flex justify-center items-center shrink-0">
+                  <span className="material-symbols-outlined text-rose-500 text-[22px] font-bold">military_tech</span>
+                </div>
                 <span>Dùng điểm tích lũy</span>
               </div>
               <span className="text-[10px] text-slate-400 font-bold">
@@ -251,8 +286,102 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             )}
           </div>
         )}
+        {/* LazPe Wallet & Coins Toggle Section */}
+        <div className="border-t border-slate-100">
+          <button
+            onClick={() => setIsWalletExpanded(!isWalletExpanded)}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-6 flex justify-center items-center shrink-0">
+                <span className="material-symbols-outlined text-teal-600 text-[22px] font-bold">account_balance_wallet</span>
+              </div>
+              <span className="text-sm font-bold text-slate-800">Ví LazPe & Coins</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isWalletExpanded && (useCoins || useWallet) && (
+                <span className="text-[10px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded font-bold">
+                  Đang dùng
+                </span>
+              )}
+              {isWalletExpanded ? (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              )}
+            </div>
+          </button>
+          
+          <div className={`overflow-hidden transition-all duration-300 ${isWalletExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="bg-slate-50/50 pb-2">
+              {/* Coins Section */}
+              <div className="px-6 py-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <div className="w-6 flex justify-center items-center shrink-0">
+                      <span className="material-symbols-outlined text-orange-500 text-[22px] font-bold">monetization_on</span>
+                    </div>
+                    <span>Sử dụng LazPe Coins</span>
+                  </div>
+                  <span className="text-orange-500 font-extrabold text-xs">{formatVND(coinsBalance)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 flex justify-center items-center shrink-0">
+                    <input
+                      type="checkbox"
+                      id="useCoins"
+                      checked={useCoins}
+                      onChange={(e) => setUseCoins(e.target.checked)}
+                      disabled={coinsBalance <= 0 || submitting}
+                      className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <label htmlFor="useCoins" className={`text-xs ${coinsBalance <= 0 ? 'text-slate-400' : 'text-slate-600 cursor-pointer'}`}>
+                    Dùng LazPe Coins để thanh toán
+                  </label>
+                </div>
+              </div>
 
+              {/* Divider */}
+              <div className="mx-6 border-t border-slate-200 border-dashed"></div>
 
+              {/* Wallet Section */}
+              <div className="px-6 py-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <div className="w-6 flex justify-center items-center shrink-0">
+                      <span className="material-symbols-outlined text-emerald-500 text-[22px] font-bold">account_balance_wallet</span>
+                    </div>
+                    <span>Sử dụng Số dư Ví LazPe</span>
+                  </div>
+                  <span className="text-emerald-500 font-extrabold text-xs">{formatVND(walletBalance)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 flex justify-center items-center shrink-0">
+                    <input
+                      type="checkbox"
+                      id="useWallet"
+                      checked={useWallet}
+                      onChange={(e) => setUseWallet(e.target.checked)}
+                      disabled={walletBalance <= 0 || submitting || isWalletLocked}
+                      className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="useWallet" className={`text-xs ${walletBalance <= 0 || isWalletLocked ? 'text-slate-400' : 'text-slate-600 cursor-pointer'}`}>
+                      Dùng số dư Ví để thanh toán
+                    </label>
+                    {isWalletLocked && (
+                      <span className="text-[10px] text-rose-500 font-semibold mt-0.5">
+                        (Ví đang bị khóa 15 phút. Vui lòng mở khóa trong phần quản lý Ví)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Price Calculations */}
         <div className="p-6 space-y-4">
@@ -280,8 +409,6 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               </div>
             )}
 
-
-
             {/* Voucher Discount */}
             {discountAmount > 0 && (
               <div className="flex justify-between items-center text-rose-500">
@@ -295,6 +422,22 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               <div className="flex justify-between items-center text-rose-500">
                 <span>Giảm từ điểm tích lũy:</span>
                 <span className="font-bold">- {formatVND(loyaltyDiscount)}</span>
+              </div>
+            )}
+
+            {/* Coins Discount */}
+            {coinsDiscount > 0 && (
+              <div className="flex justify-between items-center text-orange-500">
+                <span>Sử dụng LazPe Coins:</span>
+                <span className="font-bold">- {formatVND(coinsDiscount)}</span>
+              </div>
+            )}
+
+            {/* Wallet Discount */}
+            {walletDiscount > 0 && (
+              <div className="flex justify-between items-center text-emerald-500">
+                <span>Sử dụng Số dư Ví:</span>
+                <span className="font-bold">- {formatVND(walletDiscount)}</span>
               </div>
             )}
 

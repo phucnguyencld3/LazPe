@@ -244,6 +244,48 @@ namespace PolyBabyAPI.Controllers
         #region Voucher Management
 
         /// <summary>
+        /// Tự động áp dụng mã giảm giá tốt nhất
+        /// </summary>
+        [HttpPost("auto-apply-vouchers")]
+        public async Task<IActionResult> AutoApplyVouchers()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var cart = await _cartService.GetCartByUserIdAsync(userId);
+                var result = await _cartService.AutoApplyBestVouchersAsync(cart.CartID);
+
+                if (result.Success)
+                {
+                    var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
+                    var cartDto = MapCartToDto(updatedCart);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        appliedCodes = result.AppliedCodes,
+                        data = cartDto
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error auto applying vouchers");
+                return StatusCode(500, new { success = false, message = "Có lỗi khi tự động áp dụng mã giảm giá" });
+            }
+        }
+
+        /// <summary>
         /// Áp dụng mã giảm giá
         /// </summary>
         [HttpPost("apply-voucher")]
@@ -372,7 +414,7 @@ namespace PolyBabyAPI.Controllers
                     ProductID = detail.Variant.Product.ProductID,
                     Name = detail.Variant.Product.ProductName,
                     ImageUrl = GetProductImageUrl(detail.Variant.Product),
-                    Slug = GenerateProductSlug(detail.Variant.Product.ProductName)
+                    Slug = !string.IsNullOrEmpty(detail.Variant.Product.Slug) ? detail.Variant.Product.Slug : GenerateProductSlug(detail.Variant.Product.ProductName)
                 } : null,
                 Variant = detail.Variant != null ? new VariantCartDto
                 {

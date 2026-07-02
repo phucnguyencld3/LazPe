@@ -6,8 +6,11 @@ using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
+using System.Collections.Generic;
+using System.Security.Claims;
 using PolyBabyAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
+using PolyBabyAPI.Filters;
 
 namespace PolyBabyAPI.Controllers
 {
@@ -114,6 +117,12 @@ namespace PolyBabyAPI.Controllers
                     shipping = invoices.Count(i => i.Status == OrderStatus.Shipped),
                     completed = invoices.Count(i => i.Status == OrderStatus.Completed),
                     cancelled = invoices.Count(i => i.Status == OrderStatus.Cancelled),
+                    cancelRequested = invoices.Count(i => i.Status == OrderStatus.CancelRequested),
+                    returnRequested = invoices.Count(i => i.Status == OrderStatus.ReturnRequested),
+                    returnedRefunded = invoices.Count(i => i.Status == OrderStatus.ReturnedRefunded),
+                    cancelledRefunded = invoices.Count(i => i.Status == OrderStatus.CancelledRefunded),
+                    returnApproved = invoices.Count(i => i.Status == OrderStatus.ReturnApproved),
+                    returnRejected = invoices.Count(i => i.Status == OrderStatus.ReturnRejected),
                     todayRevenue = invoices
                         .Where(i => i.CreatedAt.HasValue && i.CreatedAt.Value.Date == today && i.Status != OrderStatus.Cancelled)
                         .Sum(i => i.TotalPrice),
@@ -136,13 +145,27 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpGet("user/{userId}")]
         //[Authorize(Roles = "Admin")]
-        public async Task<ActionResult<IEnumerable<object>>> GetByUser(string userId, [FromQuery] OrderStatus? status = null)
+        public async Task<ActionResult<object>> GetByUser(
+            string userId, 
+            [FromQuery] OrderStatus? status = null,
+            [FromQuery] string? search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             try
             {
-                var invoices = await _invoiceService.GetByUserAsync(userId, status);
-                var result = invoices.Select(MapInvoiceToResponse);
-                return Ok(result);
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+                var (invoices, totalCount) = await _invoiceService.GetByUserPaginatedAsync(userId, status, search, page, pageSize);
+                var result = invoices.Select(MapInvoiceToClientListResponse);
+                return Ok(new
+                {
+                    Items = result,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
+                });
             }
             catch (Exception ex)
             {
@@ -301,7 +324,8 @@ namespace PolyBabyAPI.Controllers
         /// Xuất danh sách hóa đơn ra Excel
         /// </summary>
         [HttpGet("export")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
+        [Permission("Order.Read")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] string? search,
             [FromQuery] OrderStatus? status,
@@ -588,14 +612,14 @@ namespace PolyBabyAPI.Controllers
         /// Tạo hóa đơn từ giỏ hàng (hỗ trợ chọn item + voucher tự động + points quy đổi)
         /// </summary>
         [HttpPost("create-from-cart/{cartId}")]
+        [TypeFilter(typeof(AntiSpamCheckoutFilter))]
         //[Authorize]
         public async Task<ActionResult<object>> CreateFromCart(
             int cartId,
             [FromQuery] PayMethod? payMethod,
             [FromQuery] int? addressId,
             [FromQuery] string? shippingAddress,
-            [FromBody] CreateFromCartRequest? body,
-            [FromQuery] int pointsToUse = 0)
+            [FromBody] InvoiceDtos.CheckoutRequestDto? body)
         {
             try
             {
@@ -605,77 +629,8 @@ namespace PolyBabyAPI.Controllers
 
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "UnknownIP";
 
-                // Kiểm tra xem IP có bị chặn không
-                if (await _ipBlockService.IsIpBlockedAsync(ipAddress))
-                {
-                    return StatusCode(403, new { success = false, message = "Truy cập bị từ chối do phát hiện hành vi bất thường từ địa chỉ IP này. Vui lòng liên hệ bộ phận hỗ trợ." });
-                }
-
-                // Kiểm tra rate limiting cho thanh toán COD
-                if (payMethod == null)
-                {
-                    var cacheKey1m = $"COD_RL_1m_{ipAddress}";
-                    var cacheKey10m = $"COD_RL_10m_{ipAddress}";
-                    var cacheKey1d = $"COD_RL_1d_{ipAddress}";
-
-                    var count1m = _cache.GetOrCreate(cacheKey1m, entry => { entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); return 0; });
-                    var count10m = _cache.GetOrCreate(cacheKey10m, entry => { entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10); return 0; });
-                    var count1d = _cache.GetOrCreate(cacheKey1d, entry => { entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1); return 0; });
-
-                    count1m++;
-                    count10m++;
-                    count1d++;
-
-                    _cache.Set(cacheKey1m, count1m, TimeSpan.FromMinutes(1));
-                    _cache.Set(cacheKey10m, count10m, TimeSpan.FromMinutes(10));
-                    _cache.Set(cacheKey1d, count1d, TimeSpan.FromDays(1));
-
-                    if (count1m >= 5 || count10m >= 30 || count1d >= 50)
-                    {
-                        // Kiểm tra nếu là Admin thì không khóa
-                        var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-                        if (!isAdmin)
-                        {
-                            // Khóa tài khoản 1 ngày
-                            user.LockoutEnd = DateTimeOffset.UtcNow.AddDays(1);
-                            await _userManager.UpdateAsync(user);
-
-                            // Block IP chỉ 1 ngày
-                            var reason = $"Tài khoản {user.Email} có dấu hiệu spam khi tạo liên tục {count1m} đơn COD trong 1 phút (hoặc {count1d} đơn/ngày). Hệ thống đã tự động khóa tài khoản và IP để bảo vệ.";
-                            
-                            var recentInvoices = await _context.Invoices
-                                .Where(i => i.UserID == user.Id)
-                                .OrderByDescending(i => i.CreatedAt)
-                                .Take(5)
-                                .Select(i => i.InvoiceCode)
-                                .ToListAsync();
-                                
-                            await _ipBlockService.BlockIpAsync(ipAddress, reason, 1, user.Id, user.Email, recentInvoices);
-
-                            // Thông báo Admin
-                            try
-                        {
-                            var notifDto = new CreateNotificationDto
-                            {
-                                Title = "Cảnh báo bảo mật: Đã chặn IP Spam COD",
-                                ShortDescription = $"Tự động chặn IP {ipAddress} (User: {user.Email}).",
-                                Content = $"<p>Phát hiện hành vi spam đơn hàng COD từ IP <strong>{ipAddress}</strong>.</p><p>Lý do: {reason}</p>",
-                                Type = NotificationType.System,
-                                Priority = NotificationPriority.High,
-                                ActionType = ActionType.CustomUrl,
-                                ActionUrl = $"/admin/blocked-ips",
-                                TargetType = TargetType.Role,
-                                TargetValue = "Admin",
-                                PublishedAt = DateTime.Now
-                            };
-                            await _notificationService.CreateNotificationAsync(notifDto, "System");
-                        }
-                        catch { }
-
-                            return StatusCode(403, new { success = false, message = "Tài khoản và IP của bạn đã bị tạm khóa do có hành vi spam tạo đơn hàng. Vui lòng liên hệ CSKH." });
-                        }
-                    }
-                }
+                // Shadow Ban Check
+                bool isShadowBan = HttpContext.Items["IsShadowBan"] as bool? ?? false;
 
                 // Xác định địa chỉ giao hàng
                 string address;
@@ -729,10 +684,50 @@ namespace PolyBabyAPI.Controllers
                     matchedAddress = defaultAddress;
                 }
 
-                // ✅ Lấy selectedCartDetailIds từ body (nếu có)
+                // Lấy selectedCartDetailIds từ body (nếu có)
                 var selectedIds = body?.SelectedCartDetailIds;
 
-                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, selectedIds, matchedAddress, pointsToUse);
+                if (isShadowBan)
+                {
+                    // Đòn tâm lý: Xóa luôn giỏ hàng của kẻ tấn công để chúng tin chắc 100% là đã đặt hàng thành công
+                    if (selectedIds != null && selectedIds.Any())
+                    {
+                        var itemsToRemove = await _context.CartDetails
+                            .Where(cd => cd.CartID == cartId && selectedIds.Contains(cd.CartDetailID))
+                            .ToListAsync();
+                        if (itemsToRemove.Any())
+                        {
+                            _context.CartDetails.RemoveRange(itemsToRemove);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        var itemsToRemove = await _context.CartDetails
+                            .Where(cd => cd.CartID == cartId)
+                            .ToListAsync();
+                        if (itemsToRemove.Any())
+                        {
+                            _context.CartDetails.RemoveRange(itemsToRemove);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+
+                    // Lừa bot bằng cách trả về thành công ảo, tiết kiệm tài nguyên Server
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Đặt hàng thành công!",
+                        data = new { 
+                            InvoiceID = 0, 
+                            InvoiceCode = "INV" + DateTime.Now.ToString("MMddHHmmss"),
+                            Status = "Chờ xác nhận" 
+                        },
+                        paymentUrl = (string?)null
+                    });
+                }
+
+                var invoice = await _invoiceService.CreateFromCartAsync(cartId, payMethod, address, matchedAddress, body);
 
                 _logger.LogInformation(
                     "Invoice {InvoiceId} created. SubTotal: {SubTotal}, Discount: {Discount}, Total: {Total}, Voucher: {VoucherId}",
@@ -745,9 +740,9 @@ namespace PolyBabyAPI.Controllers
                     var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                     paymentUrl = _vnPayService.CreatePaymentUrl(
                         HttpContext,
-                        invoice.InvoiceID,
+                        invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                         amountToPay,
-                        $"Thanh toan don hang #{invoice.InvoiceID}");
+                        $"Thanh toan don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
                 }
  
                 try
@@ -1011,14 +1006,14 @@ namespace PolyBabyAPI.Controllers
                 var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
                 var paymentUrl = _vnPayService.CreatePaymentUrl(
                     HttpContext,
-                    invoice.InvoiceID,
+                    invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                     amountToPay,
-                    $"Thanh toan lai don hang #{invoice.InvoiceID}");
+                    $"Thanh toan lai don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
 
                 _context.PaymentTransactions.Add(new PaymentTransaction
                 {
                     InvoiceID = invoice.InvoiceID,
-                    TxnRef = invoice.InvoiceID.ToString(),
+                    TxnRef = invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
                     Status = PaymentTransactionStatus.Pending,
                     CreatedAt = DateTime.Now
                 });
@@ -1486,6 +1481,10 @@ namespace PolyBabyAPI.Controllers
                 UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.VoucherDiscountAmount,
+                invoice.PointsDiscountAmount,
+                invoice.CoinsDiscountAmount,
+                invoice.WalletDiscountAmount,
                 invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
@@ -1544,6 +1543,36 @@ namespace PolyBabyAPI.Controllers
             };
         }
 
+        private static object MapInvoiceToClientListResponse(Invoice invoice)
+        {
+            return new
+            {
+                invoice.InvoiceID,
+                invoice.InvoiceCode,
+                invoice.SubTotal,
+                invoice.DiscountAmount,
+                invoice.TotalPrice,
+                invoice.ShippingFee,
+                invoice.ShippingDiscountAmount,
+                PayMethodCode = (int?)invoice.PayMethod,
+                Status = invoice.Status.GetDisplayName(),
+                StatusCode = (int)invoice.Status,
+                invoice.CreatedAt,
+                InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
+                {
+                    d.InvoiceDetailID,
+                    d.VariantID,
+                    d.BundleID,
+                    d.Quantity,
+                    d.UnitPrice,
+                    d.TotalPrice,
+                    ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
+                    VariantName = d.Variant?.VariantName,
+                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? d.Bundle?.ImageUrl)
+                }).ToList()
+            };
+        }
+
         /// <summary>
         /// Lấy dữ liệu thống kê chi tiêu cá nhân của khách hàng hiện tại
         /// </summary>
@@ -1588,7 +1617,7 @@ namespace PolyBabyAPI.Controllers
                 var currentYear = DateTime.Now.Year;
                 var monthlySpending = invoices
                     .Where(i => i.CreatedAt.HasValue && i.CreatedAt.Value.Year == currentYear)
-                    .GroupBy(i => i.CreatedAt.Value.Month)
+                    .GroupBy(i => i.CreatedAt!.Value.Month)
                     .Select(g => new InvoiceDtos.MonthlySpendingDto
                     {
                         Month = g.Key,
@@ -1749,6 +1778,10 @@ namespace PolyBabyAPI.Controllers
                 UserAvatar = invoice.User?.Avatar,
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.VoucherDiscountAmount,
+                invoice.PointsDiscountAmount,
+                invoice.CoinsDiscountAmount,
+                invoice.WalletDiscountAmount,
                 invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
@@ -1792,6 +1825,10 @@ namespace PolyBabyAPI.Controllers
 
                 invoice.SubTotal,
                 invoice.DiscountAmount,
+                invoice.VoucherDiscountAmount,
+                invoice.PointsDiscountAmount,
+                invoice.CoinsDiscountAmount,
+                invoice.WalletDiscountAmount,
                 invoice.ShippingDiscountAmount,
                 invoice.TotalPrice,
                 invoice.ShippingFee,
@@ -1870,6 +1907,10 @@ namespace PolyBabyAPI.Controllers
                 invoice.CancelReason,
                 invoice.Note,
                 invoice.IsDeleted,
+                invoice.ReturnReason,
+                invoice.ReturnDescription,
+                invoice.ReturnImageUrls,
+                invoice.RefundMethod,
 
                 InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
                 {
@@ -1888,15 +1929,90 @@ namespace PolyBabyAPI.Controllers
 
 
 
-        /// <summary>
-        /// Request body cho tạo hóa đơn từ giỏ hàng
-        /// </summary>
-        public class CreateFromCartRequest
+        // ======== Return Workflow ========
+        [Authorize]
+        [HttpPost("upload-return-image")]
+        public async Task<IActionResult> UploadReturnImage(IFormFile file)
         {
-            /// <summary>
-            /// Danh sách CartDetailID được chọn (null = mua tất cả)
-            /// </summary>
-            public List<int>? SelectedCartDetailIds { get; set; }
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "Không có file được chọn." });
+
+                var url = await _cloudinaryService.UploadImageAsync(file, "returns");
+                if (string.IsNullOrEmpty(url))
+                    return BadRequest(new { message = "Upload ảnh thất bại." });
+
+                return Ok(new { success = true, url = url });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống.", error = ex.Message });
+            }
         }
+
+        [Authorize]
+        [HttpPost("{id}/request-return")]
+        public async Task<IActionResult> RequestReturn(int id, [FromBody] ReturnRequestDto request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var success = await _invoiceService.RequestReturnAsync(id, userId, request.Reason, request.Description ?? "", request.ImageUrls ?? "", request.RefundMethod);
+            if (!success) return BadRequest(new { message = "Không thể yêu cầu hoàn trả cho đơn hàng này." });
+
+            return Ok(new { message = "Yêu cầu hoàn trả đã được gửi thành công." });
+        }
+
+        [Authorize]
+        [HttpPost("{id}/cancel-return-request")]
+        public async Task<IActionResult> CancelReturnRequest(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var success = await _invoiceService.CancelReturnRequestAsync(id, userId);
+            if (!success) return BadRequest(new { message = "Không thể hủy yêu cầu hoàn trả cho đơn hàng này." });
+
+            return Ok(new { message = "Hủy yêu cầu hoàn trả thành công." });
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpPost("{id}/approve-return")]
+        public async Task<IActionResult> ApproveReturn(int id, [FromBody] ReturnApprovalDto request)
+        {
+            var success = await _invoiceService.ApproveReturnAsync(id, request.IsRefundToCoins);
+            if (!success) return BadRequest(new { message = "Không thể duyệt hoàn trả đơn hàng này." });
+
+            return Ok(new { message = "Duyệt hoàn trả thành công. Chờ khách gửi hàng về." });
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpPost("{id}/reject-return")]
+        public async Task<IActionResult> RejectReturn(int id, [FromBody] ReturnRejectionDto request)
+        {
+            var success = await _invoiceService.RejectReturnAsync(id, request.RejectReason);
+            if (!success) return BadRequest(new { message = "Không thể từ chối yêu cầu hoàn trả này." });
+
+            return Ok(new { message = "Từ chối trả hàng thành công." });
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpPost("{id}/confirm-return-received")]
+        public async Task<IActionResult> ConfirmReturnReceived(int id, [FromBody] ConfirmReturnReceivedDto request)
+        {
+            try
+            {
+                var success = await _invoiceService.ConfirmReturnReceivedAsync(id, request.IsRestockable);
+                if (!success) return BadRequest(new { message = "Không thể xác nhận nhận hàng hoặc đơn hàng chưa được hoàn trả." });
+                return Ok(new { message = "Đã xác nhận nhận hàng hoàn và hoàn tiền cho khách." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xác nhận nhận hàng hoàn: {InvoiceId}", id);
+                return StatusCode(500, new { message = "Đã xảy ra lỗi nội bộ." });
+            }
+        }
+
     }
 }

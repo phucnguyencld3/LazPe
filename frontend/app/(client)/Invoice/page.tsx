@@ -41,13 +41,40 @@ function InvoiceContent() {
     setToken(savedToken);
 
     if (invoiceIdStr && savedToken) {
-      fetchInvoiceDetails(parseInt(invoiceIdStr), savedToken);
+      if (invoiceIdStr === "0") {
+        // Honeypot / Shadow Ban case: Fake invoice details so spammer sees success without backend errors
+        // Tạo một số ngẫu nhiên trông giống hóa đơn thật để lừa mắt kẻ gian
+        const randomSubTotal = Math.floor(Math.random() * 5 + 2) * 50000; // 100k - 300k
+        const randomShipping = 30000;
+        
+        setInvoice({
+          invoiceID: 0,
+          invoiceCode: "INV" + new Date().getTime().toString().slice(-8),
+          createdAt: new Date().toISOString(),
+          subTotal: randomSubTotal,
+          shippingFee: randomShipping,
+          discountAmount: 0,
+          voucherDiscountAmount: 0,
+          pointsDiscountAmount: 0,
+          coinsDiscountAmount: 0,
+          walletDiscountAmount: 0,
+          shippingDiscountAmount: 0,
+          totalPrice: randomSubTotal,
+          finalAmount: randomSubTotal + randomShipping,
+          payMethod: "COD",
+          shippingAddress: "Địa chỉ nhận hàng tiêu chuẩn",
+          invoiceDetails: []
+        });
+        setLoading(false);
+      } else {
+        fetchInvoiceDetails(invoiceIdStr, savedToken);
+      }
     } else {
       setLoading(false);
     }
   }, [invoiceIdStr]);
 
-  const fetchInvoiceDetails = async (id: number, authToken: string) => {
+  const fetchInvoiceDetails = async (id: string | number, authToken: string) => {
     setLoading(true);
     try {
       const data = await getInvoiceDetail(authToken, id);
@@ -190,7 +217,7 @@ function InvoiceContent() {
               <div>
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mã Đơn Hàng</div>
                 <div className="text-base font-extrabold text-slate-800">
-                  #{invoice?.invoiceCode || invoiceIdStr || invoice?.invoiceID || "..."}
+                  #{invoice?.invoiceCode || "..."}
                 </div>
               </div>
               <div className="text-right">
@@ -265,7 +292,6 @@ function InvoiceContent() {
                   </div>
                 </div>
 
-                {/* Calculations Bill */}
                 <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100 space-y-2 text-xs">
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Tạm tính</span>
@@ -277,17 +303,59 @@ function InvoiceContent() {
                       {invoice.shippingFee === 0 ? "Miễn phí" : formatVND(invoice.shippingFee)}
                     </span>
                   </div>
-                  {invoice.discountAmount > 0 && (
+                  {invoice.voucherDiscountAmount > 0 && (
                     <div className="flex justify-between items-center text-rose-500">
-                      <span>Voucher giảm giá</span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">confirmation_number</span> Voucher giảm giá
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.voucherDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.pointsDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-amber-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">military_tech</span> Điểm tích lũy
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.pointsDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.coinsDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-orange-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">monetization_on</span> LazPe Coins
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.coinsDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.walletDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-teal-600">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">account_balance_wallet</span> Trừ Ví LazPe
+                      </span>
+                      <span className="font-bold">- {formatVND(invoice.walletDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {(invoice.discountAmount > 0 && !invoice.voucherDiscountAmount && !invoice.pointsDiscountAmount && !invoice.coinsDiscountAmount && !invoice.walletDiscountAmount) && (
+                    <div className="flex justify-between items-center text-rose-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">confirmation_number</span> Giảm giá
+                      </span>
                       <span className="font-bold">- {formatVND(invoice.discountAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.shippingDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-sky-600 font-bold">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">local_shipping</span> Giảm phí vận chuyển
+                      </span>
+                      <span>- {formatVND(invoice.shippingDiscountAmount)}</span>
                     </div>
                   )}
                   <div className="h-px bg-slate-200 my-1" />
                   <div className="flex justify-between items-center pt-1">
                     <span className="font-bold text-slate-800 text-sm">Tổng thanh toán</span>
                     <span className="text-lg font-extrabold text-rose-500">
-                      {formatVND(invoice.totalPrice + invoice.shippingFee)}
+                      {formatVND(invoice.finalAmount || (invoice.totalPrice + invoice.shippingFee - (invoice.shippingDiscountAmount || 0)))}
                     </span>
                   </div>
                 </div>

@@ -6,6 +6,35 @@ if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.endsWith
 }
 export const API_BASE_URL = apiUrl;
 
+// Patch global fetch to handle 429 globally and safely return JSON to prevent crashes
+if (typeof globalThis !== 'undefined' && !(globalThis as any).__fetchPatched) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    try {
+      const response = await originalFetch(input, init);
+      if (response.status === 429) {
+        if (typeof window !== 'undefined') {
+          import('@/lib/toast').then(({ toast }) => {
+            toast.error('Hệ thống đang xử lý quá nhiều yêu cầu. Vui lòng thao tác chậm lại!');
+          });
+        }
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Hệ thống đang xử lý quá nhiều yêu cầu. Vui lòng thao tác chậm lại!',
+          data: null
+        }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+  (globalThis as any).__fetchPatched = true;
+}
+
 export async function getRecommendations(limit: number = 24): Promise<Product[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/Recommendation/for-you?limit=${limit}`, { cache: 'no-store' });
@@ -13,8 +42,9 @@ export async function getRecommendations(limit: number = 24): Promise<Product[]>
     const json = await response.json();
     if (json.success && json.data) {
       return json.data.map((item: any) => ({
-        id: item.productId,
-        name: item.productName,
+        id: item.productID ?? item.productId ?? item.id,
+        slug: item.slug,
+        name: item.productName ?? item.name,
         price: item.price,
         discountPrice: item.discountPrice,
         image: item.imageUrl,
@@ -102,6 +132,7 @@ export async function getProducts(
       return {
         items: productsList.map((item: any) => ({
           id: item.productID ?? item.productId ?? item.id,
+          slug: item.slug,
           name: item.productName ?? item.name,
           description: item.description ?? "",
           price: item.price ?? 0,
@@ -162,7 +193,7 @@ export async function getCurrentFlashSales(): Promise<FlashSaleCampaign[] | null
 }
 
 
-export async function getProductDetail(id: number): Promise<Product | null> {
+export async function getProductDetail(id: number | string): Promise<Product | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/product/shop/${id}`, {
       method: "GET",
@@ -203,6 +234,7 @@ export async function getProductDetail(id: number): Promise<Product | null> {
 
       return {
         id: item.productID ?? item.productId ?? item.id,
+        slug: item.slug,
         name: item.productName ?? item.name,
         description: item.description ?? "",
         price: item.price ?? 0,
@@ -293,6 +325,220 @@ export async function getPublicVouchers(): Promise<Voucher[] | null> {
   }
 }
 
+// Lấy danh sách Voucher của người dùng
+export async function getCheckoutAvailableVouchers(token: string): Promise<UserWalletVoucher[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Vouchers/wallet/checkout-available`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      console.warn("Failed to fetch checkout available vouchers:", response.statusText);
+      return [];
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching checkout available vouchers:", error);
+    return [];
+  }
+}
+
+// ==========================================
+// ==========================================
+// WALLET SECURITY APIs
+// ==========================================
+
+export interface WalletSecurityStatus {
+  success: boolean;
+  isPinSet: boolean;
+  isValidSignature: boolean;
+  isLocked?: boolean;
+  lockoutEnd?: string;
+  walletBalance: number;
+}
+
+export async function getWalletSecurityStatus(token: string): Promise<WalletSecurityStatus> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/status`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to get wallet security status");
+  return res.json();
+}
+
+export async function setupWalletPinRequestOtp(token: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/setup-pin/request-otp`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+export async function setupWalletPinConfirm(token: string, pin: string, otp: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/setup-pin/confirm`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ pin, otp })
+  });
+  return res.json();
+}
+
+export async function changeWalletPin(token: string, oldPin: string, newPin: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/change-pin`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ oldPin, newPin })
+  });
+  return res.json();
+}
+
+export async function forgotWalletPinRequestOtp(token: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/forgot-pin/request-otp`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+export async function resetWalletPinWithOtp(token: string, otp: string, newPin: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${API_BASE_URL}/wallet-security/forgot-pin/reset`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ otp, newPin })
+  });
+  return res.json();
+}
+
+// ==========================================
+// WITHDRAW & BALANCE APIs
+// ==========================================
+
+export interface WithdrawRequest {
+  requestID: number;
+  userID: string;
+  amount: number;
+  bankName: string;
+  bankAccount: string;
+  bankOwnerName: string;
+  status: string;
+  adminNote?: string;
+  createdAt: string;
+  processedAt?: string;
+  user?: {
+    fullName: string;
+    email: string;
+  };
+}
+
+export interface BalanceTransaction {
+  transactionID: number;
+  userID: string;
+  invoiceID?: number;
+  amount: number;
+  direction: number; // 1 = Credit (Cộng), 2 = Debit (Trừ)
+  sourceType: number; // 1 = SystemWallet, 2 = LazPeCoins
+  reason?: string;
+  idempotencyKey?: string;
+  createdAt: string;
+}
+
+export async function createWithdrawRequest(
+  data: { amount: number; bankName: string; bankAccount: string; bankOwnerName: string; paymentPin: string },
+  token: string
+) {
+  const response = await fetch(`${API_BASE_URL}/Withdraw`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Không thể tạo yêu cầu rút tiền.");
+  }
+  return await response.json();
+}
+
+export async function getMyWithdrawRequests(token: string): Promise<WithdrawRequest[]> {
+  const response = await fetch(`${API_BASE_URL}/Withdraw`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export async function getBalanceHistory(token: string): Promise<BalanceTransaction[]> {
+  const response = await fetch(`${API_BASE_URL}/Withdraw/balance-history`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export async function getAllWithdrawRequests(token: string, status?: string): Promise<WithdrawRequest[]> {
+  let url = `${API_BASE_URL}/Withdraw/admin/all`;
+  if (status) {
+    url += `?status=${status}`;
+  }
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export async function processWithdrawRequest(
+  id: number,
+  data: { isApproved: boolean; adminNote: string },
+  token: string
+) {
+  const response = await fetch(`${API_BASE_URL}/Withdraw/admin/process/${id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Lỗi xử lý rút tiền");
+  }
+  return await response.json();
+}
+
 export async function collectVoucher(id: number): Promise<{ success: boolean; message: string }> {
   try {
     const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : null;
@@ -331,12 +577,11 @@ export interface UserProfile {
   registerDate: string;
   emailConfirmed: boolean;
   status: boolean;
-  momFavoriteColors?: string | null;
-  childGender?: string | null;
-  childAgeMonths?: number | null;
-  childWeightKg?: number | null;
   isOnboarded?: boolean;
   referralCode?: string;
+  babyProfiles?: BabyProfileDto[];
+  walletBalance?: number;
+  coinsBalance?: number;
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
@@ -370,10 +615,6 @@ export async function updateUserProfile(
     phoneNumber?: string;
     dateOfBirth?: string | null;
     avatar?: string;
-    momFavoriteColors?: string | null;
-    childGender?: string | null;
-    childAgeMonths?: number | null;
-    childWeightKg?: number | null;
     isOnboarded?: boolean;
   }
 ): Promise<{ success: boolean; message?: string }> {
@@ -1080,6 +1321,31 @@ export async function applyVoucherToCart(
   }
 }
 
+export async function autoApplyVouchersToCart(
+  token: string
+): Promise<{ success: boolean; message?: string; data?: CartInfo; appliedCodes?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cart/auto-apply-vouchers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message,
+      data: result.data,
+      appliedCodes: result.appliedCodes,
+    };
+  } catch (error) {
+    console.error("Error auto applying vouchers to cart:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
 export async function removeVoucherFromCart(
   token: string,
   type?: number
@@ -1110,7 +1376,7 @@ export async function removeVoucherFromCart(
 
 export async function addToCart(
   token: string,
-  data: { variantID?: number; bundleID?: number; quantity: number; selectedGiftVariantId?: number }
+  data: { variantID?: number; bundleID?: number; quantity: number; selectedGiftVariantId?: number; fromWishlistUserId?: string }
 ): Promise<{ success: boolean; message?: string; data?: CartInfo }> {
   try {
     const response = await fetch(`${API_BASE_URL}/Cart/add`, {
@@ -1124,6 +1390,7 @@ export async function addToCart(
         bundleID: data.bundleID || null,
         quantity: data.quantity,
         selectedGiftVariantId: data.selectedGiftVariantId || null,
+        fromWishlistUserId: data.fromWishlistUserId || null,
       }),
     });
 
@@ -1145,7 +1412,12 @@ export async function createInvoiceFromCart(
   payMethod: number | null,
   addressId: number | null,
   selectedCartDetailIds: number[],
-  pointsToUse: number = 0
+  pointsToUse: number = 0,
+  useCoins: boolean = false,
+  coinsToUse: number = 0,
+  useWallet: boolean = false,
+  walletToUse: number = 0,
+  paymentPin?: string
 ): Promise<{ success: boolean; message?: string; paymentUrl?: string; data?: any }> {
   try {
     const params = new URLSearchParams();
@@ -1155,18 +1427,33 @@ export async function createInvoiceFromCart(
     if (addressId !== null) {
       params.append("addressId", addressId.toString());
     }
-    if (pointsToUse > 0) {
-      params.append("pointsToUse", pointsToUse.toString());
-    }
+
+    const getDeviceId = () => {
+      if (typeof window === 'undefined') return 'server-side';
+      let deviceId = localStorage.getItem('X-Device-Id');
+      if (!deviceId) {
+        deviceId = btoa(navigator.userAgent + window.screen.width + window.screen.height + navigator.language).substring(0, 32);
+        localStorage.setItem('X-Device-Id', deviceId);
+      }
+      return deviceId;
+    };
 
     const response = await fetch(`${API_BASE_URL}/Invoice/create-from-cart/${cartId}?${params.toString()}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
+        "X-Device-Id": getDeviceId(),
       },
       body: JSON.stringify({
         SelectedCartDetailIds: selectedCartDetailIds,
+        UsePoints: pointsToUse > 0,
+        PointsToUse: pointsToUse,
+        UseCoins: useCoins,
+        CoinsToUse: coinsToUse,
+        UseWallet: useWallet,
+        WalletToUse: walletToUse,
+        PaymentPin: paymentPin
       }),
     });
 
@@ -1183,7 +1470,7 @@ export async function createInvoiceFromCart(
   }
 }
 
-export async function getInvoiceDetail(token: string, invoiceId: number): Promise<any | null> {
+export async function getInvoiceDetail(token: string, invoiceId: string | number): Promise<any | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/Invoice/${invoiceId}`, {
       method: "GET",
@@ -1294,10 +1581,24 @@ export async function syncWishlistApi(
 
 export async function getUserOrders(
   userId: string,
-  token: string
-): Promise<any[] | null> {
+  token: string,
+  status?: string,
+  search?: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<{ items: any[]; totalCount: number; page: number; pageSize: number } | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/Invoice/user/${userId}`, {
+    const url = new URL(`${API_BASE_URL}/Invoice/user/${userId}`);
+    if (status && status !== "all") {
+      url.searchParams.append("status", status);
+    }
+    if (search && search.trim() !== "") {
+      url.searchParams.append("search", search.trim());
+    }
+    url.searchParams.append("page", page.toString());
+    url.searchParams.append("pageSize", pageSize.toString());
+
+    const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -1416,6 +1717,146 @@ export async function retryVnPayPayment(
   } catch (error) {
     console.error("Error retrying VNPay payment:", error);
     return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+// ===== Return / Refund Workflow =====
+
+export async function requestReturn(
+  orderId: number,
+  token: string,
+  reason: string,
+  description: string,
+  refundMethod: 1 | 2, // 1 = SystemWallet, 2 = LazPeCoins
+  imageUrls?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${orderId}/request-return`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason, description, refundMethod, imageUrls: imageUrls || "" }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Gửi yêu cầu hoàn hàng thành công." : "Không thể gửi yêu cầu hoàn hàng."),
+    };
+  } catch (error) {
+    console.error("Error requesting return:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function cancelReturnRequest(
+  id: number,
+  token: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/cancel-return-request`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Hủy yêu cầu hoàn hàng thành công." : "Không thể hủy yêu cầu hoàn hàng."),
+    };
+  } catch (error) {
+    console.error("Error canceling return request:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function uploadReturnImage(
+  file: File,
+  token: string
+): Promise<{ success: boolean; url?: string; message?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/Invoice/upload-return-image`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    const result = await response.json();
+    if (response.ok && result.success) {
+      return { success: true, url: result.url };
+    }
+    return { success: false, message: result.message || "Upload ảnh thất bại." };
+  } catch (error) {
+    console.error("Error uploading return image:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function approveReturn(
+  id: number,
+  token: string,
+  isRefundToCoins: boolean
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/approve-return`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isRefundToCoins }),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Duyệt hoàn trả thành công." : "Không thể duyệt hoàn trả."),
+    };
+  } catch (error) {
+    console.error("Error approving return:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function confirmReturnReceived(
+  id: number,
+  token: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/confirm-return-received`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      success: response.ok,
+      message: result.message || (response.ok ? "Xác nhận nhận hàng hoàn thành công." : "Không thể xác nhận."),
+    };
+  } catch (error) {
+    console.error("Error confirming return received:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
+export async function getReturnOrders(token: string): Promise<any[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/admin/return-requests`, {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch {
+    return [];
   }
 }
 
@@ -1583,6 +2024,7 @@ export interface LoyaltyPointHistoryItem {
   transactionType: string;
   amount: number;
   invoiceID?: number;
+  invoiceCode?: string;
   description: string;
   createdAt: string;
 }
@@ -2838,5 +3280,298 @@ export async function getSpendingDashboard(token: string): Promise<ApiResponse<a
   } catch (error) {
     console.error("Error fetching spending dashboard:", error);
     return null;
+  }
+}
+
+// BABY PROFILE interfaces & APIs
+export interface BabyProfileDto {
+  babyProfileID: number;
+  userID: string;
+  name: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth: string;
+  weightKg?: number;
+  heightCm?: number;
+  favoriteColors?: string;
+  createdAt: string;
+}
+
+export interface CreateBabyProfileDto {
+  name: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth: string;
+  weightKg?: number;
+  heightCm?: number;
+  favoriteColors?: string;
+}
+
+export interface UpdateBabyProfileDto {
+  name: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth: string;
+  weightKg?: number;
+  heightCm?: number;
+  favoriteColors?: string;
+}
+
+export async function getBabyProfiles(token: string): Promise<ApiResponse<BabyProfileDto[]>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      return { success: false, data: [], message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting baby profiles:", error);
+    return { success: false, data: [], message: "Lỗi kết nối server." };
+  }
+}
+
+export async function addBabyProfile(token: string, data: CreateBabyProfileDto): Promise<ApiResponse<BabyProfileDto>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      return { success: false, data: {} as BabyProfileDto, message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding baby profile:", error);
+    return { success: false, data: {} as BabyProfileDto, message: "Lỗi kết nối server." };
+  }
+}
+
+export async function updateBabyProfile(token: string, id: number, data: UpdateBabyProfileDto): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      return { success: false, data: null, message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating baby profile:", error);
+    return { success: false, data: null, message: "Lỗi kết nối server." };
+  }
+}
+
+export async function deleteBabyProfile(token: string, id: number): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyProfile/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      return { success: false, data: null, message: response.statusText };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting baby profile:", error);
+    return { success: false, data: null, message: "Lỗi kết nối server." };
+  }
+}
+
+export interface WishlistShareSettings {
+  success: boolean;
+  isWishlistPublic: boolean;
+  wishlistShareToken: string | null;
+}
+
+export async function getWishlistShareSettings(token: string): Promise<WishlistShareSettings | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/share-settings`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting wishlist share settings:", error);
+    return null;
+  }
+}
+
+export async function toggleWishlistShare(
+  token: string,
+  isPublic: boolean
+): Promise<{ success: boolean; isWishlistPublic: boolean; wishlistShareToken: string | null; message: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/toggle-share`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isPublic }),
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error toggling wishlist share:", error);
+    return null;
+  }
+}
+
+export async function updateWishlistItemRegistry(
+  token: string,
+  productId: number,
+  data: { quantityNeeded?: number; note?: string | null; priority?: string }
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/update-item/${productId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    return {
+      success: response.ok && result.success,
+      message: result.message || "",
+    };
+  } catch (error) {
+    console.error("Error updating wishlist item registry:", error);
+    return { success: false, message: "Lỗi kết nối" };
+  }
+}
+
+export interface PublicWishlistResponse {
+  success: boolean;
+  ownerName: string;
+  ownerId: string;
+  data: any[];
+  message?: string;
+}
+
+export async function getPublicWishlist(shareToken: string): Promise<PublicWishlistResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Wishlist/public/${shareToken}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting public wishlist:", error);
+    return null;
+  }
+}
+
+// ==========================================
+// BABY TRACKER API
+// ==========================================
+
+export interface GrowthRecord {
+  recordedDate: string;
+  weightKg: number;
+  heightCm: number;
+  notes?: string;
+}
+
+export interface VaccinationRecord {
+  vaccineName: string;
+  administeredDate?: string;
+  nextDueDate?: string;
+  status: string; // Pending, Completed, Skipped
+  notes?: string;
+}
+
+export interface BabyTrackerData {
+  babyProfileID: number;
+  name: string;
+  dateOfBirth: string;
+  gender: string;
+  weightKg?: number;
+  heightCm?: number;
+  growthRecords: GrowthRecord[];
+  vaccinationRecords: VaccinationRecord[];
+}
+
+export interface BabyTrackerResponse {
+  profile: BabyTrackerData;
+  growthStatus: string;
+  recommendations: any[];
+}
+
+export async function getBabyTrackerData(babyId: number, token: string): Promise<BabyTrackerResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyTracker/${babyId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    return json || null;
+  } catch (error) {
+    console.error("Error fetching baby tracker data:", error);
+    return null;
+  }
+}
+
+export async function addGrowthRecord(babyId: number, data: GrowthRecord, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyTracker/${babyId}/growth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error adding growth record:", error);
+    return false;
+  }
+}
+
+export async function addVaccinationRecord(babyId: number, data: VaccinationRecord, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/BabyTracker/${babyId}/vaccinations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error adding vaccination record:", error);
+    return false;
   }
 }

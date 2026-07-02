@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -6,7 +6,10 @@ namespace PolyBabyAPI.Models
 {
     public class VoucherUsage
     {
-        // Composite key (VoucherID + UserID + InvoiceID) - cấu hình trong DbContext
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+
         public int VoucherID { get; set; }
         public string UserID { get; set; }
         public int? InvoiceID { get; set; }
@@ -15,12 +18,12 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Ngày sử dụng")]
         public DateTime UsedAt { get; set; } = DateTime.Now;
 
-        // ✅ Thêm số tiền giảm thực tế khi áp dụng voucher
+        // Thêm số tiền giảm thực tế khi áp dụng voucher
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Số tiền giảm")]
         public decimal DiscountAmount { get; set; }
 
-        // ✅ Thêm giá trị đơn hàng tại thời điểm sử dụng (để lưu lịch sử)
+        // Thêm giá trị đơn hàng tại thời điểm sử dụng (để lưu lịch sử)
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Giá trị đơn hàng")]
         public decimal OrderValue { get; set; }

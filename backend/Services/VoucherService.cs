@@ -72,10 +72,9 @@ namespace PolyBabyAPI.Services
             Voucher? voucher = null;
             bool isUniqueCode = false;
 
-            // 1. Kiểm tra IssuedCode bảo mật
             var userVoucher = await _context.UserVouchers
                 .Include(uv => uv.Voucher)
-                .FirstOrDefaultAsync(uv => uv.IssuedCode == code);
+                .FirstOrDefaultAsync(uv => uv.IssuedCode == code || (uv.Voucher.Code == code && uv.UserID == userId && uv.Status != UserVoucherStatus.Used));
 
             if (userVoucher != null)
             {
@@ -88,6 +87,7 @@ namespace PolyBabyAPI.Services
                     return (false, "Bạn đã sử dụng mã giảm giá này rồi.");
                 }
                 voucher = userVoucher.Voucher;
+                // Nếu voucher này có trong ví (kể cả exclusive dùng base code), ta coi là hợp lệ (đã được issue cho user)
                 isUniqueCode = true;
             }
             else
@@ -132,13 +132,13 @@ namespace PolyBabyAPI.Services
                 return (false, $"Đơn hàng tối thiểu để áp dụng mã này là {voucher.MinOrderValue:N0}đ.");
             }
 
-            // Kiểm tra giới hạn số lần sử dụng của mỗi user (đối với mã Public)
+            // Kiểm tra giới hạn số lần sử dụng của mỗi user (đối với mã Public hoặc mã không giới hạn chung)
             if (!isUniqueCode)
             {
                 var usedCount = await _context.VoucherUsages
                     .CountAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
                 
-                if (usedCount >= voucher.UsageLimitPerUser)
+                if (voucher.UsageLimitPerUser > 0 && usedCount >= voucher.UsageLimitPerUser)
                 {
                     return (false, "Bạn đã hết lượt sử dụng mã giảm giá chung này.");
                 }

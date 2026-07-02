@@ -427,8 +427,13 @@ export default function AdminBrandsPage() {
                             </button>
                             <button
                               onClick={() => setBrandToDelete({ id: brand.supplierID, name: brand.supplierName })}
-                              className="p-2 hover:bg-rose-50 rounded-full text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
-                              title="Xóa"
+                              disabled={(brand.productCount ?? 0) > 0}
+                              className={`p-2 rounded-full transition-colors ${
+                                (brand.productCount ?? 0) > 0
+                                  ? "opacity-30 cursor-not-allowed text-slate-300"
+                                  : "text-rose-500 hover:bg-rose-50 hover:text-rose-700 cursor-pointer"
+                              }`}
+                              title={(brand.productCount ?? 0) > 0 ? "Không thể xóa thương hiệu có liên kết sản phẩm" : "Xóa"}
                             >
                               <span className="material-symbols-outlined text-lg">delete</span>
                             </button>

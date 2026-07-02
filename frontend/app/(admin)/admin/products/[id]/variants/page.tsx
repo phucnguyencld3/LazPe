@@ -67,11 +67,11 @@ export default function ProductVariantsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
-  
+
   // Bulk Edit states
   const [isBulkEditing, setIsBulkEditing] = useState(false);
   const [bulkEdits, setBulkEdits] = useState<Record<number, { unitPrice: number, stock: number }>>({});
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search input
@@ -143,7 +143,7 @@ export default function ProductVariantsPage() {
       const newStatus = !variant.status;
       await toggleVariantStatus(token, variant.variantID, newStatus);
       toast.success(`Đã ${newStatus ? "bật" : "tắt"} trạng thái biến thể "${variant.variantName}".`);
-      
+
       setVariants(prev =>
         prev.map(v => (v.variantID === variant.variantID ? { ...v, status: newStatus } : v))
       );
@@ -226,7 +226,7 @@ export default function ProductVariantsPage() {
 
   const handleSaveBulkEdit = async () => {
     if (actionLoading) return;
-    
+
     const updates = Object.keys(bulkEdits).map(id => {
       const variantID = Number(id);
       return {
@@ -235,7 +235,7 @@ export default function ProductVariantsPage() {
         stock: bulkEdits[variantID].stock
       };
     });
-    
+
     if (updates.length === 0) {
       setIsBulkEditing(false);
       return;
@@ -247,7 +247,7 @@ export default function ProductVariantsPage() {
 
       setActionLoading(true);
       await bulkUpdateVariants(token, updates);
-      
+
       toast.success("Cập nhật hàng loạt biến thể thành công!");
       setIsBulkEditing(false);
       setBulkEdits({});
@@ -272,7 +272,7 @@ export default function ProductVariantsPage() {
       const res = await deleteProductVariant(token, deleteModal.variant.variantID);
       toast.success("Xóa biến thể thành công.");
       setDeleteModal({ isOpen: false, variant: null });
-      
+
       // If we are on page > 1 and deleted the only item, go to prev page
       if (variants.length === 1 && page > 1) {
         setPage(page - 1);
@@ -332,13 +332,13 @@ export default function ProductVariantsPage() {
       setImageUploading(true);
       const res = await uploadVariantImage(token, imageModal.variant.variantID, file);
       toast.success("Tải lên hình ảnh biến thể thành công.");
-      
+
       // Update modal variant status locally
       setImageModal(prev => ({
         ...prev,
         variant: prev.variant ? { ...prev.variant, imageUrl: res.imageUrl } : null
       }));
-      
+
       loadVariants();
     } catch (err: any) {
       console.error(err);
@@ -359,12 +359,12 @@ export default function ProductVariantsPage() {
       setActionLoading(true);
       await deleteVariantImage(token, imageModal.variant.variantID);
       toast.success("Đã xóa hình ảnh biến thể thành công.");
-      
+
       setImageModal(prev => ({
         ...prev,
         variant: prev.variant ? { ...prev.variant, imageUrl: null } : null
       }));
-      
+
       loadVariants();
     } catch (err: any) {
       console.error(err);
@@ -515,7 +515,7 @@ export default function ProductVariantsPage() {
                   displayedVariants.map((variant) => {
                     const finalPrice = variant.finalPrice;
                     const isDiscounted = variant.variantDiscountPercent > 0 || (product && product.productDiscountPercent > 0);
-                    
+
                     return (
                       <tr key={variant.variantID} className="hover:bg-slate-50/40 transition-colors group">
                         {/* Image Thumbnail */}
@@ -581,13 +581,12 @@ export default function ProductVariantsPage() {
                             />
                           ) : (
                             <span
-                              className={`px-3 py-1 rounded-[8px] text-xs font-bold ${
-                                variant.stock > 10
+                              className={`px-3 py-1 rounded-[8px] text-xs font-bold ${variant.stock > 10
                                   ? "bg-emerald-50 text-emerald-700"
                                   : variant.stock > 0
-                                  ? "bg-amber-50 text-amber-700"
-                                  : "bg-rose-50 text-rose-700"
-                              }`}
+                                    ? "bg-amber-50 text-amber-700"
+                                    : "bg-rose-50 text-rose-700"
+                                }`}
                             >
                               {variant.stock} chiếc
                             </span>
@@ -598,11 +597,10 @@ export default function ProductVariantsPage() {
                         <td className="px-6 py-4.5">
                           <button
                             onClick={() => handleToggleStatus(variant)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] text-[10px] font-bold border transition-all cursor-pointer ${
-                              variant.status
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] text-[10px] font-bold border transition-all cursor-pointer ${variant.status
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100/60"
                                 : "bg-slate-100 text-slate-500 border-slate-200/50 hover:bg-slate-200/50"
-                            }`}
+                              }`}
                             title={variant.status ? "Click để ẩn biến thể" : "Click để kích hoạt biến thể"}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${variant.status ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
@@ -662,11 +660,10 @@ export default function ProductVariantsPage() {
                   <button
                     key={pNum}
                     onClick={() => setPage(pNum)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      page === pNum
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === pNum
                         ? "bg-primary text-on-primary shadow-sm"
                         : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     {pNum}
                   </button>
@@ -739,11 +736,10 @@ export default function ProductVariantsPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => !imageUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-[8px] p-8 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${
-                  dragging
+                className={`border-2 border-dashed rounded-[8px] p-8 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${dragging
                     ? "border-primary bg-primary/5 scale-[0.99]"
                     : "border-slate-200 hover:border-primary/50 hover:bg-slate-50/60"
-                } ${imageUploading ? "opacity-60 cursor-not-allowed" : ""}`}
+                  } ${imageUploading ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 <input
                   type="file"
@@ -753,7 +749,7 @@ export default function ProductVariantsPage() {
                   accept="image/*"
                   disabled={imageUploading}
                 />
-                
+
                 {imageUploading ? (
                   <div className="flex flex-col items-center gap-2.5">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
@@ -791,7 +787,7 @@ export default function ProductVariantsPage() {
       {/* 2. Modal: Chỉnh sửa thông tin biến thể */}
       {editModal.isOpen && editModal.variant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[850px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-800">Sửa thông tin biến thể</h3>
@@ -806,100 +802,95 @@ export default function ProductVariantsPage() {
 
             {/* Form */}
             <form onSubmit={handleEditSubmit}>
-              <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
-                {/* SKU (Readonly) */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mã SKU (Không thể đổi)</label>
-                  <input
-                    type="text"
-                    value={editModal.variant.sku}
-                    disabled
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-500 rounded-[8px] text-xs font-mono select-none"
-                  />
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tên biến thể</label>
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    required
-                    placeholder="Vd: SAF-RED-XL"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Price */}
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+                {/* Cột trái */}
+                <div className="space-y-4">
+                  {/* Name */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Giá bán (VNĐ)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tên biến thể</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="1000"
-                      value={editForm.price}
-                      onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                       required
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
+                      placeholder="Vd: SAF-RED-XL"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
                     />
                   </div>
 
-                  {/* Discount percent */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Price */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Giá bán (VNĐ)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={editForm.price}
+                        onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                        required
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
+                      />
+                    </div>
+
+                    {/* Discount percent */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chiết khấu (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editForm.variantDiscountPercent}
+                        onChange={(e) => setEditForm({ ...editForm, variantDiscountPercent: Number(e.target.value) })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stock */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chiết khấu (%)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Số lượng tồn kho</label>
                     <input
                       type="number"
                       min="0"
-                      max="100"
-                      value={editForm.variantDiscountPercent}
-                      onChange={(e) => setEditForm({ ...editForm, variantDiscountPercent: Number(e.target.value) })}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
+                      value={editForm.stock}
+                      onChange={(e) => setEditForm({ ...editForm, stock: Number(e.target.value) })}
+                      required
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Stock */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Số lượng tồn kho</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editForm.stock}
-                    onChange={(e) => setEditForm({ ...editForm, stock: Number(e.target.value) })}
-                    required
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mô tả ngắn</label>
-                  <textarea
-                    rows={3}
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all resize-none"
-                    placeholder="Mô tả cụ thể cho biến thể này..."
-                  />
-                </div>
-
-                {/* Active status */}
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-[8px] border border-slate-100">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-700">Trạng thái kinh doanh</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">Cho phép đặt hàng và bán sản phẩm này</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editForm.status}
-                      onChange={(e) => setEditForm({ ...editForm, status: e.target.checked })}
-                      className="sr-only peer"
+                {/* Cột phải */}
+                <div className="space-y-4">
+                  {/* Description */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mô tả ngắn</label>
+                    <textarea
+                      rows={6}
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all resize-none"
+                      placeholder="Mô tả cụ thể cho biến thể này..."
                     />
-                    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
+                  </div>
+
+                  {/* Active status */}
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-[8px] border border-slate-100">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-700">Trạng thái kinh doanh</span>
+                      <span className="text-xs text-slate-400 mt-0.5">Cho phép đặt hàng và bán sản phẩm này</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editForm.status}
+                        onChange={(e) => setEditForm({ ...editForm, status: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
 

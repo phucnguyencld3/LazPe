@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -37,6 +37,8 @@ namespace PolyBabyAPI.Models
         [MaxLength(100, ErrorMessage = "Người tạo tối đa 100 ký tự")]
         [Display(Name = "Người tạo")]
         public string CreatedBy { get; set; }
+
+        public bool IsDeleted { get; set; } = false;
 
         [ValidateNever]
         public virtual ICollection<VariantOptionValue> VariantOptionValues { get; set; } = new List<VariantOptionValue>();
