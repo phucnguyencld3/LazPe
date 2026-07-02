@@ -50,7 +50,7 @@ namespace PolyBabyAPI.Services
                 ["vnp_ExpireDate"] = now.AddMinutes(15).ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)
             };
 
-            var signData = string.Join("&", vnpParams.Select(x => $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
+            var signData = string.Join("&", vnpParams.Select(x => $"{x.Key}={Uri.EscapeDataString(x.Value)}"));
             var secureHash = ComputeHmacSha512(_options.HashSecret.Trim(), signData);
 
             return $"{_options.BaseUrl}?{signData}&vnp_SecureHashType=HMACSHA512&vnp_SecureHash={secureHash}";
@@ -83,7 +83,7 @@ namespace PolyBabyAPI.Services
                 }
             }
 
-            string signData = string.Join("&", inputData.Select(x => $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
+            string signData = string.Join("&", inputData.Select(x => $"{x.Key}={Uri.EscapeDataString(x.Value)}"));
             var signValue = ComputeHmacSha512(_options.HashSecret.Trim(), signData);
             var returnedHash = query["vnp_SecureHash"].ToString();
 
