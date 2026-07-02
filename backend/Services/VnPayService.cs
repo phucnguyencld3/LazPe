@@ -17,10 +17,6 @@ namespace PolyBabyAPI.Services
         {
             _options = options.Value;
             _logger = logger;
-            
-            // Re-hardcoding to test user's hypothesis
-            _options.TmnCode = "D3SX3GYM";
-            _options.HashSecret = "T0LGAVOENTMGVTL3XKX06LNINQAKPAFG";
         }
 
         public string CreatePaymentUrl(HttpContext context, int invoiceId, decimal amount, string orderInfo)
