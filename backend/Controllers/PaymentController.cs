@@ -48,8 +48,8 @@ namespace PolyBabyAPI.Controllers
             var baseRef = invoice.InvoiceCode ?? request.InvoiceId.ToString();
             var txnRef = $"{baseRef}_{DateTime.Now.Ticks}";
             var orderInfo = string.IsNullOrWhiteSpace(request.OrderInfo)
-                ? $"Thanh toan don hang {txnRef}"
-                : request.OrderInfo;
+                ? $"ThanhToanDonHang_{txnRef}"
+                : request.OrderInfo.Replace(" ", "");
 
             var paymentUrl = _vnPayService.CreatePaymentUrl(
                 HttpContext,
