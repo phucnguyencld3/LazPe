@@ -43,10 +43,13 @@ namespace PolyBabyAPI.Controllers
                 return NotFound(new { success = false, message = "Không tìm thấy hóa đơn." });
             }
 
-            var txnRef = invoice.InvoiceCode ?? request.InvoiceId.ToString();
+            // VNPay yêu cầu vnp_TxnRef phải là duy nhất cho mỗi lần giao dịch (kể cả khi thanh toán lại cùng 1 đơn hàng)
+            // Vì vậy ta thêm Ticks vào sau Mã Hóa Đơn để đảm bảo tính duy nhất.
+            var baseRef = invoice.InvoiceCode ?? request.InvoiceId.ToString();
+            var txnRef = $"{baseRef}_{DateTime.Now.Ticks}";
             var orderInfo = string.IsNullOrWhiteSpace(request.OrderInfo)
-                ? $"Thanh toan don hang {txnRef}"
-                : request.OrderInfo;
+                ? $"ThanhToanDonHang_{txnRef}"
+                : request.OrderInfo.Replace(" ", "");
 
             var paymentUrl = _vnPayService.CreatePaymentUrl(
                 HttpContext,
@@ -80,14 +83,17 @@ namespace PolyBabyAPI.Controllers
             {
                 var success = _vnPayService.ValidateReturn(Request.Query, out var responseCode, out var txnRef, out var transactionNo);
 
+                // Tách lấy mã hóa đơn gốc (bỏ đi phần _Ticks)
+                var originalRef = txnRef.Contains('_') ? txnRef.Split('_')[0] : txnRef;
+
                 Invoice? invoice = null;
-                if (int.TryParse(txnRef, out var invoiceId))
+                if (int.TryParse(originalRef, out var invoiceId))
                 {
                     invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
                 }
                 else
                 {
-                    invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceCode == txnRef && !x.IsDeleted);
+                    invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceCode == originalRef && !x.IsDeleted);
                 }
 
                 if (invoice != null)
@@ -135,8 +141,8 @@ namespace PolyBabyAPI.Controllers
                     : _vnPayOptions.FrontendBaseUrl.Trim().TrimEnd('/');
 
                 var redirectUrl = success
-                    ? $"{baseUrl}/Invoice?payment=success&invoiceId={txnRef}&txnNo={transactionNo}"
-                    : $"{baseUrl}/profile?tab=orders&id={txnRef}&payment=failed&code={responseCode}";
+                    ? $"{baseUrl}/Invoice?payment=success&invoiceId={originalRef}&txnNo={transactionNo}"
+                    : $"{baseUrl}/profile?tab=orders&id={originalRef}&payment=failed&code={responseCode}";
 
                 // Trả về HTML chứa script redirect để tránh lỗi Mixed Content (HTTPS -> HTTP) của trình duyệt
                 return Content($@"
