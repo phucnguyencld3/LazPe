@@ -2,9 +2,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/a
 
 export const uploadImageForSearch = async (file: File) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file); // changed from 'file' to 'image' as param is IFormFile image
 
-    const response = await fetch(`${API_BASE_URL}/Search/image`, {
+    const response = await fetch(`${API_BASE_URL}/image-search`, {
         method: 'POST',
         body: formData,
     });

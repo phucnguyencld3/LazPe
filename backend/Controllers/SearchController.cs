@@ -14,12 +14,14 @@ namespace PolyBabyAPI.Controllers
         private readonly IImageSearchService _imageSearchService;
         private readonly IVoiceSearchService _voiceSearchService;
         private readonly ApplicationDbContext _dbContext;
+        private readonly IGeminiService _geminiService;
 
-        public SearchController(IImageSearchService imageSearchService, IVoiceSearchService voiceSearchService, ApplicationDbContext dbContext)
+        public SearchController(IImageSearchService imageSearchService, IVoiceSearchService voiceSearchService, ApplicationDbContext dbContext, IGeminiService geminiService)
         {
             _imageSearchService = imageSearchService;
             _voiceSearchService = voiceSearchService;
             _dbContext = dbContext;
+            _geminiService = geminiService;
         }
 
         [HttpPost("image")]
@@ -68,6 +70,34 @@ namespace PolyBabyAPI.Controllers
                     query = keyword,
                     products = sortedProducts,
                     matchedScore = 0.99
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            }
+        }
+
+        [HttpPost("/api/image-search")]
+        public async Task<IActionResult> AdvancedImageSearch(IFormFile image)
+        {
+            try
+            {
+                if (image == null || image.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "Không có file ảnh được tải lên." });
+                }
+
+                var aiResult = await _geminiService.AnalyzeImageAdvancedAsync(image);
+                if (aiResult == null)
+                {
+                    return BadRequest(new { success = false, message = "Không thể nhận diện hình ảnh." });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    data = aiResult
                 });
             }
             catch (Exception ex)

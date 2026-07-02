@@ -24,12 +24,28 @@ export const useImageSearch = (onSearchSuccess: (keyword: string) => void) => {
 
         try {
             setIsImageLoading(true);
-            const data = await uploadImageForSearch(file);
-            if (data.success && data.query) {
-                toast.success('Đã nhận diện: ' + data.query);
-                onSearchSuccess(data.query);
+            const response = await uploadImageForSearch(file);
+            
+            if (response.success && response.data) {
+                const ai = response.data;
+                let queryToSearch = '';
+                
+                if (ai.type === 'brand' && ai.brand) {
+                    queryToSearch = ai.brand;
+                } else if (ai.type === 'product') {
+                    queryToSearch = [ai.brand, ai.product_name].filter(Boolean).join(' ');
+                } else if (ai.type === 'unknown' && ai.keywords && ai.keywords.length > 0) {
+                    queryToSearch = ai.keywords.join(' ');
+                }
+
+                if (queryToSearch.trim()) {
+                    toast.success('Đã nhận diện: ' + queryToSearch.trim());
+                    onSearchSuccess(queryToSearch.trim());
+                } else {
+                    toast.error('Không tìm thấy sản phẩm tương ứng trong ảnh.');
+                }
             } else {
-                toast.error('Không tìm thấy sản phẩm trong ảnh.');
+                toast.error('Không thể nhận diện hình ảnh.');
             }
         } catch (error: any) {
             console.error(error);

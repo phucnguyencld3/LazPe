@@ -13,6 +13,16 @@ namespace PolyBabyAPI.Models.Gemini
 
         [JsonPropertyName("tools")]
         public List<GeminiTool>? Tools { get; set; }
+
+        [JsonPropertyName("generationConfig")]
+        public GeminiGenerationConfig? GenerationConfig { get; set; }
+    }
+
+    public class GeminiGenerationConfig
+    {
+        [JsonPropertyName("responseMimeType")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ResponseMimeType { get; set; }
     }
 
     public class GeminiContent
