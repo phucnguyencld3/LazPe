@@ -1588,39 +1588,27 @@ namespace PolyBabyAPI.Services
 
                 if (referralRecord == null) return;
 
-                decimal commissionRate = 0;
                 if (!referralRecord.HasCompletedFirstOrder)
                 {
                     // Đơn đầu tiên
-                    commissionRate = 0.10m; // 10%
                     referralRecord.HasCompletedFirstOrder = true;
                     
-                    // Nếu đơn đầu tiên này được hoàn tất trong vòng 7 ngày kể từ lúc đăng ký, kích hoạt vĩnh viễn
+                    // Nếu đơn đầu tiên này được hoàn tất trong vòng 7 ngày kể từ lúc đăng ký
                     if ((DateTime.Now - referralRecord.CreatedAt).TotalDays <= 7)
                     {
-                        referralRecord.IsPermanentlyActive = true;
+                        // Thưởng cố định 50,000 điểm hiện có (không tích lũy xét hạng)
+                        int pointsToAdd = 50000;
+                        await _loyaltyService.AddPointsAsync(
+                            referralRecord.ReferrerId, 
+                            pointsToAdd, 
+                            "EARN", 
+                            $"Thưởng giới thiệu bạn bè (đơn đầu tiên trong 7 ngày) - #{invoiceId}", 
+                            invoiceId, 
+                            false // không cộng vào điểm tích lũy xét hạng
+                        );
                     }
-                }
-                else
-                {
-                    // Đơn thứ hai trở đi
-                    if (!referralRecord.IsPermanentlyActive)
-                    {
-                        return; // Không đủ điều kiện hưởng vĩnh viễn
-                    }
-                    commissionRate = 0.05m; // 5%
                 }
 
-                var commissionAmount = invoiceTotal * commissionRate;
-                if (commissionAmount > 0)
-                {
-                    int pointsToAdd = (int)Math.Round(commissionAmount);
-
-                    if (pointsToAdd > 0)
-                    {
-                        await _loyaltyService.AddPointsAsync(referralRecord.ReferrerId, pointsToAdd, "EARN", $"Thưởng giới thiệu đơn hàng #{invoiceId}", invoiceId);
-                    }
-                }
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
