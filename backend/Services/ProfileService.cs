@@ -34,6 +34,13 @@ namespace PolyBabyAPI.Service
                     return null;
                 }
 
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
+                }
+
                 return new UserProfileDto
                 {
                     UserId = user.Id,
@@ -52,7 +59,8 @@ namespace PolyBabyAPI.Service
                     ChildGender = user.ChildGender,
                     ChildAgeMonths = user.ChildAgeMonths,
                     ChildWeightKg = user.ChildWeightKg,
-                    IsOnboarded = user.IsOnboarded
+                    IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode
                 };
             }
             catch (Exception ex)
@@ -280,6 +288,13 @@ namespace PolyBabyAPI.Service
                     return null;
                 }
 
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
+                }
+
                 return new UserProfileDto
                 {
                     UserId = user.Id,
@@ -298,7 +313,8 @@ namespace PolyBabyAPI.Service
                     ChildGender = user.ChildGender,
                     ChildAgeMonths = user.ChildAgeMonths,
                     ChildWeightKg = user.ChildWeightKg,
-                    IsOnboarded = user.IsOnboarded
+                    IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode
                 };
             }
             catch (Exception ex)

@@ -61,6 +61,10 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Đã hoàn thành onboarding")]
         public bool IsOnboarded { get; set; } = false;
 
+        [Display(Name = "Mã giới thiệu")]
+        [StringLength(20)]
+        public string? ReferralCode { get; set; }
+
         // Refresh Token
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }

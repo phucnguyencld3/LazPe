@@ -753,11 +753,12 @@ namespace PolyBabyAPI.Services
                 if (!string.IsNullOrEmpty(invoice.UserID))
                 {
                     await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.TotalPrice);
+                    await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi tích điểm Loyalty khi hoàn thành đơn hàng {InvoiceId}", invoiceId);
+                _logger.LogError(ex, "Lỗi tích điểm Loyalty/Referral khi hoàn thành đơn hàng {InvoiceId}", invoiceId);
             }
 
             return true;
@@ -1267,6 +1268,57 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        // ======== XỬ LÝ HOA HỒNG GIỚI THIỆU KHI ĐƠN HÀNG HOÀN TẤT ========
+        private async Task HandleReferralOnOrderCompletedAsync(string userId, decimal invoiceTotal, int invoiceId)
+        {
+            try
+            {
+                var referralRecord = await _context.ReferralRecords
+                    .FirstOrDefaultAsync(r => r.ReferredUserId == userId);
+
+                if (referralRecord == null) return;
+
+                decimal commissionRate = 0;
+                if (!referralRecord.HasCompletedFirstOrder)
+                {
+                    // Đơn đầu tiên
+                    commissionRate = 0.10m; // 10%
+                    referralRecord.HasCompletedFirstOrder = true;
+                    
+                    // Nếu đơn đầu tiên này được hoàn tất trong vòng 7 ngày kể từ lúc đăng ký, kích hoạt vĩnh viễn
+                    if ((DateTime.Now - referralRecord.CreatedAt).TotalDays <= 7)
+                    {
+                        referralRecord.IsPermanentlyActive = true;
+                    }
+                }
+                else
+                {
+                    // Đơn thứ hai trở đi
+                    if (!referralRecord.IsPermanentlyActive)
+                    {
+                        return; // Không đủ điều kiện hưởng vĩnh viễn
+                    }
+                    commissionRate = 0.05m; // 5%
+                }
+
+                var commissionAmount = invoiceTotal * commissionRate;
+                if (commissionAmount > 0)
+                {
+                    int pointsToAdd = (int)Math.Round(commissionAmount);
+
+                    if (pointsToAdd > 0)
+                    {
+                        await _loyaltyService.AddPointsAsync(referralRecord.ReferrerId, pointsToAdd, "EARN", $"Thưởng giới thiệu đơn hàng #{invoiceId}", invoiceId);
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi xử lý điểm thưởng Referral cho hóa đơn {InvoiceId}", invoiceId);
+            }
+        }
+
         // ======== TỰ ĐỘNG HOÀN TẤT ĐƠN HÀNG SAU 7 NGÀY ĐANG GIAO ========
         public async Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken)
         {
@@ -1292,16 +1344,17 @@ namespace PolyBabyAPI.Services
 
                     _logger.LogInformation("Tự động hoàn tất hóa đơn {InvoiceId}", invoice.InvoiceID);
 
-                    // Tích lũy điểm Loyalty
+                    // Tích lũy điểm Loyalty và Referral
                     if (!string.IsNullOrEmpty(invoice.UserID))
                     {
                         try
                         {
                             await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.TotalPrice);
+                            await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
                         }
                         catch (Exception lEx)
                         {
-                            _logger.LogError(lEx, "Lỗi tích điểm Loyalty khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
+                            _logger.LogError(lEx, "Lỗi tích điểm Loyalty/Referral khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
                         }
                     }
                 }

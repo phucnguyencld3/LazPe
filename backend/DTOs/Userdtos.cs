@@ -69,6 +69,7 @@ namespace PolyBabyAPI.DTOs
         public int? ChildAgeMonths { get; set; }
         public double? ChildWeightKg { get; set; }
         public bool IsOnboarded { get; set; }
+        public string? ReferralCode { get; set; }
     }
 
     /// <summary>

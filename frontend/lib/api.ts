@@ -336,6 +336,7 @@ export interface UserProfile {
   childAgeMonths?: number | null;
   childWeightKg?: number | null;
   isOnboarded?: boolean;
+  referralCode?: string;
 }
 
 export async function getUserProfile(userId: string, token: string): Promise<UserProfile | null> {
