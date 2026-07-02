@@ -738,9 +738,10 @@ namespace PolyBabyAPI.Controllers
                 if (invoice.PayMethod == PayMethod.MobilePayment)
                 {
                     var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
+                    var txnRef = $"{(invoice.InvoiceCode ?? invoice.InvoiceID.ToString())}_{DateTime.Now.Ticks}";
                     paymentUrl = _vnPayService.CreatePaymentUrl(
                         HttpContext,
-                        invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
+                        txnRef,
                         amountToPay,
                         $"Thanh toan don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
                 }
@@ -1004,16 +1005,17 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { message = "Đã quá hạn 24 giờ thanh toán. Vui lòng tạo đơn hàng mới." });
 
                 var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
+                var txnRef = $"{(invoice.InvoiceCode ?? invoice.InvoiceID.ToString())}_{DateTime.Now.Ticks}";
                 var paymentUrl = _vnPayService.CreatePaymentUrl(
                     HttpContext,
-                    invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
+                    txnRef,
                     amountToPay,
                     $"Thanh toan lai don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
 
                 _context.PaymentTransactions.Add(new PaymentTransaction
                 {
                     InvoiceID = invoice.InvoiceID,
-                    TxnRef = invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
+                    TxnRef = txnRef,
                     Status = PaymentTransactionStatus.Pending,
                     CreatedAt = DateTime.Now
                 });

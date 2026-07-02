@@ -60,7 +60,7 @@ namespace PolyBabyAPI.Services
             Console.WriteLine($"SecureHash: {secureHash}");
             Console.WriteLine("========================");
 
-            return $"{_options.BaseUrl}?{signData}&vnp_SecureHashType=HMACSHA512&vnp_SecureHash={secureHash}";
+            return $"{_options.BaseUrl}?{signData}&vnp_SecureHash={secureHash}";
         }
 
         public bool ValidateReturn(IQueryCollection query, out string responseCode, out string txnRef, out string transactionNo)
