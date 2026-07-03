@@ -64,7 +64,7 @@ export default function SidebarMenuV2() {
               >
                 <Link 
                   href={`/products?category=${cat.id}`} 
-                  className={`flex items-center justify-between px-4 py-3 text-[13px] font-bold transition-all
+                  className={`flex items-center justify-between px-4 py-1.5 text-[13px] font-bold transition-all
                     ${activeMenu === cat.id ? 'bg-gradient-to-r from-rose-50 to-white text-rose-600 border-l-[3px] border-rose-500' : 'text-slate-700 hover:bg-slate-50 hover:text-rose-600 border-l-[3px] border-transparent'}
                   `}
                 >
