@@ -62,6 +62,24 @@ export function PersonalInfo({ userProfile, onEditClick }: PersonalInfoProps) {
             {formatDob(userProfile.dateOfBirth)}
           </span>
         </div>
+        <div className="flex flex-col gap-1 border-b border-slate-50 pb-2">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mã giới thiệu của bạn</span>
+          <span className="font-semibold text-[13px] text-slate-800 flex items-center gap-2">
+            {userProfile.referralCode || "Chưa có"}
+            {userProfile.referralCode && (
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(userProfile.referralCode || "");
+                  alert("Đã sao chép mã giới thiệu: " + userProfile.referralCode);
+                }}
+                className="text-primary hover:text-rose-600 transition-colors"
+                title="Sao chép mã"
+              >
+                <span className="material-symbols-outlined text-[14px]">content_copy</span>
+              </button>
+            )}
+          </span>
+        </div>
         <div className="flex flex-col gap-1 md:col-span-2 pt-1">
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ngày tham gia hệ thống</span>
           <div className="font-semibold text-[13px] text-slate-800 flex items-center gap-1.5 mt-1 bg-slate-50 p-2.5 rounded-[8px] border border-slate-100/60 w-fit">

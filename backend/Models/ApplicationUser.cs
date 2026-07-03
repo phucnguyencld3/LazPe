@@ -68,6 +68,10 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Đã hoàn thành onboarding")]
         public bool IsOnboarded { get; set; } = false;
 
+        [Display(Name = "Mã giới thiệu")]
+        [StringLength(20)]
+        public string? ReferralCode { get; set; }
+        
         public bool IsWishlistPublic { get; set; } = false;
         public string? WishlistShareToken { get; set; }
 

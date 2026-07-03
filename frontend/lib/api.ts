@@ -578,6 +578,7 @@ export interface UserProfile {
   emailConfirmed: boolean;
   status: boolean;
   isOnboarded?: boolean;
+  referralCode?: string;
   babyProfiles?: BabyProfileDto[];
   walletBalance?: number;
   coinsBalance?: number;
