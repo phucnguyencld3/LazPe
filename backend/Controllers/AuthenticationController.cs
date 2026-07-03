@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Models;
 using System.Net;
@@ -27,6 +29,7 @@ namespace PolyBabyAPI.Controllers
         private readonly IPermissionService _permissionService; 
         private readonly IEmailSender _emailSender;
         private readonly IMemoryCache _memoryCache;
+        private readonly ApplicationDbContext _context;
         private const int ResetOtpExpiredSeconds = 60;
         private const int ResetPasswordSessionExpiredMinutes = 10;
         private const int ResetOtpMaxAttempts = 5;
@@ -40,7 +43,8 @@ namespace PolyBabyAPI.Controllers
             IConfiguration configuration,
             IPermissionService permissionService,
             IEmailSender emailSender,
-            IMemoryCache memoryCache) 
+            IMemoryCache memoryCache,
+            ApplicationDbContext context) 
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -49,6 +53,7 @@ namespace PolyBabyAPI.Controllers
             _permissionService = permissionService; 
             _emailSender = emailSender;
             _memoryCache = memoryCache;
+            _context = context;
         }
 
         private sealed class PasswordResetOtpInfo
@@ -504,6 +509,9 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "Email này đã được sử dụng." });
                 }
 
+                // Tạo ReferralCode cho user mới
+                var referralCode = $"REF{RandomNumberGenerator.GetInt32(1000, 9999)}";
+
                 var user = new ApplicationUser
                 {
                     UserName = registerDto.Email,
@@ -513,7 +521,8 @@ namespace PolyBabyAPI.Controllers
                     DateOfBirth = registerDto.DateOfBirth,
                     RegisterDate = DateTime.Now,
                     Status = true,
-                    EmailConfirmed = true // Confirm email immediately since they verified with OTP
+                    EmailConfirmed = true, // Confirm email immediately since they verified with OTP
+                    ReferralCode = referralCode
                 };
 
                 var result = await _userManager.CreateAsync(user, registerDto.Password);
@@ -521,6 +530,45 @@ namespace PolyBabyAPI.Controllers
                 if (result.Succeeded)
                 {
                     _memoryCache.Remove(cacheKey);
+
+                    // Xử lý mã giới thiệu nếu có
+                    if (!string.IsNullOrEmpty(registerDto.ReferralCode))
+                    {
+                        var referrer = await _userManager.Users.FirstOrDefaultAsync(u => u.ReferralCode == registerDto.ReferralCode);
+                        if (referrer != null)
+                        {
+                            var referralRecord = new ReferralRecord
+                            {
+                                ReferrerId = referrer.Id,
+                                ReferredUserId = user.Id,
+                                CreatedAt = DateTime.Now,
+                                IsPermanentlyActive = false,
+                                HasCompletedFirstOrder = false
+                            };
+                            _context.ReferralRecords.Add(referralRecord);
+                            await _context.SaveChangesAsync();
+
+                            // Kiểm tra cấu hình tặng Voucher chào mừng
+                            var setting = await _context.LoyaltySettings.FirstOrDefaultAsync(s => s.Id == 1);
+                            if (setting != null && setting.WelcomeVoucherID.HasValue)
+                            {
+                                var voucher = await _context.Vouchers.FindAsync(setting.WelcomeVoucherID.Value);
+                                if (voucher != null && voucher.Status && voucher.EndDate >= DateTime.Now)
+                                {
+                                    var userVoucher = new UserVoucher
+                                    {
+                                        UserID = user.Id,
+                                        VoucherID = voucher.VoucherID,
+                                        Status = UserVoucherStatus.Unused,
+                                        CollectedAt = DateTime.Now
+                                    };
+                                    _context.UserVouchers.Add(userVoucher);
+                                    voucher.UsedQuantity++;
+                                    await _context.SaveChangesAsync();
+                                }
+                            }
+                        }
+                    }
 
                     // Assign default role
                     await AssignDefaultRoleAsync(user);
