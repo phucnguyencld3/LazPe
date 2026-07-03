@@ -27,6 +27,10 @@ namespace PolyBabyAPI.Models
         public int VoucherID { get; set; }
         public int? InvoiceID { get; set; }
 
+        [MaxLength(50)]
+        [Display(Name = "Mã phát hành duy nhất")]
+        public string? IssuedCode { get; set; }
+
         public UserVoucherStatus Status { get; set; } = UserVoucherStatus.Unused;
         public UserVoucherSource SourceType { get; set; }
 

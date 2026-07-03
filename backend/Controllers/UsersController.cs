@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.DTOs;
@@ -34,14 +34,15 @@ namespace PolyBabyAPI.Controllers
         public async Task<IActionResult> GetUsers(
             [FromQuery] string? search = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool onlyWithPermissions = false)
         {
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 _logger.LogInformation("User {UserId} accessing users list", userId);
 
-                var (users, totalCount) = await _userService.GetUsersPagedAsync(search, page, pageSize);
+                var (users, totalCount) = await _userService.GetUsersPagedAsync(search, page, pageSize, onlyWithPermissions);
 
                 return Ok(new
                 {
@@ -64,6 +65,39 @@ namespace PolyBabyAPI.Controllers
                 {
                     success = false,
                     message = "Có lỗi xảy ra khi lấy danh sách users"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Xuất danh sách tài khoản người dùng ra Excel
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Authorize(Roles = "Admin")]
+        [Permission("User.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string? search = null,
+            [FromQuery] bool onlyWithPermissions = false)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting users list to Excel...");
+                var fileContents = await _userService.ExportExcelAsync(search, onlyWithPermissions);
+                var fileName = $"DanhSachTaiKhoan_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error exporting users to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
                 });
             }
         }

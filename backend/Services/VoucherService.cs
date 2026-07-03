@@ -69,11 +69,41 @@ namespace PolyBabyAPI.Services
 
         public async Task<(bool IsValid, string Message)> ValidateVoucherAsync(string code, decimal orderValue, string userId)
         {
-            var voucher = await GetVoucherByCodeAsync(code);
+            Voucher? voucher = null;
+            bool isUniqueCode = false;
+
+            var userVoucher = await _context.UserVouchers
+                .Include(uv => uv.Voucher)
+                .FirstOrDefaultAsync(uv => uv.IssuedCode == code || (uv.Voucher.Code == code && uv.UserID == userId && uv.Status != UserVoucherStatus.Used));
+
+            if (userVoucher != null)
+            {
+                if (userVoucher.UserID != userId)
+                {
+                    return (false, "Mã giảm giá này không thuộc về bạn.");
+                }
+                if (userVoucher.Status == UserVoucherStatus.Used)
+                {
+                    return (false, "Bạn đã sử dụng mã giảm giá này rồi.");
+                }
+                voucher = userVoucher.Voucher;
+                // Nếu voucher này có trong ví (kể cả exclusive dùng base code), ta coi là hợp lệ (đã được issue cho user)
+                isUniqueCode = true;
+            }
+            else
+            {
+                voucher = await GetVoucherByCodeAsync(code);
+            }
 
             if (voucher == null)
             {
                 return (false, "Mã giảm giá không tồn tại.");
+            }
+
+            // Ngăn chặn dùng mã gốc của Voucher Độc quyền
+            if (!isUniqueCode && voucher.VisibilityType == VoucherVisibilityType.Exclusive)
+            {
+                return (false, "Mã giảm giá này là mã độc quyền. Vui lòng sử dụng mã cá nhân của bạn.");
             }
 
             if (!voucher.Status)
@@ -94,7 +124,7 @@ namespace PolyBabyAPI.Services
 
             if (voucher.UsedQuantity >= voucher.TotalQuantity)
             {
-                return (false, "Mã giảm giá đã hết lượt sử dụng.");
+                return (false, "Mã giảm giá đã hết lượt sử dụng chung.");
             }
 
             if (orderValue < voucher.MinOrderValue)
@@ -102,15 +132,17 @@ namespace PolyBabyAPI.Services
                 return (false, $"Đơn hàng tối thiểu để áp dụng mã này là {voucher.MinOrderValue:N0}đ.");
             }
 
-            // Kiểm tra xem user này đã dùng voucher này chưa (nếu cần giới hạn 1 lần/user)
-            var hasUsed = await _context.VoucherUsages
-                .AnyAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
-            
-            // Tùy nghiệp vụ: nếu muốn chặn user dùng lại thì mở comment dưới
-            // if (hasUsed)
-            // {
-            //     return (false, "Bạn đã sử dụng mã giảm giá này rồi.");
-            // }
+            // Kiểm tra giới hạn số lần sử dụng của mỗi user (đối với mã Public hoặc mã không giới hạn chung)
+            if (!isUniqueCode)
+            {
+                var usedCount = await _context.VoucherUsages
+                    .CountAsync(vu => vu.VoucherID == voucher.VoucherID && vu.UserID == userId);
+                
+                if (voucher.UsageLimitPerUser > 0 && usedCount >= voucher.UsageLimitPerUser)
+                {
+                    return (false, "Bạn đã hết lượt sử dụng mã giảm giá chung này.");
+                }
+            }
 
             return (true, "Mã giảm giá hợp lệ.");
         }
@@ -138,6 +170,50 @@ namespace PolyBabyAPI.Services
             if (discountAmount > orderValue)
             {
                 discountAmount = orderValue;
+            }
+
+            return discountAmount;
+        }
+
+        public decimal CalculateShippingDiscount(Voucher voucher, decimal shippingFee)
+        {
+            if (voucher.VoucherType != VoucherType.ShippingDiscount)
+            {
+                return 0;
+            }
+
+            if (voucher.IsFreeShipping)
+            {
+                return shippingFee;
+            }
+
+            decimal discountAmount = 0;
+
+            if (voucher.DiscountType == 1) // Phần trăm
+            {
+                discountAmount = shippingFee * (voucher.DiscountValue / 100);
+            }
+            else // Tiền mặt cố định
+            {
+                discountAmount = voucher.DiscountValue;
+            }
+
+            // Kiểm tra giảm tối đa (sử dụng MaxShippingDiscount hoặc MaxDiscount)
+            var maxCap = voucher.MaxShippingDiscount ?? voucher.MaxDiscount;
+            if (maxCap > 0 && discountAmount > maxCap)
+            {
+                discountAmount = maxCap;
+            }
+
+            // Không được giảm quá phí vận chuyển thực tế
+            if (discountAmount > shippingFee)
+            {
+                discountAmount = shippingFee;
+            }
+
+            if (discountAmount < 0)
+            {
+                discountAmount = 0;
             }
 
             return discountAmount;

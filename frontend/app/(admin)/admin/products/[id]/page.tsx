@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   AdminProductDetailInfo,
@@ -14,15 +14,55 @@ import { formatCurrency } from "@/lib/utils/formatters";
 export default function AdminProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get("page") || "1";
 
   const [product, setProduct] = useState<AdminProductDetailInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // Deletion Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  const mainImageUrl = useMemo(() => {
+    if (!product) return null;
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls[0] || null;
+    }
+    if (product.variants && product.variants.length > 0) {
+      const imgVar = product.variants.find(v => v.imageUrl && v.imageUrl.trim() !== "");
+      if (imgVar && imgVar.imageUrl) return imgVar.imageUrl;
+    }
+    return null;
+  }, [product]);
+
+  // Update selectedImage if it's null and we now have a mainImageUrl
+  useEffect(() => {
+    if (mainImageUrl && !selectedImage) {
+      setSelectedImage(mainImageUrl);
+    }
+  }, [mainImageUrl, selectedImage]);
+
+  // Parse specifications JSON
+  const parsedSpecsList = (() => {
+    if (!product || !product.specifications) return [];
+    try {
+      const parsed = JSON.parse(product.specifications);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item: any) => [item.key || "", item.value || ""]);
+      }
+      if (parsed && typeof parsed === "object") {
+        return Object.entries(parsed);
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return [];
+  })();
 
   const loadProductDetails = async () => {
     try {
@@ -78,6 +118,7 @@ export default function AdminProductDetailPage() {
   // Trigger custom confirmation modal
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
+    setDeleteConfirmText("");
   };
 
   // Perform actual deletion
@@ -118,24 +159,13 @@ export default function AdminProductDetailPage() {
         <p className="text-error font-bold text-lg">Không tìm thấy sản phẩm</p>
         <button
           onClick={() => router.push("/admin/products")}
-          className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+          className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-[8px] font-bold hover:scale-105 active:scale-95 transition-transform cursor-pointer"
         >
           Quay lại danh sách
         </button>
       </div>
     );
   }
-
-  // Get first variant image or fallback to box icon
-  const getProductImage = () => {
-    if (product.variants && product.variants.length > 0) {
-      const imgVar = product.variants.find(v => v.imageUrl && v.imageUrl.trim() !== "");
-      if (imgVar) return imgVar.imageUrl;
-    }
-    return null;
-  };
-
-  const mainImageUrl = getProductImage();
 
   // Get effective price: discount applied
   const salePrice = product.productDiscountPercent > 0
@@ -168,7 +198,7 @@ export default function AdminProductDetailPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <button
-            onClick={() => router.push("/admin/products")}
+            onClick={() => router.push(`/admin/products?page=${fromPage}`)}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-2 font-bold"
           >
             <span className="material-symbols-outlined">arrow_back</span>
@@ -179,7 +209,7 @@ export default function AdminProductDetailPage() {
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={handleDeleteClick}
-            className="px-6 py-2.5 rounded-full border border-rose-200 text-error hover:bg-rose-50 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
+            className="px-6 py-2.5 rounded-[8px] border border-rose-200 text-error hover:bg-rose-50 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
           >
             <span className="material-symbols-outlined text-lg">delete</span>
             Xóa sản phẩm
@@ -187,9 +217,9 @@ export default function AdminProductDetailPage() {
           <button
             onClick={() => {
               toast.info("Điều hướng đến trang chỉnh sửa sản phẩm");
-              router.push(`/admin/products/edit/${product.productID}`);
+              router.push(`/admin/products/edit/${product.productID}?page=${fromPage}`);
             }}
-            className="px-8 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
+            className="px-8 py-2.5 rounded-[8px] bg-primary text-on-primary hover:bg-primary/95 font-bold text-sm flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-md"
           >
             <span className="material-symbols-outlined text-lg">edit</span>
             Chỉnh sửa sản phẩm
@@ -201,14 +231,14 @@ export default function AdminProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
         
         {/* Left Card: Product Overview */}
-        <div className="lg:col-span-8 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+        <div className="lg:col-span-8 bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">info</span>
               Tổng quan sản phẩm
             </h3>
             <span
-              className={`px-4 py-1.5 rounded-full font-bold text-xs flex items-center gap-1 ${
+              className={`px-4 py-1.5 rounded-[8px] font-bold text-xs flex items-center gap-1 ${
                 product.status
                   ? "bg-secondary-container text-on-secondary-container"
                   : "bg-slate-100 text-slate-500"
@@ -224,24 +254,39 @@ export default function AdminProductDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             {/* Image Box */}
             <div className="md:col-span-2">
-              <div className="aspect-[0.9] bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden group relative flex items-center justify-center">
-                {mainImageUrl ? (
+              <div className="aspect-[0.9] bg-slate-50 border border-slate-100 rounded-[8px] overflow-hidden group relative flex items-center justify-center">
+                {selectedImage ? (
                   <img
-                    src={mainImageUrl}
+                    src={selectedImage}
                     alt={product.productName}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <span className="material-symbols-outlined text-slate-300 text-5xl">inventory_2</span>
                 )}
-                {mainImageUrl && (
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4">
+                {selectedImage && (
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4 pointer-events-none">
                     <div className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-primary shadow-sm">
                       <span className="material-symbols-outlined text-lg">zoom_in</span>
                     </div>
                   </div>
                 )}
               </div>
+              
+              {/* Thumbnail Gallery */}
+              {product.imageUrls && product.imageUrls.length > 0 && (
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {product.imageUrls.map((url, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setSelectedImage(url)}
+                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 cursor-pointer shrink-0 transition-all ${selectedImage === url ? 'border-primary shadow-sm' : 'border-transparent hover:border-primary/50'}`}
+                    >
+                      <img src={url} className="w-full h-full object-cover" alt="Gallery item" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details Box */}
@@ -264,6 +309,24 @@ export default function AdminProductDetailPage() {
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Thương hiệu / Nhà CC</p>
                 <p className="font-semibold text-slate-700 text-sm">{product.supplier?.supplierName || "Không có"}</p>
+              </div>
+              
+              <div className="col-span-2">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Đường dẫn (Slug)</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100 font-mono flex-1 truncate" title={product.slug || "Không có slug"}>
+                    {product.slug || "Không có slug"}
+                  </span>
+                  {product.slug && (
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(product.slug || "")}
+                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                      title="Sao chép Slug"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                    </button>
+                  )}
+                </div>
               </div>
               
               <div className="col-span-2">
@@ -290,7 +353,7 @@ export default function AdminProductDetailPage() {
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Chiết khấu (%)</p>
                 {product.productDiscountPercent > 0 ? (
-                  <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-error font-bold text-xs">
+                  <span className="px-3 py-1 rounded-[8px] bg-rose-50 border border-rose-100 text-error font-bold text-xs">
                     -{product.productDiscountPercent}% OFF
                   </span>
                 ) : (
@@ -303,7 +366,7 @@ export default function AdminProductDetailPage() {
 
         {/* Right Card: Inventory & Pricing */}
         <div className="lg:col-span-4 flex flex-col gap-8">
-          <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex-1 flex flex-col justify-between">
+          <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -324,23 +387,23 @@ export default function AdminProductDetailPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-[8px]">
                   <span className="text-slate-500 font-semibold text-sm">Giá niêm yết</span>
                   <span className="text-slate-700 font-bold text-lg">{formatCurrency(product.price)}</span>
                 </div>
                 
-                <div className="flex items-center justify-between p-4 bg-primary-container/10 border border-primary-container/20 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-primary-container/10 border border-primary-container/20 rounded-[8px]">
                   <span className="text-slate-500 font-semibold text-sm">Giá bán thực tế</span>
                   <span className="text-primary font-bold text-xl">{formatCurrency(salePrice)}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-[8px] text-center">
                     <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Tổng tồn kho</p>
-                    <p className="text-2xl font-bold text-slate-800">{product.stock}</p>
+                    <p className="text-2xl font-bold text-slate-800">{product.variants.length > 0 ? totalVariantStock : product.stock}</p>
                     <p className="text-[10px] text-secondary font-bold mt-1">Sản phẩm gốc</p>
                   </div>
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-[8px] text-center">
                     <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Tồn kho biến thể</p>
                     <p className="text-2xl font-bold text-slate-800">{totalVariantStock}</p>
                     <p className="text-[10px] text-slate-400 font-bold mt-1">Tổng biến thể</p>
@@ -369,11 +432,31 @@ export default function AdminProductDetailPage() {
         </div>
       </div>
 
+      {/* Specifications Section */}
+      <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm mb-8 animate-in fade-in duration-300">
+        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-6">
+          <span className="material-symbols-outlined text-primary">fact_check</span>
+          Thông số kỹ thuật sản phẩm
+        </h3>
+        {parsedSpecsList.length === 0 ? (
+          <p className="text-slate-400 font-medium text-sm italic py-4">Sản phẩm này chưa cấu hình thông số kỹ thuật.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {parsedSpecsList.map(([key, value]) => (
+              <div key={key} className="p-4 bg-slate-50 border border-slate-100 rounded-[8px] flex flex-col justify-center hover:border-primary/20 transition-colors">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{key}</p>
+                <p className="font-bold text-slate-800 text-sm leading-relaxed">{String(value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Bottom Row: Variants & Attributes Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Left Side: Product Variants List (Max 2 newest) */}
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -398,9 +481,9 @@ export default function AdminProductDetailPage() {
                 {latestVariants.map((variant, index) => (
                   <div
                     key={variant.variantID}
-                    className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-4 p-4 rounded-[8px] border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
                   >
-                    <div className="w-16 h-16 bg-white border border-slate-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-white border border-slate-100 rounded-[8px] overflow-hidden flex-shrink-0 flex items-center justify-center">
                       {variant.imageUrl && variant.imageUrl.trim() !== "" ? (
                         <img src={variant.imageUrl} alt={variant.variantName} className="w-full h-full object-cover" />
                       ) : (
@@ -445,7 +528,7 @@ export default function AdminProductDetailPage() {
         </div>
 
         {/* Right Side: Product Attributes/Options List (Max 2 newest) */}
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -469,7 +552,7 @@ export default function AdminProductDetailPage() {
                 {latestOptions.map((option, idx) => (
                   <div
                     key={option.productOptionID}
-                    className="p-5 rounded-2xl bg-slate-50 border border-slate-100 relative"
+                    className="p-5 rounded-[8px] bg-slate-50 border border-slate-100 relative"
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <div
@@ -492,7 +575,7 @@ export default function AdminProductDetailPage() {
                       {option.productOptionValues.map((val) => (
                         <span
                           key={val.productOptionValueID}
-                          className="px-3 py-1 rounded-full bg-white text-slate-700 text-xs font-semibold border border-slate-200/50 shadow-sm"
+                          className="px-3 py-1 rounded-[8px] bg-white text-slate-700 text-xs font-semibold border border-slate-200/50 shadow-sm"
                         >
                           {val.value}
                         </span>
@@ -514,7 +597,7 @@ export default function AdminProductDetailPage() {
       {/* Custom Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -534,22 +617,35 @@ export default function AdminProductDetailPage() {
             
             {/* Body */}
             <div className="p-6">
-              <p className="text-slate-600 text-sm leading-relaxed mb-6">
+              <p className="text-slate-600 text-sm leading-relaxed mb-4">
                 Bạn có chắc chắn muốn xóa sản phẩm <strong className="text-slate-800">"{product.productName}"</strong> không? Hành động này không thể hoàn tác và sẽ xóa toàn bộ các biến thể liên quan nếu sản phẩm chưa phát sinh đơn hàng.
               </p>
+              
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Vui lòng nhập <span className="text-error">tôi đồng ý xóa</span> để xác nhận:
+                </label>
+                <input 
+                  type="text" 
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="tôi đồng ý xóa"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
+                />
+              </div>
               
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
                   disabled={deleting}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  disabled={deleting}
+                  className="px-5 py-2 rounded-[8px] bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={deleting || deleteConfirmText.trim().toLowerCase() !== "tôi đồng ý xóa"}
                 >
                   {deleting ? (
                     <>

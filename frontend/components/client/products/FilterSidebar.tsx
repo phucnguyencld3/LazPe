@@ -41,7 +41,7 @@ export default function FilterSidebar({
             placeholder="Tìm tên sản phẩm..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full h-11 pl-4 pr-10 rounded-full border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm transition-all"
+            className="w-full h-11 pl-4 pr-10 rounded-[8px] border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm transition-all"
           />
           <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
             <Search size={18} />
@@ -74,6 +74,9 @@ export default function FilterSidebar({
               }`}
             >
               <span>{cat.name}</span>
+              <span className={`text-xs ${selectedCategory === cat.id ? "text-white/80" : "text-slate-400"}`}>
+                ({cat.productCount ?? 0})
+              </span>
             </button>
           ))}
         </div>
@@ -105,7 +108,7 @@ export default function FilterSidebar({
       {/* Clear Button */}
       <button
         onClick={handleClearFilters}
-        className="w-full h-11 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+        className="w-full h-11 rounded-[8px] border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2"
       >
         <X size={16} />
         Đặt lại bộ lọc

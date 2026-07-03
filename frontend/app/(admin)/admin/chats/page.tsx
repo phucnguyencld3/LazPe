@@ -1,8 +1,40 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+const AdminChatProductCard = ({ data, onZoomImage }: { data: any, onZoomImage?: (url: string) => void }) => {
+  return (
+    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full max-w-sm">
+      <div 
+        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px] cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={() => onZoomImage && onZoomImage(data.imageUrl || '/assets/img/products/default-product.jpg')}
+        title="Phóng to ảnh"
+      >
+        <img src={data.imageUrl || '/assets/img/products/default-product.jpg'} alt={data.name} className="max-h-[60px] max-w-full object-contain mix-blend-multiply" />
+      </div>
+      <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
+        <h4 
+          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words" 
+          title={data.name}
+        >
+          {data.name}
+        </h4>
+        <div className="flex items-center justify-between">
+          <span className="text-primary font-bold text-[13px] truncate pr-1">
+            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
+          </span>
+          <div className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-100 rounded">
+            Sản phẩm
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface ChatSession {
   id: string;
@@ -13,9 +45,18 @@ interface ChatSession {
   createdAt: string;
   updatedAt: string;
   isClosed: boolean;
+  isWaitingForSupport: boolean;
   lastMessageText: string | null;
   unreadByAdmin: number;
   unreadByCustomer: number;
+}
+
+interface CustomerChatGroup {
+  customerId: string;
+  customerName: string;
+  latestSession: ChatSession;
+  recentSessions: ChatSession[];
+  unreadCount: number;
 }
 
 interface Message {
@@ -82,11 +123,19 @@ export default function AdminChatsPage() {
   const [currentAdmin, setCurrentAdmin] = useState<{ id: string; fullName: string } | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
+  const [connectionStatus, setConnectionStatus] = useState<string>("Đang kết nối...");
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
+  const selectedSessionRef = useRef<ChatSession | null>(null);
 
-  const API_BASE = "http://localhost:5101";
+  // Auto-sync selectedSession to ref for use inside SignalR callbacks
+  useEffect(() => {
+    selectedSessionRef.current = selectedSession;
+  }, [selectedSession]);
+
+  const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101").replace(/\/api$/, "");
 
   // Auto scroll
   useEffect(() => {
@@ -96,7 +145,10 @@ export default function AdminChatsPage() {
   // Load chat sessions on mount & setup SignalR
   useEffect(() => {
     loadSessions();
-    setupSignalR();
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (token) {
+      setupSignalR(token);
+    }
     fetchCurrentAdmin();
 
     return () => {
@@ -168,33 +220,39 @@ export default function AdminChatsPage() {
     }
   };
 
-  const setupSignalR = () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) return;
+  const setupSignalR = async (token: string) => {
+    if (hubConnectionRef.current) {
+      await hubConnectionRef.current.stop();
+    }
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_BASE}/chatHub?access_token=${token}`)
+      .withUrl(`${API_BASE}/chatHub?access_token=${token}`, {
+        // Force SSE/LongPolling to bypass Cloudflare/Antivirus WebSocket frame corruption (Opcode 11)
+        transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+      })
       .withAutomaticReconnect()
       .build();
 
+    // Set ref immediately so other functions know connection exists
+    hubConnectionRef.current = connection;
+
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
-      // Nếu tin nhắn thuộc phòng đang chọn
-      setSelectedSession(curr => {
-        if (curr && curr.id === normalized.chatSessionId) {
-          setMessages(prev => {
-            // Lọc bỏ tin nhắn tạm có ID âm khi nhận tin nhắn chính thức từ SignalR
-            const filtered = prev.filter(m => m.id > 0);
-            if (filtered.some(m => m.id === normalized.id)) return filtered;
-            return [...filtered, normalized];
-          });
-          // Đánh dấu đã đọc trên server
+      
+      // Update messages if the message belongs to the currently selected room
+      if (selectedSessionRef.current && selectedSessionRef.current.id === normalized.chatSessionId) {
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.id > 0);
+          if (filtered.some(m => m.id === normalized.id)) return filtered;
+          return [...filtered, normalized];
+        });
+        
+        if (!normalized.isFromAdmin) {
           markAsRead(normalized.chatSessionId);
         }
-        return curr;
-      });
+      }
 
-      // Cập nhật danh sách session
+      // Update session list unread counts
       loadSessions();
     });
 
@@ -202,12 +260,34 @@ export default function AdminChatsPage() {
       loadSessions();
     });
 
+    connection.onreconnected(() => {
+      setConnectionStatus("Đã kết nối");
+      if (selectedSessionRef.current) {
+        connection.invoke("JoinRoom", selectedSessionRef.current.id).catch(console.error);
+      }
+    });
+    
+    connection.onreconnecting(() => {
+      setConnectionStatus("Đang kết nối lại...");
+    });
+    
+    connection.onclose(() => {
+      setConnectionStatus("Mất kết nối");
+    });
+
     connection
       .start()
       .then(() => {
-        hubConnectionRef.current = connection;
+        setConnectionStatus("Đã kết nối");
+        // If a session was already selected during connection startup, join it now
+        if (selectedSessionRef.current) {
+          connection.invoke("JoinRoom", selectedSessionRef.current.id).catch(console.error);
+        }
       })
-      .catch(err => console.error("Admin SignalR Connection Error: ", err));
+      .catch(err => {
+        setConnectionStatus("Lỗi kết nối");
+        console.error("Admin SignalR Connection Error: ", err);
+      });
   };
 
   const markAsRead = async (sid: string) => {
@@ -222,14 +302,30 @@ export default function AdminChatsPage() {
     }
   };
 
-  const selectRoom = (session: ChatSession) => {
+  const selectRoom = async (session: ChatSession) => {
+    const conn = hubConnectionRef.current;
+    
+    // Leave previous room if exists
+    if (conn && selectedSession) {
+      if (conn.state === signalR.HubConnectionState.Connected) {
+        try {
+          await conn.invoke("LeaveRoom", selectedSession.id);
+        } catch (e) {
+          console.error("LeaveRoom Error:", e);
+        }
+      }
+    }
+    
     setSelectedSession(session);
     loadMessages(session.id);
-    if (hubConnectionRef.current) {
-      if (selectedSession) {
-        hubConnectionRef.current.invoke("LeaveRoom", selectedSession.id);
+    
+    // Join new room
+    if (conn && conn.state === signalR.HubConnectionState.Connected) {
+      try {
+        await conn.invoke("JoinRoom", session.id);
+      } catch (e) {
+        console.error("JoinRoom Error:", e);
       }
-      hubConnectionRef.current.invoke("JoinRoom", session.id);
     }
   };
 
@@ -237,6 +333,13 @@ export default function AdminChatsPage() {
     e.preventDefault();
     if (!selectedSession) return;
     if (!inputText.trim()) return;
+
+    const isDifferentAdminSupporting = !!(selectedSession.adminId && currentAdmin && selectedSession.adminId !== currentAdmin.id);
+    const isNoAdminSupporting = !selectedSession.adminId;
+    if (selectedSession.isClosed || isDifferentAdminSupporting || isNoAdminSupporting) {
+      toast.error("Bạn không thể gửi tin nhắn lúc này.");
+      return;
+    }
 
     // --- OPTIMISTIC UI UPDATE ---
     const tempId = -Date.now();
@@ -277,6 +380,9 @@ export default function AdminChatsPage() {
         setMessages(prev => prev.filter(m => m.id !== tempId));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
+        // Cập nhật id thật từ server để xóa trạng thái Đang gửi
+        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
+        
         if (!selectedSession.adminId && currentAdmin) {
           setSelectedSession(prev => prev ? { ...prev, adminId: currentAdmin.id, adminName: currentAdmin.fullName } : null);
         }
@@ -289,6 +395,13 @@ export default function AdminChatsPage() {
 
   const sendSticker = async (stickerUrl: string) => {
     if (!selectedSession) return;
+
+    const isDifferentAdminSupporting = !!(selectedSession.adminId && currentAdmin && selectedSession.adminId !== currentAdmin.id);
+    const isNoAdminSupporting = !selectedSession.adminId;
+    if (selectedSession.isClosed || isDifferentAdminSupporting || isNoAdminSupporting) {
+      toast.error("Bạn không thể gửi tin nhắn lúc này.");
+      return;
+    }
 
     const tempId = -Date.now();
     const tempMsg: Message = {
@@ -323,6 +436,8 @@ export default function AdminChatsPage() {
         setMessages(prev => prev.filter(m => m.id !== tempId));
         toast.error(data.message || "Không thể gửi sticker.");
       } else {
+        // Cập nhật id thật từ server
+        setMessages(prev => prev.map(m => m.id === tempId ? normalizeMessage(data.message) : m));
         if (!selectedSession.adminId && currentAdmin) {
           setSelectedSession(prev => prev ? { ...prev, adminId: currentAdmin.id, adminName: currentAdmin.fullName } : null);
         }
@@ -356,6 +471,31 @@ export default function AdminChatsPage() {
       toast.error("Lỗi khi đóng cuộc hội thoại.");
     }
   };
+  const endSupport = async () => {
+    if (!selectedSession) return;
+
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/api/chat/session/${selectedSession.id}/end-support`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Đã kết thúc hỗ trợ trực tiếp. Trợ lý AI sẽ tiếp quản.");
+        setSelectedSession(prev => prev ? { ...prev, adminId: null, adminName: null, isWaitingForSupport: false } : null);
+        loadSessions();
+      } else {
+        toast.error(data.message || "Lỗi khi kết thúc hỗ trợ.");
+      }
+    } catch (e) {
+      toast.error("Lỗi mạng khi kết thúc hỗ trợ.");
+    }
+  };
 
   const claimRoom = async () => {
     if (!selectedSession) return;
@@ -373,7 +513,7 @@ export default function AdminChatsPage() {
       const data = await res.json();
       if (data.success) {
         toast.success("Đã nhận hỗ trợ cuộc chat này.");
-        setSelectedSession(prev => prev ? { ...prev, adminId: data.adminId, adminName: data.adminName } : null);
+        setSelectedSession(prev => prev ? { ...prev, adminId: data.adminId, adminName: data.adminName, isWaitingForSupport: false } : null);
         loadSessions();
         loadMessages(selectedSession.id);
       } else {
@@ -403,25 +543,77 @@ export default function AdminChatsPage() {
     }
   };
 
-  // Lọc và Tìm kiếm phòng chat
-  const filteredSessions = sessions.filter(s => {
-    const matchesSearch = s.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (s.lastMessageText && s.lastMessageText.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Nhóm các phiên chat theo Khách hàng
+  const filteredGroups = useMemo(() => {
+    const groups: Record<string, CustomerChatGroup> = {};
     
-    if (filter === "active") return matchesSearch && !s.isClosed;
-    if (filter === "closed") return matchesSearch && s.isClosed;
-    return matchesSearch;
-  });
+    sessions.forEach(session => {
+      const customerId = session.userId || session.customerName; // Fallback to name if anonymous
+      
+      if (!groups[customerId]) {
+        groups[customerId] = {
+          customerId,
+          customerName: session.customerName,
+          latestSession: session,
+          recentSessions: [session],
+          unreadCount: session.unreadByAdmin || 0
+        };
+      } else {
+        const group = groups[customerId];
+        group.recentSessions.push(session);
+        group.unreadCount += (session.unreadByAdmin || 0);
+
+        const currentLatestTime = new Date(group.latestSession.updatedAt).getTime();
+        const thisSessionTime = new Date(session.updatedAt).getTime();
+        
+        if (thisSessionTime > currentLatestTime) {
+          group.latestSession = session;
+        }
+      }
+    });
+
+    Object.values(groups).forEach(g => {
+      // Sort recent sessions DESC by updatedAt
+      g.recentSessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      // Keep only top 3
+      g.recentSessions = g.recentSessions.slice(0, 3);
+    });
+
+    let arr = Object.values(groups).sort((a, b) => 
+      new Date(b.latestSession.updatedAt).getTime() - new Date(a.latestSession.updatedAt).getTime()
+    );
+
+    const query = searchQuery.toLowerCase();
+    arr = arr.filter(g => {
+      const matchesSearch = g.customerName.toLowerCase().includes(query) || 
+                            (g.latestSession.lastMessageText && g.latestSession.lastMessageText.toLowerCase().includes(query));
+      
+      if (filter === "active") return matchesSearch && !g.latestSession.isClosed;
+      if (filter === "closed") return matchesSearch && g.latestSession.isClosed;
+      return matchesSearch;
+    });
+
+    return arr;
+  }, [sessions, filter, searchQuery]);
+
+  const currentCustomerSessions = useMemo(() => {
+    if (!selectedSession) return [];
+    const customerId = selectedSession.userId || selectedSession.customerName;
+    const customerSessions = sessions.filter(s => (s.userId || s.customerName) === customerId);
+    customerSessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return customerSessions.slice(0, 3);
+  }, [selectedSession, sessions]);
 
   const isDifferentAdminSupporting = !!(selectedSession?.adminId && currentAdmin && selectedSession.adminId !== currentAdmin.id);
-  const isChatInputDisabled = !!(selectedSession?.isClosed || isDifferentAdminSupporting);
+  const isNoAdminSupporting = !selectedSession?.adminId;
+  const isChatInputDisabled = !!(selectedSession?.isClosed || isDifferentAdminSupporting || isNoAdminSupporting);
 
   return (
-    <div className="flex w-full flex-1 bg-white rounded-2xl overflow-hidden border border-slate-200 min-h-0">
+    <div className="flex w-full flex-1 bg-white rounded-[8px] overflow-hidden border border-slate-200 min-h-0">
       {/* Left panel: Sessions list */}
       <div className="w-80 border-r border-slate-200 flex flex-col bg-slate-50 shrink-0">
         {/* Search & Filter */}
-        <div className="p-4 border-b border-slate-200 space-y-3">
+        <div className="p-4 border-b border-slate-200 space-y-3 shrink-0">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-lg">search</span>
             <input
@@ -463,53 +655,94 @@ export default function AdminChatsPage() {
 
         {/* Sessions list */}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-          {filteredSessions.length === 0 ? (
+          {filteredGroups.length === 0 ? (
             <div className="text-center text-slate-400 py-10 text-sm">
-              Không tìm thấy cuộc trò chuyện nào.
+              Không tìm thấy khách hàng nào.
             </div>
           ) : (
-            filteredSessions.map(session => (
-              <div
-                key={session.id}
-                onClick={() => selectRoom(session)}
-                className={`p-4 border-b border-slate-100 flex items-start gap-3 cursor-pointer transition-colors duration-200 ${
-                  selectedSession?.id === session.id
-                    ? "bg-primary/5 border-l-4 border-primary"
-                    : "hover:bg-slate-100/50 bg-white"
-                }`}
-              >
-                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-                  {session.customerName.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <h4 className="font-semibold text-slate-800 text-sm truncate pr-2">
-                      {session.customerName}
-                    </h4>
-                    <span className="text-[10px] text-slate-400 shrink-0">
-                      {new Date(session.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+            filteredGroups.map(group => {
+              const isSelected = selectedSession && group.recentSessions.some(s => s.id === selectedSession.id);
+              return (
+                <div key={group.customerId} className="mb-2">
+                  <div
+                    onClick={() => {
+                      if (!isSelected) selectRoom(group.latestSession);
+                    }}
+                    className={`p-4 mx-2 mt-2 rounded-[8px] flex items-start gap-3 cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? "bg-primary/10 border border-primary/20 shadow-sm"
+                        : "hover:bg-slate-100/80 bg-white border border-transparent"
+                    }`}
+                  >
+                    <div className={`relative h-11 w-11 rounded-full flex items-center justify-center font-bold text-base shrink-0 ${
+                      isSelected ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-slate-200 text-slate-500"
+                    }`}>
+                      {group.customerName.charAt(0).toUpperCase()}
+                      {group.latestSession.isWaitingForSupport && !group.latestSession.isClosed && (
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-warning border-2 border-white rounded-full animate-pulse"></span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className={`font-bold text-sm truncate ${isSelected ? "text-primary" : "text-slate-700"}`}>
+                          {group.customerName}
+                        </h4>
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
+                          {new Date(group.latestSession.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 truncate mb-1">
+                        {isMediaUrl(group.latestSession.lastMessageText) 
+                          ? <span className="flex items-center gap-1 italic"><span className="material-symbols-outlined text-[14px]">image</span> Hình ảnh/Sticker</span> 
+                          : group.latestSession.lastMessageText || "Chưa có tin nhắn"}
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
+                          group.latestSession.isClosed ? "bg-slate-200 text-slate-500" :
+                          group.latestSession.adminId 
+                            ? (group.latestSession.adminId === currentAdmin?.id ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")
+                            : (group.latestSession.isWaitingForSupport ? "bg-warning/20 text-warning-dark" : "bg-blue-100 text-blue-600")
+                        }`}>
+                          {group.latestSession.isClosed ? "Đã đóng" :
+                          group.latestSession.adminId 
+                            ? (group.latestSession.adminId === currentAdmin?.id ? "Bạn đang hỗ trợ" : group.latestSession.adminName)
+                            : (group.latestSession.isWaitingForSupport ? "Chờ hỗ trợ" : "AI đang hỗ trợ")}
+                        </span>
+                        {group.unreadCount > 0 && (
+                          <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {group.unreadCount > 99 ? '99+' : group.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 truncate mb-1">
-                    {session.lastMessageText || "[Không có tin nhắn]"}
-                  </p>
                   
-                  <div className="flex items-center gap-1.5">
-                    {session.isClosed ? (
-                      <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">Đã đóng</span>
-                    ) : (
-                      <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded font-medium">Hoạt động</span>
-                    )}
-
-                    {session.unreadByAdmin > 0 && (
-                      <span className="ml-auto bg-rose-500 text-white text-[10px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center">
-                        {session.unreadByAdmin}
-                      </span>
-                    )}
-                  </div>
+                  {isSelected && group.recentSessions.length > 1 && (
+                    <div className="mx-4 mt-1 px-3 py-2 bg-slate-50 rounded-b-[8px] border-x border-b border-slate-200/60 shadow-inner">
+                      <div className="text-[10px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Lịch sử trò chuyện</div>
+                      <div className="flex flex-col gap-1">
+                        {group.recentSessions.map((s, idx) => (
+                          <div
+                            key={s.id}
+                            onClick={(e) => { e.stopPropagation(); selectRoom(s); }}
+                            className={`px-3 py-1.5 rounded cursor-pointer text-xs flex justify-between items-center transition-colors ${
+                              selectedSession?.id === s.id 
+                                ? "bg-white border border-primary/30 text-primary font-bold shadow-sm" 
+                                : "hover:bg-slate-200/50 text-slate-600 border border-transparent"
+                            }`}
+                          >
+                            <span className="truncate pr-2">{idx === 0 ? "Mới nhất" : `Trước đó (${idx})`}</span>
+                            <span className={`text-[10px] shrink-0 ${selectedSession?.id === s.id ? "text-primary/70" : "text-slate-400"}`}>
+                              {new Date(s.updatedAt).toLocaleDateString('vi-VN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -526,23 +759,27 @@ export default function AdminChatsPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-base">{selectedSession.customerName}</h3>
-                  <span className="text-xs text-slate-400 flex items-center gap-1">
-                    ID: {selectedSession.id}
-                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200" title={selectedSession.id}>
+                      ID: {selectedSession.id.substring(0, 8)}...
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 {!selectedSession.isClosed ? (
-                  <button
-                    onClick={closeRoom}
-                    className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold px-3 py-2 rounded-full cursor-pointer transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">cancel</span>
-                    Đóng cuộc chat
-                  </button>
+                  selectedSession.adminId === currentAdmin?.id ? (
+                    <button
+                      onClick={endSupport}
+                      className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold px-3 py-2 rounded-[8px] cursor-pointer transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">cancel</span>
+                      Kết thúc hội thoại
+                    </button>
+                  ) : null
                 ) : (
-                  <span className="text-xs bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-full">
+                  <span className="text-xs bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-[8px]">
                     Cuộc trò chuyện đã đóng
                   </span>
                 )}
@@ -551,28 +788,35 @@ export default function AdminChatsPage() {
 
             {/* Claim/Staff Status Banner */}
             {!selectedSession.isClosed && (
-              <div className="px-4 py-2 bg-white border-b text-xs flex justify-between items-center shrink-0">
+              <div className="px-4 py-3 bg-white border-b border-slate-100 text-xs flex justify-between items-center shrink-0">
                 {!selectedSession.adminId ? (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2.5 rounded-lg w-full flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <span className="material-symbols-outlined text-sm">warning</span>
-                      Chưa có nhân viên nhận hỗ trợ cuộc chat này.
-                    </span>
-                    <button
-                      onClick={claimRoom}
-                      className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1 px-3 rounded-full text-[11px] transition-colors cursor-pointer"
-                    >
-                      Nhận hỗ trợ
-                    </button>
-                  </div>
+                  selectedSession.isWaitingForSupport ? (
+                    <div className="bg-warning-container border border-warning/20 text-on-warning-container p-3 rounded-[8px] w-full flex items-center justify-between shadow-sm">
+                      <span className="flex items-center gap-2 font-semibold">
+                        <span className="material-symbols-outlined text-warning">warning</span>
+                        Khách hàng đang yêu cầu nhân viên hỗ trợ!
+                      </span>
+                      <button
+                        onClick={claimRoom}
+                        className="bg-warning hover:bg-warning/90 text-on-warning font-bold py-1.5 px-4 rounded-[8px] text-xs transition-colors cursor-pointer shadow-sm bouncy-hover"
+                      >
+                        Nhận hỗ trợ
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-100 border border-slate-200 text-slate-500 p-3 rounded-[8px] w-full flex items-center justify-center gap-2 font-medium">
+                      <span className="material-symbols-outlined text-sm">smart_toy</span>
+                      Trợ lý AI đang tiếp quản cuộc trò chuyện này.
+                    </div>
+                  )
                 ) : selectedSession.adminId === currentAdmin?.id ? (
-                  <div className="bg-green-50 border border-green-200 text-green-800 p-2.5 rounded-lg w-full flex items-center gap-1.5 font-medium">
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                  <div className="bg-success-container border border-success/20 text-on-success-container p-3 rounded-[8px] w-full flex items-center gap-2 font-medium">
+                    <span className="material-symbols-outlined text-success">check_circle</span>
                     Bạn đang hỗ trợ khách hàng này.
                   </div>
                 ) : (
-                  <div className="bg-rose-50 border border-rose-200 text-rose-800 p-2.5 rounded-lg w-full flex items-center gap-1.5 font-medium">
-                    <span className="material-symbols-outlined text-sm">lock</span>
+                  <div className="bg-error-container border border-error/20 text-on-error-container p-3 rounded-[8px] w-full flex items-center gap-2 font-medium">
+                    <span className="material-symbols-outlined text-error">lock</span>
                     Cuộc chat này đang được nhận hỗ trợ bởi nhân viên: <strong className="underline">{selectedSession.adminName}</strong>
                   </div>
                 )}
@@ -580,9 +824,9 @@ export default function AdminChatsPage() {
             )}
 
             {/* Messages area Zalo Style Background */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#e2e9f1]" style={{ scrollbarWidth: "thin" }}>
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-surface-container-lowest" style={{ scrollbarWidth: "thin" }}>
               {messages.length === 0 ? (
-                <div className="text-center text-slate-500 py-10 text-xs bg-white/40 rounded-xl p-4">
+                <div className="text-center text-slate-500 py-10 text-xs bg-white/40 rounded-[8px] p-4">
                   Không có tin nhắn nào trong phòng này.
                 </div>
               ) : (
@@ -592,7 +836,7 @@ export default function AdminChatsPage() {
                   if (isSystem) {
                     return (
                       <div key={msg.id} className="w-full flex justify-center my-2 select-none">
-                        <span className="bg-slate-200/90 text-slate-600 text-[11px] px-3 py-1 rounded-full shadow-sm">
+                        <span className="text-slate-500 text-[11px] italic">
                           {msg.messageText}
                         </span>
                       </div>
@@ -604,15 +848,15 @@ export default function AdminChatsPage() {
                       key={msg.id}
                       className={`flex flex-col ${msg.isFromAdmin ? "items-end" : "items-start"}`}
                     >
-                      <span className="text-[10px] text-slate-500 mb-0.5 px-1">
+                      <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
                         {msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       <div
-                        className={`max-w-[70%] rounded-2xl p-3 text-sm shadow-sm ${
+                        className={`max-w-[85%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed shadow-sm ${
                           msg.isFromAdmin
-                            ? "bg-[#cce4ff] text-[#081c36] rounded-tr-none"
-                            : "bg-white text-slate-800 rounded-tl-none border border-slate-100/30"
-                        } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none" : ""}`}
+                            ? "bg-primary text-white rounded-tr-sm"
+                            : "bg-white text-slate-700 rounded-tl-sm border border-slate-100/50"
+                        } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                       >
                         {isMediaUrl(msg.messageText) ? (
                           <img
@@ -624,11 +868,41 @@ export default function AdminChatsPage() {
                             }}
                           />
                         ) : (
-                          msg.messageText && <p className="whitespace-pre-wrap">{msg.messageText}</p>
+                          msg.messageText && (
+                            <div className="prose prose-sm max-w-none break-words leading-relaxed [&>p]:mb-0">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  code: ({ node, inline, className, children, ...props }: any) => {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    if (!inline && match && match[1] === 'product_card') {
+                                      try {
+                                        const data = JSON.parse(String(children).replace(/\n$/, ''));
+                                        return <AdminChatProductCard data={data} onZoomImage={setZoomedImage} />;
+                                      } catch (e) {
+                                        return <code className={className} {...props}>{children}</code>;
+                                      }
+                                    }
+                                    return <code className={className} {...props}>{children}</code>;
+                                  },
+                                  img: ({ node, ...props }) => (
+                                    <img
+                                      {...props}
+                                      className="max-w-[200px] h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 mt-2 shadow-sm"
+                                      onClick={() => setZoomedImage(typeof props.src === 'string' ? props.src : null)}
+                                      alt={props.alt || "Image"}
+                                    />
+                                  )
+                                }}
+                              >
+                                {msg.messageText}
+                              </ReactMarkdown>
+                            </div>
+                          )
                         )}
                       </div>
                       {msg.id < 0 && (
-                        <span className="text-[9px] text-[#0068ff] italic mt-0.5 px-1 animate-pulse">
+                        <span className="text-[10px] text-primary italic mt-1 px-2 animate-pulse font-medium">
                           Đang gửi...
                         </span>
                       )}
@@ -643,7 +917,7 @@ export default function AdminChatsPage() {
             <div className="bg-white border-t border-slate-200 flex flex-col shrink-0 relative">
               {/* Emoji/Sticker Picker Popup */}
               {showPicker && (
-                <div className="absolute bottom-full left-4 mb-2 w-80 h-72 bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="absolute bottom-full left-4 mb-2 w-80 h-72 bg-white rounded-[8px] shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
                   {/* Picker Tabs */}
                   <div className="flex border-b border-slate-100 text-xs shrink-0 select-none">
                     <button
@@ -714,16 +988,17 @@ export default function AdminChatsPage() {
                   <button
                     type="button"
                     onClick={() => setShowPicker(!showPicker)}
+                    disabled={isChatInputDisabled}
                     className={`hover:text-primary hover:bg-slate-100 p-1.5 rounded transition-colors material-symbols-outlined text-lg cursor-pointer ${
                       showPicker ? "text-primary bg-slate-100" : "text-slate-400"
-                    }`}
+                    } ${isChatInputDisabled ? "opacity-50 cursor-not-allowed hover:text-slate-400 hover:bg-transparent" : ""}`}
                     title="Cảm xúc & Sticker"
                   >
                     sentiment_satisfied
                   </button>
                   
                   {/* Phím tắt trả lời nhanh */}
-                  {!selectedSession.isClosed && !isDifferentAdminSupporting && currentAdmin && (
+                  {!isChatInputDisabled && currentAdmin && (
                     <button
                       type="button"
                       onClick={() => {
@@ -750,9 +1025,11 @@ export default function AdminChatsPage() {
                       ? "Cuộc hội thoại đã đóng"
                       : isDifferentAdminSupporting
                       ? `Nhân viên khác (${selectedSession.adminName}) đang nhận hỗ trợ`
+                      : isNoAdminSupporting
+                      ? "Bạn cần Nhận hỗ trợ để có thể nhắn tin"
                       : "Nhập tin nhắn..."
                   }
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"
@@ -763,6 +1040,29 @@ export default function AdminChatsPage() {
                 </button>
               </form>
             </div>
+
+            {/* Image Zoom Modal */}
+            {zoomedImage && (
+              <div 
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+                onClick={() => setZoomedImage(null)}
+              >
+                <div className="relative max-w-4xl max-h-[90vh] flex items-center justify-center">
+                  <button 
+                    onClick={() => setZoomedImage(null)}
+                    className="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                  <img 
+                    src={zoomedImage} 
+                    alt="Zoomed" 
+                    className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* Placeholder */

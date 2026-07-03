@@ -20,7 +20,7 @@ namespace PolyBabyAPI.DTOs
         public bool Status { get; set; }
         public bool EmailConfirmed { get; set; }
 
-        /// <summary>true nếu LockoutEnd > DateTime.UtcNow</summary>
+        /// <summary>true nếu LockoutEnd > DateTime.Now</summary>
         public bool IsLocked { get; set; }
 
         /// <summary>null nếu không bị khóa</summary>
@@ -61,6 +61,14 @@ namespace PolyBabyAPI.DTOs
         public DateTime RegisterDate { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool Status { get; set; }
+        public bool ReceiveEmailNotifications { get; set; }
+        public bool ReceiveOrderUpdates { get; set; }
+        public bool ReceivePromotions { get; set; }
+        public bool IsOnboarded { get; set; }
+        public string? ReferralCode { get; set; }
+        public decimal WalletBalance { get; set; }
+        public decimal CoinsBalance { get; set; }
+        public List<BabyProfileDto> BabyProfiles { get; set; } = new List<BabyProfileDto>();
     }
 
     /// <summary>
@@ -90,14 +98,26 @@ namespace PolyBabyAPI.DTOs
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty;
 
+        private string? _phoneNumber;
+
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
         [StringLength(13)]
-        public string? PhoneNumber { get; set; }
+        public string? PhoneNumber
+        {
+            get => _phoneNumber;
+            set => _phoneNumber = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+
 
         public DateTime? DateOfBirth { get; set; }
 
         /// <summary>URL Cloudinary sau khi upload riêng, null = giữ nguyên</summary>
         public string? Avatar { get; set; }
+
+        public bool? ReceiveEmailNotifications { get; set; }
+        public bool? ReceiveOrderUpdates { get; set; }
+        public bool? ReceivePromotions { get; set; }
+        public bool? IsOnboarded { get; set; }
     }
 
     /// <summary>
@@ -108,6 +128,17 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Mật khẩu hiện tại là bắt buộc")]
         public string CurrentPassword { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Mật khẩu mới là bắt buộc")]
+        [MinLength(6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
+        [Compare("NewPassword", ErrorMessage = "Mật khẩu xác nhận không khớp")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
+
+    public class SetPasswordDto
+    {
         [Required(ErrorMessage = "Mật khẩu mới là bắt buộc")]
         [MinLength(6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự")]
         public string NewPassword { get; set; } = string.Empty;

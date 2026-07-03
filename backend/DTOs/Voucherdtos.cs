@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.DTOs
@@ -41,6 +41,10 @@ namespace PolyBabyAPI.DTOs
 
             public int VisibilityType { get; set; } = 1;
             public int ExclusiveType { get; set; } = 0;
+            public int VoucherType { get; set; } = 1;
+            public bool IsFreeShipping { get; set; } = false;
+            public decimal? MaxShippingDiscount { get; set; }
+            public int UsageLimitPerUser { get; set; } = 1;
         }
 
         public class UpdateVoucherRequest
@@ -53,15 +57,19 @@ namespace PolyBabyAPI.DTOs
             public DateTime? EndDate { get; set; }
             public int? Quantity { get; set; }
             public bool? IsActive { get; set; }
-            public string? Name { get; internal set; }
-            public decimal DiscountValue { get; internal set; }
-            public int DiscountType { get; internal set; }
-            public decimal MinOrderValue { get; internal set; }
-            public decimal MaxDiscount { get; internal set; }
-            public int TotalQuantity { get; internal set; }
-            public bool Status { get; internal set; }
-            public int VisibilityType { get; internal set; }
-            public int ExclusiveType { get; internal set; }
+            public string? Name { get; set; }
+            public decimal DiscountValue { get; set; }
+            public int DiscountType { get; set; }
+            public decimal MinOrderValue { get; set; }
+            public decimal MaxDiscount { get; set; }
+            public int TotalQuantity { get; set; }
+            public bool Status { get; set; }
+            public int VisibilityType { get; set; }
+            public int ExclusiveType { get; set; }
+            public int VoucherType { get; set; }
+            public bool IsFreeShipping { get; set; }
+            public decimal? MaxShippingDiscount { get; set; }
+            public int UsageLimitPerUser { get; set; } = 1;
         }
 
         public class ActivateExclusiveVoucherRequest

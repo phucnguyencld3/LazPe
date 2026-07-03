@@ -9,6 +9,7 @@ export interface CategoryInfo {
   status: boolean;
   createdAt: string;
   createdBy?: string | null;
+  productCount?: number;
 }
 
 export interface CreateCategoryPayload {
@@ -97,3 +98,86 @@ export const toggleCategoryStatus = async (token: string, id: number): Promise<a
   }
   return res.json();
 };
+
+export interface CategoryDetailInfo {
+  categoryID: number;
+  categoryName: string;
+  description?: string;
+  parentID: number | null;
+  parentCategoryName?: string | null;
+  level: number;
+  sortOrder?: string | null;
+  status: boolean;
+  createdAt: string;
+  createdBy?: string | null;
+  productCount: number;
+  subCategories: any[];
+  products: any[];
+}
+
+export const fetchCategoryById = async (token: string, id: number): Promise<CategoryDetailInfo> => {
+  const res = await fetch(`${API_BASE_URL}/Category/${id}/detail`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch category details");
+  const result = await res.json();
+  return result.data;
+};
+
+export const exportCategoriesExcel = async (
+  token: string,
+  searchTerm: string = "",
+  status: boolean | null = null
+): Promise<Blob> => {
+  const params = new URLSearchParams({
+    searchTerm: searchTerm
+  });
+  if (status !== null) {
+    params.append("status", status.toString());
+  }
+
+  const res = await fetch(`${API_BASE_URL}/Category/export-excel?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to export categories Excel");
+  return res.blob();
+};
+
+export const downloadCategoryTemplate = async (): Promise<Blob> => {
+  const res = await fetch(`${API_BASE_URL}/CategoryImport/template`);
+  if (!res.ok) throw new Error("Failed to download category template");
+  return res.blob();
+};
+
+export const validateCategoryImport = async (token: string, file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE_URL}/CategoryImport/validate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to validate categories excel file");
+  }
+  return res.json();
+};
+
+export const commitCategoryImport = async (token: string, payload: any): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/CategoryImport/commit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to commit categories import");
+  }
+  return res.json();
+};
+

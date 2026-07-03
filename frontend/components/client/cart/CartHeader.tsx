@@ -1,25 +1,26 @@
 import React from "react";
+import { ChevronRight } from "lucide-react";
 
 export const CartHeader: React.FC = () => {
   return (
-    <div className="flex flex-col items-center mb-12">
-      <h1 className="font-headline-lg text-4xl font-bold text-primary mb-6 tracking-tight">Giỏ hàng của bạn</h1>
+    <div className="flex flex-col items-center mb-8">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-4 tracking-tight">Giỏ hàng của bạn</h1>
       
       {/* Checkout Steps */}
-      <div className="flex items-center gap-sm">
-        <div className="flex items-center gap-xs">
-          <span className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm">1</span>
-          <span className="font-quicksand font-bold text-primary text-sm">Giỏ hàng</span>
+      <div className="flex items-center space-x-3 text-sm">
+        <div className="flex items-center text-rose-500 font-semibold">
+          <span className="w-6 h-6 rounded-[8px] bg-rose-500 text-white flex items-center justify-center font-bold text-xs mr-2 shadow-sm">1</span>
+          <span>Giỏ hàng</span>
         </div>
-        <div className="w-12 h-[2px] bg-outline-variant"></div>
-        <div className="flex items-center gap-xs">
-          <span className="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm">2</span>
-          <span className="font-quicksand font-medium text-slate-500 text-sm">Thanh toán</span>
+        <ChevronRight className="h-4 w-4 text-slate-300" />
+        <div className="flex items-center text-slate-400">
+          <span className="w-6 h-6 rounded-[8px] bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs mr-2">2</span>
+          <span>Thanh toán</span>
         </div>
-        <div className="w-12 h-[2px] bg-outline-variant"></div>
-        <div className="flex items-center gap-xs">
-          <span className="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm">3</span>
-          <span className="font-quicksand font-medium text-slate-500 text-sm">Hoàn tất</span>
+        <ChevronRight className="h-4 w-4 text-slate-300" />
+        <div className="flex items-center text-slate-400">
+          <span className="w-6 h-6 rounded-[8px] bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-xs mr-2">3</span>
+          <span>Hoàn tất</span>
         </div>
       </div>
     </div>

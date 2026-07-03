@@ -26,7 +26,7 @@ export const ProductControlBar: React.FC<ProductControlBarProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div className="p-4 sm:px-5 flex flex-col sm:flex-row justify-between items-center gap-4">
       {/* Product Counter */}
       <div className="text-sm text-slate-600 font-medium flex items-center gap-2">
         <span>Hiển thị:</span>
@@ -38,7 +38,7 @@ export const ProductControlBar: React.FC<ProductControlBarProps> = ({
         {/* Mobile Filter Toggle Button */}
         <button
           onClick={() => setShowMobileFilters(true)}
-          className="lg:hidden h-10 px-4 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-colors"
+          className="lg:hidden h-10 px-4 rounded-[8px] border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-colors"
         >
           <SlidersHorizontal size={14} />
           Bộ lọc

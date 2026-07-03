@@ -5,6 +5,7 @@ export interface AdminProductInfo {
   code: string;
   productName: string;
   description: string;
+  specifications?: string;
   price: number;
   productDiscountPercent: number;
   stock: number;
@@ -57,7 +58,8 @@ export const fetchAdminProducts = async (
   pageSize: number = 12,
   searchTerm: string = "",
   categoryId: number | null = null,
-  status: boolean | null = null
+  status: boolean | null = null,
+  supplierId: number | null = null
 ): Promise<AdminProductPagination> => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -71,6 +73,10 @@ export const fetchAdminProducts = async (
 
   if (status !== null) {
     params.append("status", status.toString());
+  }
+
+  if (supplierId !== null) {
+    params.append("supplierId", supplierId.toString());
   }
 
   const res = await fetch(`${API_BASE_URL}/Product?${params.toString()}`, {
@@ -126,6 +132,13 @@ export const fetchCategoriesForSelect = async (token: string): Promise<CategoryS
 };
 
 // Detailed definitions
+export interface AdminVariantOptionValue {
+  variantOptionValueID: number;
+  variantID: number;
+  productOptionValueID: number;
+  productOptionValue?: AdminProductOptionValue;
+}
+
 export interface AdminVariantInfo {
   variantID: number;
   productID: number;
@@ -140,6 +153,7 @@ export interface AdminVariantInfo {
   description?: string | null;
   status: boolean;
   createdAt?: string;
+  variantOptionValues: AdminVariantOptionValue[];
 }
 
 export interface AdminProductOptionValue {
@@ -161,8 +175,10 @@ export interface AdminProductOption {
 export interface AdminProductDetailInfo {
   productID: number;
   code: string;
+  slug?: string;
   productName: string;
   description: string;
+  specifications?: string;
   price: number;
   productDiscountPercent: number;
   stock: number;
@@ -181,6 +197,7 @@ export interface AdminProductDetailInfo {
   } | null;
   variants: AdminVariantInfo[];
   productOptions: AdminProductOption[];
+  imageUrls?: string[];
 }
 
 export const fetchAdminProductDetail = async (token: string, id: string): Promise<AdminProductDetailInfo> => {
@@ -368,6 +385,26 @@ export const toggleVariantStatus = async (
   return res.json();
 };
 
+export const bulkUpdateVariants = async (
+  token: string,
+  updates: { variantId: number; unitPrice: number; stock: number }[]
+): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Variant/bulk-update`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(updates)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to bulk update variants");
+  }
+  return res.json();
+};
+
 export const deleteProductVariant = async (token: string, variantId: number): Promise<any> => {
   const res = await fetch(`${API_BASE_URL}/Variant/${variantId}`, {
     method: "DELETE",
@@ -483,11 +520,49 @@ export interface CreateProductPayload {
   code?: string;
   productName: string;
   description?: string;
+  specifications?: string;
   price?: number;
   productDiscountPercent?: number;
   stock?: number;
   categoryID: number;
   supplierID?: number | null;
+}
+
+export interface CreateFullProductPayload {
+  code?: string;
+  productName: string;
+  description?: string;
+  specifications?: string;
+  price?: number;
+  productDiscountPercent?: number;
+  stock?: number;
+  categoryID: number;
+  supplierID?: number | null;
+  status?: boolean;
+  images?: string[];
+  options: {
+    name: string;
+    displayOrder: number;
+    values: {
+      value: string;
+      price: number;
+      displayOrder: number;
+    }[];
+  }[];
+  variants: {
+    variantName: string;
+    unitPrice: number;
+    variantDiscountPercent: number;
+    stock: number;
+    sku: string;
+    imageUrl?: string | null;
+    description?: string | null;
+    status: boolean;
+    optionValues: {
+      optionName: string;
+      value: string;
+    }[];
+  }[];
 }
 
 export const fetchSuppliersForSelect = async (token: string): Promise<SupplierSelectOption[]> => {
@@ -512,7 +587,32 @@ export const createProduct = async (token: string, payload: CreateProductPayload
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.errors) {
+      const messages = Object.values(errorData.errors).flat().join(", ");
+      throw new Error(messages || errorData.title || "Failed to create product");
+    }
     throw new Error(errorData.message || "Failed to create product");
+  }
+  return res.json();
+};
+
+export const createFullProduct = async (token: string, payload: CreateFullProductPayload): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Product/full`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    if (errorData.errors) {
+      const messages = Object.values(errorData.errors).flat().join(", ");
+      throw new Error(messages || errorData.title || "Failed to create full product");
+    }
+    throw new Error(errorData.message || "Failed to create full product");
   }
   return res.json();
 };
@@ -521,12 +621,15 @@ export interface UpdateProductPayload {
   code?: string;
   productName: string;
   description?: string;
+  specifications?: string;
   price?: number;
   productDiscountPercent?: number;
   stock?: number;
   categoryID: number;
   supplierID?: number | null;
   status: boolean;
+  images?: string[];
+  clearVariantImages?: boolean;
 }
 
 export const updateProduct = async (token: string, id: number, payload: UpdateProductPayload): Promise<any> => {
@@ -541,6 +644,10 @@ export const updateProduct = async (token: string, id: number, payload: UpdatePr
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (errorData.errors) {
+      const messages = Object.values(errorData.errors).flat().join(", ");
+      throw new Error(messages || errorData.title || "Failed to update product");
+    }
     throw new Error(errorData.message || "Failed to update product");
   }
   return res.json();

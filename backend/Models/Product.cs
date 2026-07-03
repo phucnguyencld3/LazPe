@@ -1,8 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace PolyBabyAPI.Models
 {
+    [Index(nameof(Slug), IsUnique = true)]
     public class Product
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -20,9 +22,11 @@ namespace PolyBabyAPI.Models
         public string ProductName { get; set; }
 
         [Required(ErrorMessage = "Mô tả sản phẩm là bắt buộc")]
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
+
+        [Display(Name = "Thông số kỹ thuật (JSON)")]
+        public string? Specifications { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Giá")]
@@ -43,6 +47,30 @@ namespace PolyBabyAPI.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; }
 
+        // SEO Optimization
+        [StringLength(255)]
+        [Display(Name = "Đường dẫn thân thiện (Slug)")]
+        public string? Slug { get; set; }
+
+        [StringLength(255)]
+        [Display(Name = "Tiêu đề SEO")]
+        public string? MetaTitle { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Mô tả SEO")]
+        public string? MetaDescription { get; set; }
+
+        // Rating Cache
+        [Display(Name = "Điểm đánh giá trung bình")]
+        public double AverageRating { get; set; } = 0;
+
+        [Display(Name = "Số lượng đánh giá")]
+        public int ReviewCount { get; set; } = 0;
+
+        // Soft Delete
+        [Display(Name = "Đã xóa")]
+        public bool IsDeleted { get; set; } = false;
+
         // Navigation
         [ForeignKey(nameof(CategoryID))]
         public virtual Categories? Category { get; set; }
@@ -50,32 +78,10 @@ namespace PolyBabyAPI.Models
         [ForeignKey(nameof(SupplierID))]
         public virtual Supplier? Supplier { get; set; }
 
-        [NotMapped]
-        public int TotalStock => Variants?.Sum(v => v.Stock) ?? 0;
-
-        [NotMapped]
-        public decimal MinPrice
-        {
-            get
-            {
-                var activeVariants = Variants?.Where(v => v.Status).ToList();
-                return activeVariants?.Any() == true ? activeVariants.Min(v => v.UnitPrice) : 0;
-            }
-        }
-
-        [NotMapped]
-        public decimal MaxPrice
-        {
-            get
-            {
-                var activeVariants = Variants?.Where(v => v.Status).ToList();
-                return activeVariants?.Any() == true ? activeVariants.Max(v => v.UnitPrice) : 0;
-            }
-        }
-
 
         // ✅ Thêm navigation property thiếu
         public virtual ICollection<Variant>? Variants { get; set; } = new List<Variant>();
         public virtual ICollection<ProductOption> ProductOptions { get; set; } = new List<ProductOption>();
+        public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     }
 }

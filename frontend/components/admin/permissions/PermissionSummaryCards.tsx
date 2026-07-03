@@ -10,38 +10,47 @@ export const PermissionSummaryCards: React.FC<PermissionSummaryCardsProps> = ({
   totalGroups,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-lg">
-      <div className="p-lg rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm flex items-start justify-between">
-        <div>
-          <p className="font-label-md text-label-md text-on-surface-variant font-bold">Tổng số quyền hệ thống</p>
-          <h3 className="font-display-lg text-display-lg text-primary mt-xs">{totalSystemPermissions}</h3>
-          <p className="text-xs text-on-surface-variant/60 mt-xs">Được định nghĩa trong cơ sở dữ liệu</p>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
+      {/* Card 1: Tổng số quyền hệ thống */}
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+            <span className="material-symbols-outlined text-[20px]">vpn_key</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Quyền hệ thống</span>
+            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Định nghĩa trong DB</span>
+          </div>
         </div>
-        <div className="p-sm bg-primary-container/20 rounded-lg">
-          <span className="material-symbols-outlined text-primary text-[28px]">vpn_key</span>
-        </div>
+        <span className="text-2xl font-extrabold text-slate-800">{totalSystemPermissions}</span>
       </div>
 
-      <div className="p-lg rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm flex items-start justify-between">
-        <div>
-          <p className="font-label-md text-label-md text-on-surface-variant font-bold">Nhóm tài nguyên phân quyền</p>
-          <h3 className="font-display-lg text-display-lg text-secondary mt-xs">{totalGroups}</h3>
-          <p className="text-xs text-on-surface-variant/60 mt-xs">Mô-đun chức năng được bảo vệ</p>
+      {/* Card 2: Nhóm tài nguyên */}
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">grid_view</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Nhóm tài nguyên</span>
+            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Mô-đun bảo vệ</span>
+          </div>
         </div>
-        <div className="p-sm bg-secondary-container/20 rounded-lg">
-          <span className="material-symbols-outlined text-secondary text-[28px]">grid_view</span>
-        </div>
+        <span className="text-2xl font-extrabold text-slate-800">{totalGroups}</span>
       </div>
 
-      <div className="p-lg rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm flex items-start justify-between">
-        <div>
-          <p className="font-label-md text-label-md text-on-surface-variant font-bold">Vai trò trong trang này</p>
-          <h3 className="font-display-lg text-display-lg text-tertiary mt-xs">Admin / Staff / User</h3>
-          <p className="text-xs text-on-surface-variant/60 mt-xs">Theo chuẩn phân quyền ASP.NET Identity</p>
+      {/* Card 3: Vai trò */}
+      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">shield</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Vai trò chính</span>
+            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Chuẩn Identity</span>
+          </div>
         </div>
-        <div className="p-sm bg-tertiary-container/20 rounded-lg">
-          <span className="material-symbols-outlined text-tertiary text-[28px]">shield</span>
-        </div>
+        <span className="text-sm font-extrabold text-slate-700">Admin / Staff</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interface
 {
@@ -18,5 +18,6 @@ namespace PolyBabyAPI.Interface
         Task<IEnumerable<Supplier>> SearchSuppliersAsync(string searchTerm);
         Task<int> GetProductCountBySupplierAsync(int supplierId);
         Task<bool> CanDeleteSupplierAsync(int supplierId);
+        Task<byte[]> ExportExcelAsync(string searchTerm, bool? status);
     }
 }

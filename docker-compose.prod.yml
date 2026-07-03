@@ -1,0 +1,79 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: lazpe-db-prod
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=LazPeSecurePwd@2026!
+    ports:
+      - "127.0.0.1:14330:1433"
+    volumes:
+      - mssql_data_prod:/var/opt/mssql
+    networks:
+      - lazpe-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lazpe-backend-prod
+    restart: always
+    ports:
+      - "5101:8080"
+    volumes:
+      - ./Local:/Local
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=LazPeDB;User Id=sa;Password=LazPeSecurePwd@2026!;TrustServerCertificate=True;
+      - EmailSettings__BrevoApiKey=
+      - EmailSettings__SmtpPassword=nwjy ukee qeee gsyh
+      - VnPay__ReturnUrl=https://api.lazpe.store/api/payment/vnpay-return
+      - VnPay__FrontendBaseUrl=https://lazpe.store
+      - Meilisearch__Url=http://meilisearch:7700
+      - Meilisearch__ApiKey=LazPeProdMasterKey@2026!
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - lazpe-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://api.lazpe.store/api
+    container_name: lazpe-frontend-prod
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - PORT=3000
+    depends_on:
+      - backend
+    networks:
+      - lazpe-network
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.18
+    container_name: lazpe-meilisearch-prod
+    restart: always
+    ports:
+      - "127.0.0.1:7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=LazPeProdMasterKey@2026!
+      - MEILI_ENV=production
+    volumes:
+      - meili_data_prod:/meili_data
+    networks:
+      - lazpe-network
+
+volumes:
+  mssql_data_prod:
+  meili_data_prod:
+
+networks:
+  lazpe-network:
+    driver: bridge

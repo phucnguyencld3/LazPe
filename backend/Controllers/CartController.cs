@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -61,6 +61,8 @@ namespace PolyBabyAPI.Controllers
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
             }
 
+            _logger.LogInformation("Received AddToCart: VariantID={VariantID}, BundleID={BundleID}, Quantity={Quantity}, SelectedGiftVariantId={SelectedGiftVariantId}", dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId);
+
             // ✅ Kiểm tra phải có ít nhất VariantID hoặc BundleID
             if (!dto.IsValid)
             {
@@ -75,7 +77,7 @@ namespace PolyBabyAPI.Controllers
                     return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
                 }
 
-                await _cartService.AddToCartAsync(userId, dto.VariantID, dto.BundleID, dto.Quantity);
+                await _cartService.AddToCartAsync(userId, dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId);
 
                 var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
                 var cartDto = MapCartToDto(updatedCart);
@@ -242,6 +244,48 @@ namespace PolyBabyAPI.Controllers
         #region Voucher Management
 
         /// <summary>
+        /// Tự động áp dụng mã giảm giá tốt nhất
+        /// </summary>
+        [HttpPost("auto-apply-vouchers")]
+        public async Task<IActionResult> AutoApplyVouchers()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var cart = await _cartService.GetCartByUserIdAsync(userId);
+                var result = await _cartService.AutoApplyBestVouchersAsync(cart.CartID);
+
+                if (result.Success)
+                {
+                    var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
+                    var cartDto = MapCartToDto(updatedCart);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        appliedCodes = result.AppliedCodes,
+                        data = cartDto
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error auto applying vouchers");
+                return StatusCode(500, new { success = false, message = "Có lỗi khi tự động áp dụng mã giảm giá" });
+            }
+        }
+
+        /// <summary>
         /// Áp dụng mã giảm giá
         /// </summary>
         [HttpPost("apply-voucher")]
@@ -291,7 +335,7 @@ namespace PolyBabyAPI.Controllers
         /// Hủy áp dụng mã giảm giá
         /// </summary>
         [HttpPost("remove-voucher")]
-        public async Task<IActionResult> RemoveVoucher()
+        public async Task<IActionResult> RemoveVoucher([FromQuery] int? type = null)
         {
             try
             {
@@ -302,15 +346,19 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var cart = await _cartService.GetCartByUserIdAsync(userId);
-                await _cartService.RemoveVoucherAsync(cart.CartID);
+                await _cartService.RemoveVoucherAsync(cart.CartID, type);
 
                 var updatedCart = await _cartService.GetCartByUserIdAsync(userId);
                 var cartDto = MapCartToDto(updatedCart);
 
+                var message = type == 1 ? "Đã hủy mã giảm giá sản phẩm" 
+                            : type == 2 ? "Đã hủy mã giảm giá vận chuyển" 
+                            : "Đã hủy mã giảm giá";
+
                 return Ok(new
                 {
                     success = true,
-                    message = "Đã hủy mã giảm giá",
+                    message = message,
                     data = cartDto
                 });
             }
@@ -334,18 +382,17 @@ namespace PolyBabyAPI.Controllers
         {
             if (cart == null) return new CartDto();
 
-            var subTotal = cart.CartDetails.Sum(cd => cd.TotalPrice);
-            var discountAmount = cart.Voucher != null ? (subTotal - cart.TotalAmount) : 0;
-
             return new CartDto
             {
                 CartID = cart.CartID,
                 UserID = cart.UserID,
                 CreatedDate = cart.CreatedDate,
                 TotalAmount = cart.TotalAmount,
-                SubTotal = subTotal,
-                DiscountAmount = discountAmount,
+                SubTotal = cart.SubTotal,
+                DiscountAmount = cart.DiscountAmount,
+                ShippingDiscountAmount = cart.ShippingDiscountAmount,
                 Voucher = cart.Voucher != null ? MapVoucherToDto(cart.Voucher) : null,
+                ShippingVoucher = cart.ShippingVoucher != null ? MapVoucherToDto(cart.ShippingVoucher) : null,
                 CartDetails = cart.CartDetails.Select(MapCartDetailToDto).ToList()
             };
         }
@@ -361,12 +408,13 @@ namespace PolyBabyAPI.Controllers
                 Quantity = detail.Quantity,
                 UnitPrice = detail.UnitPrice,
                 TotalPrice = detail.TotalPrice,
+                IsGift = detail.IsGift,
                 Product = detail.Variant?.Product != null ? new ProductCartDto
                 {
                     ProductID = detail.Variant.Product.ProductID,
                     Name = detail.Variant.Product.ProductName,
                     ImageUrl = GetProductImageUrl(detail.Variant.Product),
-                    Slug = GenerateProductSlug(detail.Variant.Product.ProductName)
+                    Slug = !string.IsNullOrEmpty(detail.Variant.Product.Slug) ? detail.Variant.Product.Slug : GenerateProductSlug(detail.Variant.Product.ProductName)
                 } : null,
                 Variant = detail.Variant != null ? new VariantCartDto
                 {
@@ -395,20 +443,26 @@ namespace PolyBabyAPI.Controllers
                 VoucherID = voucher.VoucherID,
                 Code = voucher.Code,
                 Name = voucher.Name,
-                Description = $"Giảm {GetDiscountDescription(voucher)}",
+                Description = voucher.VoucherType == VoucherType.ShippingDiscount 
+                    ? (voucher.IsFreeShipping ? "Miễn phí vận chuyển" : $"Giảm phí vận chuyển {GetDiscountDescription(voucher)}") 
+                    : $"Giảm {GetDiscountDescription(voucher)}",
                 DiscountAmount = voucher.DiscountType == 2 ? voucher.DiscountValue : 0,
                 DiscountPercent = voucher.DiscountType == 1 ? voucher.DiscountValue : 0,
                 MinOrderValue = voucher.MinOrderValue,
                 MaxDiscount = voucher.MaxDiscount,
                 StartDate = voucher.StartDate,
                 EndDate = voucher.EndDate,
-                IsPercentage = voucher.DiscountType == 1
+                IsPercentage = voucher.DiscountType == 1,
+                VoucherType = (int)voucher.VoucherType,
+                IsFreeShipping = voucher.IsFreeShipping,
+                MaxShippingDiscount = voucher.MaxShippingDiscount
             };
         }
 
         private string? GetProductImageUrl(Product product)
         {
-            return "/assets/img/products/default-product.jpg";
+            var img = product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
+            return !string.IsNullOrEmpty(img) ? img : "/assets/img/products/default-product.jpg";
         }
 
         private string GenerateProductSlug(string productName)

@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.DTOs;
+using PolyBabyAPI.DTOs;
 
 namespace PolyBabyAPI.Interfaces
 {
@@ -13,7 +13,8 @@ namespace PolyBabyAPI.Interfaces
         Task<(List<UserDto> users, int totalCount)> GetUsersPagedAsync(
             string? search = null,
             int page = 1,
-            int pageSize = 10);
+            int pageSize = 10,
+            bool onlyWithPermissions = false);
 
         /// <summary>
         /// Lấy thông tin user theo ID
@@ -39,5 +40,10 @@ namespace PolyBabyAPI.Interfaces
         /// Lấy thống kê users
         /// </summary>
         Task<UserStatisticsDto> GetUserStatisticsAsync();
+
+        /// <summary>
+        /// Xuất danh sách users ra Excel
+        /// </summary>
+        Task<byte[]> ExportExcelAsync(string? search, bool onlyWithPermissions);
     }
 }

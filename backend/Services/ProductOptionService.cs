@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -31,6 +31,7 @@ namespace PolyBabyAPI.Services
                     CreatedAt = po.CreatedAt,
                     CreatedBy = po.CreatedBy,
                     ProductOptionValues = po.ProductOptionValues
+                        .Where(v => !v.IsDeleted)
                         .OrderBy(v => v.DisplayOrder)
                         .Select(v => new ProductOptionValueDto
                         {
@@ -59,6 +60,7 @@ namespace PolyBabyAPI.Services
                     CreatedAt = po.CreatedAt,
                     CreatedBy = po.CreatedBy,
                     ProductOptionValues = po.ProductOptionValues
+                        .Where(v => !v.IsDeleted)
                         .OrderBy(v => v.DisplayOrder)
                         .Select(v => new ProductOptionValueDto
                         {
@@ -203,7 +205,7 @@ namespace PolyBabyAPI.Services
 
                 // Check duplicate value
                 var exists = await _context.ProductOptionValues
-                    .AnyAsync(v => v.ProductOptionID == optionId && v.Value == dto.Value);
+                    .AnyAsync(v => v.ProductOptionID == optionId && v.Value == dto.Value && !v.IsDeleted);
                 if (exists)
                     return new ServiceResult<ProductOptionValueDto> { Success = false, Message = $"Giá trị '{dto.Value}' đã tồn tại" };
 
@@ -251,9 +253,8 @@ namespace PolyBabyAPI.Services
                 if (value == null)
                     return new ServiceResult<ProductOptionValueDto> { Success = false, Message = "Không tìm thấy giá trị thuộc tính" };
 
-                // Check duplicate (exclude self)
                 var exists = await _context.ProductOptionValues
-                    .AnyAsync(v => v.ProductOptionID == value.ProductOptionID && v.Value == dto.Value && v.ProductOptionValueID != valueId);
+                    .AnyAsync(v => v.ProductOptionID == value.ProductOptionID && v.Value == dto.Value && v.ProductOptionValueID != valueId && !v.IsDeleted);
                 if (exists)
                     return new ServiceResult<ProductOptionValueDto> { Success = false, Message = $"Giá trị '{dto.Value}' đã tồn tại" };
 
@@ -295,13 +296,14 @@ namespace PolyBabyAPI.Services
                     return new ServiceResult<bool> { Success = false, Message = "Không tìm thấy giá trị thuộc tính" };
 
                 if (value.VariantOptionValues.Any())
-                    return new ServiceResult<bool>
-                    {
-                        Success = false,
-                        Message = "Không thể xóa giá trị đang được sử dụng bởi biến thể. Vui lòng xóa biến thể liên quan trước."
-                    };
-
-                _context.ProductOptionValues.Remove(value);
+                {
+                    value.IsDeleted = true;
+                    _context.ProductOptionValues.Update(value);
+                }
+                else
+                {
+                    _context.ProductOptionValues.Remove(value);
+                }
                 await _context.SaveChangesAsync();
 
                 return new ServiceResult<bool> { Success = true, Data = true, Message = "Xóa giá trị thành công" };

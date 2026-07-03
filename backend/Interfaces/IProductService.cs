@@ -8,11 +8,13 @@ namespace PolyBabyAPI.Interfaces
             int page, int pageSize, string searchTerm = "",
             int? categoryId = null, int? supplierId = null, bool? status = null,
             decimal? minPrice = null, decimal? maxPrice = null,
-            string sortBy = "CreatedAt", string sortDirection = "desc");
+            string sortBy = "CreatedAt", string sortDirection = "desc", bool? hasDiscount = null);
 
         Task<ProductDto?> GetProductByIdAsync(int id);
         Task<ProductDetailDto?> GetProductDetailAsync(int id);
+        Task<ProductDetailDto?> GetProductBySlugAsync(string slug);
         Task<ServiceResult<ProductDto>> CreateProductAsync(CreateProductDto dto);
+        Task<ServiceResult<ProductDto>> CreateFullProductAsync(CreateFullProductDto dto);
         Task<ServiceResult<ProductDto>> UpdateProductAsync(int id, UpdateProductDto dto, string userId);
         Task<ServiceResult<bool>> DeleteProductAsync(int id);
         Task<ServiceResult<bool>> ToggleProductStatusAsync(int id);
@@ -20,5 +22,7 @@ namespace PolyBabyAPI.Interfaces
         Task<List<SupplierSelectDto>> GetSuppliersForSelectAsync();
         Task<bool> IsProductCodeExistAsync(string code, int? excludeId = null);
         Task<object> GetProductStatsAsync();
+        Task<ServiceResult<object>> SyncSeoFieldsAsync();
+        void ClearProductCache();
     }
 }

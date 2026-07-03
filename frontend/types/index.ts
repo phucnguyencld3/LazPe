@@ -39,19 +39,32 @@ export interface Variant {
 
 export interface Product {
   id: number;
+  slug?: string;
   name: string;
   description: string;
+  specifications?: string;
   price: number;
   discountPrice?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  minEffectivePrice?: number;
+  maxEffectivePrice?: number;
+  limitExceeded?: boolean;
+  variantCount?: number;
   image?: string;
+  imageUrls?: string[];
   rating?: number;
   ratingCount?: number;
   categoryId: number;
   categoryName?: string;
   inStock: boolean;
   quantity?: number;
+  isBundle?: boolean;
   variants?: Variant[];
   productOptions?: ProductOption[];
+  quantityNeeded?: number;
+  note?: string | null;
+  priority?: string;
 }
 
 export interface Category {
@@ -61,6 +74,7 @@ export interface Category {
   image?: string;
   parentId?: number | null;
   level?: number;
+  productCount?: number;
 }
 
 export interface Voucher {
@@ -78,12 +92,44 @@ export interface Voucher {
   remainingQuantity: number;
   visibilityType: string;
   isCollected: boolean;
+  voucherType?: number;
+  isFreeShipping?: boolean;
+  maxShippingDiscount?: number | null;
+}
+
+export interface FlashSaleItem {
+  flashSaleItemId: number;
+  campaignId: number;
+  itemType: number;
+  referenceId: number;
+  productId?: number;
+  itemName?: string;
+  imageUrl?: string;
+  originalPrice: number;
+  discountPrice: number;
+  totalQuantity: number;
+  soldQuantity: number;
+  status: number;
+  maxQuantityPerUser?: number;
+  userPurchasedQuantity?: number;
+}
+
+export interface FlashSaleCampaign {
+  campaignId: number;
+  name: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  status: number;
+  flashSaleItems: FlashSaleItem[];
 }
 
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
+  isLocked?: boolean;
+  failedCount?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -93,3 +139,29 @@ export interface PaginatedResponse<T> {
   currentPage: number;
   pageSize: number;
 }
+
+export enum AlertType {
+  PriceDrop = 0,
+  BackInStock = 1
+}
+
+export interface CreateProductAlertDto {
+  productId: number;
+  variantId?: number;
+  alertType: AlertType;
+  targetPrice?: number;
+}
+
+export interface ProductAlert {
+  id: number;
+  userId: string;
+  productId: number;
+  variantId?: number;
+  productName: string;
+  imageUrl?: string;
+  alertType: AlertType;
+  targetPrice?: number;
+  isTriggered: boolean;
+  createdAt: string;
+}
+

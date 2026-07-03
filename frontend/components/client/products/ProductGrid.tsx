@@ -1,6 +1,7 @@
 import React from "react";
 import ProductCard from "@/components/client/common/ProductCard";
 import { Product } from "@/types";
+import { InlineGridBanner } from "./InlineGridBanner";
 
 interface ProductGridProps {
   loading: boolean;
@@ -32,7 +33,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         <p className="text-red-500 font-semibold mb-4">{error}</p>
         <button
           onClick={handleRetry}
-          className="px-6 py-2 bg-primary text-white rounded-full font-medium shadow hover:brightness-110 active:scale-95 transition-all"
+          className="px-6 py-2 bg-primary text-white rounded-[8px] font-medium shadow hover:brightness-110 active:scale-95 transition-all"
         >
           Thử lại
         </button>
@@ -46,7 +47,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         <p className="text-slate-500 font-medium mb-4">Không tìm thấy sản phẩm nào phù hợp với bộ lọc.</p>
         <button
           onClick={handleClearFilters}
-          className="px-6 py-2 bg-primary text-white rounded-full font-medium shadow hover:brightness-110 active:scale-95 transition-all"
+          className="px-6 py-2 bg-primary text-white rounded-[8px] font-medium shadow hover:brightness-110 active:scale-95 transition-all"
         >
           Xóa bộ lọc
         </button>
@@ -54,11 +55,17 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     );
   }
 
+  const elements = filteredProducts.map((product) => (
+    <ProductCard key={product.id} product={product} />
+  ));
+
+  if (filteredProducts.length > 0) {
+    elements.unshift(<InlineGridBanner key="inline-banner" products={filteredProducts} />);
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-      {filteredProducts.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 grid-flow-row-dense">
+      {elements}
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { fetchPermissions, API_BASE_URL } from "@/lib/features/permissions/permissionApi";
 import { PermissionSummaryCards } from "@/components/admin/permissions/PermissionSummaryCards";
-import { PermissionDefinitionsTab } from "@/components/admin/permissions/PermissionDefinitionsTab";
+import { PermissionRoleTemplatesTab } from "@/components/admin/permissions/PermissionRoleTemplatesTab";
 import { PermissionUsersTab } from "@/components/admin/permissions/PermissionUsersTab";
 
 export default function PermissionCenterPage() {
@@ -21,7 +21,7 @@ export default function PermissionCenterPage() {
   const [totalCount, setTotalCount] = useState(0);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"users" | "definitions">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "templates">("users");
 
   // Debounce search
   useEffect(() => {
@@ -45,14 +45,21 @@ export default function PermissionCenterPage() {
         const perms = await fetchPermissions(token);
         setPermissions(perms);
 
-        const usersRes = await fetch(`${API_BASE_URL}/Users?search=${debouncedSearch}&page=${page}&pageSize=10`, {
+        const usersRes = await fetch(`${API_BASE_URL}/Users?search=${debouncedSearch}&page=${page}&pageSize=10&onlyWithPermissions=true`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const usersData = await usersRes.json();
         if (usersData.success) {
-          setUsers(usersData.data);
+          // Lọc bỏ các tài khoản có quyền Admin khỏi danh sách phân quyền
+          const filteredUsers = usersData.data.filter((u: any) => {
+            const hasAdminRole = u.roles?.some((r: string) => r.toLowerCase() === "admin" || r.toLowerCase() === "administrator");
+            const hasAdminTemplate = u.roleTemplateName?.toLowerCase() === "admin";
+            return !hasAdminRole && !hasAdminTemplate;
+          });
+          
+          setUsers(filteredUsers);
           setTotalPages(usersData.pagination.totalPages);
-          setTotalCount(usersData.pagination.totalCount);
+          setTotalCount(usersData.pagination.totalCount - (usersData.data.length - filteredUsers.length));
         }
       } catch (err) {
         console.error("Error fetching permission center data:", err);
@@ -99,26 +106,26 @@ export default function PermissionCenterPage() {
       />
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-outline-variant/30 mb-md">
+      <div className="flex bg-slate-50 p-1.5 rounded-[8px] w-fit mb-6 shadow-inner border border-slate-100">
         <button
           onClick={() => setActiveTab("users")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === "users"
-              ? "border-primary text-primary"
-              : "border-transparent text-on-surface-variant/70 hover:text-primary"
+          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-[8px] transition-all cursor-pointer ${activeTab === "users"
+              ? "bg-white text-primary shadow-sm"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">manage_accounts</span>
+          <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
           Phân quyền tài khoản ({totalCount})
         </button>
         <button
-          onClick={() => setActiveTab("definitions")}
-          className={`px-lg py-md font-label-md text-label-md font-bold flex items-center gap-2 border-b-2 transition-all ${activeTab === "definitions"
-              ? "border-primary text-primary"
-              : "border-transparent text-on-surface-variant/70 hover:text-primary"
+          onClick={() => setActiveTab("templates")}
+          className={`px-6 py-2.5 font-bold text-sm flex items-center gap-2 rounded-[8px] transition-all cursor-pointer ${activeTab === "templates"
+              ? "bg-white text-primary shadow-sm"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
             }`}
         >
-          <span className="material-symbols-outlined text-sm">rule</span>
-          Danh sách quyền hệ thống ({totalSystemPermissions})
+          <span className="material-symbols-outlined text-[18px]">settings_suggest</span>
+          Quản lý Gói Quyền
         </button>
       </div>
 
@@ -135,7 +142,7 @@ export default function PermissionCenterPage() {
           setPage={setPage}
         />
       ) : (
-        <PermissionDefinitionsTab groupedPermissions={groupedPermissions} />
+        <PermissionRoleTemplatesTab showHeader={false} />
       )}
     </div>
   );

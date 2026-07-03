@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
@@ -128,6 +128,43 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Cập nhật cài đặt nhận thông báo của user
+        /// </summary>
+        [HttpPut("notification-settings")]
+        public async Task<IActionResult> UpdateNotificationSettings([FromQuery] string userId, [FromBody] UpdateNotificationSettingsDto settingsDto)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { success = false, message = "UserId không được để trống" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                if (!CanAccessUser(userId, "User.Update"))
+                    return Forbid();
+
+                var result = await _profileService.UpdateNotificationSettingsAsync(userId, settingsDto);
+                if (result)
+                {
+                    _logger.LogInformation("Notification settings updated successfully for user {UserId}", userId);
+                    return Ok(new { success = true, message = "Cập nhật cài đặt thông báo thành công!" });
+                }
+
+                return BadRequest(new { success = false, message = "Không thể cập nhật cài đặt thông báo" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating notification settings for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật cài đặt thông báo" });
+            }
+        }
+
+        /// <summary>
         /// Đổi mật khẩu
         /// </summary>
         [HttpPost("change-password")]
@@ -161,6 +198,75 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error changing password for user {UserId}", userId);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi đổi mật khẩu" });
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra xem user đã có mật khẩu hay chưa
+        /// </summary>
+        [HttpGet("has-password")]
+        public async Task<IActionResult> HasPassword([FromQuery] string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { success = false, message = "UserId không được để trống" });
+            }
+
+            try
+            {
+                if (!CanAccessUser(userId, "User.Read"))
+                    return Forbid();
+
+                var result = await _profileService.HasPasswordAsync(userId);
+                return Ok(new { success = true, hasPassword = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking password for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
+            }
+        }
+
+        /// <summary>
+        /// Thiết lập mật khẩu cho user chưa có mật khẩu
+        /// </summary>
+        [HttpPost("set-password")]
+        public async Task<IActionResult> SetPassword([FromQuery] string userId, [FromBody] SetPasswordDto setPasswordDto)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { success = false, message = "UserId không được để trống" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
+            }
+
+            try
+            {
+                if (!CanAccessUser(userId, "User.Update"))
+                    return Forbid();
+
+                var hasPassword = await _profileService.HasPasswordAsync(userId);
+                if (hasPassword)
+                {
+                    return BadRequest(new { success = false, message = "Tài khoản đã có mật khẩu. Vui lòng dùng chức năng đổi mật khẩu." });
+                }
+
+                var result = await _profileService.SetPasswordAsync(userId, setPasswordDto);
+                if (result)
+                {
+                    _logger.LogInformation("Password set successfully for user {UserId}", userId);
+                    return Ok(new { success = true, message = "Thiết lập mật khẩu thành công!" });
+                }
+
+                return BadRequest(new { success = false, message = "Có lỗi xảy ra khi thiết lập mật khẩu" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting password for user {UserId}", userId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi thiết lập mật khẩu" });
             }
         }
 

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using ClosedXML.Excel;
+using System.IO;
 
 namespace PolyBabyAPI.Services
 {
@@ -34,11 +36,17 @@ namespace PolyBabyAPI.Services
         public async Task<(List<UserDto> users, int totalCount)> GetUsersPagedAsync(
             string? search = null,
             int page = 1,
-            int pageSize = 10)
+            int pageSize = 10,
+            bool onlyWithPermissions = false)
         {
             try
             {
                 var query = _context.Users.AsQueryable();
+
+                if (onlyWithPermissions)
+                {
+                    query = query.Where(u => u.RoleTemplateId != null || _context.UserPermissions.Any(up => up.UserId == u.Id));
+                }
 
                 // Filter by search
                 if (!string.IsNullOrEmpty(search))
@@ -67,7 +75,7 @@ namespace PolyBabyAPI.Services
                         Avatar = u.Avatar,
                         Status = u.Status,
                         EmailConfirmed = u.EmailConfirmed,
-                        IsLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTime.UtcNow,
+                        IsLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTime.Now,
                         LockoutEnd = u.LockoutEnd.HasValue ? u.LockoutEnd.Value.DateTime : (DateTime?)null, // ✅ SỬA: Convert DateTimeOffset to DateTime
                         RegisterDate = u.RegisterDate, 
                         Roles = new List<string>() // TODO: Load roles
@@ -118,7 +126,7 @@ namespace PolyBabyAPI.Services
                     Avatar = user.Avatar,
                     Status = user.Status,
                     EmailConfirmed = user.EmailConfirmed,
-                    IsLocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow,
+                    IsLocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.Now,
                     LockoutEnd = user.LockoutEnd.HasValue ? user.LockoutEnd.Value.DateTime : (DateTime?)null, // ✅ SỬA: Convert DateTimeOffset to DateTime
                     DateOfBirth = user.DateOfBirth,
                     AccessFailedCount = user.AccessFailedCount,
@@ -307,7 +315,7 @@ namespace PolyBabyAPI.Services
                     .Where(u => u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow)
                     .CountAsync();
                 var newUsersThisMonth = await _context.Users
-                    .Where(u => u.RegisterDate >= DateTime.UtcNow.AddDays(-30))
+                    .Where(u => u.RegisterDate >= DateTime.Now.AddDays(-30))
                     .CountAsync();
 
                 return new UserStatisticsDto
@@ -323,6 +331,115 @@ namespace PolyBabyAPI.Services
                 _logger.LogError(ex, "Error getting user statistics");
                 throw;
             }
+        }
+
+        public async Task<byte[]> ExportExcelAsync(string? search, bool onlyWithPermissions)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (onlyWithPermissions)
+            {
+                query = query.Where(u => u.RoleTemplateId != null || _context.UserPermissions.Any(up => up.UserId == u.Id));
+            }
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                var keyword = search.Trim().ToLower();
+                query = query.Where(u =>
+                    u.Id.Contains(keyword) ||
+                    (u.UserName != null && u.UserName.ToLower().Contains(keyword)) ||
+                    (u.FullName != null && u.FullName.ToLower().Contains(keyword)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(keyword)) ||
+                    (u.PhoneNumber != null && u.PhoneNumber.Contains(keyword)));
+            }
+
+            var users = await query.OrderByDescending(u => u.RegisterDate).ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Danh sách tài khoản");
+
+            // Header báo cáo
+            worksheet.Cell("A1").Value = "DANH SÁCH TÀI KHOẢN NGƯỜI DÙNG";
+            worksheet.Cell("A1").Style.Font.Bold = true;
+            worksheet.Cell("A1").Style.Font.FontSize = 16;
+            worksheet.Cell("A1").Style.Font.FontColor = XLColor.DarkMidnightBlue;
+            worksheet.Range("A1:J1").Merge();
+
+            worksheet.Cell("A2").Value = $"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            worksheet.Range("A2:J2").Merge();
+
+            // Header bảng
+            var headers = new string[] { 
+                "STT", "ID Tài khoản", "Tên đăng nhập", "Họ và tên", "Email", 
+                "Số điện thoại", "Vai trò", "Ngày đăng ký", "Khóa tài khoản", "Thời gian hết hạn khóa" 
+            };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(4, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.LightSkyBlue;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            }
+
+            int row = 5;
+            int stt = 1;
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Any(r => r.ToLower() == "admin" || r.ToLower() == "administrator"))
+                {
+                    continue; // Skip admin
+                }
+
+                worksheet.Cell(row, 1).Value = stt++;
+                worksheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 2).Value = user.Id;
+                worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 3).Value = user.UserName ?? "";
+                worksheet.Cell(row, 4).Value = user.FullName ?? "";
+                worksheet.Cell(row, 5).Value = user.Email ?? "";
+                
+                worksheet.Cell(row, 6).Value = user.PhoneNumber ?? "";
+                worksheet.Cell(row, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 7).Value = string.Join(", ", roles);
+                worksheet.Cell(row, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(row, 8).Value = user.RegisterDate.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                bool isLocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
+                worksheet.Cell(row, 9).Value = isLocked ? "Bị khóa" : "Hoạt động";
+                worksheet.Cell(row, 9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                if (isLocked)
+                {
+                    worksheet.Cell(row, 9).Style.Font.FontColor = XLColor.Red;
+                    worksheet.Cell(row, 10).Value = user.LockoutEnd.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+                    worksheet.Cell(row, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
+                else
+                {
+                    worksheet.Cell(row, 9).Style.Font.FontColor = XLColor.Green;
+                    worksheet.Cell(row, 10).Value = "-";
+                    worksheet.Cell(row, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
+                row++;
+            }
+
+            var range = worksheet.Range(4, 1, row - 1, headers.Length);
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorderColor = XLColor.LightGray;
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
         }
     }
 }

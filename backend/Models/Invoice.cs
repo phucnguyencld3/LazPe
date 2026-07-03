@@ -14,7 +14,10 @@ namespace PolyBabyAPI.Models
         DebitCard = 2,
 
         [Display(Name = "Ví điện tử")]
-        MobilePayment = 3
+        MobilePayment = 3,
+
+        [Display(Name = "Ví nội bộ / Hệ thống")]
+        SystemWallet = 4
     }
 
     public enum OrderStatus
@@ -31,11 +34,33 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Hoàn tất")]
         Completed = 3,
 
-        [Display(Name = "Yêu cầu hủy")]
+        [Display(Name = "Chờ duyệt hủy")]
         CancelRequested = 4,
 
         [Display(Name = "Đã hủy")]
-        Cancelled = 5
+        Cancelled = 5,
+
+        [Display(Name = "Yêu cầu trả hàng")]
+        ReturnRequested = 6,
+
+        [Display(Name = "Đã trả hàng & hoàn tiền")]
+        ReturnedRefunded = 7,
+
+        [Display(Name = "Đã hủy & hoàn tiền")]
+        CancelledRefunded = 8,
+
+        [Display(Name = "Đã duyệt trả hàng")]
+        ReturnApproved = 9,
+
+        [Display(Name = "Từ chối trả hàng")]
+        ReturnRejected = 10
+    }
+
+    public enum RefundMethod
+    {
+        None = 0,
+        SystemWallet = 1,
+        LazPeCoins = 2
     }
 
     public class Invoice
@@ -43,27 +68,73 @@ namespace PolyBabyAPI.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int InvoiceID { get; set; }
 
+        [MaxLength(50)]
+        public string? InvoiceCode { get; set; }
+
+        [MaxLength(50)]
+        public string? TrackingCode { get; set; }
+
         public string? UserID { get; set; }
 
-        // ✅ Thêm VoucherID liên kết voucher đã sử dụng
         public int? VoucherID { get; set; }
+
+        public int? ShippingVoucherID { get; set; }
 
         [ForeignKey(nameof(UserID))]
         [ValidateNever]
         public ApplicationUser User { get; set; }
 
-        // ✅ Navigation tới Voucher
+        // Navigation tới Voucher
         [ForeignKey(nameof(VoucherID))]
         [ValidateNever]
         public virtual Voucher? Voucher { get; set; }
+
+        [ForeignKey(nameof(ShippingVoucherID))]
+        [ValidateNever]
+        public virtual Voucher? ShippingVoucher { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Tạm tính")]
         public decimal SubTotal { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "Tiền giảm giá")]
+        [Display(Name = "Tổng tiền giảm giá")]
         public decimal DiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Voucher")]
+        public decimal VoucherDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Điểm")]
+        public decimal PointsDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Xu")]
+        public decimal CoinsDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm Ví")]
+        public decimal WalletDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Cần thanh toán")]
+        public decimal AmountToPay { get; set; } = 0;
+
+        public RefundMethod? CancelRefundMethod { get; set; }
+
+        public bool IsRefunded { get; set; } = false;
+
+        public DateTime? RefundedAt { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Chiết khấu hạng thẻ")]
+        public decimal TierDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền giảm ship")]
+        public decimal ShippingDiscountAmount { get; set; } = 0;
+
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0, double.MaxValue, ErrorMessage = "Tổng tiền không hợp lệ")]
@@ -89,6 +160,14 @@ namespace PolyBabyAPI.Models
 
         [MaxLength(500)]
         public string? ShippingStreetAddress { get; set; }
+
+        [MaxLength(100, ErrorMessage = "Tên người nhận tối đa 100 ký tự")]
+        [Display(Name = "Tên người nhận")]
+        public string? ShippingRecipientName { get; set; }
+
+        [MaxLength(15, ErrorMessage = "Số điện thoại người nhận tối đa 15 ký tự")]
+        [Display(Name = "Số điện thoại nhận hàng")]
+        public string? ShippingPhone { get; set; }
 
         [Display(Name = "Trạng thái đơn hàng")]
         [Required(ErrorMessage = "Trạng thái đơn hàng không được để trống")]
@@ -119,10 +198,21 @@ namespace PolyBabyAPI.Models
         [MaxLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự")]
         public string? Note { get; set; }
 
-        [ValidateNever]
-        public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+        public string? PrintTicketUrl { get; set; }
 
-        // ✅ Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
+        [ValidateNever]
+        public string? ReturnReason { get; set; }
+
+        [MaxLength(1000)]
+        public string? ReturnDescription { get; set; }
+        
+        public string? ReturnImageUrls { get; set; }
+        public RefundMethod? RefundMethod { get; set; }
+        public bool IsReturnReceived { get; set; }
+
+        public ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+
+        // Lịch sử sử dụng voucher - để check ai dùng voucher nào, khi nào
         public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();
         public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 

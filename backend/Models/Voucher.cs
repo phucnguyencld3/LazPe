@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PolyBabyAPI.Models
@@ -16,8 +16,24 @@ namespace PolyBabyAPI.Models
         DirectAssign = 2
     }
 
+    public enum VoucherType
+    {
+        ProductDiscount = 1,
+        ShippingDiscount = 2
+    }
+
     public class Voucher
     {
+        [Display(Name = "Loại voucher")]
+        public VoucherType VoucherType { get; set; } = VoucherType.ProductDiscount;
+
+        [Display(Name = "Miễn phí vận chuyển")]
+        public bool IsFreeShipping { get; set; } = false;
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Mức giảm phí ship tối đa")]
+        public decimal? MaxShippingDiscount { get; set; }
+
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int VoucherID { get; set; }
 
@@ -66,6 +82,9 @@ namespace PolyBabyAPI.Models
 
         [Display(Name = "Kiểu phân phối độc quyền")]
         public ExclusiveDistributionType ExclusiveType { get; set; } = ExclusiveDistributionType.None;
+
+        [Display(Name = "Giới hạn sử dụng trên mỗi người dùng")]
+        public int UsageLimitPerUser { get; set; } = 1;
 
         // Navigation
         public virtual ICollection<VoucherUsage> VoucherUsages { get; set; }

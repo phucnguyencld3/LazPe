@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   AdminProductInfo,
@@ -18,6 +18,7 @@ import { formatCurrency } from "@/lib/utils/formatters";
 
 export default function AdminProductsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   // Data states
@@ -25,8 +26,11 @@ export default function AdminProductsPage() {
   const [stats, setStats] = useState<ProductStats | null>(null);
   const [categories, setCategories] = useState<CategorySelectOption[]>([]);
   
-  // Filter/Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
+  // Filter/Pagination states — khởi tạo từ URL nếu có ?page=X
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = searchParams.get("page");
+    return p ? Math.max(1, parseInt(p)) : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
@@ -40,6 +44,7 @@ export default function AdminProductsPage() {
   // Deletion Modal states
   const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Load select list categories & stats once
   const loadInitialData = async (token: string) => {
@@ -87,9 +92,11 @@ export default function AdminProductsPage() {
 
       // Client-side fallback filter for Out of Stock if selected
       if (selectedStatus === "outOfStock") {
-        // Fetch a larger page size or filter on page. Since we are doing paginated count:
-        // We'll filter what is fetched, or let's assume if client filters outOfStock, we filter products:
-        fetchedProducts = fetchedProducts.filter(p => p.stock === 0);
+        // Dùng totalStock nếu sản phẩm có biến thể, ngược lại dùng stock gốc
+        fetchedProducts = fetchedProducts.filter(p => {
+          const actualStock = p.variantCount > 0 ? p.totalStock : p.stock;
+          return actualStock === 0;
+        });
       }
 
       setProducts(fetchedProducts);
@@ -140,6 +147,7 @@ export default function AdminProductsPage() {
   // Trigger custom confirmation modal
   const handleDeleteClick = (id: number, name: string) => {
     setProductToDelete({ id, name });
+    setDeleteConfirmText("");
   };
 
   // Perform actual deletion
@@ -169,6 +177,44 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Handle Export to Excel
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      toast.loading("Đang tạo file Excel...");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101/api'}/ProductImport/export`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      toast.dismiss();
+      if (!res.ok) {
+        toast.error("Lỗi khi xuất dữ liệu.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ProductsExport_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Xuất dữ liệu thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.dismiss();
+      toast.error("Không thể kết nối đến máy chủ.");
+    }
+  };
+
   // Helpers for Stock status indicators
   const getStockBadge = (stock: number) => {
     if (stock === 0) {
@@ -192,6 +238,15 @@ export default function AdminProductsPage() {
     };
   };
 
+  const canDeleteProduct = (createdAtStr?: string) => {
+    if (!createdAtStr) return false;
+    const createdDate = new Date(createdAtStr);
+    const now = new Date();
+    const diffMs = now.getTime() - createdDate.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays <= 3;
+  };
+
   return (
     <main className="w-full pb-20">
       {/* Title Header Section */}
@@ -202,10 +257,17 @@ export default function AdminProductsPage() {
         </div>
         <div className="flex items-center gap-sm shrink-0">
           <button
-            onClick={() => toast.info("Tính năng xuất dữ liệu chưa khả dụng")}
-            className="border border-primary text-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-sm font-bold cursor-pointer"
+            onClick={() => router.push("/admin/products/import")}
+            className="border border-secondary text-secondary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined">file_export</span>
+            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+            Import Excel
+          </button>
+          <button
+            onClick={handleExport}
+            className="border border-primary text-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">file_export</span>
             Xuất dữ liệu
           </button>
           <button
@@ -213,82 +275,82 @@ export default function AdminProductsPage() {
               toast.info("Điều hướng sang trang tạo sản phẩm mới");
               router.push("/admin/products/new");
             }}
-            className="bg-primary text-on-primary px-lg py-md rounded-full font-label-md text-label-md flex items-center gap-xs hover:scale-105 active:scale-95 transition-all shadow-md font-bold cursor-pointer"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >
-            <span className="material-symbols-outlined">add_circle</span>
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
             Thêm sản phẩm mới
           </button>
         </div>
       </header>
 
-      {/* Stats Bento Grid */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Card 1: Total */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">inventory</span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">inventory</span>
             </div>
-            <span className="px-2 py-1 bg-secondary-container/20 text-secondary text-[10px] font-bold rounded-full">
-              +5% tháng này
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng sản phẩm</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Tổng sản phẩm</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.totalProducts ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.totalProducts ?? "..."}</span>
         </div>
 
         {/* Card 2: Active */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-secondary-container/20 flex items-center justify-center text-secondary">
-              <span className="material-symbols-outlined">check_circle</span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang kinh doanh</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Đang kinh doanh</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">{stats?.activeProducts ?? "..."}</h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.activeProducts ?? "..."}</span>
         </div>
 
         {/* Card 3: Out of stock */}
-        <div className="bg-rose-50/50 p-6 rounded-[2rem] shadow-sm border border-rose-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center text-error">
-              <span className="material-symbols-outlined">warning</span>
+        <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+          (stats?.outOfStockProducts ?? 0) > 0
+            ? "bg-rose-50/50 border-rose-100"
+            : "bg-white border-slate-100"
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 ${
+              (stats?.outOfStockProducts ?? 0) > 0
+                ? "bg-rose-100 text-error"
+                : "bg-slate-100 text-slate-500"
+            }`}>
+              <span className="material-symbols-outlined text-[20px]">warning</span>
             </div>
-            <span className="px-2 py-1 bg-error text-white text-[10px] font-bold rounded-full">
-              Cảnh báo
-            </span>
+            <span className={`text-xs font-bold uppercase tracking-wider ${
+              (stats?.outOfStockProducts ?? 0) > 0 ? "text-rose-950/60" : "text-slate-500"
+            }`}>Hết hàng</span>
           </div>
-          <div>
-            <p className="text-rose-900/60 text-xs font-bold uppercase tracking-widest">Hết hàng</p>
-            <h3 className="text-3xl font-bold text-error mt-1">{stats?.outOfStockProducts ?? "..."}</h3>
+          <div className="flex items-center gap-2">
+            {(stats?.outOfStockProducts ?? 0) > 0 && (
+              <span className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-[8px]">
+                Cảnh báo
+              </span>
+            )}
+            <span className={`text-2xl font-extrabold ${
+              (stats?.outOfStockProducts ?? 0) > 0 ? "text-error" : "text-slate-800"
+            }`}>{stats?.outOfStockProducts ?? "..."}</span>
           </div>
         </div>
 
         {/* Card 4: New products */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-300">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
-              <span className="material-symbols-outlined">new_releases</span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">new_releases</span>
             </div>
-            <span className="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">
-              Mới
-            </span>
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm mới</span>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Sản phẩm mới</p>
-            <h3 className="text-3xl font-bold text-slate-800 mt-1">
-              {stats?.newProducts ?? "..."} <span className="text-xs text-slate-400 font-normal normal-case">Tuần này</span>
-            </h3>
-          </div>
+          <span className="text-2xl font-extrabold text-slate-800">{stats?.newProducts ?? "..."}</span>
         </div>
       </div>
 
       {/* Filters & Product Table Area */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
@@ -304,7 +366,7 @@ export default function AdminProductsPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               placeholder="Tìm theo tên hoặc mã sản phẩm..."
             />
           </div>
@@ -317,7 +379,7 @@ export default function AdminProductsPage() {
               setSelectedCategory(val ? Number(val) : null);
               setCurrentPage(1);
             }}
-            className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+            className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
           >
             <option value="">Tất cả danh mục</option>
             {categories.map((cat) => (
@@ -334,7 +396,7 @@ export default function AdminProductsPage() {
               setSelectedStatus(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+            className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
           >
             <option value="all">Trạng thái</option>
             <option value="active">Đang bán</option>
@@ -351,7 +413,7 @@ export default function AdminProductsPage() {
                 setSelectedStatus("all");
                 setCurrentPage(1);
               }}
-              className="px-6 py-3 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">clear</span>
               Xóa bộ lọc
@@ -364,11 +426,11 @@ export default function AdminProductsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center w-16">STT</th>
                 <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sản phẩm</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá bán</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Tồn kho</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Hành động</th>
+                <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -387,14 +449,18 @@ export default function AdminProductsPage() {
                   </td>
                 </tr>
               ) : (
-                products.map((product) => {
+                products.map((product, index) => {
                   const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
                   const stockDetails = getStockBadge(actualStock);
+                  const stt = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
                     <tr key={product.productID} className="hover:bg-slate-50/30 transition-colors group">
+                      <td className="px-6 py-5 text-center">
+                        <span className="font-bold text-slate-400 text-sm">{stt}</span>
+                      </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100 flex items-center justify-center">
                             {product.imageUrl && product.imageUrl.trim() !== "" ? (
                               <img
                                 src={product.imageUrl}
@@ -424,7 +490,9 @@ export default function AdminProductsPage() {
                       
                       <td className="px-6 py-5">
                         <div className="font-bold text-slate-800 text-sm">
-                          {formatCurrency(product.price)}
+                          {product.variantCount > 0 && product.minPrice !== product.maxPrice
+                            ? `${formatCurrency(product.minPrice)} - ${formatCurrency(product.maxPrice)}`
+                            : formatCurrency(product.variantCount > 0 && product.minPrice > 0 ? product.minPrice : product.price)}
                         </div>
                         {product.productDiscountPercent > 0 && (
                           <div className="text-[10px] font-bold text-red-500 mt-0.5">
@@ -452,49 +520,59 @@ export default function AdminProductsPage() {
                         </div>
                       </td>
 
-                      <td className="px-6 py-5 text-center">
-                        <button
-                          onClick={() => handleToggleStatus(product.productID)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-bold inline-block cursor-pointer transition-all ${
-                            product.status
-                              ? "bg-secondary-container text-on-secondary-container"
-                              : "bg-slate-100 text-slate-500"
-                          }`}
-                          title="Click để đổi trạng thái"
-                        >
-                          {product.status ? "Đang bán" : "Đã ẩn"}
-                        </button>
-                      </td>
-
+                      {/* Xóa cột Trạng thái riêng, gộp vào Thao tác */}
                       <td className="px-8 py-5 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Toggle trạng thái */}
+                          <div className="flex flex-col items-center gap-1 px-1">
+                            <label className="relative inline-flex items-center cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={product.status}
+                                onChange={() => handleToggleStatus(product.productID)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                            <span className={`text-[9px] font-bold uppercase ${product.status ? "text-secondary" : "text-slate-400"}`}>
+                              {product.status ? "Đang bán" : "Đã ẩn"}
+                            </span>
+                          </div>
+
+                          <div className="w-px h-8 bg-slate-100 mx-1"></div>
+
                           <button
                             onClick={() => {
                               toast.info(`Xem chi tiết sản phẩm: ${product.productName}`);
-                              router.push(`/admin/products/${product.productID}`);
+                              router.push(`/admin/products/${product.productID}?page=${currentPage}`);
                             }}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
                             title="Xem chi tiết"
                           >
-                            <span className="material-symbols-outlined text-[20px]">visibility</span>
+                            <span className="material-symbols-outlined text-[18px]">visibility</span>
                           </button>
                           <button
                             onClick={() => {
                               toast.info(`Chỉnh sửa sản phẩm: ${product.productName}`);
-                              router.push(`/admin/products/edit/${product.productID}`);
+                              router.push(`/admin/products/edit/${product.productID}?page=${currentPage}`);
                             }}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
                             title="Chỉnh sửa"
                           >
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                           <button
-                             onClick={() => handleDeleteClick(product.productID, product.productName)}
-                             className="w-10 h-10 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
-                             title="Xóa"
-                           >
-                             <span className="material-symbols-outlined text-[20px]">delete</span>
-                           </button>
+                          <button
+                            onClick={() => handleDeleteClick(product.productID, product.productName)}
+                            disabled={!canDeleteProduct(product.createdAt)}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                              !canDeleteProduct(product.createdAt)
+                                ? "opacity-30 cursor-not-allowed text-slate-300"
+                                : "text-error hover:bg-error-container/20 cursor-pointer"
+                            }`}
+                            title={!canDeleteProduct(product.createdAt) ? "Chỉ được xóa sản phẩm mới tạo trong vòng 3 ngày" : "Xóa"}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -517,7 +595,7 @@ export default function AdminProductsPage() {
       {/* Custom Delete Confirmation Modal */}
       {productToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -537,22 +615,35 @@ export default function AdminProductsPage() {
             
             {/* Body */}
             <div className="p-6">
-              <p className="text-slate-600 text-sm leading-relaxed mb-6">
+              <p className="text-slate-600 text-sm leading-relaxed mb-4">
                 Bạn có chắc chắn muốn xóa sản phẩm <strong className="text-slate-800">"{productToDelete.name}"</strong> không? Hành động này không thể hoàn tác và sẽ xóa toàn bộ các biến thể liên quan nếu sản phẩm chưa phát sinh đơn hàng.
               </p>
+              
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Vui lòng nhập <span className="text-error">tôi đồng ý xóa</span> để xác nhận:
+                </label>
+                <input 
+                  type="text" 
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="tôi đồng ý xóa"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-[8px] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error placeholder-slate-300"
+                />
+              </div>
               
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setProductToDelete(null)}
-                  className="px-5 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                  className="px-5 py-2 rounded-[8px] border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
                   disabled={deletingId !== null}
                 >
                   Hủy bỏ
                 </button>
                 <button
                   onClick={confirmDeleteProduct}
-                  className="px-5 py-2 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  disabled={deletingId !== null}
+                  className="px-5 py-2 rounded-[8px] bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={deletingId !== null || deleteConfirmText.trim().toLowerCase() !== "tôi đồng ý xóa"}
                 >
                   {deletingId !== null ? (
                     <>

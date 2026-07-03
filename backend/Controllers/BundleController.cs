@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Filters;
@@ -179,6 +179,39 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Xuất danh sách Combo sản phẩm ra Excel
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Authorize(Roles = "Admin")]
+        [Permission("Bundle.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string searchTerm = "",
+            [FromQuery] bool? status = null)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting bundles list to Excel...");
+                var fileContents = await _bundleService.ExportExcelAsync(searchTerm, status);
+                var fileName = $"DanhSachCombo_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error exporting bundles to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
+                });
+            }
+        }
+
+        /// <summary>
         /// Lấy chi tiết bundle (cho admin)
         /// </summary>
         /// <param name="id"></param>
@@ -331,7 +364,7 @@ namespace PolyBabyAPI.Controllers
         [HttpPost("upload-image")]
         [Consumes("multipart/form-data")]
         [Permission("Bundle.Update")]
-        public async Task<IActionResult> UploadBundleImage(IFormFile file)
+        public async Task<IActionResult> UploadBundleImage([FromForm] IFormFile file, [FromForm] string? oldImageUrl = null)
         {
             try
             {
@@ -345,7 +378,7 @@ namespace PolyBabyAPI.Controllers
                 if (file.Length > 5 * 1024 * 1024)
                     return BadRequest(new { success = false, message = "File ảnh không được vượt quá 5MB" });
 
-                var imageUrl = await _cloudinaryService.UploadImageAsync(file, "polystation/Bundles");
+                var imageUrl = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, "polystation/Bundles");
 
                 if (string.IsNullOrEmpty(imageUrl))
                     return StatusCode(500, new { success = false, message = "Upload ảnh thất bại" });
@@ -580,7 +613,10 @@ namespace PolyBabyAPI.Controllers
             status = b.Status,
             itemCount = b.BundleItems?.Count ?? 0,
             createdDate = b.CreatedDate,
-            imageUrl = b.ImageUrl ?? ""
+            imageUrl = b.ImageUrl ?? "",
+            stock = b.BundleItems == null || !b.BundleItems.Any()
+                ? 0
+                : b.BundleItems.Min(bi => bi.Variant != null && bi.Quantity > 0 ? (bi.Variant.Stock / bi.Quantity) : 0)
         };
 
         #endregion

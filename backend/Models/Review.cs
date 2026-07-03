@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.Models;
+using PolyBabyAPI.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -26,11 +26,23 @@ namespace PolyBabyAPI.Models
 
         public bool IsHidden { get; set; }
 
+        public bool HasEarnedRewardPoints { get; set; } = false;
+        public int LoyaltyPointsEarned { get; set; } = 0;
+
+        public DateTime? UpdatedAt { get; set; }
+        public string? CensorshipReason { get; set; }
+
+        public string? AutoModerationStatus { get; set; } = "Approved";
+        public string? FlaggedReason { get; set; }
+        public int ViolationScore { get; set; } = 0;
+
         // Navigation
         public virtual ApplicationUser User { get; set; }
         public virtual Variant Variant { get; set; }
         public virtual Bundle Bundle { get; set; }
         public virtual ICollection<ReviewLike> ReviewLikes { get; set; }
         public virtual ICollection<ReviewComment> ReviewComments { get; set; }
+        public virtual ICollection<ReviewMedia> ReviewMedia { get; set; } = new List<ReviewMedia>();
+        public virtual ICollection<ReviewCensorshipLog> CensorshipLogs { get; set; } = new List<ReviewCensorshipLog>();
     }
 }

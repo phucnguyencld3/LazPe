@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
@@ -27,11 +27,20 @@ namespace PolyBabyAPI.Service
         {
             try
             {
-                var user = await _userManager.FindByIdAsync(userId);
+                var user = await _userManager.Users
+                    .Include(u => u.BabyProfiles)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with ID: {UserId}", userId);
                     return null;
+                }
+
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
                 }
 
                 return new UserProfileDto
@@ -44,7 +53,27 @@ namespace PolyBabyAPI.Service
                     Avatar = user.Avatar,
                     RegisterDate = user.RegisterDate,
                     EmailConfirmed = user.EmailConfirmed,
-                    Status = user.Status
+                    Status = user.Status,
+                    ReceiveEmailNotifications = user.ReceiveEmailNotifications,
+                    ReceiveOrderUpdates = user.ReceiveOrderUpdates,
+                    ReceivePromotions = user.ReceivePromotions,
+                    IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance,
+                    BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
+                    {
+                        BabyProfileID = b.BabyProfileID,
+                        UserID = b.UserID,
+                        Name = b.Name,
+                        Relationship = b.Relationship,
+                        Gender = b.Gender,
+                        DateOfBirth = b.DateOfBirth,
+                        WeightKg = b.WeightKg,
+                        HeightCm = b.HeightCm,
+                        FavoriteColors = b.FavoriteColors,
+                        CreatedAt = b.CreatedAt
+                    }).ToList() ?? new List<BabyProfileDto>()
                 };
             }
             catch (Exception ex)
@@ -78,6 +107,24 @@ namespace PolyBabyAPI.Service
                     user.Avatar = updateDto.Avatar;
                 }
 
+                if (updateDto.ReceiveEmailNotifications.HasValue)
+                {
+                    user.ReceiveEmailNotifications = updateDto.ReceiveEmailNotifications.Value;
+                }
+                if (updateDto.ReceiveOrderUpdates.HasValue)
+                {
+                    user.ReceiveOrderUpdates = updateDto.ReceiveOrderUpdates.Value;
+                }
+                if (updateDto.ReceivePromotions.HasValue)
+                {
+                    user.ReceivePromotions = updateDto.ReceivePromotions.Value;
+                }
+
+                if (updateDto.IsOnboarded.HasValue)
+                {
+                    user.IsOnboarded = updateDto.IsOnboarded.Value;
+                }
+
                 _logger.LogInformation("Updating user {UserId}. Avatar: {Avatar}",
                     userId, updateDto.Avatar);
 
@@ -96,6 +143,22 @@ namespace PolyBabyAPI.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> HasPasswordAsync(string userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null) return false;
+                
+                return await _userManager.HasPasswordAsync(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if user {UserId} has password", userId);
                 return false;
             }
         }
@@ -126,6 +189,36 @@ namespace PolyBabyAPI.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing password for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SetPasswordAsync(string userId, SetPasswordDto setPasswordDto)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId}", userId);
+                    return false;
+                }
+
+                var result = await _userManager.AddPasswordAsync(user, setPasswordDto.NewPassword);
+
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("Password set successfully for user {UserId}", userId);
+                    return true;
+                }
+
+                _logger.LogWarning("Failed to set password for user {UserId}. Errors: {Errors}",
+                    userId, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting password for user {UserId}", userId);
                 return false;
             }
         }
@@ -197,11 +290,20 @@ namespace PolyBabyAPI.Service
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(email);
+                var user = await _userManager.Users
+                    .Include(u => u.BabyProfiles)
+                    .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper());
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with email: {Email}", email);
                     return null;
+                }
+
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
                 }
 
                 return new UserProfileDto
@@ -214,13 +316,58 @@ namespace PolyBabyAPI.Service
                     Avatar = user.Avatar,
                     RegisterDate = user.RegisterDate,
                     EmailConfirmed = user.EmailConfirmed,
-                    Status = user.Status
+                    Status = user.Status,
+                    ReceiveEmailNotifications = user.ReceiveEmailNotifications,
+                    ReceiveOrderUpdates = user.ReceiveOrderUpdates,
+                    ReceivePromotions = user.ReceivePromotions,
+                    IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode,
+                    WalletBalance = user.WalletBalance,
+                    CoinsBalance = user.CoinsBalance,
+                    BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
+                    {
+                        BabyProfileID = b.BabyProfileID,
+                        UserID = b.UserID,
+                        Name = b.Name,
+                        Relationship = b.Relationship,
+                        Gender = b.Gender,
+                        DateOfBirth = b.DateOfBirth,
+                        WeightKg = b.WeightKg,
+                        HeightCm = b.HeightCm,
+                        FavoriteColors = b.FavoriteColors,
+                        CreatedAt = b.CreatedAt
+                    }).ToList() ?? new List<BabyProfileDto>()
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting profile by email {Email}", email);
                 return null;
+            }
+        }
+
+        public async Task<bool> UpdateNotificationSettingsAsync(string userId, UpdateNotificationSettingsDto settingsDto)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId} for updating settings", userId);
+                    return false;
+                }
+
+                user.ReceiveEmailNotifications = settingsDto.ReceiveEmailNotifications;
+                user.ReceiveOrderUpdates = settingsDto.ReceiveOrderUpdates;
+                user.ReceivePromotions = settingsDto.ReceivePromotions;
+
+                var result = await _userManager.UpdateAsync(user);
+                return result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating notification settings for user {UserId}", userId);
+                return false;
             }
         }
     }

@@ -11,7 +11,7 @@ namespace PolyBabyAPI.Models
         public string UserID { get; set; }
         public int ProvinceID { get; set; }
         public int? DistrictID { get; set; }
-        public int WardID { get; set; }
+        public int? WardID { get; set; }
 
         [Required(ErrorMessage = "Tên người nhận là bắt buộc")]
         [StringLength(100)]

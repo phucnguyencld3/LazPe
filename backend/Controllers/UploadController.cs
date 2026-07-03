@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolyBabyAPI.Filters;
 using PolyBabyAPI.Interface;
+using PolyBabyAPI.Interfaces;
 using System.Security.Claims;
 
 namespace PolyBabyAPI.Controllers
@@ -12,11 +13,13 @@ namespace PolyBabyAPI.Controllers
     public class UploadController : ControllerBase
     {
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IImageModerationService _imageModerationService;
         private readonly ILogger<UploadController> _logger;
 
-        public UploadController(ICloudinaryService cloudinaryService, ILogger<UploadController> logger)
+        public UploadController(ICloudinaryService cloudinaryService, IImageModerationService imageModerationService, ILogger<UploadController> logger)
         {
             _cloudinaryService = cloudinaryService;
+            _imageModerationService = imageModerationService;
             _logger = logger;
         }
 
@@ -56,6 +59,14 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "File không được vượt quá 5MB" });
                 }
 
+                // AI Moderation: Kiểm duyệt hình ảnh phản cảm
+                var moderationResult = await _imageModerationService.IsImageSafeAsync(file);
+                if (!moderationResult.IsSafe)
+                {
+                    _logger.LogWarning("Avatar upload rejected by AI Moderation for user {UserId}. Reason: {Reason}", userId, moderationResult.Message);
+                    return BadRequest(new { success = false, message = moderationResult.Message });
+                }
+
                 // ✅ Sửa: Sử dụng method UploadAvatarAsync có sẵn
                 var uploadResult = await _cloudinaryService.UploadAvatarAsync(file, userId);
 
@@ -89,13 +100,13 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
         [HttpPost("image")]
         [Permission("Product.Update")]
-        public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string folder = "polystation/variants")
+        public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string folder = "polystation/variants", [FromForm] string? oldImageUrl = null)
         {
             try
             {
                 _logger.LogInformation("=== Upload Image Request ===");
-                _logger.LogInformation("File: {FileName}, Size: {Size}, Folder: {Folder}",
-                    file?.FileName ?? "null", file?.Length ?? 0, folder);
+                _logger.LogInformation("File: {FileName}, Size: {Size}, Folder: {Folder}, OldImageUrl: {OldImageUrl}",
+                    file?.FileName ?? "null", file?.Length ?? 0, folder, oldImageUrl ?? "null");
 
                 if (file == null || file.Length == 0)
                 {
@@ -121,9 +132,9 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
                 }
 
-                //  Sử dụng method UploadImageAsync có sẵn
-                _logger.LogInformation("Calling CloudinaryService.UploadImageAsync...");
-                var uploadResult = await _cloudinaryService.UploadImageAsync(file, folder);
+                // Sử dụng method ReplaceImageAsync dùng chung
+                _logger.LogInformation("Calling CloudinaryService.ReplaceImageAsync...");
+                var uploadResult = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, folder);
 
                 _logger.LogInformation("Upload result: {Result}", uploadResult ?? "NULL");
 
@@ -146,6 +157,59 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error uploading image to folder {Folder}", folder);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi upload file: " + ex.Message });
+            }
+        }
+
+        [HttpPost("chat-image")]
+        public async Task<IActionResult> UploadChatImage([FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "Không có file được chọn" });
+                }
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh JPG, PNG, GIF, WebP" });
+                }
+
+                const long maxFileSize = 10 * 1024 * 1024;
+                if (file.Length > maxFileSize)
+                {
+                    return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
+                }
+
+                // AI Moderation: Kiểm duyệt hình ảnh phản cảm
+                var moderationResult = await _imageModerationService.IsImageSafeAsync(file);
+                if (!moderationResult.IsSafe)
+                {
+                    _logger.LogWarning("Chat image upload rejected by AI Moderation. Reason: {Reason}", moderationResult.Message);
+                    return BadRequest(new { success = false, message = moderationResult.Message });
+                }
+
+                var uploadResult = await _cloudinaryService.ReplaceImageAsync(null, file, "chat_images");
+
+                if (!string.IsNullOrEmpty(uploadResult))
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        url = uploadResult,
+                        message = "Upload ảnh chat thành công!"
+                    });
+                }
+
+                return BadRequest(new { success = false, message = "Không thể upload file lên Cloudinary" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading chat image");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi upload ảnh chat" });
             }
         }
 
@@ -177,6 +241,67 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error deleting image {ImageUrl}", imageUrl);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi xóa ảnh" });
+            }
+        }
+
+        /// <summary>
+        /// Upload review media (hình ảnh/video) lên Cloudinary
+        /// </summary>
+        [HttpPost("review-media")]
+        public async Task<IActionResult> UploadReviewMedia([FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "Không có file được chọn" });
+                }
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".mov", ".avi", ".mkv" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh hoặc video" });
+                }
+
+                const long maxFileSize = 20 * 1024 * 1024;
+                if (file.Length > maxFileSize)
+                {
+                    return BadRequest(new { success = false, message = "File không được vượt quá 20MB" });
+                }
+
+                var mediaType = new[] { ".mp4", ".mov", ".avi", ".mkv" }.Contains(fileExtension) ? "VIDEO" : "IMAGE";
+
+                // AI Moderation: Nếu là hình ảnh, kiểm duyệt nội dung phản cảm
+                if (mediaType == "IMAGE")
+                {
+                    var moderationResult = await _imageModerationService.IsImageSafeAsync(file);
+                    if (!moderationResult.IsSafe)
+                    {
+                        _logger.LogWarning("Review media upload rejected by AI Moderation. Reason: {Reason}", moderationResult.Message);
+                        return BadRequest(new { success = false, message = moderationResult.Message });
+                    }
+                }
+                var uploadResult = await _cloudinaryService.UploadImageAsync(file, "Reviews");
+
+                if (!string.IsNullOrEmpty(uploadResult))
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        url = uploadResult,
+                        mediaType = mediaType,
+                        message = "Upload thành công!"
+                    });
+                }
+
+                return BadRequest(new { success = false, message = "Không thể upload file lên Cloudinary" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading review media");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi upload file: " + ex.Message });
             }
         }
     }

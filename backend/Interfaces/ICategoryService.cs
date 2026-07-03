@@ -1,4 +1,4 @@
-﻿using PolyBabyAPI.DTOs;
+using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Models;
 
 namespace PolyBabyAPI.Interfaces
@@ -20,6 +20,7 @@ namespace PolyBabyAPI.Interfaces
         Task<CategoryDetailDto?> GetCategoryDetailAsync(int id);
         Task<bool> HasProductsAsync(int categoryId);
         Task<List<Categories>> GetSubCategoriesAsync(int parentId);
+        Task<byte[]> ExportExcelAsync(string searchTerm, bool? status);
     }
 }
 

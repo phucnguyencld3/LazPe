@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using PolyBabyAPI.Filters;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Interfaces;
@@ -24,10 +25,72 @@ namespace PolyBabyAPI.Controllers
         }
 
         // GET: api/vouchers
+        [Permission("Voucher.Read")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var vouchers = await _voucherService.GetAllVouchersAsync();
+            var result = vouchers.Select(v => new
+            {
+                v.VoucherID,
+                v.Code,
+                v.Name,
+                v.DiscountType,
+                v.DiscountValue,
+                v.MinOrderValue,
+                v.MaxDiscount,
+                v.StartDate,
+                v.EndDate,
+                v.TotalQuantity,
+                v.UsedQuantity,
+                v.Status,
+                v.VisibilityType,
+                v.ExclusiveType,
+                v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
+            });
+            return Ok(result);
+        }
+
+        // GET: api/vouchers/exclusive-direct
+        [HttpGet("exclusive-direct")]
+        [Authorize]
+        public async Task<IActionResult> GetExclusiveDirectVouchers()
+        {
+            var now = DateTime.Now;
+
+            var query = _context.Vouchers
+                .Where(v => v.Status
+                    && v.VisibilityType == VoucherVisibilityType.Exclusive
+                    && v.ExclusiveType == ExclusiveDistributionType.DirectAssign
+                    && v.EndDate >= now
+                    && v.UsedQuantity < v.TotalQuantity)
+                .OrderByDescending(v => v.StartDate)
+                .AsQueryable();
+
+            var vouchers = await query.Select(v => new
+            {
+                v.VoucherID,
+                v.Code,
+                v.Name,
+                v.DiscountType,
+                v.DiscountValue,
+                v.MinOrderValue,
+                v.MaxDiscount,
+                v.TotalQuantity,
+                v.UsedQuantity,
+                v.StartDate,
+                v.EndDate,
+                RemainingQuantity = v.TotalQuantity - v.UsedQuantity,
+                VisibilityType = v.VisibilityType.ToString(),
+                VoucherType = (int)v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
+            }).ToListAsync();
+
             return Ok(vouchers);
         }
 
@@ -62,7 +125,11 @@ namespace PolyBabyAPI.Controllers
                 v.StartDate,
                 v.EndDate,
                 RemainingQuantity = v.TotalQuantity - v.UsedQuantity,
-                VisibilityType = v.VisibilityType.ToString()
+                VisibilityType = v.VisibilityType.ToString(),
+                VoucherType = (int)v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
             }).ToListAsync();
 
             if (string.IsNullOrWhiteSpace(userId))
@@ -82,16 +149,32 @@ namespace PolyBabyAPI.Controllers
                     v.EndDate,
                     v.RemainingQuantity,
                     v.VisibilityType,
-                    IsCollected = false
+                    IsCollected = false,
+                    v.VoucherType,
+                    v.IsFreeShipping,
+                    v.MaxShippingDiscount,
+                    v.UsageLimitPerUser
                 }));
             }
+
+            var userVoucherUsages = await _context.VoucherUsages
+                .Where(vu => vu.UserID == userId)
+                .GroupBy(vu => vu.VoucherID)
+                .Select(g => new { VoucherID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.VoucherID, x => x.Count);
 
             var collectedVoucherIds = await _context.UserVouchers
                 .Where(uv => uv.UserID == userId && uv.Status == UserVoucherStatus.Unused)
                 .Select(uv => uv.VoucherID)
                 .ToListAsync();
 
-            return Ok(vouchers.Select(v => new
+            var eligibleVouchers = vouchers.Where(v => 
+            {
+                userVoucherUsages.TryGetValue(v.VoucherID, out int usedCount);
+                return v.UsageLimitPerUser <= 0 || usedCount < v.UsageLimitPerUser;
+            });
+
+            return Ok(eligibleVouchers.Select(v => new
             {
                 v.VoucherID,
                 v.Code,
@@ -106,12 +189,110 @@ namespace PolyBabyAPI.Controllers
                 v.EndDate,
                 v.RemainingQuantity,
                 v.VisibilityType,
-                IsCollected = collectedVoucherIds.Contains(v.VoucherID)
+                IsCollected = collectedVoucherIds.Contains(v.VoucherID),
+                v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
+            }));
+        }
+
+        // GET: api/vouchers/checkout-available
+        [Authorize]
+        [HttpGet("checkout-available")]
+        [HttpGet("wallet/checkout-available")]
+        public async Task<IActionResult> GetCheckoutAvailableVouchers()
+        {
+            var now = DateTime.Now;
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            // 1. Get all public vouchers
+            var publicVouchersQuery = _context.Vouchers
+                .Where(v => v.Status
+                    && v.VisibilityType == VoucherVisibilityType.Public
+                    && v.ExclusiveType != ExclusiveDistributionType.DirectAssign
+                    && v.StartDate <= now
+                    && v.EndDate >= now
+                    && v.UsedQuantity < v.TotalQuantity)
+                .AsQueryable();
+
+            // 2. Get all vouchers in user's wallet that are unused
+            var walletVoucherIds = await _context.UserVouchers
+                .Where(uv => uv.UserID == userId && uv.Status == UserVoucherStatus.Unused && uv.Voucher != null && uv.Voucher.EndDate >= now)
+                .Select(uv => uv.VoucherID)
+                .ToListAsync();
+
+            var walletVouchersQuery = _context.Vouchers
+                .Where(v => walletVoucherIds.Contains(v.VoucherID) && v.Status && v.UsedQuantity < v.TotalQuantity)
+                .AsQueryable();
+
+            // Combine both queries
+            var combinedVouchers = await publicVouchersQuery.Union(walletVouchersQuery)
+                .OrderByDescending(v => v.StartDate)
+                .Select(v => new
+                {
+                    v.VoucherID,
+                    v.Code,
+                    v.Name,
+                    v.DiscountType,
+                    v.DiscountValue,
+                    v.MinOrderValue,
+                    v.MaxDiscount,
+                    v.TotalQuantity,
+                    v.UsedQuantity,
+                    v.StartDate,
+                    v.EndDate,
+                    RemainingQuantity = v.TotalQuantity - v.UsedQuantity,
+                    VisibilityType = v.VisibilityType.ToString(),
+                    VoucherType = (int)v.VoucherType,
+                    v.IsFreeShipping,
+                    v.MaxShippingDiscount,
+                    v.UsageLimitPerUser
+                })
+                .ToListAsync();
+
+            var userVoucherUsages = await _context.VoucherUsages
+                .Where(vu => vu.UserID == userId)
+                .GroupBy(vu => vu.VoucherID)
+                .Select(g => new { VoucherID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.VoucherID, x => x.Count);
+
+            var eligibleVouchers = combinedVouchers.Where(v => 
+            {
+                userVoucherUsages.TryGetValue(v.VoucherID, out int usedCount);
+                return v.UsageLimitPerUser <= 0 || usedCount < v.UsageLimitPerUser;
+            });
+
+            return Ok(eligibleVouchers.Select(v => new
+            {
+                v.VoucherID,
+                v.Code,
+                v.Name,
+                v.DiscountType,
+                v.DiscountValue,
+                v.MinOrderValue,
+                v.MaxDiscount,
+                v.TotalQuantity,
+                v.UsedQuantity,
+                v.StartDate,
+                v.EndDate,
+                v.RemainingQuantity,
+                v.VisibilityType,
+                IsCollected = walletVoucherIds.Contains(v.VoucherID),
+                v.VoucherType,
+                v.IsFreeShipping,
+                v.MaxShippingDiscount,
+                v.UsageLimitPerUser
             }));
         }
 
         // GET: api/vouchers/search-users?keyword=
         [Authorize]
+        [Permission("User.Read")]
         [HttpGet("search-users")]
         public async Task<IActionResult> SearchUsers([FromQuery] string? keyword)
         {
@@ -148,6 +329,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // GET: api/vouchers/5
+        [Permission("Voucher.Read")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -155,10 +337,31 @@ namespace PolyBabyAPI.Controllers
             if (voucher == null)
                 return NotFound();
 
-            return Ok(voucher);
+            return Ok(new
+            {
+                voucher.VoucherID,
+                voucher.Code,
+                voucher.Name,
+                voucher.DiscountType,
+                voucher.DiscountValue,
+                voucher.MinOrderValue,
+                voucher.MaxDiscount,
+                voucher.StartDate,
+                voucher.EndDate,
+                voucher.TotalQuantity,
+                voucher.UsedQuantity,
+                voucher.Status,
+                voucher.VisibilityType,
+                voucher.ExclusiveType,
+                voucher.VoucherType,
+                voucher.IsFreeShipping,
+                voucher.MaxShippingDiscount,
+                voucher.UsageLimitPerUser
+            });
         }
 
         // GET: api/vouchers/5/usages
+        [Permission("Voucher.Read")]
         [HttpGet("{id}/usages")]
         public async Task<IActionResult> GetUsages(int id)
         {
@@ -209,6 +412,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // POST: api/vouchers
+        [Permission("Voucher.Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateVoucherRequest request)
         {
@@ -241,7 +445,13 @@ namespace PolyBabyAPI.Controllers
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 VisibilityType = visibilityType,
-                ExclusiveType = exclusiveType
+                ExclusiveType = exclusiveType,
+                VoucherType = Enum.IsDefined(typeof(VoucherType), request.VoucherType)
+                    ? (VoucherType)request.VoucherType
+                    : VoucherType.ProductDiscount,
+                IsFreeShipping = request.IsFreeShipping,
+                MaxShippingDiscount = request.MaxShippingDiscount,
+                UsageLimitPerUser = request.UsageLimitPerUser
             };
 
             await _voucherService.CreateVoucherAsync(voucher);
@@ -255,7 +465,27 @@ namespace PolyBabyAPI.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = voucher.VoucherID }, new
             {
-                voucher,
+                voucher = new
+                {
+                    voucher.VoucherID,
+                    voucher.Code,
+                    voucher.Name,
+                    voucher.DiscountType,
+                    voucher.DiscountValue,
+                    voucher.MinOrderValue,
+                    voucher.MaxDiscount,
+                    voucher.StartDate,
+                    voucher.EndDate,
+                    voucher.TotalQuantity,
+                    voucher.UsedQuantity,
+                    voucher.Status,
+                    voucher.VisibilityType,
+                    voucher.ExclusiveType,
+                    voucher.VoucherType,
+                    voucher.IsFreeShipping,
+                    voucher.MaxShippingDiscount,
+                    voucher.UsageLimitPerUser
+                },
                 autoAssignedCount,
                 message = autoAssignedCount > 0
                     ? $"Tạo voucher thành công. Đã tự động phát {autoAssignedCount} voucher vào ví người dùng."
@@ -264,6 +494,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // PUT: api/vouchers/5
+        [Permission("Voucher.Update")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateVoucherRequest request)
         {
@@ -278,8 +509,8 @@ namespace PolyBabyAPI.Controllers
             voucher.MaxDiscount = request.MaxDiscount;
             voucher.TotalQuantity = request.TotalQuantity;
             voucher.Status = request.Status;
-            voucher.StartDate = (DateTime)request.StartDate;
-            voucher.EndDate = (DateTime)request.EndDate;
+            voucher.StartDate = request.StartDate ?? voucher.StartDate;
+            voucher.EndDate = request.EndDate ?? voucher.EndDate;
             voucher.VisibilityType = Enum.IsDefined(typeof(VoucherVisibilityType), request.VisibilityType)
                 ? (VoucherVisibilityType)request.VisibilityType
                 : voucher.VisibilityType;
@@ -292,6 +523,13 @@ namespace PolyBabyAPI.Controllers
                 voucher.ExclusiveType = ExclusiveDistributionType.None;
             }
 
+            voucher.VoucherType = Enum.IsDefined(typeof(VoucherType), request.VoucherType)
+                ? (VoucherType)request.VoucherType
+                : voucher.VoucherType;
+            voucher.IsFreeShipping = request.IsFreeShipping;
+            voucher.MaxShippingDiscount = request.MaxShippingDiscount;
+            voucher.UsageLimitPerUser = request.UsageLimitPerUser;
+
             await _voucherService.UpdateVoucherAsync(voucher);
 
             var autoAssignedCount = 0;
@@ -303,7 +541,27 @@ namespace PolyBabyAPI.Controllers
 
             return Ok(new
             {
-                voucher,
+                voucher = new
+                {
+                    voucher.VoucherID,
+                    voucher.Code,
+                    voucher.Name,
+                    voucher.DiscountType,
+                    voucher.DiscountValue,
+                    voucher.MinOrderValue,
+                    voucher.MaxDiscount,
+                    voucher.StartDate,
+                    voucher.EndDate,
+                    voucher.TotalQuantity,
+                    voucher.UsedQuantity,
+                    voucher.Status,
+                    voucher.VisibilityType,
+                    voucher.ExclusiveType,
+                    voucher.VoucherType,
+                    voucher.IsFreeShipping,
+                    voucher.MaxShippingDiscount,
+                    voucher.UsageLimitPerUser
+                },
                 autoAssignedCount,
                 message = autoAssignedCount > 0
                     ? $"Cập nhật thành công. Đã tự động phát thêm {autoAssignedCount} voucher vào ví người dùng."
@@ -481,6 +739,7 @@ namespace PolyBabyAPI.Controllers
 
         // POST: api/vouchers/assign-direct
         [Authorize]
+        [Permission("Voucher.Update")]
         [HttpPost("assign-direct")]
         public async Task<IActionResult> AssignDirect([FromBody] AssignExclusiveVoucherRequest request)
         {
@@ -566,6 +825,7 @@ namespace PolyBabyAPI.Controllers
                 {
                     UserID = userId,
                     VoucherID = request.VoucherID,
+                    IssuedCode = $"{voucher.Code}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
                     SourceType = UserVoucherSource.DirectAssigned,
                     Status = UserVoucherStatus.Unused,
                     CollectedAt = now
@@ -589,6 +849,7 @@ namespace PolyBabyAPI.Controllers
 
         // GET: api/vouchers/{id}/direct-assignments
         [Authorize]
+        [Permission("Voucher.Read")]
         [HttpGet("{id}/direct-assignments")]
         public async Task<IActionResult> GetDirectAssignments(int id)
         {
@@ -611,6 +872,7 @@ namespace PolyBabyAPI.Controllers
                     UserEmail = uv.User != null ? uv.User.Email : string.Empty,
                     UserPhone = uv.User != null ? uv.User.PhoneNumber : string.Empty,
                     Status = uv.Status.ToString(),
+                    uv.IssuedCode,
                     uv.CollectedAt,
                     uv.UsedAt
                 })
@@ -632,6 +894,7 @@ namespace PolyBabyAPI.Controllers
 
         // DELETE: api/vouchers/direct-assignments/{userVoucherId}
         [Authorize]
+        [Permission("Voucher.Update")]
         [HttpDelete("direct-assignments/{userVoucherId}")]
         public async Task<IActionResult> RevokeDirectAssignment(int userVoucherId)
         {
@@ -674,6 +937,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // PUT: api/vouchers/5/toggle-status
+        [Permission("Voucher.Update")]
         [HttpPut("{id}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(int id)
         {
@@ -687,6 +951,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // DELETE: api/vouchers/5
+        [Permission("Voucher.Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -705,6 +970,7 @@ namespace PolyBabyAPI.Controllers
         }
 
         // POST: api/vouchers/generate-code
+        [Permission("Voucher.Create")]
         [HttpPost("generate-code")]
         public async Task<IActionResult> GenerateCode()
         {
@@ -756,6 +1022,7 @@ namespace PolyBabyAPI.Controllers
             {
                 UserID = userId,
                 VoucherID = voucher.VoucherID,
+                IssuedCode = $"{voucher.Code}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
                 SourceType = UserVoucherSource.DirectAssigned,
                 Status = UserVoucherStatus.Unused,
                 CollectedAt = now

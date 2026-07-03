@@ -8,6 +8,8 @@ import {
   getUserProfile,
   updateUserProfile,
   changePassword,
+  checkHasPassword,
+  setPassword,
   getUserAddresses,
   getProvinces,
   getDistricts,
@@ -16,22 +18,33 @@ import {
   updateAddress,
   setDefaultAddress,
   deleteAddress,
+  getLoyaltyProfile,
   UserProfile,
   AddressItem,
-  normalizeName
+  normalizeName,
+  updateNotificationSettings
 } from "@/lib/api";
 
 import { ProfileHeader } from "@/components/client/profile/ProfileHeader";
 import { PersonalInfo } from "@/components/client/profile/PersonalInfo";
+import { BabyInfo } from "@/components/client/profile/BabyInfo";
 import { AddressList } from "@/components/client/profile/AddressList";
 import { SecurityAndSettings } from "@/components/client/profile/SecurityAndSettings";
 import { EditProfileModal } from "@/components/client/profile/modals/EditProfileModal";
+import { EditBabyInfoModal } from "@/components/client/profile/modals/EditBabyInfoModal";
+import { ProfileMessages } from "@/components/client/profile/ProfileMessages";
 import { ChangePasswordModal } from "@/components/client/profile/modals/ChangePasswordModal";
 import { ProfileAddressModal } from "@/components/client/profile/modals/ProfileAddressModal";
 import { VoucherSection } from "@/components/client/profile/VoucherSection";
 import { OrdersSection } from "@/components/client/profile/OrdersSection";
 import { ReviewsSection } from "@/components/client/profile/ReviewsSection";
 import { PrivacySection } from "@/components/client/profile/PrivacySection";
+import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
+import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
+import { SpendingSection } from "@/components/client/profile/SpendingSection";
+import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
+import { WalletSection } from "@/components/client/profile/WalletSection";
+import { BabyTrackerSection } from "@/components/client/profile/BabyTrackerSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -40,17 +53,60 @@ export default function ProfilePage() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [hasPassword, setHasPassword] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
+  const [loyaltyProfile, setLoyaltyProfile] = useState<any>(null);
   const [provinces, setProvinces] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
+  const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
+  const [pendingSupportOrder, setPendingSupportOrder] = useState<any>(null);
+  const [activeBabyId, setActiveBabyId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const idParam = params.get("id");
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+      if (idParam) {
+        const parsed = parseInt(idParam, 10);
+        if (!isNaN(parsed)) {
+          setInitialNotifId(parsed);
+        }
+      }
+    }
+  }, []);
+
+  const handleClearInitialId = () => {
+    setInitialNotifId(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("id");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  };
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  };
 
   // Modals States
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editBabyInfoOpen, setEditBabyInfoOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
 
   // Forms States
   const [profileForm, setProfileForm] = useState({
@@ -101,14 +157,7 @@ export default function ProfilePage() {
 
     setToken(savedToken);
 
-    const savedNotifs = localStorage.getItem("notification_settings");
-    if (savedNotifs) {
-      try {
-        setNotificationSettings(JSON.parse(savedNotifs));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    // Gỡ bỏ load từ localStorage để dùng API backend trực tiếp
 
     const parsedUser = JSON.parse(savedUserJson);
     const userId = parsedUser.id || parsedUser.userId;
@@ -141,11 +190,30 @@ export default function ProfilePage() {
           phoneNumber: profileData.phoneNumber || "",
           dateOfBirth: profileData.dateOfBirth ? profileData.dateOfBirth.split("T")[0] : "",
         });
+        setNotificationSettings({
+          emailNotifications: (profileData as any).receiveEmailNotifications ?? true,
+          orderUpdates: (profileData as any).receiveOrderUpdates ?? true,
+          promotions: (profileData as any).receivePromotions ?? true,
+        });
       }
+
+      // Check has password
+      const hasPass = await checkHasPassword(userId, authToken);
+      setHasPassword(hasPass);
 
       const addressList = await getUserAddresses(userId, authToken);
       if (addressList) {
         setAddresses(addressList);
+      }
+
+      // Fetch Loyalty Profile
+      try {
+        const lp = await getLoyaltyProfile(authToken);
+        if (lp) {
+          setLoyaltyProfile(lp);
+        }
+      } catch (e) {
+        console.error("Error fetching loyalty profile in profile:", e);
       }
     } catch (error) {
       console.error("Error fetching profile details:", error);
@@ -163,7 +231,7 @@ export default function ProfilePage() {
       const result = await updateUserProfile(userProfile.userId, token, {
         fullName: profileForm.fullName,
         email: profileForm.email,
-        phoneNumber: profileForm.phoneNumber,
+        phoneNumber: profileForm.phoneNumber || undefined,
         dateOfBirth: profileForm.dateOfBirth ? new Date(profileForm.dateOfBirth).toISOString() : null,
         avatar: userProfile.avatar,
       });
@@ -185,6 +253,7 @@ export default function ProfilePage() {
           userObj.fullName = profileForm.fullName;
           userObj.phoneNumber = profileForm.phoneNumber;
           userObj.email = profileForm.email;
+
           if (localStorage.getItem("user")) {
             localStorage.setItem("user", JSON.stringify(userObj));
           } else {
@@ -192,6 +261,7 @@ export default function ProfilePage() {
           }
         }
         setEditProfileOpen(false);
+        setEditBabyInfoOpen(false);
       } else {
         setProfileError(result.message || "Không thể cập nhật thông tin cá nhân");
       }
@@ -217,16 +287,27 @@ export default function ProfilePage() {
     }
 
     try {
-      const result = await changePassword(userProfile.userId, token, {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
-      });
+      let result;
+      if (hasPassword) {
+        result = await changePassword(userProfile.userId, token, {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          confirmNewPassword: passwordForm.confirmNewPassword
+        });
+      } else {
+        result = await setPassword(userProfile.userId, token, {
+          newPassword: passwordForm.newPassword,
+          confirmNewPassword: passwordForm.confirmNewPassword
+        });
+      }
+
       if (result.success) {
-        toast.success("Đổi mật khẩu thành công!");
+        toast.success(hasPassword ? "Đổi mật khẩu thành công!" : "Thiết lập mật khẩu thành công!");
         setChangePasswordOpen(false);
         setPasswordForm({ currentPassword: "", newPassword: "", confirmNewPassword: "" });
+        setHasPassword(true); // User now has a password
       } else {
-        setPasswordError(result.message || "Đổi mật khẩu thất bại");
+        setPasswordError(result.message || (hasPassword ? "Đổi mật khẩu thất bại" : "Thiết lập mật khẩu thất bại"));
       }
     } catch (err) {
       console.error(err);
@@ -234,16 +315,41 @@ export default function ProfilePage() {
     }
   };
 
-  const handleNotificationToggle = (key: keyof typeof notificationSettings) => {
+  const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
+    if (!userProfile || !token) return;
     const updated = { ...notificationSettings, [key]: !notificationSettings[key] };
+
     setNotificationSettings(updated);
-    localStorage.setItem("notification_settings", JSON.stringify(updated));
-    toast.success("Đã cập nhật cài đặt thông báo!");
+    try {
+      const result = await updateNotificationSettings(userProfile.userId, token, updated);
+      if (result.success) {
+        toast.success("Đã cập nhật cài đặt thông báo!");
+      } else {
+        toast.error(result.message || "Không thể lưu cài đặt");
+        setNotificationSettings(notificationSettings);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi kết nối khi cập nhật cài đặt");
+      setNotificationSettings(notificationSettings);
+    }
   };
 
   const handleAvatarUpdated = (newAvatarUrl: string) => {
     if (userProfile) {
       setUserProfile({ ...userProfile, avatar: newAvatarUrl });
+
+      const savedUserJson = localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (savedUserJson) {
+        const userObj = JSON.parse(savedUserJson);
+        userObj.avatar = newAvatarUrl;
+        if (localStorage.getItem("user")) {
+          localStorage.setItem("user", JSON.stringify(userObj));
+        } else {
+          sessionStorage.setItem("user", JSON.stringify(userObj));
+        }
+        window.dispatchEvent(new Event("auth-change"));
+      }
     }
   };
 
@@ -266,7 +372,7 @@ export default function ProfilePage() {
     });
     setDistricts([]);
     setWards([]);
-    
+
     try {
       const provList = await getProvinces("v2");
       if (provList) setProvinces(provList);
@@ -301,7 +407,7 @@ export default function ProfilePage() {
         const distData = await getDistricts(provCode, apiVer);
         distList = distData?.districts || [];
         setDistricts(distList);
-        
+
         if (distList.length === 1) {
           matchedDistrict = distList[0];
         } else {
@@ -323,7 +429,7 @@ export default function ProfilePage() {
         const wardData = await getWards(wardFetchCode, apiVer);
         wardList = wardData?.wards || [];
         setWards(wardList);
-        
+
         if (address.wardCode) {
           matchedWard = wardList.find((w: any) => String(w.code) === String(address.wardCode));
         }
@@ -359,7 +465,7 @@ export default function ProfilePage() {
     setAddressForm({ ...addressForm, provinceCode: code, provinceName: name, districtCode: "", districtName: "", wardCode: "", wardName: "" });
     setDistricts([]);
     setWards([]);
-    
+
     if (code) {
       const data = await getDistricts(code, addressForm.apiVersion);
       if (data && data.districts) setDistricts(data.districts);
@@ -371,7 +477,7 @@ export default function ProfilePage() {
     const name = e.target.options[e.target.selectedIndex].text;
     setAddressForm({ ...addressForm, districtCode: code, districtName: name, wardCode: "", wardName: "" });
     setWards([]);
-    
+
     if (code) {
       const data = await getWards(code, addressForm.apiVersion);
       if (data && data.wards) setWards(data.wards);
@@ -389,8 +495,8 @@ export default function ProfilePage() {
     if (!userProfile || !token) return;
     setAddressError(null);
 
-    if (!addressForm.provinceCode || !addressForm.districtCode || !addressForm.wardCode) {
-      setAddressError("Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã");
+    if (!addressForm.provinceCode || !addressForm.districtCode || (addressForm.apiVersion === "v1" && !addressForm.wardCode)) {
+      setAddressError(addressForm.apiVersion === "v2" ? "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã" : "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã");
       return;
     }
 
@@ -431,10 +537,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDeleteAddressClick = async (addressId: number) => {
-    if (!token || !userProfile) return;
-    if (window.confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) {
-      const result = await deleteAddress(addressId, token);
+  const handleDeleteAddressClick = (addressId: number) => {
+    setAddressToDelete(addressId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDeleteAddress = async () => {
+    if (!token || !userProfile || addressToDelete === null) return;
+    try {
+      const result = await deleteAddress(addressToDelete, token);
       if (result.success) {
         toast.success("Xóa địa chỉ thành công");
         const addressList = await getUserAddresses(userProfile.userId, token);
@@ -442,6 +553,12 @@ export default function ProfilePage() {
       } else {
         toast.error(result.message || "Không thể xóa địa chỉ");
       }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi kết nối đến server");
+    } finally {
+      setDeleteConfirmOpen(false);
+      setAddressToDelete(null);
     }
   };
 
@@ -480,192 +597,288 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface py-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-lg items-start">
-          {/* Left Sidebar Menu */}
-          <aside className="lg:col-span-1 space-y-md">
-            {/* Quick User Card */}
-            <div className="bg-white rounded-2xl p-md border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)] flex lg:flex-col items-center lg:items-start gap-4">
-              <div 
-                className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container relative bg-slate-100 flex-shrink-0 flex items-center justify-center cursor-pointer group"
-                onClick={() => setActiveTab("profile")}
-                title="Quản lý thông tin tài khoản"
-              >
-                {userProfile.avatar ? (
-                  <img
-                    className="w-full h-full object-cover"
-                    alt="Avatar"
-                    src={userProfile.avatar}
-                  />
-                ) : (
-                  <span className="material-symbols-outlined text-slate-400 text-3xl">person</span>
-                )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <span className="material-symbols-outlined text-white text-xs">edit</span>
+    <div className="w-full">
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
+        {/* Left Sidebar Menu */}
+        <aside className="w-full lg:w-[240px] flex-shrink-0 lg:sticky lg:top-[90px] z-10">
+          <div className="bg-white rounded-[10px] border border-slate-100/60 shadow-sm pb-3 max-h-[calc(100vh-140px)] overflow-y-auto scrollbar-none">
+            {/* Quick User Section */}
+              <div className="p-5 flex flex-col items-center text-center gap-2">
+                <div className="space-y-1 w-full">
+                  <h3 className="font-bold text-slate-800 text-base line-clamp-1">{userProfile.fullName}</h3>
+                  <p className="text-[11px] text-slate-400 font-medium truncate px-2">{userProfile.email}</p>
                 </div>
               </div>
-              <div className="text-left space-y-0.5 min-w-0">
-                <h3 className="font-bold text-slate-800 text-base line-clamp-1 leading-snug">{userProfile.fullName}</h3>
-                <p className="text-xs text-slate-400 font-semibold truncate">{userProfile.email}</p>
-                <div className="flex gap-1.5 pt-1.5">
-                  <span className="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold">
-                    Thành viên Gold
-                  </span>
-                </div>
-              </div>
-            </div>
 
-            {/* Menu List */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.04)]">
-              {/* Desktop view */}
-              <nav className="hidden lg:flex flex-col gap-1.5">
-                {(
-                  [
-                    { id: "profile", label: "Thông tin tài khoản", icon: "person" },
-                    { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
-                    { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
-                    { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
-                    { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
-                    { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left transition-all ${
-                      activeTab === item.id
-                        ? "bg-primary/5 text-primary border-l-4 border-primary pl-3"
-                        : "text-slate-600 hover:text-primary hover:bg-slate-50 border-l-4 border-transparent"
-                    }`}
-                  >
-                    <span className={`material-symbols-outlined text-lg ${activeTab === item.id ? "text-primary" : "text-slate-400"}`}>
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
+              {/* Menu List Section */}
+              <div className="px-2">
+                {/* Desktop view */}
+                <nav className="hidden lg:flex flex-col gap-1">
+                  {(
+                    [
+                      { id: "profile", label: "Thông tin tài khoản", icon: "person" },
+                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
+                      { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
+                      { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
+                      { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
+                      { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
+                      { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
+                      { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
+                      { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
+                      { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
+                      { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleTabChange(item.id)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[8px] font-bold text-[13px] text-left transition-all ${activeTab === item.id
+                        ? "bg-primary text-white shadow-sm shadow-primary/20 scale-[1.01]"
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                        }`}
+                    >
+                      <span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? "text-white" : "text-slate-400"}`}>
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
 
-              {/* Mobile view */}
-              <div className="lg:hidden flex overflow-x-auto gap-2 pb-1 scrollbar-none">
-                {(
-                  [
-                    { id: "profile", label: "Tài khoản", icon: "person" },
-                    { id: "address", label: "Địa chỉ", icon: "location_on" },
-                    { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
-                    { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
-                    { id: "reviews", label: "Đánh giá", icon: "reviews" },
-                    { id: "privacy", label: "Bảo mật", icon: "policy" },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all ${
-                      activeTab === item.id
+                {/* Mobile view */}
+                <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 scrollbar-none px-1">
+                  {(
+                    [
+                      { id: "profile", label: "Tài khoản", icon: "person" },
+                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
+                      { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
+                      { id: "spending", label: "Chi tiêu", icon: "monitoring" },
+                      { id: "address", label: "Địa chỉ", icon: "location_on" },
+                      { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
+                      { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "messages", label: "Tin nhắn", icon: "chat" },
+                      { id: "alerts", label: "Báo giá", icon: "add_alert" },
+                      { id: "notifications", label: "Thông báo", icon: "notifications" },
+                      { id: "reviews", label: "Đánh giá", icon: "reviews" },
+                      { id: "privacy", label: "Bảo mật", icon: "policy" },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleTabChange(item.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] whitespace-nowrap transition-all ${activeTab === item.id
                         ? "bg-primary text-white shadow-sm"
                         : "bg-slate-100 text-slate-600 hover:text-primary hover:bg-slate-200"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </button>
-                ))}
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </aside>
 
           {/* Right Content Area */}
-          <main className="lg:col-span-3 min-w-0">
+          <main className="flex-1 min-w-0 w-full">
             {activeTab === "profile" && (
-              <div className="space-y-lg">
-                <ProfileHeader 
-                  userProfile={userProfile} 
-                  token={token} 
-                  onAvatarUpdated={handleAvatarUpdated} 
+              <div className="space-y-3">
+                <ProfileHeader
+                  userProfile={userProfile}
+                  token={token}
+                  onAvatarUpdated={handleAvatarUpdated}
+                  loyaltyProfile={loyaltyProfile}
                 />
-                <PersonalInfo 
-                  userProfile={userProfile} 
-                  onEditClick={() => setEditProfileOpen(true)} 
+                <PersonalInfo
+                  userProfile={userProfile}
+                  onEditClick={() => setEditProfileOpen(true)}
                 />
-                <SecurityAndSettings 
-                  onChangePasswordClick={() => setChangePasswordOpen(true)} 
-                  notificationSettings={notificationSettings} 
-                  onNotificationToggle={handleNotificationToggle} 
+                <BabyInfo
+                  userProfile={userProfile}
+                  onEditClick={() => setEditBabyInfoOpen(true)}
+                  onOpenTracker={(id) => {
+                    setActiveBabyId(id);
+                    handleTabChange("baby-tracker");
+                  }}
+                />
+                <SecurityAndSettings
+                  hasPassword={hasPassword}
+                  onChangePasswordClick={() => setChangePasswordOpen(true)}
+                  notificationSettings={notificationSettings}
+                  onNotificationToggle={handleNotificationToggle}
                 />
               </div>
             )}
+            
+            {activeTab === "messages" && (
+              <ProfileMessages 
+                token={token} 
+                pendingSupportOrder={pendingSupportOrder}
+                clearPendingSupportOrder={() => setPendingSupportOrder(null)}
+              />
+            )}
 
             {activeTab === "address" && (
-              <AddressList 
-                addresses={addresses} 
-                onAddClick={openNewAddressModal} 
-                onEditClick={handleOpenEditAddressForm} 
-                onDeleteClick={handleDeleteAddressClick} 
-                onSetDefaultClick={handleSetDefaultAddressClick} 
+              <AddressList
+                addresses={addresses}
+                onAddClick={openNewAddressModal}
+                onEditClick={handleOpenEditAddressForm}
+                onDeleteClick={handleDeleteAddressClick}
+                onSetDefaultClick={handleSetDefaultAddressClick}
               />
             )}
 
             {activeTab === "vouchers" && <VoucherSection token={token} />}
 
+            {activeTab === "wallet" && (
+              <WalletSection token={token} uid={userProfile.userId} />
+            )}
+
+            {activeTab === "loyalty" && (
+              <LoyaltySection token={token} />
+            )}
+
+            {activeTab === "spending" && (
+              <SpendingSection token={token} />
+            )}
+
             {activeTab === "orders" && (
-              <OrdersSection 
-                userId={userProfile.userId} 
-                token={token} 
+              <OrdersSection
+                userId={userProfile.userId}
+                token={token}
+                initialOrderId={initialNotifId}
+                onClearInitialOrderId={handleClearInitialId}
+                onChangeTab={handleTabChange}
+                onSupportOrder={(order) => {
+                  setPendingSupportOrder(order);
+                  handleTabChange("messages");
+                }}
+              />
+            )}
+
+            {activeTab === "alerts" && (
+              <ProductAlertsSection token={token} />
+            )}
+
+            {activeTab === "notifications" && (
+              <NotificationsSection
+                token={token}
+                initialSelectedId={initialNotifId}
+                onClearInitialId={handleClearInitialId}
               />
             )}
 
             {activeTab === "reviews" && (
-              <ReviewsSection 
-                userId={userProfile.userId} 
-                token={token} 
+              <ReviewsSection
+                userId={userProfile.userId}
+                token={token}
+              />
+            )}
+
+            {activeTab === "baby-tracker" && activeBabyId !== null && (
+              <BabyTrackerSection 
+                babyId={activeBabyId} 
+                onBack={() => handleTabChange("profile")} 
+                onUpdate={() => {
+                  if (userProfile && token) fetchData(userProfile.userId, token);
+                }}
               />
             )}
 
             {activeTab === "privacy" && <PrivacySection />}
           </main>
         </div>
-      </div>
 
-      <EditProfileModal 
-        isOpen={editProfileOpen} 
-        onClose={() => setEditProfileOpen(false)} 
-        onSubmit={handleProfileUpdate} 
-        profileForm={profileForm} 
-        setProfileForm={setProfileForm} 
-        profileError={profileError} 
+      <EditProfileModal
+        isOpen={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+        onSubmit={handleProfileUpdate}
+        profileForm={profileForm}
+        setProfileForm={setProfileForm}
+        profileError={profileError}
       />
 
-      <ChangePasswordModal 
-        isOpen={changePasswordOpen} 
-        onClose={() => setChangePasswordOpen(false)} 
-        onSubmit={handlePasswordChange} 
-        passwordForm={passwordForm} 
-        setPasswordForm={setPasswordForm} 
-        passwordError={passwordError} 
+      <EditBabyInfoModal
+        isOpen={editBabyInfoOpen}
+        onClose={() => setEditBabyInfoOpen(false)}
+        token={token}
+        userProfile={userProfile}
+        onRefreshProfile={() => {
+          if (userProfile && token) {
+            fetchData(userProfile.userId, token);
+          }
+        }}
       />
 
-      <ProfileAddressModal 
-        isOpen={addressModalOpen} 
-        onClose={() => setAddressModalOpen(false)} 
-        onSubmit={handleAddressSubmit} 
-        isEditing={!!editingAddress} 
-        addressForm={addressForm} 
-        setAddressForm={setAddressForm} 
-        addressError={addressError} 
-        provinces={provinces} 
-        setProvinces={setProvinces} 
-        districts={districts} 
-        wards={wards} 
-        handleProvinceChange={handleProvinceChange} 
-        handleDistrictChange={handleDistrictChange} 
-        handleWardChange={handleWardChange} 
-        setDistricts={setDistricts} 
-        setWards={setWards} 
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+        onSubmit={handlePasswordChange}
+        passwordForm={passwordForm}
+        setPasswordForm={setPasswordForm}
+        passwordError={passwordError}
+        hasPassword={hasPassword}
       />
+
+      <ProfileAddressModal
+        isOpen={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        onSubmit={handleAddressSubmit}
+        isEditing={!!editingAddress}
+        addressForm={addressForm}
+        setAddressForm={setAddressForm}
+        addressError={addressError}
+        provinces={provinces}
+        setProvinces={setProvinces}
+        districts={districts}
+        wards={wards}
+        handleProvinceChange={handleProvinceChange}
+        handleDistrictChange={handleDistrictChange}
+        handleWardChange={handleWardChange}
+        setDistricts={setDistricts}
+        setWards={setWards}
+      />
+
+      {/* Confirm Delete Address Modal (Thay thế cho Modal mặc định của trình duyệt) */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div
+            className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 shrink-0"
+            style={{ width: '384px', maxWidth: 'calc(100vw - 32px)' }}
+          >
+            <div className="flex items-center gap-2 text-rose-600 font-bold">
+              <span className="material-symbols-outlined text-rose-500 shrink-0">delete</span>
+              <h3 className="text-base md:text-lg text-slate-800 font-bold">Xác nhận xóa địa chỉ</h3>
+            </div>
+            <p className="text-xs md:text-sm text-slate-500 font-semibold leading-relaxed">
+              Bạn có chắc chắn muốn xóa địa chỉ này? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setAddressToDelete(null);
+                }}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteAddress}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
 import { AddressItem } from "@/lib/api";
+import { formatLocationName } from "@/lib/utils/formatters";
 
 interface AddressListProps {
   addresses: AddressItem[];
@@ -12,87 +13,93 @@ interface AddressListProps {
 
 export function AddressList({ addresses, onAddClick, onEditClick, onDeleteClick, onSetDefaultClick }: AddressListProps) {
   return (
-    <section className="bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)] border border-slate-100">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-md pb-3 border-b border-slate-100">
-        <h2 className="font-headline-md text-xl font-bold text-primary flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">location_on</span> Địa chỉ giao hàng
+    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base">location_on</span> Địa chỉ giao hàng
         </h2>
-        <button
-          onClick={onAddClick}
-          className="bg-primary hover:bg-primary/95 text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 bouncy-hover active:scale-95 shadow-md shadow-primary/10 text-sm transition-transform"
-        >
-          <span className="material-symbols-outlined text-sm font-bold">add</span> Thêm địa chỉ mới
-        </button>
+        {addresses.length >= 4 ? (
+          <div className="bg-slate-50 text-slate-500 px-3.5 py-1.5 rounded-[6px] text-[11px] font-bold border border-slate-200 flex items-center gap-1.5 cursor-not-allowed" title="Mỗi tài khoản chỉ được tạo tối đa 4 địa chỉ">
+            <span className="material-symbols-outlined text-[13px] font-bold text-slate-400">lock</span> Đã đạt giới hạn (4/4)
+          </div>
+        ) : (
+          <button
+            onClick={onAddClick}
+            className="bg-primary hover:bg-primary/90 text-white px-3.5 py-1.5 rounded-[6px] font-bold flex items-center gap-1.5 active:scale-95 shadow-sm text-[11px] transition-all"
+          >
+            <span className="material-symbols-outlined text-[13px] font-bold">add</span> Thêm địa chỉ mới
+          </button>
+        )}
       </div>
 
-      <div className="space-y-md pt-2">
+      <div className="space-y-3 pt-1">
         {addresses.length > 0 ? (
           addresses.map((address) => (
             <div
               key={address.addressID}
-              className={`border-2 rounded-2xl p-5 flex flex-col md:flex-row justify-between gap-md relative overflow-hidden transition-all duration-200 ${address.isDefault
-                  ? "border-primary-container bg-primary-container/5"
-                  : "border-slate-200 bg-white hover:border-primary/50"
+              className={`border rounded-[8px] px-3.5 py-2 flex flex-col md:flex-row justify-between gap-3 relative overflow-hidden transition-all duration-200 group ${address.isDefault
+                  ? "border-primary/30 bg-primary/5 shadow-sm"
+                  : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm"
                 }`}
             >
               {address.isDefault && (
-                <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1.5 rounded-bl-xl text-label-sm font-bold text-xs uppercase tracking-wide">
+                <div className="absolute top-0 right-0 bg-primary text-white px-2 py-0.5 rounded-bl-[6px] text-[9px] font-black uppercase tracking-wider shadow-sm">
                   Mặc định
                 </div>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 pr-12">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary text-lg">{address.recipientName}</span>
-                  <span className="text-xs text-on-surface-variant font-semibold bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="font-extrabold text-primary text-[13px]">{address.recipientName}</span>
+                  <span className="text-[10px] text-primary/80 font-bold bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-[4px]">
                     {address.phoneNumber}
                   </span>
                 </div>
-                <p className="text-on-surface-variant text-sm font-medium">
-                  {address.detailAddress}
+                <p className="text-slate-500 text-[11px] font-medium leading-relaxed mt-0.5">
+                  {[formatLocationName(address.ward), formatLocationName(address.district), formatLocationName(address.province)].filter(Boolean).join(', ')}
                   <br />
-                  {address.ward}, {address.district}, {address.province}
+                  {address.detailAddress}
                   {address.apiVersion === "v1" && (
-                    <span className="ml-2 text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded uppercase font-bold">V1</span>
+                    <span className="ml-2 text-[9px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded uppercase font-bold">V1</span>
                   )}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 md:flex-col md:items-end justify-end mt-2 md:mt-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
-                <div className="flex gap-2">
+              <div className="flex items-center gap-2 md:flex-col md:items-end justify-end mt-1 md:mt-0 border-t md:border-t-0 pt-2.5 md:pt-0 border-slate-100">
+                <div className="flex gap-1.5">
                   <button
                     onClick={() => onEditClick(address)}
-                    className="p-2 text-primary hover:bg-primary-container rounded-full transition-colors"
+                    className="p-1 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-[4px] transition-colors"
                     title="Chỉnh sửa địa chỉ"
                   >
-                    <span className="material-symbols-outlined text-lg">edit</span>
+                    <span className="material-symbols-outlined text-[15px]">edit</span>
                   </button>
                   {!address.isDefault && (
                     <button
                       onClick={() => onDeleteClick(address.addressID)}
-                      className="p-2 text-error hover:bg-error-container hover:text-error rounded-full transition-colors"
+                      className="p-1 text-slate-400 hover:text-error hover:bg-error-container rounded-[4px] transition-colors"
                       title="Xóa địa chỉ"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={15} />
                     </button>
                   )}
                 </div>
                 {!address.isDefault && (
                   <button
                     onClick={() => onSetDefaultClick(address.addressID)}
-                    className="text-xs font-bold text-primary hover:underline px-3 py-1.5 rounded-full hover:bg-primary-container/20 mt-1"
+                    className="text-[10px] font-bold text-slate-500 hover:text-primary hover:bg-primary/10 px-2 py-0.5 rounded-[4px] mt-1 transition-colors"
                   >
-                    Thiết lập mặc định
+                    Đặt làm mặc định
                   </button>
                 )}
               </div>
             </div>
           ))
         ) : (
-          <div className="text-center py-10 bg-surface-container-low rounded-2xl border border-dashed border-slate-300">
-            <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">location_off</span>
-            <p className="text-on-surface-variant font-medium">Bạn chưa có địa chỉ giao hàng nào.</p>
-            <p className="text-sm text-slate-500 mt-1">Thêm địa chỉ ngay để thanh toán nhanh chóng hơn!</p>
+          <div className="text-center py-8 bg-slate-50/50 rounded-[8px] border border-dashed border-slate-200">
+            <span className="material-symbols-outlined text-3xl text-slate-300 mb-1">location_off</span>
+            <p className="text-slate-500 font-bold text-[12px]">Bạn chưa có địa chỉ giao hàng nào.</p>
+            <p className="text-[10px] text-slate-400 mt-1">Thêm địa chỉ ngay để thanh toán nhanh chóng hơn!</p>
           </div>
         )}
       </div>

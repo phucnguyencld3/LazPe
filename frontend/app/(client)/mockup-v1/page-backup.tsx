@@ -1,0 +1,92 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Product, Voucher } from "@/types";
+import { getProducts, getPublicVouchers, collectVoucher } from "@/lib/api";
+import { toast } from "@/lib/toast";
+
+import { HeroSection } from "@/components/client/home/HeroSection";
+import { FlashSaleSection } from "@/components/client/home/FlashSaleSection";
+import { VoucherSection } from "@/components/client/home/VoucherSection";
+import { ProductSection } from "@/components/client/home/ProductSection";
+import { ProductRecommendations } from "@/components/client/products/ProductRecommendations";
+import { CTASection } from "@/components/client/home/CTASection";
+
+export default function HomePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingVouchers, setLoadingVouchers] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    const fetchData = async () => {
+      // Fetch products (fetch 10 to display 2 full rows of 5 cards on desktop)
+      setLoadingProducts(true);
+      const productsData = await getProducts(1, 10);
+      if (productsData) {
+        // Lọc bỏ hoàn toàn các sản phẩm hết hàng (inStock = false)
+        const inStockProducts = (productsData.items || []).filter((p) => p.inStock);
+        setProducts(inStockProducts);
+      }
+      setLoadingProducts(false);
+
+      // Fetch vouchers
+      setLoadingVouchers(true);
+      const vouchersData = await getPublicVouchers();
+      if (vouchersData) {
+        setVouchers(vouchersData);
+      }
+      setLoadingVouchers(false);
+    };
+
+    fetchData();
+  }, []);
+
+  const handleCollectVoucher = async (voucherId: number) => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để lưu voucher!");
+      window.location.href = "/login";
+      return;
+    }
+
+    const result = await collectVoucher(voucherId);
+    if (result.success) {
+      toast.success("Lưu voucher thành công!");
+      setVouchers((prev) =>
+        prev.map((v) => (v.voucherID === voucherId ? { ...v, isCollected: true } : v))
+      );
+    } else {
+      toast.error(result.message || "Lưu voucher thất bại!");
+    }
+  };
+
+  return (
+    <>
+      <HeroSection />
+
+      <FlashSaleSection />
+
+      <VoucherSection
+        vouchers={vouchers}
+        loadingVouchers={loadingVouchers}
+        handleCollectVoucher={handleCollectVoucher}
+      />
+
+      <ProductSection
+        products={products}
+        loadingProducts={loadingProducts}
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ProductRecommendations limit={10} />
+      </div>
+
+      <CTASection isLoggedIn={isLoggedIn} />
+    </>
+  );
+}

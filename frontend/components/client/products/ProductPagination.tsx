@@ -19,7 +19,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
       <button
         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
         disabled={currentPage === 1}
-        className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-10 h-10 rounded-[8px] flex items-center justify-center border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ChevronLeft size={18} />
       </button>
@@ -28,7 +28,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
         <button
           key={pageNumber}
           onClick={() => setCurrentPage(pageNumber)}
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+          className={`w-10 h-10 rounded-[8px] flex items-center justify-center font-bold transition-all ${
             currentPage === pageNumber
               ? "bg-primary text-white"
               : "bg-white text-slate-600 border border-slate-200 hover:border-primary hover:text-primary"
@@ -41,7 +41,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
       <button
         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
         disabled={currentPage === totalPages}
-        className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-10 h-10 rounded-[8px] flex items-center justify-center border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ChevronRight size={18} />
       </button>

@@ -2,9 +2,57 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import Link from 'next/link';
+import { MessagesSquare, X } from 'lucide-react';
+import { useRouter } from "next/navigation";
+const ChatProductCard = ({ data, onZoomImage, onClickProduct }: { data: any, onZoomImage?: (url: string) => void, onClickProduct?: () => void }) => {
+  const router = useRouter();
 
-interface Message {
+  const handleProductClick = () => {
+    if (data.productId || data.variantId || data.id) {
+      const id = data.productId || data.variantId || data.id;
+      // In case it's a slug, we can use it.
+      router.push(`/products/${data.slug || id}`);
+      if (onClickProduct) onClickProduct();
+    }
+  };
+
+  return (
+    <div 
+      className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all my-2 w-full cursor-pointer hover:border-primary/50 group"
+      onClick={handleProductClick}
+    >
+      <div 
+        className="w-[70px] shrink-0 bg-slate-50 flex items-center justify-center p-1.5 border-r border-slate-100 self-stretch min-h-[70px]"
+        title="Xem chi tiết"
+      >
+        <img 
+          src={data.imageUrl || '/assets/img/products/default-product.jpg'} 
+          alt={data.name} 
+          className="max-h-[60px] max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform" 
+        />
+      </div>
+      <div className="p-2 flex flex-col justify-center flex-1 min-w-0 gap-1.5">
+        <h4 
+          className="text-[12px] font-semibold text-slate-700 leading-[1.4] whitespace-normal break-words group-hover:text-primary transition-colors" 
+          title={data.name}
+        >
+          {data.name}
+        </h4>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-rose-600 font-bold text-[13px] truncate pr-1">
+            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.price || 0)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export interface Message {
   id: number;
   chatSessionId: string;
   senderId: string | null;
@@ -13,7 +61,31 @@ interface Message {
   messageText: string | null;
   imageUrl: string | null;
   createdAt: string;
+  isRead?: boolean;
 }
+
+const ChatProductList = ({ products, onClickProduct }: { products: any[], onClickProduct?: () => void }) => {
+  return (
+    <div className="flex flex-col gap-2 mt-2">
+      {products.map((p, idx) => (
+        <Link 
+          key={idx} 
+          href={`/products/${p.slug || p.id}`} 
+          onClick={() => {
+            if (onClickProduct) onClickProduct();
+          }}
+          className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50 transition-colors bg-white"
+        >
+          <img src={p.image || p.imageUrl || '/placeholder.png'} alt={p.name} className="w-12 h-12 object-cover rounded-md border" />
+          <div className="flex flex-col">
+            <span className="text-sm font-medium line-clamp-1 text-slate-800">{p.name}</span>
+            <span className="text-sm font-semibold text-primary">{p.price?.toLocaleString('vi-VN')} ₫</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+};
 
 const normalizeMessage = (msg: any): Message => {
   if (!msg) return msg;
@@ -69,22 +141,216 @@ export default function CustomerChatWidget() {
   const [isClosed, setIsClosed] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"emoji" | "sticker">("emoji");
+  const [connectionStatus, setConnectionStatus] = useState<string>("Đang kết nối...");
+  const [isAiMode, setIsAiMode] = useState(true);
+  const [showEndChatModal, setShowEndChatModal] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [pendingAutoSendMsg, setPendingAutoSendMsg] = useState<string | null>(null);
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
+  const voiceOutputEnabledRef = useRef(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const spokenMessagesRef = useRef<Set<string | number>>(new Set());
+
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("voiceOutputEnabled");
+    if (saved !== null) {
+      setVoiceOutputEnabled(saved === "true");
+      voiceOutputEnabledRef.current = saved === "true";
+    }
+  }, []);
+
+  // Ngăn cuộn trang nền khi modal đang mở full màn hình
+  useEffect(() => {
+    if (isOpen && isExpanded) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    // Dọn dẹp khi component unmount
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, isExpanded]);
+
+  const handleToggleVoiceOutput = () => {
+    const newVal = !voiceOutputEnabled;
+    setVoiceOutputEnabled(newVal);
+    voiceOutputEnabledRef.current = newVal;
+    localStorage.setItem("voiceOutputEnabled", String(newVal));
+    if (!newVal && currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+  };
+
+  const speakText = (text: string, msgId: string | number) => {
+    if (typeof window === 'undefined') return;
+    if (spokenMessagesRef.current.has(msgId)) return;
+    spokenMessagesRef.current.add(msgId);
+
+    // Stop current audio if playing
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+
+    // Clean markdown and emojis for better TTS
+    const cleanText = text
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/[*#_~]/g, "")
+      .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "")
+      .trim();
+
+    if (!cleanText) return;
+
+    // Use our backend proxy GET /api/chatbot/tts?text=...
+    const audioUrl = `${API_BASE}/api/chatbot/tts?text=${encodeURIComponent(cleanText)}`;
+    const audio = new Audio(audioUrl);
+    audio.playbackRate = 1.0; // Đưa về tốc độ 1.0 để giọng nghe truyền cảm và tự nhiên như người thật
+    currentAudioRef.current = audio;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        if (err.name !== "AbortError") {
+          console.error("Audio playback failed", err);
+        }
+      });
+    }
+  };
+
+  const toggleListening = () => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    if (!recognitionRef.current) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = "vi-VN";
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInputText((prev) => {
+            const next = prev ? prev.trim() + " " + transcript : transcript;
+            setTimeout(() => {
+              if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+                textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+              }
+            }, 50);
+            return next;
+          });
+        }
+      };
+
+      rec.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        if (event.error === "not-allowed") {
+          toast.error("Quyền truy cập Micro bị từ chối.");
+        } else {
+          toast.error("Lỗi nhận diện giọng nói: " + event.error);
+        }
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+
+    try {
+      recognitionRef.current.start();
+    } catch (e) {
+      console.error(e);
+      setIsListening(false);
+    }
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hubConnectionRef = useRef<signalR.HubConnection | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const API_BASE = "http://localhost:5101";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "")
+    : "http://localhost:5101";
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isAdminTyping]);
+    const handleOpenChatWithMsg = (e: any) => {
+      setIsOpen(true);
+      const msg = e.detail;
+      if (msg) {
+        setPendingAutoSendMsg(msg);
+        setInputText(msg);
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          }
+        }, 100);
+      }
+    };
+    window.addEventListener('open_chat_with_msg', handleOpenChatWithMsg);
+    return () => window.removeEventListener('open_chat_with_msg', handleOpenChatWithMsg);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  }, [messages, isAdminTyping, isOpen]);
+
+  // Auto-close after 15 minutes of inactivity
+  useEffect(() => {
+    if (!isStarted || !sessionId || isClosed) return;
+
+    const timeout = setTimeout(() => {
+      handleResetChat();
+      toast.info("Cuộc trò chuyện đã tự động kết thúc do bạn không hoạt động trong 15 phút.");
+    }, 15 * 60 * 1000);
+
+    return () => clearTimeout(timeout);
+  }, [messages, isStarted, sessionId, isClosed]);
 
   // Load existing session on mount
   useEffect(() => {
     const initSession = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       let savedSessionId = localStorage.getItem("chat_session_id");
+      let savedMode = localStorage.getItem("chatMode");
+
+      if (savedMode) {
+        setIsAiMode(savedMode === "AI");
+      }
 
       if (token) {
         // Authenticated user: verify/retrieve active session
@@ -123,6 +389,10 @@ export default function CustomerChatWidget() {
       if (hubConnectionRef.current) {
         hubConnectionRef.current.stop();
       }
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
     };
   }, []);
 
@@ -157,21 +427,33 @@ export default function CustomerChatWidget() {
       : `${API_BASE}/chatHub`;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl)
+      .withUrl(hubUrl, {
+        transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+      })
       .withAutomaticReconnect()
       .build();
 
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
       setMessages((prev) => {
-        // Lọc bỏ tin nhắn tạm thời (optimistic update có id âm) khi nhận được tin nhắn thực
-        const filtered = prev.filter(m => m.id > 0);
-        if (filtered.some((m) => m.id === normalized.id)) return filtered;
-        return [...filtered, normalized];
+        if (prev.some((m) => m.id === normalized.id)) return prev;
+        
+        if (!normalized.isFromAdmin) {
+          const tempIndex = prev.findIndex(m => m.id < 0 && m.messageText === normalized.messageText);
+          if (tempIndex !== -1) {
+            const next = [...prev];
+            next[tempIndex] = normalized;
+            return next;
+          }
+        }
+        
+        return [...prev, normalized];
       });
-      // Đánh dấu đã đọc ở client khi nhận tin nhắn trong khi đang mở chat
       if (isOpen && !normalized.isFromAdmin) {
         markAsRead(sid);
+      }
+      if (voiceOutputEnabledRef.current && normalized.isFromAdmin && normalized.messageText) {
+        speakText(normalized.messageText, normalized.id);
       }
     });
 
@@ -184,17 +466,46 @@ export default function CustomerChatWidget() {
     connection.on("SessionClosed", (closedId: string) => {
       if (closedId === sid) {
         setIsClosed(true);
+        setIsAdminTyping(false);
         toast.info("Cuộc trò chuyện đã được đóng bởi quản trị viên.");
       }
+    });
+
+    connection.on("SupportEnded", () => {
+      setIsAiMode(true);
+      setIsAdminTyping(false);
+      localStorage.setItem("chatMode", "AI");
+      toast.info("Nhân viên CSKH đã rời khỏi cuộc trò chuyện. Trợ lý AI đã tiếp quản.");
+    });
+
+    connection.on("CartUpdated", () => {
+      window.dispatchEvent(new Event("cart_updated"));
+    });
+
+    connection.onreconnected(() => {
+      setConnectionStatus("Đã kết nối");
+      connection.invoke("JoinRoom", sid).catch(console.error);
+    });
+
+    connection.onreconnecting(() => {
+      setConnectionStatus("Đang kết nối lại...");
+    });
+
+    connection.onclose(() => {
+      setConnectionStatus("Mất kết nối");
     });
 
     connection
       .start()
       .then(() => {
-        connection.invoke("JoinRoom", sid);
+        setConnectionStatus("Đã kết nối");
+        connection.invoke("JoinRoom", sid).catch(console.error);
         hubConnectionRef.current = connection;
       })
-      .catch((err) => console.error("SignalR Connection Error: ", err));
+      .catch((err) => {
+        setConnectionStatus("Lỗi kết nối");
+        console.error("SignalR Connection Error: ", err);
+      });
   };
 
   const markAsRead = async (sid: string) => {
@@ -236,34 +547,140 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!sessionId) return;
-    if (!inputText.trim()) return;
 
-    // --- OPTIMISTIC UI UPDATE ---
-    const tempId = -Date.now();
+
+  const requestCSKH = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/session/${sessionId}/request-cskh`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        toast.success("Đã gửi yêu cầu kết nối với nhân viên hỗ trợ.");
+        setIsAiMode(false);
+        localStorage.setItem("chatMode", "CSKH");
+      } else {
+        toast.error("Không thể kết nối với CSKH.");
+      }
+    } catch (e) {
+      toast.error("Lỗi khi gửi yêu cầu.");
+    }
+  };
+
+  // Thêm state hàng chờ cho AI
+  const [aiMessageQueue, setAiMessageQueue] = useState<{ id: number, text: string }[]>([]);
+
+  useEffect(() => {
+    if (aiMessageQueue.length > 0 && !isAdminTyping) {
+      const nextItem = aiMessageQueue[0];
+      processAiMessage(nextItem.id, nextItem.text);
+    }
+  }, [aiMessageQueue, isAdminTyping]);
+
+  const processAiMessage = async (tempId: number, textToSend: string) => {
+    try {
+      setIsAdminTyping(true);
+      
+      const res = await fetch(`${API_BASE}/api/chatbot/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sessionId || "ai-session", message: textToSend }),
+      });
+
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        
+        setMessages((prev) => {
+          // Keep the user message in UI and remove the 'Đang gửi...' status by assigning a positive ID.
+          const prevUpdated = prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m);
+          
+          if (data && data.message) {
+            const aiMsg = normalizeMessage(data.message);
+            // Prevent duplicate if SignalR was faster
+            if (!prevUpdated.some(m => m.id === aiMsg.id)) {
+              if (voiceOutputEnabledRef.current && aiMsg.messageText) {
+                speakText(aiMsg.messageText, aiMsg.id);
+              }
+              return [...prevUpdated, aiMsg];
+            }
+          } else if (data && data.text) {
+            // Fallback for old backend that only returns text
+            const aiMsg: Message = {
+              id: Date.now() + Math.random(),
+              chatSessionId: sessionId || "ai-session",
+              senderId: null,
+              senderName: "LazPe AI Assistant",
+              isFromAdmin: true,
+              messageText: data.text,
+              imageUrl: null,
+              createdAt: new Date().toISOString()
+            };
+            if (voiceOutputEnabledRef.current && aiMsg.messageText) {
+              speakText(aiMsg.messageText, aiMsg.id);
+            }
+            return [...prevUpdated, aiMsg];
+          }
+          return prevUpdated;
+        });
+      } else {
+        const errData = await res.json().catch(() => null);
+        const errMsg = errData?.error || "AI không thể phản hồi lúc này.";
+        toast.error(errMsg);
+        setMessages((prev) => prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m));
+      }
+    } catch (e) {
+      toast.error("Lỗi kết nối AI.");
+      setMessages((prev) => prev.map(m => m.id === tempId ? { ...m, id: Date.now() + Math.random() } : m));
+    } finally {
+      setIsAdminTyping(false);
+      setAiMessageQueue(prev => prev.slice(1));
+    }
+  };
+
+  const sendMessage = async (textToSend: string) => {
+    if (!sessionId && !isAiMode) return;
+    if (!textToSend.trim()) return;
+
+    const lowerText = textToSend.trim().toLowerCase();
+    if (isAiMode && (lowerText === "yêu cầu gặp nhân viên cskh" || lowerText === "gặp cskh" || lowerText === "tôi muốn gặp nhân viên")) {
+      requestCSKH();
+      return;
+    }
+
+    const tempId = -(Date.now() + Math.random());
     const tempMsg: Message = {
       id: tempId,
-      chatSessionId: sessionId,
+      chatSessionId: sessionId || "ai-session",
       senderId: null,
       senderName: guestName || "Khách hàng",
       isFromAdmin: false,
-      messageText: inputText.trim(),
+      messageText: textToSend,
       imageUrl: null,
       createdAt: new Date().toISOString()
     };
-
-    // Thêm tin nhắn tạm vào danh sách ngay lập tức để tạo cảm giác phản hồi tức thì
     setMessages((prev) => [...prev, tempMsg]);
 
-    const textToSend = inputText.trim();
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
 
-    // Reset các trường nhập liệu trên giao diện ngay lập tức
-    setInputText("");
+    const faqList = [
+      "thời gian giao hàng là bao lâu?",
+      "chính sách đổi trả hàng như thế nào?",
+      "kiểm tra trạng thái đơn hàng của tôi",
+      "tôi muốn thay đổi địa chỉ nhận hàng",
+      "shop có chương trình khuyến mãi nào không?"
+    ];
+
+    if (isAiMode || faqList.includes(lowerText)) {
+      setAiMessageQueue(prev => [...prev, { id: tempId, text: textToSend }]);
+      return;
+    }
 
     const formData = new FormData();
-    formData.append("messageText", textToSend);
+    if (tempMsg.messageText) {
+      formData.append("messageText", tempMsg.messageText);
+    }
 
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -280,24 +697,40 @@ export default function CustomerChatWidget() {
 
       const data = await res.json();
       if (!data.success) {
-        // Nếu lỗi, xóa tin nhắn tạm và thông báo
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
         toast.error(data.message || "Không thể gửi tin nhắn.");
       } else {
+        setMessages(prev => prev.map(m => m.id === tempMsg.id ? normalizeMessage(data.message) : m));
         if (isClosed) {
           setIsClosed(false);
         }
       }
     } catch (e) {
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
       toast.error("Gửi tin nhắn thất bại. Vui lòng kiểm tra kết nối mạng.");
     }
+  };
+
+  useEffect(() => {
+    if (pendingAutoSendMsg && isStarted && sessionId) {
+      sendMessage(pendingAutoSendMsg);
+      setPendingAutoSendMsg(null);
+      setInputText("");
+    }
+  }, [pendingAutoSendMsg, isStarted, sessionId]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputText.trim();
+    if (!text) return;
+    setInputText("");
+    await sendMessage(text);
   };
 
   const sendSticker = async (stickerUrl: string) => {
     if (!sessionId) return;
 
-    const tempId = -Date.now();
+    const tempId = -(Date.now() + Math.random());
     const tempMsg: Message = {
       id: tempId,
       chatSessionId: sessionId,
@@ -339,8 +772,11 @@ export default function CustomerChatWidget() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+
     if (hubConnectionRef.current && sessionId) {
       hubConnectionRef.current.invoke(
         "SendTypingStatus",
@@ -351,11 +787,27 @@ export default function CustomerChatWidget() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (inputText.trim()) {
+        handleSend(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
   const handleResetChat = async () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    setShowEndChatModal(false);
     localStorage.removeItem("chat_session_id");
+    localStorage.removeItem("chatMode");
     setSessionId(null);
     setIsClosed(false);
     setMessages([]);
+    setIsAiMode(true);
 
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (token) {
@@ -393,63 +845,76 @@ export default function CustomerChatWidget() {
 
   return (
     <>
-      {/* FAB Button Zalo Style */}
       <button
         onClick={toggleOpen}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#0068ff] hover:bg-[#0056d6] text-white flex items-center justify-center shadow-lg cursor-pointer bouncy-hover transition-transform duration-300 transform active:scale-95"
-        style={{
-          boxShadow: "0 8px 24px rgba(0, 104, 255, 0.3)",
-        }}
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white flex items-center justify-center shadow-lg shadow-primary/30 cursor-pointer transition-all duration-300 transform active:scale-95 ${isOpen ? "hidden" : "flex"}`}
       >
-        <span className="material-symbols-outlined text-3xl">
-          {isOpen ? "close" : "sms"}
-        </span>
+        {isOpen ? (
+          <X size={28} strokeWidth={2.5} />
+        ) : (
+          <MessagesSquare size={28} strokeWidth={2.5} />
+        )}
       </button>
 
-      {/* Chat Window Container Zalo Style (Tăng kích thước to hơn) */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 z-50 w-[430px] max-w-[95vw] h-[610px] max-h-[85vh] bg-[#f4f6f9] rounded-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 shadow-2xl"
-          style={{
-            boxShadow: "0 12px 40px rgba(0, 0, 0, 0.16)",
-          }}
+          className={`fixed z-[60] bg-white flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] transition-all ${
+            isExpanded
+              ? "inset-0 w-full h-[100dvh] rounded-none border-0"
+              : "bottom-0 right-0 sm:bottom-[15px] sm:right-6 w-full sm:w-[460px] h-[100dvh] sm:h-[calc(100vh_-_95px)] sm:rounded-2xl"
+          }`}
         >
-          {/* Zalo Blue Header */}
-          <div className="bg-[#0068ff] text-white px-4 py-3.5 flex items-center justify-between select-none">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-base text-white">
-                LP
+          <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-4 py-2.5 flex items-center justify-between select-none shadow-sm relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm text-white">
+                {isAiMode ? "AI" : "LP"}
               </div>
               <div>
-                <h3 className="font-semibold text-base leading-tight">Hỗ trợ LazPe</h3>
-                <span className="text-xs text-blue-100 flex items-center gap-1.5 mt-0.5">
-                  <span className="h-2 w-2 rounded-full bg-[#4eff8a] inline-block animate-pulse"></span>
+                <h3 className="font-semibold text-sm leading-tight">
+                  {isAiMode ? "LazPe AI Assistant" : "Hỗ trợ LazPe"}
+                </h3>
+                <span className="text-[10px] text-blue-100 flex items-center gap-1.5 mt-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#4eff8a] inline-block animate-pulse"></span>
                   Trực tuyến
                 </span>
               </div>
             </div>
 
-            {/* Header Action Icons */}
-            <div className="flex items-center gap-2 text-white/90">
-              <span className="material-symbols-outlined hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-xl">phone</span>
-              <span className="material-symbols-outlined hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-xl">videocam</span>
+            <div className="flex items-center gap-1.5 text-white/90 relative z-10">
+              {isStarted && (
+                <button
+                  onClick={() => setShowEndChatModal(true)}
+                  className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl"
+                  title="Kết thúc trò chuyện"
+                >
+                  delete
+                </button>
+              )}
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl hidden sm:block"
+                title={isExpanded ? "Thu nhỏ" : "Phóng to"}
+              >
+                {isExpanded ? "close_fullscreen" : "open_in_full"}
+              </button>
               <button
                 onClick={toggleOpen}
-                className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer text-xl"
+                className="hover:text-white material-symbols-outlined rounded-full p-1 hover:bg-white/20 transition-colors cursor-pointer text-xl"
               >
                 close
               </button>
             </div>
           </div>
 
-          {/* Messages Area Zalo Gray-Blue Background */}
-          <div className="flex-1 bg-[#e2e9f1] flex flex-col min-h-0 overflow-y-auto p-4 space-y-4" style={{ scrollbarWidth: "thin" }}>
+          <div className="flex-1 bg-slate-50/80 backdrop-blur-md flex flex-col min-h-0 overflow-y-auto p-4 space-y-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {!isStarted ? (
-              /* Start Chat Form for Guest */
-              <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white rounded-2xl m-2 shadow-sm">
-                <span className="material-symbols-outlined text-[#0068ff] text-6xl mb-4">chat</span>
-                <h4 className="font-bold text-slate-800 text-lg mb-2">Chào mừng bạn đến với LazPe</h4>
-                <p className="text-sm text-slate-500 mb-6 max-w-[260px]">
+              <div className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-white/60 backdrop-blur-lg rounded-3xl m-2 shadow-sm border border-white/50">
+                <div className="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-5">
+                  <span className="material-symbols-outlined text-on-primary-container text-4xl">forum</span>
+                </div>
+                <h4 className="font-extrabold text-slate-800 text-xl mb-2">Chào mừng đến LazPe</h4>
+                <p className="text-sm text-slate-500 mb-6 max-w-[260px] leading-relaxed">
                   Vui lòng cho biết tên của bạn để bắt đầu trò chuyện trực tuyến với chúng tôi.
                 </p>
                 <form onSubmit={startGuestChat} className="w-full space-y-4">
@@ -459,31 +924,64 @@ export default function CustomerChatWidget() {
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
                     placeholder="Nhập tên của bạn..."
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0068ff] focus:ring-2 focus:ring-blue-500/20 bg-white text-slate-800"
+                    className="w-full px-5 py-3.5 border-0 bg-white rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-shadow"
                   />
                   <button
                     type="submit"
-                    className="w-full bg-[#0068ff] hover:bg-[#0056d6] text-white font-bold py-3 px-4 rounded-xl text-sm transition-colors cursor-pointer shadow-md shadow-blue-500/10"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Bắt đầu trò chuyện
                   </button>
                 </form>
               </div>
             ) : (
-              /* Message Thread */
               <>
-                {messages.length === 0 ? (
-                  <div className="text-center text-slate-500 py-10 text-xs bg-white/50 rounded-xl p-4">
-                    Bắt đầu cuộc trò chuyện. Hãy gửi lời chào đến chúng tôi!
+                {isAiMode && (
+                  <div className="flex flex-col gap-3 py-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex flex-col items-start w-full">
+                      <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
+                        LazPe AI
+                      </span>
+                      <div className="max-w-[85%] rounded-[20px] px-4 py-3 text-[14px] leading-relaxed shadow-sm bg-white text-slate-700 rounded-tl-sm border border-slate-100/50">
+                        Chào bạn <span className="font-semibold text-primary">{guestName || "khách yêu"}</span> 👋, hôm nay bạn cần LazPe hỗ trợ về điều gì, hãy hỏi ngay để được giải đáp nhanh chóng nhé! ✨
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-start w-full mt-1">
+                      <div className="max-w-[85%] bg-white border border-slate-200 rounded-[16px] overflow-hidden shadow-sm w-full">
+                        <div className="px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-[13px] bg-slate-50/50">
+                          Bạn muốn hỏi về:
+                        </div>
+                        <div className="flex flex-col w-full">
+                          {[
+                            "Thời gian giao hàng là bao lâu?",
+                            "Chính sách đổi trả hàng như thế nào?",
+                            "Kiểm tra trạng thái đơn hàng của tôi",
+                            "Tôi muốn thay đổi địa chỉ nhận hàng",
+                            "Shop có chương trình khuyến mãi nào không?",
+                            "Yêu cầu gặp nhân viên CSKH"
+                          ].map((faq, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => sendMessage(faq)}
+                              className="px-4 py-3 text-left text-[13px] text-primary hover:bg-primary/5 transition-all border-b border-slate-50 last:border-0 hover:pl-5 cursor-pointer font-medium"
+                            >
+                              {faq}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  messages.map((msg) => {
+                )}
+
+                {messages.map((msg) => {
                     const isSystemMessage = msg.senderName === "Hệ thống";
 
                     if (isSystemMessage) {
                       return (
                         <div key={msg.id} className="w-full text-center my-2">
-                          <span className="bg-slate-200/80 text-slate-600 text-[11px] px-3 py-1 rounded-full inline-block shadow-sm">
+                          <span className="text-slate-500 text-[11px] italic">
                             {msg.messageText}
                           </span>
                         </div>
@@ -495,15 +993,15 @@ export default function CustomerChatWidget() {
                         key={msg.id}
                         className={`flex flex-col ${msg.isFromAdmin ? "items-start" : "items-end"}`}
                       >
-                        <span className="text-[10px] text-slate-500 mb-0.5 px-1.5">
+                        <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">
                           {msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
 
                         <div
-                          className={`max-w-[80%] rounded-2xl p-3 text-[14px] leading-relaxed shadow-sm ${msg.isFromAdmin
-                            ? "bg-white text-slate-800 rounded-tl-sm border border-slate-100/30"
-                            : "bg-[#cce4ff] text-[#081c36] rounded-tr-sm"
-                            } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none" : ""}`}
+                          className={`max-w-[85%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed shadow-sm ${msg.isFromAdmin
+                            ? "bg-white text-slate-700 rounded-tl-sm border border-slate-100/50"
+                            : "bg-primary text-white rounded-tr-sm"
+                            } ${msg.id < 0 ? "opacity-70" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                         >
                           {isMediaUrl(msg.messageText) ? (
                             <img
@@ -515,24 +1013,72 @@ export default function CustomerChatWidget() {
                               }}
                             />
                           ) : (
-                            msg.messageText && <p className="whitespace-pre-wrap">{msg.messageText}</p>
+                            msg.messageText && (
+                              <div className="prose prose-sm prose-slate max-w-none break-words leading-relaxed">
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    code: ({ node, inline, className, children, ...props }: any) => {
+                                      const match = /language-(\w+)/.exec(className || '');
+                                      if (!inline && match && match[1] === 'product_card') {
+                                        try {
+                                          const data = JSON.parse(String(children).replace(/\n$/, ''));
+                                          return <ChatProductCard data={data} onZoomImage={setZoomedImage} onClickProduct={() => setIsExpanded(false)} />;
+                                        } catch (e) {
+                                          return <code className={className} {...props}>{children}</code>;
+                                        }
+                                      }
+                                      if (!inline && match && match[1] === 'product_list') {
+                                        try {
+                                          const data = JSON.parse(String(children).replace(/\n$/, ''));
+                                          if (Array.isArray(data)) {
+                                            return <ChatProductList products={data} onClickProduct={() => setIsExpanded(false)} />;
+                                          }
+                                        } catch (e) {
+                                          // fallback
+                                        }
+                                      }
+                                      return <code className={className} {...props}>{children}</code>;
+                                    },
+                                    img: ({ node, ...props }) => (
+                                      <img
+                                        {...props}
+                                        className="max-w-[200px] h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 mt-2 shadow-sm"
+                                        onClick={() => setZoomedImage(typeof props.src === 'string' ? props.src : null)}
+                                        alt={props.alt || "Image"}
+                                      />
+                                    ),
+                                    a: ({ node, href, children, ...props }: any) => {
+                                      if (href && href.startsWith('/')) {
+                                        return <Link href={href} className="text-primary hover:underline font-semibold" {...props}>{children}</Link>;
+                                      }
+                                      return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold" {...props}>{children}</a>;
+                                    }
+                                  }}
+                                >
+                                  {msg.messageText}
+                                </ReactMarkdown>
+                              </div>
+                            )
                           )}
                         </div>
                         {msg.id < 0 && (
-                          <span className="text-[9px] text-[#0068ff] italic mt-0.5 px-1 animate-pulse">
+                          <span className="text-[10px] text-primary italic mt-1 px-2 animate-pulse font-medium">
                             Đang gửi...
                           </span>
                         )}
                       </div>
                     );
                   })
-                )}
+                }
                 {isAdminTyping && (
                   <div className="flex items-center gap-1 text-xs text-slate-500 py-1.5 pl-2 bg-white/40 rounded-full w-fit px-3 shadow-sm">
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce"></span>
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce delay-75"></span>
                     <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-bounce delay-150"></span>
-                    <span className="ml-1 text-[11px] font-medium text-slate-600">Nhân viên đang soạn tin...</span>
+                    <span className="ml-1 text-[11px] font-medium text-slate-600">
+                      {isAiMode ? "LazPe AI đang suy nghĩ..." : "Nhân viên đang soạn tin..."}
+                    </span>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -540,119 +1086,129 @@ export default function CustomerChatWidget() {
             )}
           </div>
 
-          {/* Footer Input Area Zalo Style */}
+          {/* SignalR Connection Status */}
+          {connectionStatus !== 'Đã kết nối' && (
+            <div className="px-4 py-1 bg-gray-50 border-t border-b border-gray-100 flex items-center gap-2 text-xs text-gray-500 shrink-0">
+              <div className={`w-2 h-2 rounded-full ${connectionStatus === 'Đã kết nối' ? 'bg-green-500' : connectionStatus === 'Đang kết nối...' || connectionStatus === 'Đang kết nối lại...' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+              {connectionStatus}
+            </div>
+          )}
+
           {isStarted && (
             isClosed ? (
-              <div className="p-4 bg-white border-t border-slate-200 flex flex-col items-center gap-2 shrink-0">
-                <p className="text-xs text-slate-500 font-medium">Cuộc hội thoại đã được đóng.</p>
+              <div className="p-5 bg-white/90 backdrop-blur border-t border-slate-100 flex flex-col items-center gap-3 shrink-0">
+                <p className="text-xs text-slate-500 font-semibold">Cuộc hội thoại đã kết thúc.</p>
                 <button
                   type="button"
                   onClick={handleResetChat}
-                  className="w-full bg-[#0068ff] hover:bg-[#0056d6] text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors cursor-pointer text-center shadow-md shadow-blue-500/10"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer text-center shadow-md active:scale-[0.98]"
                 >
                   Bắt đầu cuộc chat mới
                 </button>
               </div>
             ) : (
-              <div className="bg-white border-t border-slate-200 flex flex-col shrink-0 relative">
-                {/* Emoji/Sticker Picker Popup */}
-                {showPicker && (
-                  <div className="absolute bottom-full right-4 mb-2 w-80 h-72 bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    {/* Picker Tabs */}
-                    <div className="flex border-b border-slate-100 text-xs shrink-0 select-none">
-                      <button
-                        type="button"
-                        onClick={() => setPickerTab("emoji")}
-                        className={`flex-1 py-2 font-bold cursor-pointer transition-colors ${pickerTab === "emoji" ? "text-[#0068ff] border-b-2 border-[#0068ff]" : "text-slate-500 hover:text-slate-900"
-                          }`}
-                      >
-                        Biểu cảm
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPickerTab("sticker")}
-                        className={`flex-1 py-2 font-bold cursor-pointer transition-colors ${pickerTab === "sticker" ? "text-[#0068ff] border-b-2 border-[#0068ff]" : "text-slate-500 hover:text-slate-900"
-                          }`}
-                      >
-                        Sticker / GIF
-                      </button>
-                    </div>
-
-                    {/* Picker Body */}
-                    <div className="flex-1 overflow-y-auto p-3" style={{ scrollbarWidth: "thin" }}>
-                      {pickerTab === "emoji" ? (
-                        <div className="grid grid-cols-8 gap-2 text-xl select-none">
-                          {EMOJIS.map((emoji, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => {
-                                setInputText((prev) => prev + emoji);
-                                // giữ trạng thái không đóng picker ngay để chọn được nhiều emoji
-                              }}
-                              className="hover:bg-slate-100 rounded p-1 flex items-center justify-center cursor-pointer transition-colors active:scale-90"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-3">
-                          {STICKERS.map((sticker, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => sendSticker(sticker.url)}
-                              className="hover:bg-slate-50 p-1 rounded-lg border border-slate-100 flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 group"
-                            >
-                              <img
-                                src={sticker.url}
-                                alt={sticker.name}
-                                className="w-14 h-14 object-contain rounded-md"
-                              />
-                              <span className="text-[10px] text-slate-500 mt-1 truncate max-w-full group-hover:text-[#0068ff]">
-                                {sticker.name}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Zalo Options Toolbar */}
-                <div className="flex items-center gap-3 px-3 py-1.5 border-b border-slate-100 text-slate-400">
-                  <button
-                    type="button"
-                    onClick={() => setShowPicker(!showPicker)}
-                    className={`hover:text-[#0068ff] hover:bg-slate-100 p-1.5 rounded-full transition-colors material-symbols-outlined text-xl cursor-pointer ${showPicker ? "text-[#0068ff] bg-slate-100" : ""
-                      }`}
-                    title="Cảm xúc & Sticker"
-                  >
-                    sentiment_satisfied
-                  </button>
-                </div>
-
-                {/* Text input form */}
-                <form onSubmit={handleSend} className="p-3 flex items-center gap-2">
-                  <input
-                    type="text"
+              <div className="bg-white/95 backdrop-blur-md border-t border-slate-100 flex flex-col shrink-0 relative pb-safe">
+                <form onSubmit={handleSend} className="px-4 pb-4 pt-1 flex items-end gap-2">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
                     value={inputText}
                     onChange={handleInputChange}
-                    placeholder="Nhập tin nhắn..."
-                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:border-[#0068ff] focus:ring-1 focus:ring-blue-500/10 text-slate-800"
+                    onKeyDown={handleKeyDown}
+                    placeholder="Gửi tin nhắn..."
+                    className="flex-1 px-4 py-3 bg-slate-50/80 border-0 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 resize-none max-h-[100px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-[44px] leading-relaxed shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] transition-shadow"
                   />
+                  
+                  {/* Nút Mic Nhập Giọng Nói (STT) */}
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`p-2 flex items-center justify-center cursor-pointer transition-all rounded-full shrink-0 ${
+                      isListening 
+                        ? "bg-red-50 text-red-500 animate-pulse hover:bg-red-100" 
+                        : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                    }`}
+                    title={isListening ? "Đang lắng nghe... Bấm để dừng" : "Nói để nhập tin nhắn"}
+                  >
+                    <span className="material-symbols-outlined text-[22px]">
+                      {isListening ? "mic" : "mic_none"}
+                    </span>
+                  </button>
+
+                  {/* Nút Loa AI Trả Lời Giọng Nói (TTS) */}
+                  <button
+                    type="button"
+                    onClick={handleToggleVoiceOutput}
+                    className={`p-2 flex items-center justify-center cursor-pointer transition-all rounded-full shrink-0 ${
+                      voiceOutputEnabled 
+                        ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                        : "text-slate-400 hover:text-primary hover:bg-slate-50"
+                    }`}
+                    title={voiceOutputEnabled ? "Tắt đọc câu trả lời AI" : "Bật đọc câu trả lời AI"}
+                  >
+                    <span className="material-symbols-outlined text-[22px]">
+                      {voiceOutputEnabled ? "volume_up" : "volume_off"}
+                    </span>
+                  </button>
+
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="text-[#0068ff] hover:text-[#0056d6] disabled:text-slate-300 disabled:opacity-50 p-2 flex items-center justify-center cursor-pointer transition-colors"
+                    className="text-primary hover:text-primary/80 disabled:text-slate-300 disabled:opacity-50 p-2 flex items-center justify-center cursor-pointer transition-colors shrink-0"
                   >
                     <span className="material-symbols-outlined text-2xl font-bold">send</span>
                   </button>
                 </form>
               </div>
             )
+          )}
+
+          {/* End Chat Confirm Modal Overlay */}
+          {showEndChatModal && (
+            <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl w-[320px] shadow-2xl p-6 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-3xl">delete_sweep</span>
+                </div>
+                <h3 className="font-bold text-lg text-slate-800 mb-2">Kết thúc trò chuyện?</h3>
+                <p className="text-sm text-slate-500 mb-6">Bạn có chắc chắn muốn xóa lịch sử và kết thúc cuộc trò chuyện này không?</p>
+                <div className="flex w-full gap-3">
+                  <button 
+                    onClick={() => setShowEndChatModal(false)}
+                    className="flex-1 py-2.5 rounded-xl font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button 
+                    onClick={() => handleResetChat()}
+                    className="flex-1 py-2.5 rounded-xl font-medium bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shadow-red-200"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image Zoom Modal */}
+          {zoomedImage && (
+            <div 
+              className="absolute inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 animate-in fade-in cursor-zoom-out"
+              onClick={() => setZoomedImage(null)}
+            >
+              <button 
+                className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 material-symbols-outlined rounded-full bg-black/20 hover:bg-black/40 transition-colors"
+                onClick={(e) => { e.stopPropagation(); setZoomedImage(null); }}
+              >
+                close
+              </button>
+              <img 
+                src={zoomedImage} 
+                alt="Zoomed" 
+                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           )}
         </div>
       )}

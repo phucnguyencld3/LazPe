@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PolyBabyAPI.Interfaces;
@@ -9,11 +9,6 @@ namespace PolyBabyAPI.Data
 {
     public static class IdentitySeeder
     {
-        private const string AdminUserName = "admin";
-        private const string AdminPassword = "123456";
-        private const string AdminEmail = "admin@polybaby.com";
-        private const string AdminFullName = "Administrator";
-
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -29,13 +24,16 @@ namespace PolyBabyAPI.Data
             // 2) Seed Permissions
             await SeedPermissionsAsync(permissionService, logger);
 
-            // 3) Seed Admin User
-            var adminUser = await SeedAdminUserAsync(userManager, logger);
+            // 3) Seed Admin Users
+            var adminUsers = await SeedAdminUsersAsync(userManager, logger);
 
-            // 4) Grant all permissions to Admin
-            if (adminUser != null)
+            // 4) Grant all permissions to Admins
+            foreach (var adminUser in adminUsers)
             {
-                await GrantAllPermissionsToAdminAsync(permissionService, adminUser.Id, logger);
+                if (adminUser != null)
+                {
+                    await GrantAllPermissionsToAdminAsync(permissionService, adminUser.Id, logger);
+                }
             }
 
             logger.LogInformation("Identity Seeder completed successfully.");
@@ -69,7 +67,7 @@ namespace PolyBabyAPI.Data
 
             var defaultPermissions = new[]
             {
-                // ✅ THÊM: Admin Access Permission
+                // THÊM: Admin Access Permission
                 new { Resource = "Admin", Action = "Access", Description = "Truy cập vào Admin Dashboard" },
                 new { Resource = "Admin", Action = "ViewUsers", Description = "Xem danh sách người dùng trong Admin" },
                 new { Resource = "Admin", Action = "ManagePermissions", Description = "Quản lý phân quyền hệ thống" },
@@ -136,7 +134,35 @@ namespace PolyBabyAPI.Data
                 new { Resource = "Address", Action = "Create", Description = "Tạo địa chỉ mới" },
                 new { Resource = "Address", Action = "Read", Description = "Xem địa chỉ" },
                 new { Resource = "Address", Action = "Update", Description = "Cập nhật địa chỉ" },
-                new { Resource = "Address", Action = "Delete", Description = "Xóa địa chỉ" }
+                new { Resource = "Address", Action = "Delete", Description = "Xóa địa chỉ" },
+
+                // Voucher Management
+                new { Resource = "Voucher", Action = "Create", Description = "Tạo mã giảm giá" },
+                new { Resource = "Voucher", Action = "Read", Description = "Xem mã giảm giá" },
+                new { Resource = "Voucher", Action = "Update", Description = "Cập nhật mã giảm giá" },
+                new { Resource = "Voucher", Action = "Delete", Description = "Xóa mã giảm giá" },
+
+                // Loyalty Management
+                new { Resource = "Loyalty", Action = "Create", Description = "Tạo thứ hạng thành viên" },
+                new { Resource = "Loyalty", Action = "Read", Description = "Xem thứ hạng thành viên" },
+                new { Resource = "Loyalty", Action = "Update", Description = "Cập nhật thứ hạng thành viên" },
+                new { Resource = "Loyalty", Action = "Delete", Description = "Xóa thứ hạng thành viên" },
+
+                // Notification Management
+                new { Resource = "Notification", Action = "Create", Description = "Tạo thông báo" },
+                new { Resource = "Notification", Action = "Read", Description = "Xem thông báo" },
+                new { Resource = "Notification", Action = "Update", Description = "Cập nhật thông báo" },
+                new { Resource = "Notification", Action = "Delete", Description = "Xóa thông báo" },
+
+                // Flash Sale Management
+                new { Resource = "FlashSale", Action = "Create", Description = "Tạo chiến dịch Flash Sale" },
+                new { Resource = "FlashSale", Action = "Read", Description = "Xem chiến dịch Flash Sale" },
+                new { Resource = "FlashSale", Action = "Update", Description = "Cập nhật chiến dịch Flash Sale" },
+                new { Resource = "FlashSale", Action = "Delete", Description = "Xóa chiến dịch Flash Sale" },
+                new { Resource = "Chat", Action = "Manage", Description = "Quản lý Chat" },
+                new { Resource = "Withdraw", Action = "Read", Description = "Xem yêu cầu rút tiền" },
+                new { Resource = "Withdraw", Action = "Update", Description = "Xử lý yêu cầu rút tiền" },
+                new { Resource = "System", Action = "Audit", Description = "Xem nhật ký hệ thống" }
             };
 
             var existingPermissions = await permissionService.GetAllPermissionsAsync();
@@ -165,51 +191,84 @@ namespace PolyBabyAPI.Data
             logger.LogInformation("Permissions seeded successfully. Created: {Count}", createdCount);
         }
 
-        private static async Task<ApplicationUser?> SeedAdminUserAsync(UserManager<ApplicationUser> userManager, ILogger logger)
+        private static async Task<List<ApplicationUser>> SeedAdminUsersAsync(UserManager<ApplicationUser> userManager, ILogger logger)
         {
-            var adminUser = await userManager.FindByNameAsync(AdminUserName);
-            
-            if (adminUser == null)
+            var seededAdmins = new List<ApplicationUser>();
+            var primaryAdminEmail = "lazpevn@gmail.com";
+
+            // Migrate legacy admin to the primary admin (lazpevn@gmail.com) if found
+            var oldAdmin = await userManager.FindByNameAsync("admin") ?? await userManager.FindByEmailAsync("admin@polybaby.com");
+            if (oldAdmin != null)
             {
-                adminUser = new ApplicationUser
+                logger.LogInformation("Found legacy admin user. Migrating username and email to '{NewAdmin}'...", primaryAdminEmail);
+                oldAdmin.UserName = primaryAdminEmail;
+                oldAdmin.Email = primaryAdminEmail;
+                oldAdmin.EmailConfirmed = true;
+                var updateResult = await userManager.UpdateAsync(oldAdmin);
+                if (updateResult.Succeeded)
                 {
-                    UserName = AdminUserName,
-                    Email = AdminEmail,
-                    EmailConfirmed = true,
-                    FullName = AdminFullName,
-                    Status = true,
-                    RegisterDate = DateTime.Now
-                };
-
-                var createResult = await userManager.CreateAsync(adminUser, AdminPassword);
-                if (createResult.Succeeded)
-                {
-                    logger.LogInformation("Created admin user: {UserName}", AdminUserName);
-
-                    // Thêm role Admin
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                    logger.LogInformation("Added Admin role to user: {UserName}", AdminUserName);
+                    logger.LogInformation("Successfully migrated legacy admin to '{NewAdmin}'.", primaryAdminEmail);
                 }
                 else
                 {
-                    var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
-                    logger.LogError("Failed to create admin user: {Errors}", errors);
-                    return null;
+                    logger.LogError("Failed to migrate legacy admin: {Errors}", 
+                        string.Join("; ", updateResult.Errors.Select(e => e.Description)));
                 }
             }
-            else
+
+            var adminConfigs = new[]
             {
-                logger.LogInformation("Admin user already exists: {UserName}", AdminUserName);
+                new { Email = "lazpevn@gmail.com", Password = "123456", FullName = "Administrator" },
+                new { Email = "lazpeadmin001@gmail.com", Password = "123456", FullName = "Admin 001" }
+            };
 
-                // Đảm bảo admin có role Admin
-                if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+            foreach (var config in adminConfigs)
+            {
+                var adminUser = await userManager.FindByEmailAsync(config.Email) ?? await userManager.FindByNameAsync(config.Email);
+                
+                if (adminUser == null)
                 {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                    logger.LogInformation("Added Admin role to existing user: {UserName}", AdminUserName);
+                    adminUser = new ApplicationUser
+                    {
+                        UserName = config.Email,
+                        Email = config.Email,
+                        EmailConfirmed = true,
+                        FullName = config.FullName,
+                        Status = true,
+                        RegisterDate = DateTime.Now
+                    };
+
+                    var createResult = await userManager.CreateAsync(adminUser, config.Password);
+                    if (createResult.Succeeded)
+                    {
+                        logger.LogInformation("Created admin user: {UserName}", config.Email);
+
+                        // Thêm role Admin
+                        await userManager.AddToRoleAsync(adminUser, "Admin");
+                        logger.LogInformation("Added Admin role to user: {UserName}", config.Email);
+                        seededAdmins.Add(adminUser);
+                    }
+                    else
+                    {
+                        var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                        logger.LogError("Failed to create admin user {Email}: {Errors}", config.Email, errors);
+                    }
+                }
+                else
+                {
+                    logger.LogInformation("Admin user already exists: {UserName}", config.Email);
+
+                    // Đảm bảo admin có role Admin
+                    if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+                    {
+                        await userManager.AddToRoleAsync(adminUser, "Admin");
+                        logger.LogInformation("Added Admin role to existing user: {UserName}", config.Email);
+                    }
+                    seededAdmins.Add(adminUser);
                 }
             }
 
-            return adminUser;
+            return seededAdmins;
         }
 
         private static async Task GrantAllPermissionsToAdminAsync(IPermissionService permissionService, string adminUserId, ILogger logger)

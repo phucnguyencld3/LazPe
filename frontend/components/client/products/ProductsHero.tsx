@@ -2,10 +2,11 @@ import React from "react";
 
 interface ProductsHeroProps {
   sortParam: string | null;
+  categoryName?: string;
 }
 
-export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam }) => {
-  let pageTitle = "Tất cả sản phẩm";
+export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam, categoryName }) => {
+  let pageTitle = categoryName || "Tất cả sản phẩm";
   let pageSubtitle = "Khám phá bộ sưu tập đồ chơi gỗ cao cấp, quần áo cotton mềm mại và những món quà tuyệt vời dành riêng cho thiên thần nhỏ của bạn tại LazPe.";
 
   if (sortParam === "bestseller") {
@@ -14,21 +15,21 @@ export const ProductsHero: React.FC<ProductsHeroProps> = ({ sortParam }) => {
   } else if (sortParam === "newest") {
     pageTitle = "Sản phẩm mới nhất";
     pageSubtitle = "Cập nhật những mẫu đồ chơi gỗ thông minh và trang phục cotton mới nhất cho bé yêu tại LazPe.";
-  } else if (sortParam === "sale") {
+  } else if (sortParam === "sale" && !categoryName) {
     pageTitle = "Sản phẩm khuyến mãi";
     pageSubtitle = "Sở hữu những sản phẩm cao cấp cho bé với mức giá ưu đãi cực sốc chỉ có tại LazPe.";
   }
 
   return (
-    <section className="bg-gradient-to-br from-[#ffd9de]/30 via-white to-white border-b border-slate-100 py-12 md:py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto text-center relative z-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <section className="bg-gradient-to-br from-[#ffd9de]/30 via-white to-white border border-slate-100 shadow-sm rounded-[10px] py-12 md:py-16 px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <h1 className="font-headline-lg text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">
           {pageTitle}
         </h1>
         <p className="max-w-2xl mx-auto font-body-lg text-base md:text-lg text-slate-600 leading-relaxed">
           {pageSubtitle}
         </p>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };

@@ -12,7 +12,8 @@ import {
   toggleVariantStatus,
   deleteProductVariant,
   uploadVariantImage,
-  deleteVariantImage
+  deleteVariantImage,
+  bulkUpdateVariants
 } from "@/lib/features/products/productApi";
 import { formatCurrency } from "@/lib/utils/formatters";
 
@@ -66,7 +67,11 @@ export default function ProductVariantsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
-  
+
+  // Bulk Edit states
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEdits, setBulkEdits] = useState<Record<number, { unitPrice: number, stock: number }>>({});
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search input
@@ -138,7 +143,7 @@ export default function ProductVariantsPage() {
       const newStatus = !variant.status;
       await toggleVariantStatus(token, variant.variantID, newStatus);
       toast.success(`Đã ${newStatus ? "bật" : "tắt"} trạng thái biến thể "${variant.variantName}".`);
-      
+
       setVariants(prev =>
         prev.map(v => (v.variantID === variant.variantID ? { ...v, status: newStatus } : v))
       );
@@ -191,6 +196,70 @@ export default function ProductVariantsPage() {
     }
   };
 
+  // Bulk Edit Handlers
+  const handleStartBulkEdit = () => {
+    const initialEdits: Record<number, { unitPrice: number, stock: number }> = {};
+    displayedVariants.forEach(v => {
+      initialEdits[v.variantID] = {
+        unitPrice: v.unitPrice,
+        stock: v.stock
+      };
+    });
+    setBulkEdits(initialEdits);
+    setIsBulkEditing(true);
+  };
+
+  const handleCancelBulkEdit = () => {
+    setIsBulkEditing(false);
+    setBulkEdits({});
+  };
+
+  const handleBulkEditChange = (variantID: number, field: "unitPrice" | "stock", value: number) => {
+    setBulkEdits(prev => ({
+      ...prev,
+      [variantID]: {
+        ...prev[variantID],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveBulkEdit = async () => {
+    if (actionLoading) return;
+
+    const updates = Object.keys(bulkEdits).map(id => {
+      const variantID = Number(id);
+      return {
+        variantId: variantID,
+        unitPrice: bulkEdits[variantID].unitPrice,
+        stock: bulkEdits[variantID].stock
+      };
+    });
+
+    if (updates.length === 0) {
+      setIsBulkEditing(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+
+      setActionLoading(true);
+      await bulkUpdateVariants(token, updates);
+
+      toast.success("Cập nhật hàng loạt biến thể thành công!");
+      setIsBulkEditing(false);
+      setBulkEdits({});
+      loadVariants();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi cập nhật hàng loạt.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Execute variant deletion
   const handleDeleteConfirm = async () => {
     if (!deleteModal.variant || actionLoading) return;
@@ -203,7 +272,7 @@ export default function ProductVariantsPage() {
       const res = await deleteProductVariant(token, deleteModal.variant.variantID);
       toast.success("Xóa biến thể thành công.");
       setDeleteModal({ isOpen: false, variant: null });
-      
+
       // If we are on page > 1 and deleted the only item, go to prev page
       if (variants.length === 1 && page > 1) {
         setPage(page - 1);
@@ -263,13 +332,13 @@ export default function ProductVariantsPage() {
       setImageUploading(true);
       const res = await uploadVariantImage(token, imageModal.variant.variantID, file);
       toast.success("Tải lên hình ảnh biến thể thành công.");
-      
+
       // Update modal variant status locally
       setImageModal(prev => ({
         ...prev,
         variant: prev.variant ? { ...prev.variant, imageUrl: res.imageUrl } : null
       }));
-      
+
       loadVariants();
     } catch (err: any) {
       console.error(err);
@@ -290,12 +359,12 @@ export default function ProductVariantsPage() {
       setActionLoading(true);
       await deleteVariantImage(token, imageModal.variant.variantID);
       toast.success("Đã xóa hình ảnh biến thể thành công.");
-      
+
       setImageModal(prev => ({
         ...prev,
         variant: prev.variant ? { ...prev.variant, imageUrl: null } : null
       }));
-      
+
       loadVariants();
     } catch (err: any) {
       console.error(err);
@@ -333,25 +402,60 @@ export default function ProductVariantsPage() {
             {product && (
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-slate-500 font-semibold text-sm">{product.productName}</span>
-                <span className="text-[10px] px-2.5 py-0.5 bg-primary-container/20 rounded-full text-primary font-bold uppercase">
+                <span className="text-[10px] px-2.5 py-0.5 bg-primary-container/20 rounded-[8px] text-primary font-bold uppercase">
                   #{product.code || product.productID.toString().padStart(6, "0")}
                 </span>
               </div>
             )}
           </div>
         </div>
-        <button
-          onClick={() => router.push(`/admin/products/${id}/variants/quick`)}
-          className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold text-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-sm">bolt</span>
-          Thêm biến thể nhanh
-        </button>
+        <div className="flex items-center gap-3">
+          {!isBulkEditing ? (
+            <>
+              <button
+                onClick={handleStartBulkEdit}
+                className="bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-[8px] font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer border border-transparent"
+              >
+                <span className="material-symbols-outlined text-sm">edit_square</span>
+                Sửa hàng loạt
+              </button>
+              <button
+                onClick={() => router.push(`/admin/products/${id}/variants/quick`)}
+                className="bg-primary text-on-primary px-6 py-2.5 rounded-[8px] font-bold text-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">bolt</span>
+                Thêm biến thể nhanh
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelBulkEdit}
+                disabled={actionLoading}
+                className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-[8px] font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSaveBulkEdit}
+                disabled={actionLoading}
+                className="bg-emerald-500 text-white px-6 py-2.5 rounded-[8px] font-bold text-sm hover:bg-emerald-600 shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              >
+                {actionLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                ) : (
+                  <span className="material-symbols-outlined text-sm">save</span>
+                )}
+                Lưu tất cả
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Search & Filter Area */}
       <section className="mb-6">
-        <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+        <div className="bg-white/80 backdrop-blur-md p-4 rounded-[8px] border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-1 group w-full">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
               search
@@ -360,7 +464,7 @@ export default function ProductVariantsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold transition-all text-slate-800"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200/60 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold transition-all text-slate-800"
               placeholder="Tìm kiếm theo SKU hoặc tên biến thể..."
             />
           </div>
@@ -368,7 +472,7 @@ export default function ProductVariantsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-slate-50 border border-slate-200/60 text-slate-700 rounded-xl px-4 py-3 font-bold text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-all"
+              className="bg-slate-50 border border-slate-200/60 text-slate-700 rounded-[8px] px-4 py-3 font-bold text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-all"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Đang hoạt động</option>
@@ -376,7 +480,7 @@ export default function ProductVariantsPage() {
             </select>
             <button
               onClick={() => toast.info("Tính năng lọc nâng cao đang được phát triển.")}
-              className="flex items-center gap-2 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold text-xs hover:opacity-90 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-[8px] font-bold text-xs hover:opacity-90 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">filter_list</span>
               Lọc nâng cao
@@ -387,7 +491,7 @@ export default function ProductVariantsPage() {
 
       {/* Table Content */}
       <section className="mb-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead className="bg-slate-50 border-b border-slate-100">
@@ -411,14 +515,14 @@ export default function ProductVariantsPage() {
                   displayedVariants.map((variant) => {
                     const finalPrice = variant.finalPrice;
                     const isDiscounted = variant.variantDiscountPercent > 0 || (product && product.productDiscountPercent > 0);
-                    
+
                     return (
                       <tr key={variant.variantID} className="hover:bg-slate-50/40 transition-colors group">
                         {/* Image Thumbnail */}
                         <td className="px-6 py-4.5">
                           <button
                             onClick={() => setImageModal({ isOpen: true, variant })}
-                            className="w-12 h-12 rounded-xl bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center cursor-pointer hover:border-primary/40 hover:scale-105 transition-all group/img relative"
+                            className="w-12 h-12 rounded-[8px] bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center cursor-pointer hover:border-primary/40 hover:scale-105 transition-all group/img relative"
                             title="Nhấp để thay đổi ảnh"
                           >
                             {variant.imageUrl ? (
@@ -444,40 +548,59 @@ export default function ProductVariantsPage() {
 
                         {/* Pricing */}
                         <td className="px-6 py-4.5">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-primary text-sm">{formatCurrency(finalPrice)}</span>
-                            {isDiscounted && (
-                              <span className="text-[10px] text-slate-400 line-through">
-                                {formatCurrency(variant.unitPrice)}
-                              </span>
-                            )}
-                          </div>
+                          {isBulkEditing ? (
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={bulkEdits[variant.variantID]?.unitPrice ?? variant.unitPrice}
+                              onChange={(e) => handleBulkEditChange(variant.variantID, "unitPrice", Number(e.target.value))}
+                              className="w-28 px-3 py-1.5 border border-primary/40 rounded-lg text-sm font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 bg-primary/5 transition-all"
+                            />
+                          ) : (
+                            <div className="flex flex-col">
+                              <span className="font-bold text-primary text-sm">{formatCurrency(finalPrice)}</span>
+                              {isDiscounted && (
+                                <span className="text-[10px] text-slate-400 line-through">
+                                  {formatCurrency(variant.unitPrice)}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
 
                         {/* Stock status */}
                         <td className="px-6 py-4.5">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              variant.stock > 10
-                                ? "bg-emerald-50 text-emerald-700"
-                                : variant.stock > 0
-                                ? "bg-amber-50 text-amber-700"
-                                : "bg-rose-50 text-rose-700"
-                            }`}
-                          >
-                            {variant.stock} chiếc
-                          </span>
+                          {isBulkEditing ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={bulkEdits[variant.variantID]?.stock ?? variant.stock}
+                              onChange={(e) => handleBulkEditChange(variant.variantID, "stock", Number(e.target.value))}
+                              className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            />
+                          ) : (
+                            <span
+                              className={`px-3 py-1 rounded-[8px] text-xs font-bold ${variant.stock > 10
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : variant.stock > 0
+                                    ? "bg-amber-50 text-amber-700"
+                                    : "bg-rose-50 text-rose-700"
+                                }`}
+                            >
+                              {variant.stock} chiếc
+                            </span>
+                          )}
                         </td>
 
                         {/* Status Switcher */}
                         <td className="px-6 py-4.5">
                           <button
                             onClick={() => handleToggleStatus(variant)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
-                              variant.status
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] text-[10px] font-bold border transition-all cursor-pointer ${variant.status
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100/60"
                                 : "bg-slate-100 text-slate-500 border-slate-200/50 hover:bg-slate-200/50"
-                            }`}
+                              }`}
                             title={variant.status ? "Click để ẩn biến thể" : "Click để kích hoạt biến thể"}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${variant.status ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
@@ -537,11 +660,10 @@ export default function ProductVariantsPage() {
                   <button
                     key={pNum}
                     onClick={() => setPage(pNum)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      page === pNum
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === pNum
                         ? "bg-primary text-on-primary shadow-sm"
                         : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     {pNum}
                   </button>
@@ -562,7 +684,7 @@ export default function ProductVariantsPage() {
       {/* 1. Modal: Thêm/Thay ảnh biến thể (Minimalist - Upload direct only, no library) */}
       {imageModal.isOpen && imageModal.variant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="relative bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <div>
@@ -585,7 +707,7 @@ export default function ProductVariantsPage() {
               {/* Display Current Image */}
               <div className="flex flex-col items-center justify-center">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 align-self-start">Ảnh hiện tại</p>
-                <div className="w-40 h-40 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center relative overflow-hidden group shadow-inner">
+                <div className="w-40 h-40 rounded-[8px] bg-slate-50 border border-slate-200/80 flex items-center justify-center relative overflow-hidden group shadow-inner">
                   {imageModal.variant.imageUrl ? (
                     <>
                       <img className="w-full h-full object-cover" src={imageModal.variant.imageUrl} alt="Current" />
@@ -614,11 +736,10 @@ export default function ProductVariantsPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => !imageUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${
-                  dragging
+                className={`border-2 border-dashed rounded-[8px] p-8 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer ${dragging
                     ? "border-primary bg-primary/5 scale-[0.99]"
                     : "border-slate-200 hover:border-primary/50 hover:bg-slate-50/60"
-                } ${imageUploading ? "opacity-60 cursor-not-allowed" : ""}`}
+                  } ${imageUploading ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 <input
                   type="file"
@@ -628,7 +749,7 @@ export default function ProductVariantsPage() {
                   accept="image/*"
                   disabled={imageUploading}
                 />
-                
+
                 {imageUploading ? (
                   <div className="flex flex-col items-center gap-2.5">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
@@ -653,7 +774,7 @@ export default function ProductVariantsPage() {
               <button
                 type="button"
                 onClick={() => setImageModal({ isOpen: false, variant: null })}
-                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
+                className="px-5 py-2.5 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
                 disabled={imageUploading || actionLoading}
               >
                 Đóng
@@ -666,7 +787,7 @@ export default function ProductVariantsPage() {
       {/* 2. Modal: Chỉnh sửa thông tin biến thể */}
       {editModal.isOpen && editModal.variant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[500px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[850px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-800">Sửa thông tin biến thể</h3>
@@ -681,100 +802,95 @@ export default function ProductVariantsPage() {
 
             {/* Form */}
             <form onSubmit={handleEditSubmit}>
-              <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
-                {/* SKU (Readonly) */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mã SKU (Không thể đổi)</label>
-                  <input
-                    type="text"
-                    value={editModal.variant.sku}
-                    disabled
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-xs font-mono select-none"
-                  />
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tên biến thể</label>
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    required
-                    placeholder="Vd: SAF-RED-XL"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Price */}
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+                {/* Cột trái */}
+                <div className="space-y-4">
+                  {/* Name */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Giá bán (VNĐ)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tên biến thể</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="1000"
-                      value={editForm.price}
-                      onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                       required
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
+                      placeholder="Vd: SAF-RED-XL"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
                     />
                   </div>
 
-                  {/* Discount percent */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Price */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Giá bán (VNĐ)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={editForm.price}
+                        onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                        required
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
+                      />
+                    </div>
+
+                    {/* Discount percent */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chiết khấu (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editForm.variantDiscountPercent}
+                        onChange={(e) => setEditForm({ ...editForm, variantDiscountPercent: Number(e.target.value) })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stock */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chiết khấu (%)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Số lượng tồn kho</label>
                     <input
                       type="number"
                       min="0"
-                      max="100"
-                      value={editForm.variantDiscountPercent}
-                      onChange={(e) => setEditForm({ ...editForm, variantDiscountPercent: Number(e.target.value) })}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
+                      value={editForm.stock}
+                      onChange={(e) => setEditForm({ ...editForm, stock: Number(e.target.value) })}
+                      required
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Stock */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Số lượng tồn kho</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editForm.stock}
-                    onChange={(e) => setEditForm({ ...editForm, stock: Number(e.target.value) })}
-                    required
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mô tả ngắn</label>
-                  <textarea
-                    rows={3}
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-slate-800 transition-all resize-none"
-                    placeholder="Mô tả cụ thể cho biến thể này..."
-                  />
-                </div>
-
-                {/* Active status */}
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-700">Trạng thái kinh doanh</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">Cho phép đặt hàng và bán sản phẩm này</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editForm.status}
-                      onChange={(e) => setEditForm({ ...editForm, status: e.target.checked })}
-                      className="sr-only peer"
+                {/* Cột phải */}
+                <div className="space-y-4">
+                  {/* Description */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mô tả ngắn</label>
+                    <textarea
+                      rows={6}
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all resize-none"
+                      placeholder="Mô tả cụ thể cho biến thể này..."
                     />
-                    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
+                  </div>
+
+                  {/* Active status */}
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-[8px] border border-slate-100">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-700">Trạng thái kinh doanh</span>
+                      <span className="text-xs text-slate-400 mt-0.5">Cho phép đặt hàng và bán sản phẩm này</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editForm.status}
+                        onChange={(e) => setEditForm({ ...editForm, status: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -783,7 +899,7 @@ export default function ProductVariantsPage() {
                 <button
                   type="button"
                   onClick={() => setEditModal({ isOpen: false, variant: null })}
-                  className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
                   disabled={actionLoading}
                 >
                   Hủy bỏ
@@ -791,7 +907,7 @@ export default function ProductVariantsPage() {
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-6 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/95 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-2.5 rounded-[8px] bg-primary text-on-primary hover:bg-primary/95 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {actionLoading ? (
                     <>
@@ -811,7 +927,7 @@ export default function ProductVariantsPage() {
       {/* 3. Modal: Xác nhận xóa (Custom Dialog Overlay) */}
       {deleteModal.isOpen && deleteModal.variant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -840,7 +956,7 @@ export default function ProductVariantsPage() {
                 <button
                   type="button"
                   onClick={() => setDeleteModal({ isOpen: false, variant: null })}
-                  className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer"
                   disabled={actionLoading}
                 >
                   Hủy bỏ
@@ -849,7 +965,7 @@ export default function ProductVariantsPage() {
                   type="button"
                   onClick={handleDeleteConfirm}
                   disabled={actionLoading}
-                  className="px-5 py-2.5 rounded-full bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 rounded-[8px] bg-error text-white hover:bg-error/90 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {actionLoading ? (
                     <>

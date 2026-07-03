@@ -9,12 +9,12 @@ async function getAdminDashboardStats() {
   try {
     const p = await getProducts(1, 1);
     if (p) productsCount = p.totalItems;
-  } catch(e) {}
+  } catch (e) { }
 
   let totalUsers = 11;
   let activeUsers = 11;
   let newUsers = 1;
-  
+
   try {
     const res = await fetch(`${API_BASE_URL}/Users/statistics`, { cache: 'no-store' });
     if (res.ok) {
@@ -25,21 +25,36 @@ async function getAdminDashboardStats() {
         newUsers = data.newUsersThisMonth;
       }
     }
-  } catch(e) {}
+  } catch (e) { }
 
-  let totalOrders = 47;
-  let completedOrders = 9;
-  let pendingOrders = 7;
-  let canceledOrders = 23;
-  let totalRevenue = 225000;
+  let totalOrders = 0;
+  let completedOrders = 0;
+  let pendingOrders = 0;
+  let canceledOrders = 0;
+  let totalRevenue = 0;
+
+  let recentOrders: any[] = [];
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/Invoice/metrics`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      totalOrders = data.totalOrders ?? 0;
+      pendingOrders = data.pending ?? 0;
+      completedOrders = data.completed ?? 0;
+      canceledOrders = data.cancelled ?? 0;
+      totalRevenue = data.totalRevenue ?? data.todayRevenue ?? 0;
+    }
+  } catch (e) { }
 
   try {
     const res = await fetch(`${API_BASE_URL}/Invoice/search?page=1&pageSize=5&sortBy=CreatedAt&desc=true`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data.TotalCount !== undefined) totalOrders = data.TotalCount;
+      if (data.items) recentOrders = data.items;
+      else if (data.Items) recentOrders = data.Items;
     }
-  } catch(e) {}
+  } catch (e) { }
 
   return {
     revenue: totalRevenue,
@@ -50,32 +65,33 @@ async function getAdminDashboardStats() {
     totalUsers,
     activeUsers,
     newUsers,
-    productsCount
+    productsCount,
+    recentOrders
   };
 }
 
 export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
-  
+
   return (
-    <main className="px-margin-mobile md:px-margin-desktop py-lg max-w-7xl mx-auto">
+    <main className="w-full pb-20 animate-in fade-in duration-300">
       {/* Welcome Banner */}
-      <section 
-        className="relative rounded-xl overflow-hidden mb-lg soft-shadow min-h-[220px] flex items-center bg-cover bg-center"
+      <section
+        className="relative rounded-[8px] overflow-hidden mb-8 shadow-sm min-h-[320px] flex items-center bg-cover bg-center border border-slate-100"
         style={{ backgroundImage: `url('/Dashboard-page-img/Dashboard-page-banner.png')` }}
       >
-        {/* Gradient Overlay to improve text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-        
-        <div className="relative px-lg z-10 text-white max-w-2xl p-8 h-full flex flex-col justify-center">
-          <h1 className="font-display-lg text-headline-lg-mobile md:text-headline-lg mb-sm drop-shadow-lg flex items-center gap-2">
-            Chào mừng quay lại! <span className="material-symbols-outlined md:text-[40px]">waving_hand</span>
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/50 to-transparent"></div>
+
+        <div className="relative px-10 z-10 text-white max-w-2xl p-8 h-full flex flex-col justify-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg flex items-center gap-2">
+            Chào mừng quay lại! <span className="material-symbols-outlined md:text-[40px] text-amber-400">waving_hand</span>
           </h1>
-          <p className="font-body-md opacity-90 mb-md drop-shadow-lg text-lg">
-            Tổng quan hoạt động kinh doanh LazPe. Hôm nay có <span className="font-bold">{stats.pendingOrders}</span> đơn hàng đang chờ xử lý.
+          <p className="opacity-90 mb-8 drop-shadow-lg text-lg">
+            Tổng quan hoạt động kinh doanh LazPe. Hôm nay có <span className="font-bold text-amber-400">{stats.pendingOrders}</span> đơn hàng đang chờ xử lý.
           </p>
           <Link href="/admin/orders">
-            <button className="bg-white text-primary px-lg py-sm rounded-full font-label-md soft-shadow hover:scale-105 transition-transform active:scale-95 self-start">
+            <button className="bg-white text-primary px-8 py-3 rounded-[8px] font-bold shadow-md hover:scale-105 transition-transform active:scale-95 self-start">
               Xử lý đơn hàng
             </button>
           </Link>
@@ -83,246 +99,226 @@ export default async function AdminDashboardPage() {
       </section>
 
       {/* Stats Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-lg">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Doanh thu */}
-        <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow flex flex-col gap-sm group hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-start">
-            <div className="bg-[#e8f5e9] p-sm rounded-lg">
-              <span className="material-symbols-outlined text-[#4caf50]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                trending_up
-              </span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">trending_up</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu</span>
             </div>
-            <span className="text-xs font-bold text-[#4caf50] bg-[#e8f5e9] px-xs py-0.5 rounded-full flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">arrow_upward</span> 12%
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-[8px] flex items-center gap-0.5">
+              <span className="material-symbols-outlined text-[12px]">arrow_upward</span> 12%
             </span>
           </div>
-          <div>
-            <p className="text-on-surface-variant font-label-sm">Doanh thu</p>
-            <h2 className="font-display-lg text-headline-md text-on-surface">{stats.revenue.toLocaleString()}₫</h2>
+          <div className="flex items-end justify-between mt-1">
+            <h2 className="text-2xl font-extrabold text-slate-800">{stats.revenue.toLocaleString()}₫</h2>
+            <p className="text-[11px] text-slate-400 font-bold mb-1">
+              <span className="text-emerald-500">{stats.completedOrders}</span> hoàn tất
+            </p>
           </div>
-          <p className="text-xs text-[#4caf50] font-medium flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">check_circle</span> {stats.completedOrders} đơn hoàn tất
-          </p>
         </div>
 
         {/* Tổng đơn hàng */}
-        <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow flex flex-col gap-sm group hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-start">
-            <div className="bg-[#fff3e0] p-sm rounded-lg">
-              <span className="material-symbols-outlined text-[#ff9800]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                shopping_cart
-              </span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đơn hàng</span>
             </div>
           </div>
-          <div>
-            <p className="text-on-surface-variant font-label-sm">Tổng đơn hàng</p>
-            <h2 className="font-display-lg text-headline-md text-on-surface">{stats.totalOrders}</h2>
+          <div className="flex items-end justify-between mt-1">
+            <h2 className="text-2xl font-extrabold text-slate-800">{stats.totalOrders}</h2>
+            <p className="text-[11px] text-slate-400 font-bold mb-1">
+              <span className="text-amber-500">{stats.pendingOrders}</span> chờ xử lý
+            </p>
           </div>
-          <p className="text-xs text-[#ff9800] font-medium flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">schedule</span> {stats.pendingOrders} chờ xử lý
-          </p>
         </div>
 
         {/* Khách hàng */}
-        <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow flex flex-col gap-sm group hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-start">
-            <div className="bg-[#e1f5fe] p-sm rounded-lg">
-              <span className="material-symbols-outlined text-[#03a9f4]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                group
-              </span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">group</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Khách hàng</span>
             </div>
           </div>
-          <div>
-            <p className="text-on-surface-variant font-label-sm">Khách hàng</p>
-            <h2 className="font-display-lg text-headline-md text-on-surface">{stats.totalUsers}</h2>
+          <div className="flex items-end justify-between mt-1">
+            <h2 className="text-2xl font-extrabold text-slate-800">{stats.totalUsers}</h2>
+            <p className="text-[11px] text-slate-400 font-bold mb-1">
+              <span className="text-blue-500">+{stats.newUsers}</span> tháng này
+            </p>
           </div>
-          <p className="text-xs text-[#03a9f4] font-medium flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">person_add</span> +{stats.newUsers} tháng này
-          </p>
         </div>
 
         {/* Sản phẩm */}
-        <div className="bg-surface-container-lowest p-md rounded-lg soft-shadow flex flex-col gap-sm group hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-start">
-            <div className="bg-[#f3e5f5] p-sm rounded-lg">
-              <span className="material-symbols-outlined text-[#9c27b0]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                inventory
-              </span>
+        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">inventory</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm</span>
             </div>
           </div>
-          <div>
-            <p className="text-on-surface-variant font-label-sm">Sản phẩm</p>
-            <h2 className="font-display-lg text-headline-md text-on-surface">{stats.productsCount.toLocaleString()}</h2>
+          <div className="flex items-end justify-between mt-1">
+            <h2 className="text-2xl font-extrabold text-slate-800">{stats.productsCount.toLocaleString()}</h2>
+            <p className="text-[11px] text-slate-400 font-bold mb-1">
+              Đang kinh doanh
+            </p>
           </div>
-          <p className="text-xs text-[#9c27b0] font-medium flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">storefront</span> Đang kinh doanh
-          </p>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders Table */}
-        <section className="lg:col-span-2 bg-surface-container-lowest rounded-xl soft-shadow p-md overflow-hidden">
-          <div className="flex justify-between items-center mb-md px-xs">
+        <section className="lg:col-span-2 bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
+          <div className="flex justify-between items-center p-6 border-b border-slate-100">
             <div>
-              <h3 className="font-headline-md text-on-surface">Đơn hàng gần đây</h3>
-              <p className="text-on-surface-variant font-label-sm">5 đơn mới nhất</p>
+              <h3 className="font-bold text-slate-800 text-lg">Đơn hàng gần đây</h3>
+              <p className="text-slate-400 font-semibold text-sm">5 đơn mới nhất</p>
             </div>
             <Link href="/admin/orders">
-              <button className="text-primary hover:bg-primary-container px-md py-sm rounded-lg font-label-md transition-colors border border-primary-container">
+              <button className="text-primary hover:bg-primary/5 px-4 py-2 rounded-[8px] font-bold text-sm transition-colors border border-primary/20">
                 Xem tất cả
               </button>
             </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left whitespace-nowrap">
-              <thead className="bg-surface-container font-label-sm text-on-surface-variant">
+              <thead className="bg-slate-50/50 border-b border-slate-100">
                 <tr>
-                  <th className="px-md py-sm rounded-l-lg">MÃ ĐƠN</th>
-                  <th className="px-md py-sm">KHÁCH HÀNG</th>
-                  <th className="px-md py-sm">TỔNG TIỀN</th>
-                  <th className="px-md py-sm">TRẠNG THÁI</th>
-                  <th className="px-md py-sm rounded-r-lg">THỜI GIAN</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">MÃ ĐƠN</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">KHÁCH HÀNG</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">TỔNG TIỀN</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">TRẠNG THÁI</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">THỜI GIAN</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant">
-                <tr className="hover:bg-surface-container-low transition-colors">
-                  <td className="px-md py-md font-label-md text-primary">#129</td>
-                  <td className="px-md py-md">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-8 h-8 shrink-0 rounded-full bg-secondary-container text-secondary flex items-center justify-center font-bold text-xs">N</div>
-                      <div>
-                        <p className="font-label-md truncate">Nguyễn Bảo Anh</p>
-                        <p className="text-[10px] text-on-surface-variant">1 sản phẩm</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-md py-md font-bold">225,000₫</td>
-                  <td className="px-md py-md">
-                    <span className="px-sm py-1 rounded-full text-[10px] font-bold bg-surface-variant text-on-surface-variant inline-block">ĐÃ HỦY</span>
-                  </td>
-                  <td className="px-md py-md text-xs text-on-surface-variant">22/04/2024</td>
-                </tr>
-                <tr className="hover:bg-surface-container-low transition-colors">
-                  <td className="px-md py-md font-label-md text-primary">#117</td>
-                  <td className="px-md py-md">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-8 h-8 shrink-0 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-xs">H</div>
-                      <div>
-                        <p className="font-label-md truncate">Hoàng Phúc</p>
-                        <p className="text-[10px] text-on-surface-variant">1 sản phẩm</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-md py-md font-bold">128,570₫</td>
-                  <td className="px-md py-md">
-                    <span className="px-sm py-1 rounded-full text-[10px] font-bold bg-[#fff3e0] text-[#e65100] inline-block">CHỜ XÁC NHẬN</span>
-                  </td>
-                  <td className="px-md py-md text-xs text-on-surface-variant">22/04/2024</td>
-                </tr>
-                <tr className="hover:bg-surface-container-low transition-colors">
-                  <td className="px-md py-md font-label-md text-primary">#116</td>
-                  <td className="px-md py-md">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-8 h-8 shrink-0 rounded-full bg-tertiary-container text-tertiary flex items-center justify-center font-bold text-xs">M</div>
-                      <div>
-                        <p className="font-label-md truncate">Minh Tuấn</p>
-                        <p className="text-[10px] text-on-surface-variant">3 sản phẩm</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-md py-md font-bold">138,570₫</td>
-                  <td className="px-md py-md">
-                    <span className="px-sm py-1 rounded-full text-[10px] font-bold bg-[#e8f5e9] text-[#2e7d32] inline-block">HOÀN TẤT</span>
-                  </td>
-                  <td className="px-md py-md text-xs text-on-surface-variant">18/04/2024</td>
-                </tr>
+              <tbody className="divide-y divide-slate-50">
+                {stats.recentOrders && stats.recentOrders.length > 0 ? (
+                  stats.recentOrders.map((order: any) => (
+                    <tr key={order.invoiceID} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-5 font-bold text-primary text-sm">#{order.invoiceCode}</td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm">
+                            {(order.userFullName || order.userName || 'K')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800 text-sm">{order.userFullName || order.userName || 'Khách hàng'}</p>
+                            <p className="text-[11px] text-slate-400 font-semibold">{order.itemCount || 0} sản phẩm</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 font-bold text-slate-800 text-sm">{(order.totalPrice || 0).toLocaleString()}₫</td>
+                      <td className="px-6 py-5 font-bold text-sm">
+                        {order.statusCode === 0 && <span className="text-amber-600">Chờ xử lý</span>}
+                        {order.statusCode === 1 && <span className="text-blue-600">Đã xác nhận</span>}
+                        {order.statusCode === 2 && <span className="text-purple-600">Đang giao</span>}
+                        {order.statusCode === 3 && <span className="text-emerald-600">Hoàn tất</span>}
+                        {order.statusCode === 4 && <span className="text-rose-600">Chờ duyệt hủy</span>}
+                        {order.statusCode === 5 && <span className="text-slate-500">Đã hủy</span>}
+                      </td>
+                      <td className="px-6 py-5 text-sm text-slate-500 font-semibold">{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-5 text-center text-sm text-slate-500">Không có đơn hàng nào</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </section>
 
-        {/* Quick Actions & Charts */}
-        <div className="space-y-lg">
+        {/* Quick Actions & User Stats */}
+        <div className="space-y-6">
           {/* Quick Actions */}
-          <section className="bg-surface-container-lowest rounded-xl soft-shadow p-md">
-            <h3 className="font-headline-md text-on-surface mb-md">Hành động nhanh</h3>
-            <div className="space-y-sm">
-              <Link href="/admin/products/new">
-                <button className="w-full bg-[#818cf8] text-white py-sm rounded-lg font-label-md flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
-                  <span className="material-symbols-outlined">add_circle</span> Thêm sản phẩm mới
-                </button>
+          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6">
+            <h3 className="font-bold text-slate-800 text-lg mb-4">Hành động nhanh</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/admin/products/new" className="bg-primary/5 hover:bg-primary/10 text-primary p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-primary/10 hover:border-primary/20 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">add_circle</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Thêm sản phẩm</span>
               </Link>
-              <Link href="/admin/orders">
-                <button className="mt-2 w-full bg-[#4caf50] text-white py-sm rounded-lg font-label-md flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
-                  <span className="material-symbols-outlined">check_circle</span> Xử lý đơn hàng
-                </button>
+              <Link href="/admin/orders" className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-emerald-100 hover:border-emerald-200 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-500">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">check_circle</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Xử lý đơn hàng</span>
               </Link>
-              <Link href="/admin/users">
-                <button className="mt-2 w-full bg-[#03a9f4] text-white py-sm rounded-lg font-label-md flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
-                  <span className="material-symbols-outlined">person_search</span> Quản lý khách hàng
-                </button>
+              <Link href="/admin/users" className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-blue-100 hover:border-blue-200 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-500">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">person_search</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Khách hàng</span>
+              </Link>
+              <Link href="/admin/statistics" className="bg-purple-50 hover:bg-purple-100 text-purple-600 p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-purple-100 hover:border-purple-200 hover:shadow-sm group">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-purple-500">
+                  <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform duration-300">bar_chart</span>
+                </div>
+                <span className="text-[12px] font-bold text-center leading-tight">Báo cáo thống kê</span>
               </Link>
             </div>
           </section>
 
           {/* User Stats */}
-          <section className="bg-surface-container-lowest rounded-xl soft-shadow p-md">
-            <div className="flex items-center gap-2 mb-md">
+          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6">
+            <div className="flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-secondary">group</span>
-              <h3 className="font-headline-md text-on-surface">Thống kê người dùng</h3>
+              <h3 className="font-bold text-slate-800 text-lg">Thống kê người dùng</h3>
             </div>
-            <div className="space-y-md">
+            <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-sm">
-                  <div className="p-xs bg-indigo-50 rounded text-indigo-500">
-                    <span className="material-symbols-outlined text-lg">person</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-[8px] text-indigo-500">
+                    <span className="material-symbols-outlined text-xl">person</span>
                   </div>
                   <div>
-                    <p className="font-label-md">Tổng người dùng</p>
-                    <p className="text-[10px] text-on-surface-variant">Tất cả tài khoản</p>
+                    <p className="font-bold text-slate-800 text-sm">Tổng người dùng</p>
+                    <p className="text-[11px] font-semibold text-slate-400">Tất cả tài khoản</p>
                   </div>
                 </div>
-                <span className="font-bold">{stats.totalUsers}</span>
+                <span className="font-extrabold text-slate-800">{stats.totalUsers}</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-sm">
-                  <div className="p-xs bg-green-50 rounded text-green-500">
-                    <span className="material-symbols-outlined text-lg">verified_user</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center bg-emerald-50 rounded-[8px] text-emerald-500">
+                    <span className="material-symbols-outlined text-xl">verified_user</span>
                   </div>
                   <div>
-                    <p className="font-label-md">Đang hoạt động</p>
-                    <p className="text-[10px] text-on-surface-variant">Tài khoản active</p>
+                    <p className="font-bold text-slate-800 text-sm">Đang hoạt động</p>
+                    <p className="text-[11px] font-semibold text-slate-400">Tài khoản active</p>
                   </div>
                 </div>
-                <span className="font-bold text-green-600">{stats.activeUsers}</span>
+                <span className="font-extrabold text-emerald-600">{stats.activeUsers}</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-sm">
-                  <div className="p-xs bg-blue-50 rounded text-blue-500">
-                    <span className="material-symbols-outlined text-lg">person_add</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-[8px] text-blue-500">
+                    <span className="material-symbols-outlined text-xl">person_add</span>
                   </div>
                   <div>
-                    <p className="font-label-md">Mới tháng này</p>
-                    <p className="text-[10px] text-on-surface-variant">Đăng ký gần đây</p>
+                    <p className="font-bold text-slate-800 text-sm">Mới tháng này</p>
+                    <p className="text-[11px] font-semibold text-slate-400">Đăng ký gần đây</p>
                   </div>
                 </div>
-                <span className="font-bold text-blue-600">{stats.newUsers}</span>
+                <span className="font-extrabold text-blue-600">{stats.newUsers}</span>
               </div>
             </div>
           </section>
         </div>
       </div>
-      
-      {/* Footer */}
-      <footer className="mt-xl text-center text-on-surface-variant font-label-sm pb-lg border-t border-outline-variant pt-lg">
-        <p>© 2024 Cổng quản trị LazPe. Bảo lưu mọi quyền.</p>
-        <div className="mt-sm flex justify-center gap-md">
-          <Link className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</Link>
-          <Link className="hover:text-primary transition-colors" href="#">Liên hệ hỗ trợ</Link>
-          <Link className="hover:text-primary transition-colors" href="#">Hướng dẫn sử dụng</Link>
-        </div>
-      </footer>
     </main>
   );
 }

@@ -36,7 +36,8 @@ function ResetPasswordContent() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5101/api/Authentication/reset-password-by-session", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
+      const response = await fetch(`${API_BASE_URL}/Authentication/reset-password-by-session`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,42 +69,44 @@ function ResetPasswordContent() {
   };
 
   return (
-    <div className="w-full max-w-[540px] bg-white rounded-xl shadow-[0px_20px_60px_rgba(255,182,193,0.15)] overflow-hidden">
-      {/* Decorative Header Image */}
-      <div className="h-48 w-full bg-primary-fixed relative overflow-hidden">
-        <img 
-          alt="Reset Password Decoration" 
-          className="w-full h-full object-cover mix-blend-overlay opacity-60" 
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl10ceiDFbIPla4JG0K9AUTDV8sg1qbvKj8W1McKAJeArPqVhDaBkCuzaKn922HEmF9H69Xao5PtQkPkG_obQm9lPuieljmTFTMAUsy14AjpozLEPFMT7mD_bqNLK3nTBlqRNovJznav3Mr8J27zrKcgQtTrs0lVvQq1VqS7YQYCUdEOHZRAODx8GxJiJpkRdWXYj5ikvPu4wZowRWNGqzkMdLkRrdCphVfAhZpMdpiUrvXYY7k-ayXyEvKfjBy-5fvpMHm6VEzSUx"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-white to-transparent"></div>
+    <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-[5px] overflow-hidden shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Decorative Header */}
+      <div className="h-32 w-full bg-primary relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white rounded-[5px] blur-xl"></div>
+          <div className="absolute top-10 -left-10 w-24 h-24 bg-secondary-container rounded-[5px] blur-xl"></div>
+        </div>
+        <span className="material-symbols-outlined text-[64px] text-white opacity-90 z-10">lock_reset</span>
       </div>
 
       {/* Content Container */}
-      <div className="px-6 md:px-12 py-8">
-        <div className="text-center mb-8">
-          <h1 className="font-headline-lg text-3xl font-bold text-primary mb-2">Đặt lại mật khẩu mới</h1>
-          <p className="font-body-md text-sm text-on-surface-variant">Vui lòng nhập mật khẩu mới để bảo vệ tài khoản của bạn tại LazPe.</p>
+      <div className="p-8 md:p-10">
+        <div className="text-center mb-6">
+          <h1 className="font-headline-lg text-2xl font-bold text-primary mb-2">Đặt lại mật khẩu</h1>
+          <p className="font-body-md text-[13px] text-on-surface-variant px-2">Vui lòng nhập mật khẩu mới để bảo vệ tài khoản của bạn tại LazPe.</p>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {error && (
-            <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+            <div className="p-2.5 bg-red-100 text-red-700 text-xs font-medium rounded-[5px] border border-red-200 text-center">
               {error}
             </div>
           )}
           {success && (
-            <div className="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
+            <div className="p-2.5 bg-green-100 text-green-700 text-xs font-medium rounded-[5px] border border-green-200 text-center">
               {success}
             </div>
           )}
 
           {/* Password Field */}
-          <div className="space-y-2">
-            <label className="font-label-md text-sm text-on-surface-variant block ml-2">Mật khẩu mới</label>
+          <div className="space-y-1">
+            <label className="font-label-md text-[12px] font-semibold text-on-surface-variant block ml-1">Mật khẩu mới</label>
             <div className="relative group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors text-xl">
+                lock
+              </span>
               <input 
-                className="w-full h-14 px-4 bg-surface-container-low border-2 border-transparent rounded-lg focus:border-primary-container focus:bg-white focus:ring-0 transition-all outline-none text-lg" 
+                className="w-full h-12 pl-11 pr-12 bg-surface-container-low border-none rounded-[5px] focus:ring-2 focus:ring-primary/50 outline-none font-medium text-[13px] text-on-surface transition-all placeholder:text-outline-variant" 
                 id="password" 
                 placeholder="••••••••" 
                 type={showPassword ? "text" : "password"}
@@ -112,11 +115,11 @@ function ResetPasswordContent() {
                 required
               />
               <button 
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-primary transition-colors" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors w-8 h-8 flex items-center justify-center rounded-[5px] hover:bg-surface-container" 
                 onClick={() => setShowPassword(!showPassword)} 
                 type="button"
               >
-                <span className="material-symbols-outlined">
+                <span className="material-symbols-outlined text-[18px]">
                   {showPassword ? "visibility_off" : "visibility"}
                 </span>
               </button>
@@ -124,11 +127,14 @@ function ResetPasswordContent() {
           </div>
 
           {/* Confirm Password Field */}
-          <div className="space-y-2">
-            <label className="font-label-md text-sm text-on-surface-variant block ml-2">Xác nhận mật khẩu mới</label>
+          <div className="space-y-1">
+            <label className="font-label-md text-[12px] font-semibold text-on-surface-variant block ml-1">Xác nhận mật khẩu</label>
             <div className="relative group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors text-xl">
+                lock_reset
+              </span>
               <input 
-                className="w-full h-14 px-4 bg-surface-container-low border-2 border-transparent rounded-lg focus:border-primary-container focus:bg-white focus:ring-0 transition-all outline-none text-lg" 
+                className="w-full h-12 pl-11 pr-12 bg-surface-container-low border-none rounded-[5px] focus:ring-2 focus:ring-primary/50 outline-none font-medium text-[13px] text-on-surface transition-all placeholder:text-outline-variant" 
                 id="confirm-password" 
                 placeholder="••••••••" 
                 type={showConfirmPassword ? "text" : "password"}
@@ -137,11 +143,11 @@ function ResetPasswordContent() {
                 required
               />
               <button 
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-primary transition-colors" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors w-8 h-8 flex items-center justify-center rounded-[5px] hover:bg-surface-container" 
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
                 type="button"
               >
-                <span className="material-symbols-outlined">
+                <span className="material-symbols-outlined text-[18px]">
                   {showConfirmPassword ? "visibility_off" : "visibility"}
                 </span>
               </button>
@@ -149,31 +155,33 @@ function ResetPasswordContent() {
           </div>
 
           {/* Submit Button */}
-          <button 
-            className="w-full h-14 mt-4 bg-primary text-white font-headline-md font-semibold rounded-full bouncy-hover shadow-lg shadow-primary/20 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-75"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="material-symbols-outlined animate-spin">sync</span>
-                Đang cập nhật...
-              </>
-            ) : (
-              <>
-                Cập nhật mật khẩu
-                <span className="material-symbols-outlined">check_circle</span>
-              </>
-            )}
-          </button>
+          <div className="pt-2">
+            <button 
+              className="w-full h-12 bg-primary text-on-primary rounded-[5px] font-headline-md text-[13px] flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 disabled:opacity-75 disabled:hover:translate-y-0"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                  Đang cập nhật...
+                </>
+              ) : (
+                <>
+                  Cập nhật mật khẩu
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                </>
+              )}
+            </button>
+          </div>
 
           {/* Back Link */}
-          <div className="text-center pt-4">
+          <div className="text-center pt-5 border-t border-outline-variant/30 mt-6">
             <Link 
-              className="font-label-md text-sm text-on-surface-variant hover:text-primary transition-colors inline-flex items-center gap-1 group" 
+              className="inline-flex items-center gap-1 font-label-md text-[12px] text-primary hover:text-primary/80 transition-colors group" 
               href="/login"
             >
-              <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
+              <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-1 transition-transform">
                 arrow_back
               </span>
               Quay lại đăng nhập
@@ -187,14 +195,18 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="min-h-[calc(100vh-80px)] w-full flex items-center justify-center px-4 py-12 md:py-24 bg-gradient-to-br from-[#f8f9fa] to-[#ffd9de] relative">
+    <div className="w-full flex-grow flex items-center justify-center px-4 py-8 relative overflow-hidden bg-primary-container min-h-screen">
+      {/* Background Decorations for full page */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white opacity-30 rounded-full -translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary-container opacity-40 rounded-full translate-x-1/4 translate-y-1/4 blur-3xl"></div>
+
       <Suspense fallback={
-        <div className="w-full max-w-[540px] bg-white rounded-xl p-12 flex justify-center items-center shadow-lg">
-          <span className="material-symbols-outlined animate-spin text-primary text-4xl">sync</span>
+        <div className="w-full max-w-[500px] bg-surface-container-lowest rounded-[5px] p-12 flex justify-center items-center shadow-[0_20px_50px_-10px_rgba(135,78,88,0.2)]">
+          <span className="material-symbols-outlined animate-spin text-primary text-[40px]">sync</span>
         </div>
       }>
         <ResetPasswordContent />
       </Suspense>
-    </main>
+    </div>
   );
 }

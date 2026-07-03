@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -30,25 +30,26 @@ namespace PolyBabyAPI.Models
         [Range(0, 100, ErrorMessage = "Giảm giá biến thể phải từ 0 đến 100")]
         public decimal VariantDiscountPercent { get; set; } = 0;
 
+        [ConcurrencyCheck]
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]
         public int Stock { get; set; }
 
-        [MaxLength(10, ErrorMessage = "SKU tối đa 100 ký tự")]
+        [MaxLength(100, ErrorMessage = "SKU tối đa 100 ký tự")]
         public string SKU { get; set; }
 
         public string? ImageUrl { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập mô tả")]
-        [MaxLength(500, ErrorMessage = "Mô tả tối đa 1000 ký tự")]
         public string Description { get; set; }
 
-        // ✅ SỬA: CreatedAt thay vì CreateDate
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [MaxLength(100, ErrorMessage = "Người tạo tối đa 100 ký tự")]
         public string CreatedBy { get; set; }
 
         public bool Status { get; set; } = true;
+        
+        public bool IsDeleted { get; set; } = false;
 
         public virtual ICollection<VariantOptionValue> VariantOptionValues { get; set; } = new List<VariantOptionValue>();
         public virtual ICollection<BundleItem> BundleItems { get; set; } = new List<BundleItem>();

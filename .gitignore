@@ -6,6 +6,7 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
+*.lnk
 .Spotlight-V100
 .Trashes
 
@@ -104,3 +105,10 @@ logs/
 .parcelcache
 .DS_Store
 /mockups/
+/Local/
+/JwtGen/
+**/RecommendationModel.zip
+**/TrendModel.zip
+.env
+backend/wwwroot/uploads/
+backend/TrendModel.zip

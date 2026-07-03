@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interfaces;
@@ -44,7 +44,8 @@ namespace PolyBabyAPI.Controllers
                     SortOrder = c.SortOrder,
                     Status = c.Status,
                     CreatedAt = c.CreatedAt,
-                    CreatedBy = c.CreatedBy
+                    CreatedBy = c.CreatedBy,
+                    ProductCount = c.Products?.Count ?? 0
                 }).ToList();
 
                 return Ok(new
@@ -94,6 +95,39 @@ namespace PolyBabyAPI.Controllers
                 {
                     success = false,
                     message = "Có lỗi xảy ra khi lấy danh sách danh mục"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Xuất danh mục sản phẩm ra Excel
+        /// </summary>
+        [HttpGet("export-excel")]
+        [Authorize(Roles = "Admin")]
+        [Permission("Category.Read")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] string searchTerm = "",
+            [FromQuery] bool? status = null)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting categories to Excel...");
+                var fileContents = await _categoryService.ExportExcelAsync(searchTerm, status);
+                var fileName = $"DanhSachDanhMuc_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileContents,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting categories to Excel");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi xuất báo cáo Excel"
                 });
             }
         }
@@ -158,7 +192,8 @@ namespace PolyBabyAPI.Controllers
                     SortOrder = category.SortOrder,
                     Status = category.Status,
                     CreatedAt = category.CreatedAt,
-                    CreatedBy = category.CreatedBy
+                    CreatedBy = category.CreatedBy,
+                    ProductCount = category.Products?.Count ?? 0
                 };
 
                 return Ok(new

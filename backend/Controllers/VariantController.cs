@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
@@ -223,6 +223,11 @@ namespace PolyBabyAPI.Controllers
                 if (finalPrice < 0)
                     return BadRequest(new { message = "Giá biến thể không được âm" });
 
+                if (!string.IsNullOrWhiteSpace(dto.SKU) && await _context.Variants.AnyAsync(v => v.SKU == dto.SKU && !v.IsDeleted))
+                {
+                    return BadRequest(new { message = $"Mã SKU '{dto.SKU}' đã tồn tại" });
+                }
+
                 string sku = dto.SKU;
                 if (string.IsNullOrWhiteSpace(sku))
                 {
@@ -382,6 +387,12 @@ namespace PolyBabyAPI.Controllers
                         decimal calculatedPrice = product.Price + selectedOptionValues.Sum(v => v.Price);
                         decimal finalPrice = calculatedPrice;
 
+                        if (!string.IsNullOrWhiteSpace(dto.SKU) && await _context.Variants.AnyAsync(v => v.SKU == dto.SKU && !v.IsDeleted))
+                        {
+                            errors.Add($"Biến thể '{dto.Name}': Mã SKU '{dto.SKU}' đã tồn tại");
+                            continue;
+                        }
+
                         // Generate SKU if not provided
                         string sku = dto.SKU;
                         if (string.IsNullOrWhiteSpace(sku))
@@ -517,6 +528,32 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Cập nhật giá và tồn kho hàng loạt cho nhiều biến thể cùng lúc
+        /// </summary>
+        [HttpPut("bulk-update")]
+        [Permission("Product.Update")]
+        public async Task<IActionResult> BulkUpdateVariants([FromBody] List<BulkUpdateVariantDto> dtos)
+        {
+            try
+            {
+                if (dtos == null || !dtos.Any())
+                    return BadRequest(new { message = "Dữ liệu không hợp lệ hoặc rỗng" });
+
+                var success = await _variantService.BulkUpdateVariantsAsync(dtos);
+                
+                if (success)
+                    return Ok(new { message = $"Đã cập nhật hàng loạt {dtos.Count} biến thể thành công" });
+                
+                return StatusCode(500, new { message = "Có lỗi xảy ra khi cập nhật hàng loạt" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk updating variants");
+                return StatusCode(500, new { message = "Lỗi hệ thống", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Bật/tắt trạng thái của biến thể (ví dụ: để ẩn biến thể không còn bán mà không xóa)
         /// </summary>
 
@@ -593,15 +630,8 @@ namespace PolyBabyAPI.Controllers
                 if (variant == null)
                     return NotFound(new { message = "Không tìm thấy biến thể" });
 
-                // Xóa ảnh cũ trên Cloudinary nếu có
-                if (!string.IsNullOrEmpty(variant.ImageUrl))
-                {
-                    try { await _cloudinaryService.DeleteImageAsync(variant.ImageUrl); }
-                    catch (Exception ex) { _logger.LogWarning(ex, "Could not delete old variant image"); }
-                }
-
-                // Upload ảnh mới lên Cloudinary folder "Variants"
-                var imageUrl = await _cloudinaryService.UploadImageAsync(image, "Variants");
+                // Thay thế ảnh trên Cloudinary bằng phương thức dùng chung
+                var imageUrl = await _cloudinaryService.ReplaceImageAsync(variant.ImageUrl, image, "Variants");
 
                 if (string.IsNullOrEmpty(imageUrl))
                     return StatusCode(500, new { message = "Không thể upload hình ảnh lên Cloudinary" });

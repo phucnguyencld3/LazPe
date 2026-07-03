@@ -33,13 +33,14 @@ namespace PolyBabyAPI.Controllers
             [FromQuery] string searchTerm = "",
             [FromQuery] int? categoryId = null,
             [FromQuery] string sortBy = "CreatedAt",
-            [FromQuery] string sortDirection = "desc")
+            [FromQuery] string sortDirection = "desc",
+            [FromQuery] bool? hasDiscount = null)
         {
             try
             {
                 var result = await _productService.GetProductsPaginatedAsync(
                     page, pageSize, searchTerm, categoryId, null,
-                    true, null, null, sortBy, sortDirection);
+                    true, null, null, sortBy, sortDirection, hasDiscount);
 
                 return Ok(new
                 {
@@ -59,19 +60,51 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        // POST: api/Product/sync-seo
+        [HttpPost("sync-seo")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> SyncSeoFields()
+        {
+            var result = await _productService.SyncSeoFieldsAsync();
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data
+                });
+            }
+            return BadRequest(new
+            {
+                success = false,
+                message = result.Message
+            });
+        }
+
         /// <summary>
         /// Lấy chi tiết sản phẩm cho shop (public — chỉ sản phẩm active)
         /// </summary>
-        [HttpGet("shop/{id}")]
+        [HttpGet("shop/{slugOrId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetProductDetailForShop(int id)
+        public async Task<IActionResult> GetProductDetailForShop(string slugOrId)
         {
             try
             {
-                if (id <= 0)
-                    return BadRequest(new { success = false, message = "ID sản phẩm không hợp lệ" });
+                if (string.IsNullOrWhiteSpace(slugOrId))
+                    return BadRequest(new { success = false, message = "Thông tin không hợp lệ" });
 
-                var product = await _productService.GetProductDetailAsync(id);
+                ProductDetailDto product = null;
+
+                // Try getting by slug first
+                product = await _productService.GetProductBySlugAsync(slugOrId);
+
+                // If not found, try parsing as ID and get by ID
+                if (product == null && int.TryParse(slugOrId, out int id))
+                {
+                    product = await _productService.GetProductDetailAsync(id);
+                }
+
                 if (product == null)
                     return NotFound(new { success = false, message = "Không tìm thấy sản phẩm" });
 
@@ -84,7 +117,37 @@ namespace PolyBabyAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting shop product detail {ProductId}", id);
+                _logger.LogError(ex, "Error getting shop product detail {SlugOrId}", slugOrId);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy chi tiết sản phẩm cho shop theo slug (public)
+        /// </summary>
+        [HttpGet("shop/slug/{slug}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductDetailBySlugForShop(string slug)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(slug))
+                    return BadRequest(new { success = false, message = "Slug sản phẩm không hợp lệ" });
+
+                var product = await _productService.GetProductBySlugAsync(slug);
+                if (product == null)
+                    return NotFound(new { success = false, message = "Không tìm thấy sản phẩm" });
+
+                return Ok(new
+                {
+                    success = true,
+                    data = product,
+                    message = "Lấy chi tiết sản phẩm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting shop product detail by slug {Slug}", slug);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
             }
         }
@@ -250,13 +313,45 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Tạo mới sản phẩm hoàn chỉnh kèm Options và Variants trong một Transaction (admin)
+        /// </summary>
+        [HttpPost("full")]
+        [Permission("Product.Create")]
+        public async Task<IActionResult> CreateFullProduct([FromBody] CreateFullProductDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors);
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = errors.Select(e => e.ErrorMessage).ToList() });
+                }
+
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "System";
+                dto.CreatedBy = userId;
+
+                var result = await _productService.CreateFullProductAsync(dto);
+
+                if (result.Success)
+                    return Ok(new { success = true, data = result.Data, message = result.Message });
+
+                return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating full product: {ProductName}", dto?.ProductName);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi tạo sản phẩm" });
+            }
+        }
+
+        /// <summary>
         /// Cập nhật thông tin một sản phẩm theo ID (admin)
         /// </summary>
         /// <param name="id">ID của sản phẩm</param>
         /// <param name="dto">Thông tin sản phẩm cần cập nhật</param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        [Permission("Product.Update")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
         {
             try
@@ -328,6 +423,26 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error toggling product status {ProductId}", id);
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật trạng thái sản phẩm" });
+            }
+        }
+
+        /// <summary>
+        /// Đồng bộ dữ liệu lên Meilisearch (admin)
+        /// </summary>
+        [HttpPost("sync-meilisearch")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> SyncMeilisearch([FromServices] PolyBabyAPI.Data.ApplicationDbContext context, [FromServices] ISearchEngineService searchEngine)
+        {
+            try
+            {
+                var products = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(context.Products);
+                await searchEngine.SyncAllProductsAsync(products);
+                return Ok(new { success = true, message = $"Đã đồng bộ {products.Count} sản phẩm lên Meilisearch." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi đồng bộ Meilisearch");
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 

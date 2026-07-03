@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -45,6 +45,7 @@ namespace PolyBabyAPI.DTOs
 
         [Required(ErrorMessage = "Email là bắt buộc")]
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Email không đúng định dạng (ví dụ: example@gmail.com)")]
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
@@ -60,6 +61,9 @@ namespace PolyBabyAPI.DTOs
         public string? PhoneNumber { get; set; }
 
         public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(20, ErrorMessage = "Mã giới thiệu không hợp lệ")]
+        public string? ReferralCode { get; set; }
     }
 
     /// <summary>
@@ -158,5 +162,80 @@ namespace PolyBabyAPI.DTOs
         [Required(ErrorMessage = "Email là bắt buộc")]
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty;  
+    }
+
+    /// <summary>
+    /// DTO xác thực OTP đăng ký tài khoản
+    /// </summary>
+    public class VerifyRegisterOtpDto
+    {
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Email không đúng định dạng (ví dụ: example@gmail.com)")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mã OTP là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã OTP phải gồm 6 chữ số")]
+        public string Otp { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO xác minh kích hoạt Authenticator App (TOTP)
+    /// </summary>
+    public class EnableAuthenticatorDto
+    {
+        [Required(ErrorMessage = "Mã xác thực là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã xác thực phải gồm 6 chữ số")]
+        public string Code { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO xác minh kích hoạt Email 2FA
+    /// </summary>
+    public class EnableEmail2FaDto
+    {
+        [Required(ErrorMessage = "Mã xác thực là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã xác thực phải gồm 6 chữ số")]
+        public string Code { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO gửi mã OTP đăng nhập 2FA qua Email
+    /// </summary>
+    public class Send2FaEmailDto
+    {
+        [Required(ErrorMessage = "UserId là bắt buộc")]
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO xác thực đăng nhập 2FA
+    /// </summary>
+    public class Verify2FaLoginDto
+    {
+        [Required(ErrorMessage = "UserId là bắt buộc")]
+        public string UserId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mã xác thực là bắt buộc")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã xác thực phải gồm 6 chữ số")]
+        public string Code { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Phương thức xác thực là bắt buộc")]
+        public string Provider { get; set; } = string.Empty; // "Email" hoặc "Authenticator"
+    }
+
+    public class RefreshTokenRequestDto
+    {
+        [Required(ErrorMessage = "Token là bắt buộc")]
+        public string Token { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "RefreshToken là bắt buộc")]
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+
+    public class GoogleLoginDto
+    {
+        [Required(ErrorMessage = "IdToken is required")]
+        public string IdToken { get; set; } = string.Empty;
     }
 }

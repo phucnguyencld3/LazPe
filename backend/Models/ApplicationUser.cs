@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -22,6 +22,28 @@ namespace PolyBabyAPI.Models
         [StringLength(13, ErrorMessage = "Số điện thoại không hợp lệ")]
         public override string? PhoneNumber { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        [ConcurrencyCheck]
+        public decimal WalletBalance { get; set; } = 0;
+
+        [MaxLength(256)]
+        public string? WalletSignature { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [ConcurrencyCheck]
+        public decimal CoinsBalance { get; set; } = 0;
+
+        [MaxLength(256)]
+        public string? CoinsSignature { get; set; }
+
+        // MÃ PIN THANH TOÁN (Lưu dưới dạng băm)
+        [MaxLength(256)]
+        public string? PaymentPinHash { get; set; }
+
+        public int PaymentPinFailedCount { get; set; } = 0;
+        
+        public DateTimeOffset? PaymentPinLockoutEnd { get; set; }
+
         // THÊM TRƯỜNG AVATAR
         [Display(Name = "Ảnh đại diện")]
         [StringLength(500, ErrorMessage = "Đường dẫn ảnh không được vượt quá 500 ký tự")]
@@ -32,6 +54,30 @@ namespace PolyBabyAPI.Models
 
         [Display(Name = "Ngày đăng ký")]
         public DateTime RegisterDate { get; set; } = DateTime.Now;
+
+        [Display(Name = "Nhận thông báo qua Email")]
+        public bool ReceiveEmailNotifications { get; set; } = true;
+
+        [Display(Name = "Nhận cập nhật đơn hàng")]
+        public bool ReceiveOrderUpdates { get; set; } = true;
+
+        [Display(Name = "Nhận thông báo khuyến mãi")]
+        public bool ReceivePromotions { get; set; } = true;
+
+
+        [Display(Name = "Đã hoàn thành onboarding")]
+        public bool IsOnboarded { get; set; } = false;
+
+        [Display(Name = "Mã giới thiệu")]
+        [StringLength(20)]
+        public string? ReferralCode { get; set; }
+        
+        public bool IsWishlistPublic { get; set; } = false;
+        public string? WishlistShareToken { get; set; }
+
+        // Refresh Token
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
 
         // Navigation Properties
         public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
@@ -48,6 +94,13 @@ namespace PolyBabyAPI.Models
 
         // Navigation property cho permissions
         public virtual ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
+
+        // THÊM NAVIGATION PROPERTY CHO ROLE TEMPLATE
+        public int? RoleTemplateId { get; set; }
+        [ForeignKey("RoleTemplateId")]
+        public virtual RoleTemplate? RoleTemplate { get; set; }
+
+        public virtual ICollection<BabyProfile> BabyProfiles { get; set; } = new List<BabyProfile>();
     }
 }
 

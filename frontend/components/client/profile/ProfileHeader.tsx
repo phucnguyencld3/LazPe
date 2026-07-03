@@ -7,9 +7,14 @@ interface ProfileHeaderProps {
   userProfile: UserProfile;
   token: string;
   onAvatarUpdated: (newAvatarUrl: string) => void;
+  loyaltyProfile?: {
+    currentTierName?: string;
+    availablePoints?: number;
+    colorHex?: string;
+  } | null;
 }
 
-export function ProfileHeader({ userProfile, token, onAvatarUpdated }: ProfileHeaderProps) {
+export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProfile }: ProfileHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -59,12 +64,12 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated }: ProfileHe
   };
 
   return (
-    <section className="flex flex-col md:flex-row items-center gap-lg bg-white rounded-xl p-lg shadow-[0_20px_40px_rgba(135,78,88,0.06)]">
+    <section className="flex flex-col md:flex-row items-center gap-4 bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm">
       <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary-container shadow-lg relative bg-slate-100 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-[16px] overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center transition-transform hover:scale-105">
           {uploadingAvatar ? (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-              <Loader className="animate-spin text-white" size={24} />
+              <Loader className="animate-spin text-white" size={16} />
             </div>
           ) : null}
           {userProfile.avatar ? (
@@ -74,11 +79,11 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated }: ProfileHe
               src={userProfile.avatar}
             />
           ) : (
-            <User size={48} className="text-slate-400" />
+            <User size={28} className="text-slate-400" />
           )}
         </div>
-        <button className="absolute bottom-0 right-0 bg-primary text-white p-2.5 rounded-full shadow-md active:scale-90 transition-transform flex items-center justify-center">
-          <span className="material-symbols-outlined text-sm font-bold">edit</span>
+        <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-[8px] shadow-md active:scale-90 transition-transform flex items-center justify-center">
+          <span className="material-symbols-outlined text-[10px] font-bold">edit</span>
         </button>
         <input
           type="file"
@@ -89,16 +94,18 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated }: ProfileHe
         />
       </div>
       <div className="text-center md:text-left space-y-1">
-        <h1 className="font-headline-lg text-3xl font-bold text-primary tracking-tight">{userProfile.fullName}</h1>
-        <p className="font-body-lg text-on-surface-variant">{userProfile.email}</p>
-        
-        {/* Badges / Trove Points (Mocked client side features) */}
-        <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-sm pt-2">
-          <span className="px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-label-sm font-bold shadow-sm">
-            Thành viên Gold
+        <h1 className="text-lg font-bold text-slate-800 tracking-tight">{userProfile.fullName}</h1>
+        <p className="text-[13px] text-slate-500 font-medium">{userProfile.email}</p>
+
+        {/* Badges / Loyalty Info */}
+        <div className="mt-1.5 flex flex-wrap justify-center md:justify-start gap-1.5">
+          <span className="px-2.5 py-0.5 bg-rose-50 text-rose-600 rounded-[6px] text-[10px] font-bold border border-rose-100 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">military_tech</span>
+            Thành viên {loyaltyProfile?.currentTierName || "Standard"}
           </span>
-          <span className="px-4 py-1.5 bg-primary-container text-on-primary-container rounded-full text-label-sm font-bold shadow-sm">
-            124 Trove Points
+          <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-[6px] text-[10px] font-bold border border-emerald-100 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">stars</span>
+            {loyaltyProfile?.availablePoints != null ? loyaltyProfile.availablePoints.toLocaleString("vi-VN") : "0"} điểm
           </span>
         </div>
       </div>
