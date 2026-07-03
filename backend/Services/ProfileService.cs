@@ -36,6 +36,13 @@ namespace PolyBabyAPI.Service
                     return null;
                 }
 
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
+                }
+
                 return new UserProfileDto
                 {
                     UserId = user.Id,
@@ -51,6 +58,7 @@ namespace PolyBabyAPI.Service
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
                     IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode,
                     WalletBalance = user.WalletBalance,
                     CoinsBalance = user.CoinsBalance,
                     BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
@@ -291,6 +299,13 @@ namespace PolyBabyAPI.Service
                     return null;
                 }
 
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
+                }
+
                 return new UserProfileDto
                 {
                     UserId = user.Id,
@@ -306,6 +321,7 @@ namespace PolyBabyAPI.Service
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
                     IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode,
                     WalletBalance = user.WalletBalance,
                     CoinsBalance = user.CoinsBalance,
                     BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto

@@ -11,7 +11,7 @@ export default function HomeLayout({
   return (
     <div className="flex gap-6 relative">
       {/* Left Sidebar */}
-      <div className="hidden lg:block sticky top-28 h-fit z-50">
+      <div className="hidden lg:block sticky top-28 h-fit z-40">
         <SidebarMenuV2 />
       </div>
 

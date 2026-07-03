@@ -277,12 +277,37 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        private string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return text;
+            
+            var normalizedString = text.Normalize(System.Text.NormalizationForm.FormD);
+            var stringBuilder = new System.Text.StringBuilder(capacity: normalizedString.Length);
+
+            for (int i = 0; i < normalizedString.Length; i++)
+            {
+                char c = normalizedString[i];
+                var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder
+                .ToString()
+                .Normalize(System.Text.NormalizationForm.FormC)
+                .Replace('đ', 'd').Replace('Đ', 'D')
+                .ToLower();
+        }
+
         private double CalculateBabyBoostScore(Product product, List<BabyProfile> babies)
         {
             if (babies == null || !babies.Any()) return 0.0;
 
             double totalBoost = 0.0;
-            string textToSearch = ((product.ProductName ?? "") + " " + (product.Description ?? "") + " " + (product.Specifications ?? "")).ToLower();
+            string rawText = (product.ProductName ?? "") + " " + (product.Description ?? "") + " " + (product.Specifications ?? "");
+            string textToSearch = RemoveDiacritics(rawText);
 
             foreach (var baby in babies)
             {
@@ -293,63 +318,86 @@ namespace PolyBabyAPI.Services
                 if (today.Day < dob.Day) months--;
                 if (months < 0) months = 0;
 
-                // 1. Khớp giới tính
-                if (!string.IsNullOrEmpty(baby.Gender))
+                // 1. Khớp cân nặng (Size Bỉm/Tã) -> Cao điểm nhất (+10)
+                if (baby.WeightKg.HasValue && baby.WeightKg.Value > 0)
                 {
-                    bool isBoy = baby.Gender.Equals("Male", StringComparison.OrdinalIgnoreCase) || baby.Gender.Equals("Nam", StringComparison.OrdinalIgnoreCase);
-                    bool isGirl = baby.Gender.Equals("Female", StringComparison.OrdinalIgnoreCase) || baby.Gender.Equals("Nữ", StringComparison.OrdinalIgnoreCase);
-
-                    if (isBoy && (textToSearch.Contains("bé trai") || textToSearch.Contains("cho bé trai") || textToSearch.Contains("siêu nhân") || textToSearch.Contains("spiderman") || textToSearch.Contains("ô tô")))
+                    double w = baby.WeightKg.Value;
+                    bool isDiaper = textToSearch.Contains("ta ") || textToSearch.Contains("bim ") || textToSearch.Contains("ta,") || textToSearch.Contains("bim,");
+                    
+                    if (isDiaper)
                     {
-                        babyBoost += 5.0;
-                    }
-                    else if (isGirl && (textToSearch.Contains("bé gái") || textToSearch.Contains("cho bé gái") || textToSearch.Contains("công chúa") || textToSearch.Contains("elsa") || textToSearch.Contains("búp bê") || textToSearch.Contains("váy")))
-                    {
-                        babyBoost += 5.0;
+                        if (w < 5 && (textToSearch.Contains("newborn") || textToSearch.Contains("nb") || textToSearch.Contains("so sinh")))
+                            babyBoost += 10.0;
+                        else if (w >= 4 && w <= 8 && textToSearch.Contains("size s"))
+                            babyBoost += 10.0;
+                        else if (w >= 6 && w <= 11 && textToSearch.Contains("size m"))
+                            babyBoost += 10.0;
+                        else if (w >= 9 && w <= 14 && textToSearch.Contains("size l"))
+                            babyBoost += 10.0;
+                        else if (w >= 12 && w <= 17 && textToSearch.Contains("size xl"))
+                            babyBoost += 10.0;
+                        else if (w >= 15 && (textToSearch.Contains("size xxl") || textToSearch.Contains("size xxxl")))
+                            babyBoost += 10.0;
                     }
                 }
 
-                // 2. Khớp độ tuổi (tháng tuổi)
+                // 2. Khớp độ tuổi (tháng tuổi) (+8)
                 if (months <= 6) // Sơ sinh nhỏ
                 {
-                    if (textToSearch.Contains("sơ sinh") || textToSearch.Contains("newborn") || textToSearch.Contains("0-6 tháng") || textToSearch.Contains("núm ty size s") || textToSearch.Contains("bỉm dán size s") || textToSearch.Contains("bỉm dán size nb"))
+                    if (textToSearch.Contains("so sinh") || textToSearch.Contains("newborn") || textToSearch.Contains("0-6 thang") || textToSearch.Contains("num ty size s") || textToSearch.Contains("so 1") || textToSearch.Contains("step 1") || textToSearch.Contains("ti gia"))
                     {
                         babyBoost += 8.0;
                     }
                 }
                 else if (months <= 12) // Sơ sinh lớn
                 {
-                    if (textToSearch.Contains("sơ sinh") || textToSearch.Contains("6-12 tháng") || textToSearch.Contains("ăn dặm") || textToSearch.Contains("núm ty size m") || textToSearch.Contains("bỉm dán size m") || textToSearch.Contains("bỉm dán size l"))
+                    if (textToSearch.Contains("6-12 thang") || textToSearch.Contains("an dam") || textToSearch.Contains("num ty size m") || textToSearch.Contains("so 2") || textToSearch.Contains("step 2") || textToSearch.Contains("bot an dam") || textToSearch.Contains("ghe an dam"))
                     {
                         babyBoost += 8.0;
                     }
                 }
                 else if (months <= 36) // 1-3 tuổi
                 {
-                    if (textToSearch.Contains("1-3 tuổi") || textToSearch.Contains("12-36 tháng") || textToSearch.Contains("tập đi") || textToSearch.Contains("sữa công thức pha sẵn") || textToSearch.Contains("bỉm quần size l") || textToSearch.Contains("bỉm quần size xl"))
+                    if (textToSearch.Contains("1-3 tuoi") || textToSearch.Contains("12-36 thang") || textToSearch.Contains("tap di") || textToSearch.Contains("pha san") || textToSearch.Contains("so 3") || textToSearch.Contains("step 3") || textToSearch.Contains("xe day"))
                     {
                         babyBoost += 8.0;
                     }
                 }
                 else if (months <= 72) // 3-6 tuổi
                 {
-                    if (textToSearch.Contains("3-6 tuổi") || textToSearch.Contains("mẫu giáo") || textToSearch.Contains("đồ chơi vận động") || textToSearch.Contains("đồ chơi xếp hình") || textToSearch.Contains("bỉm quần size xxl") || textToSearch.Contains("bỉm quần size xxxl"))
+                    if (textToSearch.Contains("3-6 tuoi") || textToSearch.Contains("mau giao") || textToSearch.Contains("mam non") || textToSearch.Contains("do choi van dong") || textToSearch.Contains("xep hinh") || textToSearch.Contains("xe dap 3 banh") || textToSearch.Contains("to mau"))
                     {
                         babyBoost += 8.0;
                     }
                 }
                 else // Trên 6 tuổi
                 {
-                    if (textToSearch.Contains("trên 6 tuổi") || textToSearch.Contains("tiểu học") || textToSearch.Contains("học sinh") || textToSearch.Contains("đồ dùng học tập") || textToSearch.Contains("xe đạp trẻ em"))
+                    if (textToSearch.Contains("tren 6 tuoi") || textToSearch.Contains("tieu hoc") || textToSearch.Contains("hoc sinh") || textToSearch.Contains("balo") || textToSearch.Contains("xe dap") || textToSearch.Contains("dong ho dinh vi"))
                     {
                         babyBoost += 8.0;
                     }
                 }
 
-                // 3. Khớp màu sắc yêu thích
+                // 3. Khớp giới tính (+5)
+                if (!string.IsNullOrEmpty(baby.Gender))
+                {
+                    bool isBoy = baby.Gender.Equals("Male", StringComparison.OrdinalIgnoreCase) || baby.Gender.Equals("Nam", StringComparison.OrdinalIgnoreCase);
+                    bool isGirl = baby.Gender.Equals("Female", StringComparison.OrdinalIgnoreCase) || baby.Gender.Equals("Nữ", StringComparison.OrdinalIgnoreCase);
+
+                    if (isBoy && (textToSearch.Contains("be trai") || textToSearch.Contains("con trai") || textToSearch.Contains("sieu nhan") || textToSearch.Contains("spiderman") || textToSearch.Contains("o to") || textToSearch.Contains("robot") || textToSearch.Contains("nguoi nhen") || textToSearch.Contains("khung long") || textToSearch.Contains("batman")))
+                    {
+                        babyBoost += 5.0;
+                    }
+                    else if (isGirl && (textToSearch.Contains("be gai") || textToSearch.Contains("con gai") || textToSearch.Contains("cong chua") || textToSearch.Contains("elsa") || textToSearch.Contains("bup be") || textToSearch.Contains("vay") || textToSearch.Contains("dam") || textToSearch.Contains("kitty") || textToSearch.Contains("pony")))
+                    {
+                        babyBoost += 5.0;
+                    }
+                }
+
+                // 4. Khớp màu sắc yêu thích (+3)
                 if (!string.IsNullOrEmpty(baby.FavoriteColors))
                 {
-                    var colors = baby.FavoriteColors.ToLower().Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var colors = RemoveDiacritics(baby.FavoriteColors).Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var color in colors)
                     {
                         if (color.Length > 2 && textToSearch.Contains(color))

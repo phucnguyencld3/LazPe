@@ -65,6 +65,7 @@ namespace PolyBabyAPI.DTOs
         public bool ReceiveOrderUpdates { get; set; }
         public bool ReceivePromotions { get; set; }
         public bool IsOnboarded { get; set; }
+        public string? ReferralCode { get; set; }
         public decimal WalletBalance { get; set; }
         public decimal CoinsBalance { get; set; }
         public List<BabyProfileDto> BabyProfiles { get; set; } = new List<BabyProfileDto>();

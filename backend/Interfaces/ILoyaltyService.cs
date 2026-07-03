@@ -20,7 +20,7 @@ namespace PolyBabyAPI.Interface
         Task<bool> ValidatePointsRedemptionAsync(string userId, int pointsToUse, decimal cartSubtotal);
         Task<bool> ApplyPointsRedemptionAsync(string userId, int pointsToUse, int invoiceId);
         Task<bool> RefundPointsAsync(string userId, int pointsToUse, int invoiceId);
-        Task<bool> AddPointsAsync(string userId, int amount, string transactionType, string description, int? invoiceId = null);
+        Task<bool> AddPointsAsync(string userId, int amount, string transactionType, string description, int? invoiceId = null, bool addToTotalPoints = true);
         Task<decimal> CalculateRedemptionDiscountAsync(string userId, int pointsToUse);
 
         Task<PolyBabyAPI.DTOs.Loyaltydtos.DailyCheckInStatusResponse> GetCheckInStatusAsync(string userId);
