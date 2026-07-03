@@ -346,6 +346,8 @@ namespace PolyBabyAPI.Models
         public int RequiredRatingForReward { get; set; } = 5;
         public bool AllowMultipleRewardsPerProduct { get; set; } = false;
 
+        public int? WelcomeVoucherID { get; set; }
+
         public int ReviewWithImageRewardPoints { get; set; } = 300;
         public int ReviewWithVideoRewardPoints { get; set; } = 500;
         public int MinimumReviewChars { get; set; } = 100;

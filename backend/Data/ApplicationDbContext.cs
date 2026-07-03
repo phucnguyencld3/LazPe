@@ -76,6 +76,9 @@ namespace PolyBabyAPI.Data
         public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
         public DbSet<LoyaltyBirthdayGiftLog> LoyaltyBirthdayGiftLogs { get; set; }
 
+        // ===== Referral System =====
+        public DbSet<ReferralRecord> ReferralRecords { get; set; }
+
         // ===== Notification Center =====
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserNotification> UserNotifications { get; set; }
@@ -119,6 +122,19 @@ namespace PolyBabyAPI.Data
                 .WithMany(fs => fs.FlashSaleItems)
                 .HasForeignKey(fsi => fsi.FlashSaleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ===== Referral System Relationships =====
+            builder.Entity<ReferralRecord>()
+                .HasOne(r => r.Referrer)
+                .WithMany()
+                .HasForeignKey(r => r.ReferrerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ReferralRecord>()
+                .HasOne(r => r.ReferredUser)
+                .WithMany()
+                .HasForeignKey(r => r.ReferredUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ===== Banner Configurations =====
             builder.Entity<Banner>(entity =>

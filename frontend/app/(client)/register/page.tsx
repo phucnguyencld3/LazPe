@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -134,6 +135,7 @@ export default function RegisterPage() {
           confirmPassword,
           phoneNumber: phoneNumber || null,
           dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
+          referralCode: referralCode.trim() || null,
         }),
       });
 
@@ -230,6 +232,7 @@ export default function RegisterPage() {
           confirmPassword,
           phoneNumber: phoneNumber || null,
           dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
+          referralCode: referralCode.trim() || null,
         }),
       });
 
@@ -422,6 +425,20 @@ export default function RegisterPage() {
                         id="confirm-password" placeholder="••••••••" type="password"
                         value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                         onFocus={() => setFocusedField("confirmPassword")} onBlur={() => setFocusedField(null)} required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mã giới thiệu */}
+                  <div className="flex flex-col gap-1 md:col-span-2">
+                    <label className="font-label-md text-[12px] font-semibold text-on-surface-variant ml-1" htmlFor="referral-code">Mã giới thiệu (không bắt buộc)</label>
+                    <div className="relative">
+                      <span className={`text-[18px] ${getInputIconClass("referralCode")}`}>loyalty</span>
+                      <input 
+                        className="w-full h-11 pl-10 pr-3 bg-surface-container-low border-none rounded-[5px] text-[13px] focus:ring-2 focus:ring-primary/50 transition-all font-medium uppercase" 
+                        id="referral-code" placeholder="Ví dụ: REF_123456" type="text"
+                        value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        onFocus={() => setFocusedField("referralCode")} onBlur={() => setFocusedField(null)}
                       />
                     </div>
                   </div>
