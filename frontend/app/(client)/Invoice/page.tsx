@@ -128,7 +128,7 @@ function InvoiceContent() {
     return (
       <div className="min-h-screen bg-slate-55 flex flex-col items-center justify-center py-12 px-4">
         <div className="text-center space-y-4">
-          <Loader className="animate-spin h-10 w-10 text-rose-500 mx-auto" />
+          <Loader className="animate-spin h-10 w-10 text-slate-900 mx-auto" />
           <p className="text-slate-600 font-medium animate-pulse">Đang tải thông tin đơn hàng...</p>
         </div>
       </div>
@@ -138,14 +138,14 @@ function InvoiceContent() {
   const isSuccess = paymentStatus === "success";
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-10 pt-4 md:pt-10 font-sans selection:bg-rose-100 selection:text-rose-900 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 pb-10 pt-4 md:pt-10 font-sans selection:bg-primary/10 selection:text-primary">
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6">
         
         {/* Navigation back link */}
         <div className="mb-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-500 font-bold transition-colors group"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 font-bold transition-colors group"
           >
             <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" />
             <span>Về trang chủ</span>
@@ -156,7 +156,7 @@ function InvoiceContent() {
           
           {/* Left Column: Status & Actions */}
           <div className="w-full md:w-5/12 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative">
-            <div className="absolute inset-0 top-0 h-32 bg-gradient-to-b from-rose-50 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 top-0 h-32 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
             
             <div className="flex-1 p-8 flex flex-col items-center justify-center text-center relative z-10">
               {isSuccess ? (
@@ -165,8 +165,8 @@ function InvoiceContent() {
                   <CheckCircle2 className="h-10 w-10 stroke-[2.5]" />
                 </div>
               ) : (
-                <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-50 text-rose-500 mb-5 shadow-sm border border-rose-100/50">
-                  <div className="absolute inset-0 rounded-full bg-rose-400/10 animate-ping opacity-50" />
+                <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/5 text-slate-900 mb-5 shadow-sm border border-primary/20/50">
+                  <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-50" />
                   <XCircle className="h-10 w-10 stroke-[2.5]" />
                 </div>
               )}
@@ -194,7 +194,7 @@ function InvoiceContent() {
             <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col gap-3">
               <Link
                 href={`/profile?tab=orders${invoiceIdStr || invoice?.invoiceID ? `&id=${invoiceIdStr || invoice?.invoiceID}` : ""}`}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-bold shadow-md shadow-rose-500/20 hover:shadow-rose-500/30 active:scale-[0.98] transition-all"
+                className="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold shadow-md shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all"
               >
                 <span>Xem đơn hàng</span>
                 <ArrowRight className="h-4 w-4" />
@@ -260,7 +260,7 @@ function InvoiceContent() {
                           )}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className={`text-[13px] font-bold ${item.unitPrice === 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                          <div className={`text-[13px] font-bold ${item.unitPrice === 0 ? "text-emerald-500" : "text-slate-900"}`}>
                             {item.unitPrice === 0 ? "QUÀ TẶNG" : formatVND(item.totalPrice)}
                           </div>
                         </div>
@@ -286,7 +286,7 @@ function InvoiceContent() {
                     <div className="text-[11px] text-slate-700 font-bold">
                       {invoice.payMethod || "COD"}
                     </div>
-                    <div className={`mt-0.5 text-[9px] font-bold ${isSuccess ? "text-emerald-600" : "text-rose-600"}`}>
+                    <div className={`mt-0.5 text-[9px] font-bold ${isSuccess ? "text-emerald-600" : "text-slate-900"}`}>
                       {isSuccess ? "Thành công" : "Thất bại"}
                     </div>
                   </div>
@@ -304,7 +304,7 @@ function InvoiceContent() {
                     </span>
                   </div>
                   {invoice.voucherDiscountAmount > 0 && (
-                    <div className="flex justify-between items-center text-rose-500">
+                    <div className="flex justify-between items-center text-slate-900">
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">confirmation_number</span> Voucher giảm giá
                       </span>
@@ -336,7 +336,7 @@ function InvoiceContent() {
                     </div>
                   )}
                   {(invoice.discountAmount > 0 && !invoice.voucherDiscountAmount && !invoice.pointsDiscountAmount && !invoice.coinsDiscountAmount && !invoice.walletDiscountAmount) && (
-                    <div className="flex justify-between items-center text-rose-500">
+                    <div className="flex justify-between items-center text-slate-900">
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">confirmation_number</span> Giảm giá
                       </span>
@@ -354,7 +354,7 @@ function InvoiceContent() {
                   <div className="h-px bg-slate-200 my-1" />
                   <div className="flex justify-between items-center pt-1">
                     <span className="font-bold text-slate-800 text-sm">Tổng thanh toán</span>
-                    <span className="text-lg font-extrabold text-rose-500">
+                    <span className="text-lg font-extrabold text-slate-900">
                       {formatVND(invoice.finalAmount || (invoice.totalPrice + invoice.shippingFee - (invoice.shippingDiscountAmount || 0)))}
                     </span>
                   </div>
@@ -378,7 +378,7 @@ export default function InvoicePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <Loader className="animate-spin h-10 w-10 text-rose-500 mb-4" />
+        <Loader className="animate-spin h-10 w-10 text-slate-900 mb-4" />
         <p className="text-slate-600 font-medium">Đang tải trang kết quả...</p>
       </div>
     }>

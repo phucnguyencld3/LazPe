@@ -85,7 +85,7 @@ namespace PolyBabyAPI.Services
         public async Task<(IEnumerable<Invoice> Items, int TotalCount)> GetByUserPaginatedAsync(string userId, OrderStatus? status = null, string? search = null, int page = 1, int pageSize = 10)
         {
             var query = _context.Invoices
-                .AsNoTracking()
+                .AsNoTrackingWithIdentityResolution()
                 .Where(i => i.UserID == userId && !i.IsDeleted);
 
             if (status.HasValue)
@@ -106,6 +106,7 @@ namespace PolyBabyAPI.Services
 
             var items = await query
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Variants)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .OrderByDescending(i => i.CreatedAt)
                 .Skip((page - 1) * pageSize)
@@ -119,13 +120,14 @@ namespace PolyBabyAPI.Services
         public async Task<Invoice?> GetByIdAsync(int id)
         {
             return await _context.Invoices
-                .AsNoTracking()
+                .AsNoTrackingWithIdentityResolution()
                 .AsSplitQuery()
                 .Include(i => i.User)
                 .Include(i => i.Voucher)
                 .Include(i => i.ShippingVoucher)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Variants)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .Include(i => i.PaymentTransactions)
                 .FirstOrDefaultAsync(i => i.InvoiceID == id && !i.IsDeleted);
@@ -1428,7 +1430,7 @@ namespace PolyBabyAPI.Services
                 {
                     if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                     {
-                        throw new InvalidOperationException($"Combo sản phẩm đã đạt giới hạn số lượng Flash Sale. Chỉ còn {fsItem.TotalQuantity - fsItem.SoldQuantity} sản phẩm.");
+                        return; // Treat as normal purchase
                     }
 
                     if (fsItem.MaxQuantityPerUser > 0)
@@ -1436,7 +1438,7 @@ namespace PolyBabyAPI.Services
                         var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
                         if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
                         {
-                            throw new InvalidOperationException($"Bạn đã vượt quá số lượng mua tối đa cho Combo này trong đợt Flash Sale (Tối đa: {fsItem.MaxQuantityPerUser}).");
+                            return; // Treat as normal purchase
                         }
                     }
 
@@ -1475,7 +1477,7 @@ namespace PolyBabyAPI.Services
                 {
                     if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                     {
-                        throw new InvalidOperationException($"Sản phẩm đã đạt giới hạn số lượng Flash Sale. Chỉ còn {fsItem.TotalQuantity - fsItem.SoldQuantity} sản phẩm.");
+                        return; // Treat as normal purchase if flash sale quantity is exhausted
                     }
 
                     if (fsItem.MaxQuantityPerUser > 0)
@@ -1483,7 +1485,7 @@ namespace PolyBabyAPI.Services
                         var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
                         if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
                         {
-                            throw new InvalidOperationException($"Bạn đã vượt quá số lượng mua tối đa cho sản phẩm này trong đợt Flash Sale (Tối đa: {fsItem.MaxQuantityPerUser}).");
+                            return; // Treat as normal purchase if user exceeds their limit
                         }
                     }
 

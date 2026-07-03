@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getUserOrders, retryVnPayPayment, markOrderCompleted } from "@/lib/api";
+import { getUserOrders, retryVnPayPayment, markOrderCompleted, addToCart } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { Loader, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { OrderDetailView } from "./OrderDetailView";
@@ -32,6 +32,40 @@ export function OrdersSection({
   const [expandedOrders, setExpandedOrders] = useState<Record<number, boolean>>({});
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
+
+  const handleRebuy = async (order: any) => {
+    if (!order.invoiceDetails || order.invoiceDetails.length === 0) return;
+    
+    const loadingToast = toast.loading("Đang thêm sản phẩm vào giỏ hàng...");
+    let successCount = 0;
+    
+    try {
+      for (const item of order.invoiceDetails) {
+        if (item.unitPrice === 0) continue; // Bỏ qua hàng tặng
+        
+        const res = await addToCart(token, {
+          variantID: item.variantID,
+          bundleID: item.bundleID,
+          quantity: item.quantity
+        });
+        
+        if (res.success) {
+          successCount++;
+        }
+      }
+      
+      toast.dismiss(loadingToast);
+      if (successCount > 0) {
+        toast.success(`Đã thêm ${successCount} sản phẩm vào giỏ hàng`);
+        window.dispatchEvent(new Event("cartUpdated"));
+      } else {
+        toast.error("Không thể thêm sản phẩm vào giỏ hàng");
+      }
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error("Lỗi khi thêm sản phẩm");
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -285,20 +319,6 @@ export function OrdersSection({
         </h2>
       </div>
 
-      {/* Search Input */}
-      <div className="mb-5 relative w-full">
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo mã đơn hàng, tên sản phẩm..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full min-w-0 pl-10 pr-4 py-2.5 rounded-[8px] border border-slate-200/80 focus:outline-none focus:border-primary text-[13px] font-semibold transition-colors shadow-sm"
-        />
-        <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">
-          search
-        </span>
-      </div>
-
       {/* Tabs */}
       <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none w-full">
         {(
@@ -323,6 +343,20 @@ export function OrdersSection({
         ))}
       </div>
 
+      {/* Search Input */}
+      <div className="mb-5 relative w-full">
+        <input
+          type="text"
+          placeholder="Tìm kiếm theo mã đơn hàng, tên sản phẩm..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full min-w-0 pl-10 pr-4 py-2.5 rounded-[8px] border border-slate-200/80 focus:outline-none focus:border-primary text-[13px] font-semibold transition-colors shadow-sm"
+        />
+        <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">
+          search
+        </span>
+      </div>
+
       {/* Orders List */}
       <div className="space-y-md">
         {filteredOrders.length > 0 ? (
@@ -339,10 +373,10 @@ export function OrdersSection({
                   return (
                     <div
                       key={order.invoiceID}
-                      className="border border-slate-100/80 rounded-[8px] overflow-hidden hover:shadow-sm transition-shadow bg-white mb-4"
+                      className="border border-slate-200 rounded-[8px] overflow-hidden hover:shadow-sm transition-shadow bg-white mb-4"
                     >
                       {/* Card Header */}
-                      <div className="bg-slate-50/50 px-4 py-2.5 border-b border-slate-100/80 flex flex-wrap justify-between items-center gap-2">
+                      <div className="bg-slate-50/50 px-4 py-2.5 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
                         <div className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-slate-500 text-base">store</span>
                           <span className="font-bold text-slate-700 text-[12px]">LazPe Store</span>
@@ -429,7 +463,7 @@ export function OrdersSection({
                       </div>
 
                       {/* Order total & CTA */}
-                      <div className="bg-slate-50/20 px-4 py-3 border-t border-slate-100/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="bg-slate-50/20 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div className="text-[11px] font-semibold text-slate-400">
                           Ngày mua: {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                         </div>
@@ -477,7 +511,7 @@ export function OrdersSection({
                             )}
                             {(order.statusCode === 3 || order.statusCode === 5) && (
                               <button
-                                onClick={() => toast.success("Đã thêm sản phẩm vào giỏ hàng")}
+                                onClick={() => handleRebuy(order)}
                                 className="border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] transition-colors"
                               >
                                 Mua lại

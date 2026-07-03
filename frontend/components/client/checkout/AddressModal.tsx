@@ -442,7 +442,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
           {showNewAddressForm ? (
             <form onSubmit={handleSaveNewAddress} className="space-y-4">
               {addressFormError && (
-                <div className="p-3 rounded-lg bg-rose-50 text-xs font-semibold text-rose-600 flex items-center gap-2">
+                <div className="p-3 rounded-lg bg-primary/5 text-xs font-semibold text-slate-900 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                   <span>{addressFormError}</span>
                 </div>
@@ -454,7 +454,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   {/* Name */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Tên người nhận <span className="text-rose-500">*</span>
+                      Tên người nhận <span className="text-slate-900">*</span>
                     </label>
                     <input
                       type="text"
@@ -469,7 +469,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   {/* Phone */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Số điện thoại <span className="text-rose-500">*</span>
+                      Số điện thoại <span className="text-slate-900">*</span>
                     </label>
                     <input
                       type="tel"
@@ -532,7 +532,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   {/* Province */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Tỉnh / Thành phố <span className="text-rose-500">*</span>
+                      Tỉnh / Thành phố <span className="text-slate-900">*</span>
                     </label>
                     <SearchableSelect
                       options={provinces}
@@ -540,7 +540,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                       onChange={onProvinceSelect}
                       placeholder="Chọn Tỉnh / Thành phố"
                       searchPlaceholder="Tìm kiếm tỉnh/thành..."
-                      accentColor="rose"
+                      accentColor="primary"
                     />
                   </div>
 
@@ -548,7 +548,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   {districts.length > 1 && (
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                        {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'} <span className="text-rose-500">*</span>
+                        {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'} <span className="text-slate-900">*</span>
                       </label>
                       <SearchableSelect
                         options={districts}
@@ -557,7 +557,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                         placeholder={addressForm.apiVersion === 'v2' ? "Chọn Xã / Phường" : "Chọn Quận / Huyện"}
                         searchPlaceholder={addressForm.apiVersion === 'v2' ? "Tìm kiếm xã/phường..." : "Tìm kiếm quận/huyện..."}
                         disabled={!addressForm.provinceCode}
-                        accentColor="rose"
+                        accentColor="primary"
                       />
                     </div>
                   )}
@@ -566,7 +566,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   {addressForm.apiVersion !== 'v2' && (
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                        Phường / Xã <span className="text-rose-500">*</span>
+                        Phường / Xã <span className="text-slate-900">*</span>
                       </label>
                     <SearchableSelect
                       options={wards}
@@ -575,7 +575,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                       placeholder="Chọn Phường / Xã"
                       searchPlaceholder="Tìm kiếm phường/xã..."
                       disabled={!addressForm.districtCode}
-                      accentColor="rose"
+                      accentColor="primary"
                     />
                     </div>
                   )}
@@ -586,7 +586,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                   {/* Detail Address */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Địa chỉ chi tiết (Số nhà, tên đường...) <span className="text-rose-500">*</span>
+                      Địa chỉ chi tiết (Số nhà, tên đường...) <span className="text-slate-900">*</span>
                     </label>
                     <input
                       type="text"
@@ -647,7 +647,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
               ) : (
                 <button
                   onClick={handleOpenNewAddressForm}
-                  className="w-full border-2 border-dashed border-rose-300 rounded-[5px] p-3 flex items-center justify-center gap-2 text-rose-500 hover:bg-rose-500/[0.02] transition-colors font-bold text-sm bouncy-hover"
+                  className="w-full border-2 border-dashed border-rose-300 rounded-[5px] p-3 flex items-center justify-center gap-2 text-slate-900 hover:bg-primary/[0.02] transition-colors font-bold text-sm bouncy-hover"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Thêm địa chỉ giao hàng mới</span>
@@ -668,7 +668,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                       }}
                       className={`border rounded-[5px] px-4 py-2 cursor-pointer transition-all ${
                         selectedAddress?.addressID === addr.addressID
-                          ? "border-rose-500 bg-rose-500/[0.01]"
+                          ? "border-primary bg-primary/[0.01]"
                           : "border-slate-200 hover:border-slate-300"
                       }`}
                     >
@@ -679,7 +679,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                             <span className="text-slate-300 text-xs">|</span>
                             <span className="text-slate-600 text-xs font-semibold">{addr.phoneNumber}</span>
                             {addr.isDefault && (
-                              <span className="bg-rose-100 text-rose-600 text-[8px] px-1.5 py-0.5 rounded-full font-extrabold uppercase tracking-wide">
+                              <span className="bg-primary/10 text-slate-900 text-[8px] px-1.5 py-0.5 rounded-full font-extrabold uppercase tracking-wide">
                                 Mặc Định
                               </span>
                             )}
@@ -699,7 +699,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                               e.stopPropagation(); // Ngăn chọn địa chỉ khi click nút sửa
                               handleOpenEditAddressForm(addr);
                             }}
-                            className="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
+                            className="p-1 text-slate-400 hover:text-slate-900 hover:bg-primary/5 rounded-lg transition-colors border border-transparent hover:border-primary/20"
                             title="Sửa địa chỉ"
                           >
                             <Pencil className="h-4 w-4" />
@@ -708,7 +708,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                           {/* Selected Radio Indicator */}
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                             selectedAddress?.addressID === addr.addressID
-                              ? "border-rose-500 bg-rose-500 text-white"
+                              ? "border-primary bg-primary text-white"
                               : "border-slate-300"
                           }`}>
                             {selectedAddress?.addressID === addr.addressID && <Check className="h-3 w-3 stroke-[3]" />}

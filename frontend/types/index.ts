@@ -45,6 +45,7 @@ export interface Product {
   specifications?: string;
   price: number;
   discountPrice?: number;
+  discountPercent?: number;
   minPrice?: number;
   maxPrice?: number;
   minEffectivePrice?: number;

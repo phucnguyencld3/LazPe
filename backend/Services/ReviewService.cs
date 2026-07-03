@@ -877,7 +877,7 @@ namespace PolyBabyAPI.Services
                 .Include(r => r.User)
                 .Include(r => r.Variant)
                     .ThenInclude(v => v.Product)
-                        .ThenInclude(p => p.Variants)
+                        .ThenInclude(p => p.Images)
                 .Include(r => r.Bundle)
                 .Include(r => r.ReviewLikes)
                 .Include(r => r.ReviewMedia)
@@ -903,6 +903,7 @@ namespace PolyBabyAPI.Services
                 .Include(i => i.InvoiceDetails)
                     .ThenInclude(d => d.Variant)
                         .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Images)
                 .Include(i => i.InvoiceDetails)
                     .ThenInclude(d => d.Bundle)
                 .Where(i => i.UserID == userId && i.Status == OrderStatus.Completed)
@@ -947,10 +948,19 @@ namespace PolyBabyAPI.Services
                     if (!isReviewed)
                     {
                         var imageUrl = detail.Variant?.ImageUrl;
+                        
+                        // Nếu variant không có ảnh, lấy ảnh của sản phẩm
+                        if (string.IsNullOrEmpty(imageUrl) && detail.Variant?.Product?.Images != null && detail.Variant.Product.Images.Any())
+                        {
+                            imageUrl = detail.Variant.Product.Images.OrderBy(img => img.DisplayOrder).FirstOrDefault()?.ImageUrl;
+                        }
+
+                        // Nếu vẫn không có, tìm ảnh của variant khác cùng sản phẩm
                         if (string.IsNullOrEmpty(imageUrl) && detail.Variant != null)
                         {
                             fallbackImages.TryGetValue(detail.Variant.ProductID, out imageUrl);
                         }
+                        
                         imageUrl = imageUrl ?? detail.Bundle?.ImageUrl ?? string.Empty;
 
                         pendingItems.Add(new PendingReviewItemDto

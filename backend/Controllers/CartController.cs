@@ -420,10 +420,16 @@ namespace PolyBabyAPI.Controllers
                 {
                     VariantID = detail.Variant.VariantID,
                     Size = "Xem chi tiết",
-                    Color = detail.Variant.VariantName,
+                    Color = (detail.Variant.VariantOptionValues != null && detail.Variant.VariantOptionValues.Any())
+                        ? string.Join(" - ", detail.Variant.VariantOptionValues.Select(v => v.ProductOptionValue?.Value).Where(v => !string.IsNullOrEmpty(v)))
+                        : (detail.Variant.VariantName.StartsWith(detail.Variant.Product?.ProductName ?? "") 
+                            ? detail.Variant.VariantName.Substring((detail.Variant.Product?.ProductName ?? "").Length).Trim(' ', '-') 
+                            : detail.Variant.VariantName),
                     UnitPrice = detail.UnitPrice,
                     Stock = detail.Variant.Stock,
-                    ImageUrl = detail.Variant.ImageUrl ?? GetProductImageUrl(detail.Variant.Product)
+                    ImageUrl = !string.IsNullOrEmpty(detail.Variant.ImageUrl) 
+                                ? detail.Variant.ImageUrl 
+                                : GetFallbackVariantImageUrl(detail.Variant)
                 } : null,
                 Bundle = detail.Bundle != null ? new BundleCartDto
                 {
@@ -463,6 +469,22 @@ namespace PolyBabyAPI.Controllers
         {
             var img = product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
             return !string.IsNullOrEmpty(img) ? img : "/assets/img/products/default-product.jpg";
+        }
+
+        private string GetFallbackVariantImageUrl(Variant variant)
+        {
+            if (variant.Product?.Variants != null)
+            {
+                // First try to find another variant of the same product that has an image
+                var otherVariantWithImg = variant.Product.Variants.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl;
+                if (!string.IsNullOrEmpty(otherVariantWithImg))
+                {
+                    return otherVariantWithImg;
+                }
+            }
+
+            // Fallback to the product's main image if no variant images are available
+            return GetProductImageUrl(variant.Product);
         }
 
         private string GenerateProductSlug(string productName)
