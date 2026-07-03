@@ -3575,3 +3575,101 @@ export async function addVaccinationRecord(babyId: number, data: VaccinationReco
     return false;
   }
 }
+
+// ==========================================
+// AFFILIATE SYSTEM
+// ==========================================
+
+export interface AffiliateDashboardStats {
+  monthlyRevenue: number;
+  lifetimeRevenue: number;
+  affiliatePoint: number;
+  totalClicks: number;
+  totalConversions: number;
+  milestones: {
+    milestoneId: number;
+    requiredRevenue: number;
+    isAchieved: boolean;
+    voucherName: string;
+  }[];
+}
+
+export interface AffiliateLink {
+  affiliateLinkCode: string;
+  fullUrl: string;
+  productId: number;
+  productName: string;
+  productImage: string;
+  clickCount: number;
+  conversionCount: number;
+  revenue: number;
+  createdAt: string;
+}
+
+export async function registerAffiliate(token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ agreeToTerms: true }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) return { success: true, message: result.message };
+    return { success: false, message: result.message || "Failed to register" };
+  } catch (error) {
+    console.error("Error registering affiliate:", error);
+    return { success: false, message: "Network error" };
+  }
+}
+
+export async function getAffiliateDashboard(token: string): Promise<AffiliateDashboardStats | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/dashboard`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting affiliate dashboard:", error);
+    return null;
+  }
+}
+
+export async function getAffiliateLinks(token: string): Promise<AffiliateLink[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/links`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting affiliate links:", error);
+    return [];
+  }
+}
+
+export async function generateAffiliateLink(token: string, productId: number): Promise<{ success: boolean; data?: AffiliateLink; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/generate-link/${productId}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) return { success: true, data: result };
+    return { success: false, message: result.message || "Failed to generate link" };
+  } catch (error) {
+    console.error("Error generating affiliate link:", error);
+    return { success: false, message: "Network error" };
+  }
+}

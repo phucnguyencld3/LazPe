@@ -18,6 +18,7 @@ namespace PolyBabyAPI.Services
         private readonly IAuditLogService _auditLogService;
         private readonly ICartService _cartService;
         private readonly IWalletSecurityService _walletSecurityService;
+        private readonly IAffiliateService _affiliateService;
 
         public InvoiceService(
             ApplicationDbContext context, 
@@ -27,7 +28,8 @@ namespace PolyBabyAPI.Services
             IRecommendationService recommendationService, 
             IAuditLogService auditLogService, 
             ICartService cartService,
-            IWalletSecurityService walletSecurityService)
+            IWalletSecurityService walletSecurityService,
+            IAffiliateService affiliateService)
         {
             _context = context;
             _logger = logger;
@@ -37,6 +39,7 @@ namespace PolyBabyAPI.Services
             _auditLogService = auditLogService;
             _cartService = cartService;
             _walletSecurityService = walletSecurityService;
+            _affiliateService = affiliateService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -933,6 +936,15 @@ namespace PolyBabyAPI.Services
                 {
                     await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
                     await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
+                }
+
+                if (!string.IsNullOrEmpty(invoice.AffiliateUserId))
+                {
+                    // Formula: Revenue = FinalPaidAmount - ShippingFee (assuming TotalPrice = SubTotal - Discount)
+                    // If invoice.AmountToPay is used, we subtract ShippingFee.
+                    // Wait, earlier the rule was FinalPaid - ShippingFee.
+                    // Let's use invoice.TotalPrice.
+                    await _affiliateService.ProcessAffiliateRevenueAsync(invoice.AffiliateUserId, invoice.InvoiceID, invoice.TotalPrice);
                 }
             }
             catch (Exception ex)

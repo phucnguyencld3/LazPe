@@ -39,6 +39,7 @@ import { VoucherSection } from "@/components/client/profile/VoucherSection";
 import { OrdersSection } from "@/components/client/profile/OrdersSection";
 import { ReviewsSection } from "@/components/client/profile/ReviewsSection";
 import { PrivacySection } from "@/components/client/profile/PrivacySection";
+import AffiliateSection from "@/components/client/profile/AffiliateSection";
 import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
 import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 import { SpendingSection } from "@/components/client/profile/SpendingSection";
@@ -627,6 +628,7 @@ export default function ProfilePage() {
                       { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
+                      { id: "affiliate", label: "Tiếp thị liên kết", icon: "campaign" },
                       { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
                     ] as const
                   ).map((item) => (
@@ -661,6 +663,7 @@ export default function ProfilePage() {
                       { id: "alerts", label: "Báo giá", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo", icon: "notifications" },
                       { id: "reviews", label: "Đánh giá", icon: "reviews" },
+                      { id: "affiliate", label: "Affiliate", icon: "campaign" },
                       { id: "privacy", label: "Bảo mật", icon: "policy" },
                     ] as const
                   ).map((item) => (
@@ -787,6 +790,10 @@ export default function ProfilePage() {
                   if (userProfile && token) fetchData(userProfile.userId, token);
                 }}
               />
+            )}
+
+            { activeTab === "affiliate" && (
+              <AffiliateSection token={token} />
             )}
 
             {activeTab === "privacy" && <PrivacySection />}
