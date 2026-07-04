@@ -81,9 +81,9 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
   const productChart = getProductChartConfig();
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col space-y-0 print-card">
       {/* Top Sellers chart */}
-      <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+      <div className="p-6 border-b border-slate-100">
         <h3 className="font-bold text-slate-800 text-base mb-6">Top 5 Sản phẩm Bán chạy</h3>
         {isChartReady && productChart ? (
           <Chart
@@ -100,9 +100,9 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
       </div>
 
       {/* Product Inventory Tops: Low vs High Stocks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
         {/* Highest Stock products */}
-        <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+        <div className="p-6">
           <h3 className="font-bold text-slate-800 text-base mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-indigo-500">warehouse</span>
             Sản phẩm Tồn kho cao nhất
@@ -134,7 +134,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         </div>
 
         {/* Lowest Stock products */}
-        <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+        <div className="p-6">
           <h3 className="font-bold text-rose-700 text-base mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-rose-500">warning</span>
             Sản phẩm Cảnh báo hết hàng
@@ -175,7 +175,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
       </div>
 
       {/* Paginated Product Sales breakdown Table */}
-      <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+      <div className="p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h3 className="font-bold text-slate-800 text-base">Báo cáo Sản phẩm Bán ra Chi tiết</h3>

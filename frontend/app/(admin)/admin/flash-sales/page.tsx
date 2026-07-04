@@ -210,8 +210,8 @@ export default function AdminFlashSalesPage() {
         toast.error(`Giá sale của "${item.name}" phải nhỏ hơn giá gốc (${formatCurrency(item.originalPrice)}).`);
         return;
       }
-      if (effDiscountType === DiscountType.Percentage && (item.discountPrice <= 0 || item.discountPrice >= 100)) {
-        toast.error(`Mức giảm phần trăm của "${item.name}" phải từ 1% đến 99%.`);
+      if (effDiscountType === DiscountType.Percentage && (item.discountPrice <= 0 || item.discountPrice > 50)) {
+        toast.error(`Mức giảm phần trăm của "${item.name}" không được vượt quá 50% theo quy định pháp luật.`);
         return;
       }
       if (item.totalQty <= 0) {
@@ -598,6 +598,34 @@ export default function AdminFlashSalesPage() {
     return matchesSearch;
   });
 
+  const isItemInOverlappingCampaign = (type: FlashSaleItemType, refId: number) => {
+    if (!formStartTime || !formEndTime) return false;
+    const start = new Date(formStartTime).getTime();
+    const end = new Date(formEndTime).getTime();
+    if (isNaN(start) || isNaN(end)) return false;
+
+    for (const sale of sales) {
+      if (activeSaleId && sale.id === activeSaleId) continue;
+      
+      const saleStart = new Date(sale.startTime).getTime();
+      const saleEnd = new Date(sale.endTime).getTime();
+      
+      // Check overlap
+      const overlaps = start < saleEnd && end > saleStart;
+      
+      if (overlaps) {
+        // Log to debug why it might be failing
+        // console.log(`Checking overlap with sale ${sale.name} for type ${type}, refId ${refId}`, sale.flashSaleItems);
+        
+        // Ensure flashSaleItems exists (it might be undefined if API changed)
+        if (sale.flashSaleItems && sale.flashSaleItems.some(i => i.itemType == type && i.referenceId == refId)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   const getStatusBadge = (startTimeStr: string, endTimeStr: string, isActive: boolean) => {
     if (!isActive) {
       return (
@@ -648,9 +676,9 @@ export default function AdminFlashSalesPage() {
     <main className="w-full pb-20 animate-in fade-in duration-300">
       {view === "list" ? (
         /* LIST VIEW */
-        <div className="space-y-6">
+        <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
           {/* Header section */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 border-b border-slate-100 bg-slate-50/50">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-3xl">bolt</span>
@@ -673,9 +701,9 @@ export default function AdminFlashSalesPage() {
           </div>
 
           {/* Stats Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/30">
             {/* Total */}
-            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined text-[20px]">calendar_today</span>
@@ -686,7 +714,7 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Active */}
-            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-[8px] bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
                   <span className="material-symbols-outlined text-[20px] animate-pulse">bolt</span>
@@ -699,7 +727,7 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Upcoming */}
-            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                   <span className="material-symbols-outlined text-[20px]">schedule</span>
@@ -712,7 +740,7 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Total Sold */}
-            <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+            <div className="px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                   <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
@@ -726,7 +754,7 @@ export default function AdminFlashSalesPage() {
           </div>
 
           {/* Main List Section */}
-          <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+          <div className="overflow-hidden">
             {/* Search, filters block */}
             <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
               {/* Search box */}
@@ -887,8 +915,8 @@ export default function AdminFlashSalesPage() {
         </div>
       ) : (
         /* CREATE OR EDIT FORM VIEW */
-        <div className="space-y-6">
-          <header className="flex items-center gap-3">
+        <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+          <header className="flex items-center gap-3 p-6 border-b border-slate-100 bg-slate-50/50">
             <button
               type="button"
               onClick={() => { setView("list"); handleResetForm(); }}
@@ -907,9 +935,9 @@ export default function AdminFlashSalesPage() {
             </div>
           </header>
 
-          <form onSubmit={handleSaveForm} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <form onSubmit={handleSaveForm} className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
             {/* Left Column: Basic configuration */}
-            <div className="bg-white p-6 rounded-[8px] border border-slate-100 shadow-sm space-y-5 lg:col-span-1">
+            <div className="bg-slate-50/30 p-8 space-y-5 lg:col-span-1">
               <h3 className="font-bold text-slate-700 text-base border-b border-slate-50 pb-2">Thông tin chiến dịch</h3>
 
               <div className="space-y-1.5">
@@ -1001,14 +1029,14 @@ export default function AdminFlashSalesPage() {
                 <button
                   type="button"
                   onClick={() => { setView("list"); handleResetForm(); }}
-                  className="flex-1 py-3 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-55/10 font-bold text-sm cursor-pointer transition-colors"
+                  className="flex-1 py-3 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-55/10 font-bold text-sm cursor-pointer transition-colors"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={savingForm}
-                  className="flex-1 py-3 rounded-full bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 py-3 rounded-[8px] bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
                 >
                   {savingForm ? (
                     <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
@@ -1020,7 +1048,7 @@ export default function AdminFlashSalesPage() {
             </div>
 
             {/* Right Column: Flash sale items configuration */}
-            <div className="bg-white p-6 rounded-[8px] border border-slate-100 shadow-sm lg:col-span-2 space-y-4">
+            <div className="p-8 lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-50 pb-3">
                 <div>
                   <h3 className="font-bold text-slate-700 text-base">Danh sách mặt hàng giảm giá</h3>
@@ -1114,7 +1142,7 @@ export default function AdminFlashSalesPage() {
                                 <div className="flex-shrink-0 w-[240px] bg-slate-50 border border-slate-200 rounded-[8px] p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
                                   {/* Header */}
                                   <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200/80">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-[8px] shadow-sm">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                       {formType === CampaignType.ComboDiscount ? `Mốc ${i + 1}` : "Cấu hình"}
                                     </span>
                                     <button
@@ -1166,9 +1194,14 @@ export default function AdminFlashSalesPage() {
                                     </div>
 
                                     <div>
-                                      <label className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">
-                                        {item.discountType === DiscountType.FreeGift ? "Giá bán" : "Giá trị giảm"}
-                                      </label>
+                                      <div className="flex justify-between items-center mb-1">
+                                        <label className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                                          {item.discountType === DiscountType.FreeGift ? "Giá bán" : "Giá giảm"}
+                                        </label>
+                                        <span className="text-[10px] text-slate-400 font-bold line-through">
+                                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.originalPrice || 0)}
+                                        </span>
+                                      </div>
                                       <input
                                         type="number"
                                         required
@@ -1178,6 +1211,15 @@ export default function AdminFlashSalesPage() {
                                         placeholder={item.discountType === DiscountType.FreeGift ? "VD: 150000" : "Mức giảm"}
                                         className="w-full px-2 py-1.5 bg-rose-50/50 border border-rose-200 rounded-lg text-sm font-bold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all placeholder:text-rose-300"
                                       />
+                                      {(item.discountType === DiscountType.Percentage || item.discountType === DiscountType.FixedPrice) && item.discountPrice > 0 && (
+                                        <div className="mt-1 text-[10px] font-bold text-emerald-600 text-right">
+                                          Sau giảm: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                                            Math.max(0, item.discountType === DiscountType.Percentage 
+                                              ? item.originalPrice * (1 - item.discountPrice / 100)
+                                              : item.originalPrice - item.discountPrice)
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div className="flex gap-2 pt-2 mt-2 border-t border-slate-200/60">
@@ -1216,7 +1258,7 @@ export default function AdminFlashSalesPage() {
 
                                     <div className="flex-shrink-0 w-[260px] bg-slate-50 border border-slate-200 rounded-[8px] p-3 shadow-sm hover:shadow-md transition-all hover:border-primary/30 relative group/tier self-start">
                                       <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200/80">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white border border-slate-100 px-2.5 py-0.5 rounded-[8px] shadow-sm text-primary">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                                           Danh sách quà tặng
                                         </span>
                                       </div>
@@ -1328,7 +1370,7 @@ export default function AdminFlashSalesPage() {
                   type="button"
                   onClick={() => setSaleToDelete(null)}
                   disabled={deleting}
-                  className="flex-1 py-2.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-55/10 font-bold text-xs cursor-pointer"
+                  className="flex-1 py-2.5 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-55/10 font-bold text-xs cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
@@ -1336,7 +1378,7 @@ export default function AdminFlashSalesPage() {
                   type="button"
                   onClick={confirmDelete}
                   disabled={deleting}
-                  className="flex-1 py-2.5 rounded-full bg-rose-500 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-rose-500/20 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 py-2.5 rounded-[8px] bg-rose-500 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-rose-500/20 hover:bg-rose-600 active:scale-95 transition-all cursor-pointer"
                 >
                   {deleting ? (
                     <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
@@ -1565,7 +1607,7 @@ export default function AdminFlashSalesPage() {
                       const availableVariantsForSale = selectedProductVariants.filter(variant => {
                         const isOutOfStock = variant.stock <= 0;
                         const isAlreadyAdded = formItems.some(
-                          item => item.type === FlashSaleItemType.Variant && item.refId === variant.variantID
+                          item => item.type == FlashSaleItemType.Variant && item.refId == variant.variantID
                         );
                         return !isOutOfStock && !isAlreadyAdded;
                       });
@@ -1579,13 +1621,19 @@ export default function AdminFlashSalesPage() {
 
                       return availableVariantsForSale.map((variant) => {
                         const isSelectedGift = giftTargetIndex !== null && (formItems[giftTargetIndex]?.giftVariantIds || []).includes(variant.variantID);
+                        const isOverlapping = isItemInOverlappingCampaign(FlashSaleItemType.Variant, variant.variantID);
 
                         return (
                           <div
                             key={variant.variantID}
-                            onClick={() => addVariantToSale(variant, selectedProductForVariants.productName)}
-                            className={`flex items-center justify-between p-3.5 border rounded-[8px] cursor-pointer transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5"}`}
+                            onClick={() => !isOverlapping && addVariantToSale(variant, selectedProductForVariants.productName)}
+                            className={`flex items-center justify-between p-3.5 border rounded-[8px] transition-all duration-200 group relative overflow-hidden ${isSelectedGift ? "border-primary bg-primary/5 ring-1 ring-primary/20" : isOverlapping ? "opacity-50 border-red-200 bg-red-50/30 cursor-not-allowed" : "border-slate-100 hover:border-primary/50 hover:bg-primary/5 cursor-pointer"}`}
                           >
+                            {isOverlapping && !isSelectedGift && (
+                              <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-[8px] shadow-sm z-10">
+                                Trùng lịch Sale
+                              </div>
+                            )}
                             {isSelectedGift && (
                               <div className="absolute top-0 right-0 w-8 h-8 bg-primary rounded-bl-[8px] flex items-center justify-center shadow-sm z-10">
                                 <span className="material-symbols-outlined text-white text-[16px] font-bold">check</span>
@@ -1625,7 +1673,7 @@ export default function AdminFlashSalesPage() {
                     const actualStock = product.variantCount > 0 ? product.totalStock : product.stock;
                     const isOutOfStock = actualStock <= 0;
                     const isAlreadyAdded = formItems.some(
-                      item => item.type === FlashSaleItemType.Product && item.refId === product.productID
+                      item => item.type == FlashSaleItemType.Product && item.refId == product.productID
                     );
                     return !isOutOfStock && !isAlreadyAdded;
                   });
@@ -1738,7 +1786,7 @@ export default function AdminFlashSalesPage() {
                   const availableBundlesForSale = selectorBundles.filter(bundle => {
                     const isOutOfStock = (bundle.stock !== undefined ? bundle.stock : 0) <= 0;
                     const isAlreadyAdded = formItems.some(
-                      item => item.type === FlashSaleItemType.Bundle && item.refId === bundle.bundleID
+                      item => item.type == FlashSaleItemType.Bundle && item.refId == bundle.bundleID
                     );
                     return !isOutOfStock && !isAlreadyAdded;
                   });

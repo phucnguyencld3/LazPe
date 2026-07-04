@@ -104,12 +104,14 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   const finalPrice = totalOriginalPrice - discountAmount;
 
   const handleDiscountPercentChange = (val: number) => {
-    const clampedVal = Math.min(100, Math.max(0, val));
+    // Theo luật bảo vệ người tiêu dùng / khuyến mãi, giảm giá tối đa không quá 50%
+    const clampedVal = Math.min(50, Math.max(0, val));
     setDiscountPercent(clampedVal);
   };
 
   const handleDiscountAmountChange = (amount: number) => {
-    const clampedAmount = Math.min(totalOriginalPrice, Math.max(0, amount));
+    const maxDiscountAmount = Math.round(totalOriginalPrice * 0.5);
+    const clampedAmount = Math.min(maxDiscountAmount, Math.max(0, amount));
     if (totalOriginalPrice > 0) {
       const percent = (clampedAmount / totalOriginalPrice) * 100;
       setDiscountPercent(Number(percent.toFixed(2)));
@@ -260,6 +262,10 @@ export const ComboForm: React.FC<ComboFormProps> = ({
       toast.error("Combo phải chứa ít nhất 1 sản phẩm.");
       return;
     }
+    if (discountPercent > 50) {
+      toast.error("Theo quy định, mức giảm giá không được vượt quá 50%.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -338,7 +344,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-full hover:bg-slate-50 font-bold text-sm transition-transform cursor-pointer"
+            className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-[8px] hover:bg-slate-50 font-bold text-sm transition-transform cursor-pointer"
             disabled={saving}
           >
             Hủy bỏ
@@ -346,7 +352,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-6 py-2.5 bg-primary text-white rounded-full font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-6 py-2.5 bg-primary text-white rounded-[8px] font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
             disabled={saving}
           >
             {saving && <Loader className="animate-spin h-4 w-4" />}
@@ -361,11 +367,14 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           <p className="font-bold">Đang tải thông tin combo...</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <>
+      {/* Main Form Content */}
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100">
           {/* Left / Main Column (Basic info & products) */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-8 flex flex-col divide-y divide-slate-100">
             {/* Basic Info Box */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-5">
+            <div className="p-8 space-y-5">
               <h3 className="text-base font-bold text-slate-800 border-b border-slate-50 pb-3 uppercase tracking-wider">
                 Thông tin cơ bản
               </h3>
@@ -399,7 +408,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             </div>
 
             {/* Selected Products Box */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-5">
+            <div className="p-8 space-y-5">
               <div className="flex justify-between items-center border-b border-slate-50 pb-3">
                 <h3 className="text-base font-bold text-slate-800 uppercase tracking-wider">
                   Sản phẩm trong Combo ({items.length})
@@ -493,9 +502,9 @@ export const ComboForm: React.FC<ComboFormProps> = ({
           </div>
 
           {/* Right Column (Pricing details & status & image upload) */}
-          <div className="space-y-6">
+          <div className="lg:col-span-4 bg-slate-50/30 flex flex-col divide-y divide-slate-100">
             {/* Image Box */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-5">
+            <div className="p-8 space-y-5">
               <h3 className="text-base font-bold text-slate-800 border-b border-slate-50 pb-3 uppercase tracking-wider">
                 Hình ảnh Combo
               </h3>
@@ -536,7 +545,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             </div>
 
             {/* Pricing Box */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-5">
+            <div className="p-8 space-y-5">
               <h3 className="text-base font-bold text-slate-800 border-b border-slate-50 pb-3 uppercase tracking-wider">
                 Định giá Combo
               </h3>
@@ -556,11 +565,11 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                   <input
                     type="number"
                     min={0}
-                    max={100}
+                    max={50}
                     value={discountPercent}
                     onChange={(e) => handleDiscountPercentChange(Number(e.target.value))}
                     placeholder="0"
-                    className="w-full pl-4 pr-12 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-850 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-4 pr-12 py-2.5 rounded-[8px] bg-slate-50 border border-slate-200 text-slate-800 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
                     %
@@ -577,16 +586,23 @@ export const ComboForm: React.FC<ComboFormProps> = ({
                   <input
                     type="number"
                     min={0}
-                    max={totalOriginalPrice}
+                    max={Math.round(totalOriginalPrice * 0.5)}
                     value={discountAmount || ""}
                     onChange={(e) => handleDiscountAmountChange(Number(e.target.value))}
                     placeholder="Tự động tính..."
-                    className="w-full pl-4 pr-12 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-850 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-4 pr-12 py-2.5 rounded-[8px] bg-slate-50 border border-slate-200 text-slate-800 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs uppercase">
                     đ
                   </span>
                 </div>
+              </div>
+
+              <div className="flex items-start gap-2 bg-amber-50/50 p-3 rounded-[8px] border border-amber-100">
+                <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">info</span>
+                <p className="text-[11px] text-amber-700/80 font-medium leading-relaxed">
+                  Theo quy định pháp luật về khuyến mại, mức giảm giá tối đa cho một Combo / Sản phẩm không được vượt quá <strong>50%</strong> giá trị gốc.
+                </p>
               </div>
 
               <div className="border-t border-slate-100 pt-4 space-y-3">
@@ -599,7 +615,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             </div>
 
             {/* Status & Options Box */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-5">
+            <div className="p-8 space-y-5">
               <h3 className="text-base font-bold text-slate-800 border-b border-slate-50 pb-3 uppercase tracking-wider">
                 Trạng thái hoạt động
               </h3>
@@ -625,6 +641,8 @@ export const ComboForm: React.FC<ComboFormProps> = ({
             </div>
           </div>
         </form>
+      </div>
+      </>
       )}
 
       {/* Modal 1: Select Main Product */}

@@ -263,9 +263,12 @@ export default function UserPermissionsPage() {
     filteredPermissions.every((p) => allSelectedSet.has(p.id));
 
   return (
-    <main className="w-full pb-lg animate-fadeIn space-y-8">
+    <main className="w-full pb-lg animate-fadeIn">
+      {/* Master Card combining Header, Role Template, Tabs, and Permissions */}
+      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden w-full flex flex-col mb-6">
+      
       {/* Header Section: User Profile Card */}
-      <header className="bg-white p-6 rounded-[8px] border border-slate-100 soft-shadow flex flex-col md:flex-row items-center justify-between gap-6">
+      <header className="p-6 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/30">
         <div className="flex items-center gap-5 w-full md:w-auto">
           <div className="relative shrink-0">
             {user.avatar ? (
@@ -309,7 +312,7 @@ export default function UserPermissionsPage() {
       </header>
 
       {/* Role Template Selection */}
-      <div className="bg-white p-6 rounded-[8px] border border-slate-100 soft-shadow">
+      <div className="p-6 border-b border-slate-100 bg-white">
         <label className="block text-sm font-bold text-slate-700 mb-2">Gói quyền mặc định (Role Template)</label>
         <select 
           value={selectedTemplateId || ""} 
@@ -330,7 +333,7 @@ export default function UserPermissionsPage() {
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-4">
+      <div className="flex p-4 gap-4 bg-slate-50/50 border-b border-slate-100">
         <button
           className={`flex items-center gap-2 px-6 py-3 rounded-[8px] font-bold text-sm transition-all cursor-pointer ${
             activeTab === "existing"
@@ -369,7 +372,7 @@ export default function UserPermissionsPage() {
       </div>
 
       {/* Permissions Container */}
-      <div className="bg-white rounded-[8px] border border-slate-100 soft-shadow overflow-hidden">
+      <div className="overflow-hidden bg-white">
         {/* Container Header */}
         <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -541,6 +544,7 @@ export default function UserPermissionsPage() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Footer Action */}

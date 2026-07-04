@@ -126,7 +126,7 @@ export const KeywordsTab: React.FC<KeywordsTabProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in duration-300">
+    <div className="animate-in fade-in duration-300">
       {/* Header Action Bar */}
       <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
         {/* Search keyword */}
@@ -208,18 +208,21 @@ export const KeywordsTab: React.FC<KeywordsTabProps> = ({
                     <td className="px-6 py-4 text-slate-400">#{k.keywordID}</td>
                     <td className="py-4 px-6 font-extrabold text-slate-800">{k.word}</td>
                     <td className="py-4 px-6">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                      <span className={`font-bold ${
                         k.severity === "Critical"
-                          ? "bg-rose-50 text-rose-600 border-rose-100"
+                          ? "text-rose-600"
                           : k.severity === "Medium"
-                          ? "bg-orange-50 text-orange-600 border-orange-100"
-                          : "bg-amber-50 text-amber-600 border-amber-100"
+                          ? "text-orange-600"
+                          : "text-amber-600"
                       }`}>
-                        {k.severity}
+                        {k.severity === "Critical" && "Nghiêm trọng"}
+                        {k.severity === "Medium" && "Trung bình"}
+                        {k.severity === "Warning" && "Nhẹ"}
+                        {!["Critical", "Medium", "Warning"].includes(k.severity) && k.severity}
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-105 bg-slate-100 text-slate-600 text-xs font-bold">
+                      <span className="text-slate-600 font-bold">
                         {k.category === "Abuse" && "Xúc phạm"}
                         {k.category === "Vulgarity" && "Tục tĩu"}
                         {k.category === "Spam" && "Spam quảng cáo"}

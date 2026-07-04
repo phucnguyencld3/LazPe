@@ -281,43 +281,46 @@ export default function AdminVouchersPage() {
         </button>
       </div>
 
-      {/* Stats Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Total Vouchers */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
-              <span className="material-symbols-outlined text-[20px]">local_activity</span>
+      {/* Master Card container */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8 animate-in fade-in duration-300">
+        
+        {/* Stats Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
+          {/* Total Vouchers */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined text-[20px]">local_activity</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng voucher</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng voucher</span>
+            <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : stats.total}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : stats.total}</span>
-        </div>
 
-        {/* Active Vouchers */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">alarm_on</span>
+          {/* Active Vouchers */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">alarm_on</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
+            <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : stats.active}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : stats.active}</span>
-        </div>
 
-        {/* Total Usages */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+          {/* Total Usages */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Lượt đã dùng</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Lượt đã dùng</span>
+            <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : stats.totalUsages}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{loading ? "..." : stats.totalUsages}</span>
-        </div>
 
-        {/* Top Performer */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          {/* Top Performer */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">stars</span>
@@ -328,10 +331,7 @@ export default function AdminVouchersPage() {
             {loading ? "..." : stats.topVoucher}
           </span>
         </div>
-      </div>
-
-      {/* Main List Section */}
-      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden">
+        </div>
         
         {/* Search, filters block */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
@@ -601,18 +601,18 @@ export default function AdminVouchersPage() {
             </table>
           )}
         </div>
+      </section>
 
-        {/* Pagination bar */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
-        )}
-      </div>
+      {/* Pagination bar */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
 
 

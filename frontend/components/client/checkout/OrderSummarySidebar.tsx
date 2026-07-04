@@ -462,9 +462,12 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             <div className="h-px bg-slate-100 my-2" />
 
             {/* Total Payment */}
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-base font-bold text-slate-800">Tổng thanh toán:</span>
-              <span className="text-xl font-extrabold text-slate-900">{formatVND(totalPrice)}</span>
+            <div className="flex justify-between items-end pt-1">
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-slate-800">Tổng thanh toán:</span>
+                <span className="text-[10px] text-slate-400 font-medium">(Đã bao gồm thuế GTGT)</span>
+              </div>
+              <span className="text-xl font-extrabold text-slate-900 leading-none">{formatVND(totalPrice)}</span>
             </div>
           </div>
 

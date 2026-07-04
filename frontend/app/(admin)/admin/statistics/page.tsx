@@ -350,7 +350,7 @@ export default function AdminStatisticsPage() {
 
   // Filter Section UI (can be passed to tabs)
   const filterSection = (
-    <div className="bg-white rounded border border-slate-100 shadow-sm p-6 mb-8 no-print">
+    <div className="p-6 border-b border-slate-100 no-print">
       <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-100">
         <span className="material-symbols-outlined text-primary">filter_alt</span>
         <h2 className="font-bold text-slate-800 text-sm">Bộ lọc tìm kiếm</h2>
@@ -476,14 +476,14 @@ export default function AdminStatisticsPage() {
         <div className="flex flex-wrap gap-3 shrink-0">
           <button
             onClick={handleRefresh}
-            className="border border-slate-200 text-slate-700 bg-white px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+            className="border border-primary/20 text-primary bg-white hover:bg-primary/5 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">refresh</span>
             Làm mới
           </button>
           <button
             onClick={handleExportExcel}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+            className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">file_export</span>
             Xuất Excel
@@ -541,10 +541,13 @@ export default function AdminStatisticsPage() {
 
 
 
-      {/* Filter is passed down or rendered before tabs based on active tab */}
-      {activeTab !== "overview" && filterSection}
+      {/* Filter and Tab Content wrapped in ONE Master Card */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 mb-8 overflow-hidden animate-in fade-in duration-300">
+        
+        {/* Filter is passed down or rendered before tabs based on active tab */}
+        {activeTab !== "overview" && filterSection}
 
-      {loading ? (
+        {loading ? (
         <div className="space-y-6">
           {activeTab === "overview" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -603,11 +606,12 @@ export default function AdminStatisticsPage() {
           )}
         </>
       ) : (
-        <div className="bg-white p-12 rounded border border-slate-100 shadow-sm text-center text-slate-400">
+        <div className="mt-6 p-12 rounded border border-slate-100 bg-slate-50 text-center text-slate-400">
           <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">bar_chart</span>
           <p className="font-semibold text-sm">Không có dữ liệu trong khoảng thời gian đã chọn.</p>
         </div>
       )}
+      </section>
     </div>
   );
 }

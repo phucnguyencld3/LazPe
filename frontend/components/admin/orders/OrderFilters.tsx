@@ -84,7 +84,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
+    <div className="border-b border-slate-100">
       {/* Status Tabs */}
       <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center gap-2 w-full overflow-x-auto scrollbar-hide">
         <button
@@ -185,7 +185,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            className="w-full pl-12 pr-4 h-[44px] bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             placeholder="Mã đơn hàng, tên khách hàng..."
             type="text"
           />
@@ -199,7 +199,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer appearance-none"
+            className="w-full pl-12 pr-4 h-[44px] bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer appearance-none"
           >
             <option value="">Tất cả thời gian</option>
             <option value="today">Hôm nay</option>
@@ -213,7 +213,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
         <select
           value={orderValue}
           onChange={(e) => setOrderValue(e.target.value)}
-          className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
+          className="px-4 h-[44px] bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[160px] cursor-pointer"
         >
           <option>Mọi mức giá</option>
           <option>Dưới 500k</option>
@@ -225,7 +225,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
         <select
           value={sortValue}
           onChange={(e) => setSortValue(e.target.value)}
-          className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
+          className="px-4 h-[44px] bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
         >
           <option value="created_desc">Mới nhất đến cũ nhất</option>
           <option value="created_asc">Cũ nhất đến mới nhất</option>
@@ -236,7 +236,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
         {/* Filter Action Button */}
         <button
           onClick={handleFilterClick}
-          className="px-5 py-3 bg-primary text-on-primary rounded-[8px] font-bold text-sm shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+          className="px-5 h-[44px] bg-primary text-on-primary rounded-[8px] border border-transparent font-bold text-sm shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
         >
           <span className="material-symbols-outlined text-[18px]">filter_list</span>
           Lọc dữ liệu
@@ -252,7 +252,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
               setStatusFilter(null);
               setSortValue("created_desc");
             }}
-            className="px-6 py-3 text-slate-500 font-bold text-sm rounded-[8px] hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-6 h-[44px] text-slate-500 font-bold text-sm rounded-[8px] border border-transparent hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">clear</span>
             Xóa bộ lọc

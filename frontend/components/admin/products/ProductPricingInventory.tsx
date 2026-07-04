@@ -21,9 +21,9 @@ export function ProductPricingInventory({
   finalPrice
 }: ProductPricingInventoryProps) {
   return (
-    <div className="flex flex-col gap-8">
+    <>
       {/* Pricing Section */}
-      <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+      <section className="p-8">
         <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
           <span className="material-symbols-outlined text-primary">payments</span>
           <h3 className="text-lg font-bold text-slate-800">Giá bán</h3>
@@ -60,7 +60,6 @@ export function ProductPricingInventory({
               <input
                 type="number"
                 min="0"
-                max="100"
                 value={discountPercent}
                 onChange={(e) => onDiscountPercentChange(e.target.value === "" ? "" : Number(e.target.value))}
                 placeholder="Ví dụ: 10"
@@ -81,6 +80,6 @@ export function ProductPricingInventory({
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 }

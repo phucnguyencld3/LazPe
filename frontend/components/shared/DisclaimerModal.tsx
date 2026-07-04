@@ -29,38 +29,52 @@ export default function DisclaimerModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div 
-        className="bg-white rounded-2xl shadow-2xl w-[90vw] sm:w-[450px] max-w-[450px] min-w-[300px] p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative"
+        className="bg-white rounded-[12px] shadow-2xl w-[90vw] sm:w-[500px] max-w-[500px] min-w-[300px] p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative border border-slate-100"
       >
-        {/* Decorative pattern at top */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary rounded-t-2xl"></div>
-        
-        <div className="flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-5 text-blue-500 shadow-inner">
-            <span className="material-symbols-outlined text-3xl">info</span>
+        <div className="flex flex-col">
+          {/* Header */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
+              <span className="material-symbols-outlined text-[32px]">campaign</span>
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800 tracking-tight">
+              Lưu Ý Quan Trọng!
+            </h3>
+            <p className="text-slate-500 font-medium mt-2">
+              Chào mừng bạn đến với <span className="font-bold text-primary">LazPe</span>
+            </p>
           </div>
           
-          <h3 className="text-2xl font-bold text-gray-900 mb-3 font-quicksand">
-            Lưu Ý Quan Trọng
-          </h3>
-          
-          <div className="text-gray-600 mb-8 space-y-3 leading-relaxed">
-            <p>
-              Chào mừng bạn đến với <strong>LazPe</strong>!
-            </p>
-            <p>
-              Website này được xây dựng nhằm mục đích phục vụ <strong>Đồ án tốt nghiệp</strong>. Toàn bộ thông tin, hình ảnh và sản phẩm trên trang đều là dữ liệu mẫu được thu thập từ nhiều nguồn khác nhau.
-            </p>
-            <p className="text-red-500 font-medium bg-red-50 px-3 py-2 rounded-lg">
-              Trang web hoàn toàn không có mục đích thương mại hay kinh doanh thực tế. Xin vui lòng không thực hiện các giao dịch chuyển khoản thật!
-            </p>
+          {/* Body */}
+          <div className="space-y-4 mb-8">
+            <div className="flex gap-4 p-4 rounded-[8px] bg-slate-50 border border-slate-100 items-start">
+              <span className="material-symbols-outlined text-secondary text-2xl mt-0.5">school</span>
+              <div>
+                <h4 className="font-bold text-slate-700 text-sm mb-1">Dự án học tập & Tốt nghiệp</h4>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  Website được xây dựng nhằm mục đích phục vụ <strong>Đồ án tốt nghiệp</strong>. Toàn bộ thông tin, hình ảnh và sản phẩm trên trang đều là dữ liệu mẫu giả lập được thu thập từ nhiều nguồn.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 p-4 rounded-[8px] bg-error/5 border border-error/20 items-start">
+              <span className="material-symbols-outlined text-error text-2xl mt-0.5">gpp_bad</span>
+              <div>
+                <h4 className="font-bold text-error text-sm mb-1">Không kinh doanh thực tế</h4>
+                <p className="text-error text-sm leading-relaxed">
+                  Trang web hoàn toàn <strong>không có mục đích thương mại</strong> hay kinh doanh thật. Xin vui lòng <strong>không thực hiện các giao dịch chuyển khoản thật</strong> dưới mọi hình thức!
+                </p>
+              </div>
+            </div>
           </div>
 
           <button
             onClick={handleClose}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary/50 font-quicksand text-lg"
+            className="w-full bg-primary hover:bg-primary/95 text-on-primary font-bold py-3.5 px-6 rounded-[8px] transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 focus:outline-none flex items-center justify-center gap-2"
           >
+            <span className="material-symbols-outlined text-[20px]">check_circle</span>
             Tôi đã hiểu và đồng ý
           </button>
         </div>
