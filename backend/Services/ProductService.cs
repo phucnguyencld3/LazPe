@@ -106,6 +106,9 @@ namespace PolyBabyAPI.Services
 
                 bool useRelevanceSort = meiliSortedIds != null && sortBy.ToLower() == "createdat";
 
+                var totalItems = await query.AsSingleQuery().CountAsync();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
                 // Apply sorting
                 if (!useRelevanceSort)
                 {
@@ -122,14 +125,12 @@ namespace PolyBabyAPI.Services
                     };
                 }
 
-                var totalItems = await query.CountAsync();
-                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
                 List<Product> productsBase;
                 if (useRelevanceSort)
                 {
                     // Lấy toàn bộ danh sách ID đã lọc (tối đa 100), sắp xếp trên RAM theo điểm relevance của Meilisearch, sau đó phân trang.
                     var allMatching = await query
+                        .AsSingleQuery()
                         .Include(p => p.Category)
                         .Include(p => p.Supplier)
                         .ToListAsync();
@@ -144,6 +145,7 @@ namespace PolyBabyAPI.Services
                 {
                     // Câu query 1: Lấy thông tin cơ bản của Product và include Category, Supplier
                     productsBase = await query
+                        .AsSingleQuery()
                         .Include(p => p.Category)
                         .Include(p => p.Supplier)
                         .Skip((page - 1) * pageSize)

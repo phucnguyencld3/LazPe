@@ -87,9 +87,9 @@ export function BabyTrackerSection({ babyId, onBack, onUpdate }: BabyTrackerSect
   const { profile, growthStatus, recommendations } = data;
 
   return (
-    <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-[16px] p-6 shadow-sm border border-slate-100/80">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+    <section className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="p-5 md:p-6">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
               onClick={onBack}
@@ -126,7 +126,7 @@ export function BabyTrackerSection({ babyId, onBack, onUpdate }: BabyTrackerSect
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
         <div className="h-full">
           <GrowthChart profile={profile} />
         </div>

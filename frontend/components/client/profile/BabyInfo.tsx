@@ -42,7 +42,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
   const hasBabies = userProfile.babyProfiles && userProfile.babyProfiles.length > 0;
 
   return (
-    <section className="bg-white rounded-[16px] p-6 shadow-sm border border-slate-100/80">
+    <section className="p-5 sm:p-6">
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -80,21 +80,17 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {userProfile.babyProfiles?.map((baby) => {
               const isBoy = baby.gender === "Boy" || baby.gender === "Male" || baby.gender === "Nam";
               return (
                 <div
                   key={baby.babyProfileID}
-                  className={`relative overflow-hidden rounded-[14px] p-5 border transition-all hover:shadow-md ${
-                    isBoy
-                      ? "bg-gradient-to-br from-blue-50/30 to-slate-50/50 border-blue-100/55 hover:border-blue-200"
-                      : "bg-gradient-to-br from-pink-50/30 to-slate-50/50 border-pink-100/55 hover:border-pink-200"
-                  }`}
+                  className="relative overflow-hidden rounded-[14px] px-4 py-3.5 border border-slate-200 bg-white transition-all hover:shadow-md"
                 >
                   {/* Card Header */}
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -115,8 +111,8 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                       </div>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                        isBoy ? "bg-blue-100/60 text-blue-700" : "bg-pink-100/60 text-pink-700"
+                      className={`text-[12px] font-bold ${
+                        isBoy ? "text-blue-600" : "text-pink-600"
                       }`}
                     >
                       {getGenderLabel(baby.gender)}
@@ -124,7 +120,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                   </div>
 
                   {/* Card Grid Details */}
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-[12px]">
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-[12px]">
                     <div className="flex items-center gap-2 text-slate-600">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <div>
@@ -165,7 +161,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                   </div>
 
                   {/* Sổ tay sức khỏe Button */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex justify-end">
                     <button
                       onClick={() => onOpenTracker && onOpenTracker(baby.babyProfileID)}
                       className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
@@ -181,10 +177,12 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
           </div>
 
           {/* Bottom Tip Banner */}
-          <div className="p-3 bg-gradient-to-r from-pink-50 to-indigo-50 rounded-[12px] border border-pink-100/20 flex items-center gap-3">
-            <span className="material-symbols-outlined text-rose-500 text-lg font-bold shrink-0 animate-pulse">sparkles</span>
-            <p className="text-slate-500 text-[11px] font-semibold leading-relaxed">
-              Các thông tin trên sẽ được tích hợp trực tiếp để cải tiến chất lượng đề xuất sản phẩm và giúp chatbot trợ lý ảo LazPe tư vấn hỗ trợ phù hợp tối ưu nhất cho bé cưng.
+          <div className="p-3 bg-gradient-to-r from-indigo-50/80 via-purple-50/40 to-pink-50/80 rounded-[12px] border border-indigo-100/50 flex items-center gap-3 shadow-[0_2px_10px_-4px_rgba(99,102,241,0.1)] overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-indigo-500">
+              <span className="material-symbols-outlined text-[18px] animate-pulse">auto_awesome</span>
+            </div>
+            <p className="text-slate-600 text-[11px] md:text-[12px] font-medium truncate">
+              Các thông tin trên sẽ được tích hợp trực tiếp để cải tiến chất lượng đề xuất sản phẩm và giúp chatbot trợ lý ảo <span className="font-bold text-indigo-600">LazPe</span> tư vấn hỗ trợ phù hợp tối ưu nhất cho bé cưng.
             </p>
           </div>
         </div>

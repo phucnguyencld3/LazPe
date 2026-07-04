@@ -272,10 +272,10 @@ export default function HeaderV2() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-slate-200">
+    <header className="fixed top-0 left-0 right-0 z-[100] bg-white shadow-sm border-b border-slate-200">
       {/* Main Header Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-0">
-        <div className="flex flex-wrap items-center justify-between sm:h-16 gap-3 sm:gap-8">
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-between sm:h-16 gap-3 lg:gap-8">
           
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
@@ -286,8 +286,8 @@ export default function HeaderV2() {
             />
           </Link>
 
-          {/* Search Bar - Wide */}
-          <div className="relative w-full order-last mt-2 sm:mt-0 sm:order-none sm:w-auto sm:flex-1 max-w-3xl" ref={searchContainerRef}>
+          {/* Search Bar - Responsive */}
+          <div className="relative w-full order-last mt-2 sm:mt-0 sm:order-none flex-1 max-w-[600px] lg:ml-8" ref={searchContainerRef}>
             <form onSubmit={handleSearchSubmit} className="relative group">
               <input 
                 type="text" 
@@ -312,7 +312,7 @@ export default function HeaderV2() {
 
             {/* Auto-complete Dropdown */}
             {showSuggestions && searchQuery.trim() !== "" && (
-              <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute z-[100] w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 {isSearching ? (
                   <div className="p-4 flex items-center justify-center text-slate-400">
                     <div className="w-5 h-5 border-2 border-slate-200 border-t-primary rounded-full animate-spin mr-2"></div>

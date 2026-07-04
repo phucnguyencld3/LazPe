@@ -45,7 +45,7 @@ export const KeywordModal: React.FC<KeywordModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white w-[calc(100vw-2rem)] md:w-[450px] shrink-0 rounded-[12px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-6 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export const KeywordModal: React.FC<KeywordModalProps> = ({
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
                 placeholder="Ví dụ: lừa đảo, cùi bắp, shop ngu..."
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 required
               />
             </div>
@@ -84,7 +84,7 @@ export const KeywordModal: React.FC<KeywordModalProps> = ({
               <select
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
               >
                 <option value="Warning">⚠️ Warning (Nhẹ - gắn cờ cần xem xét)</option>
                 <option value="Medium">🚫 Medium (Trung bình - tạm ẩn)</option>
@@ -97,7 +97,7 @@ export const KeywordModal: React.FC<KeywordModalProps> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
               >
                 <option value="Abuse">Abuse (Xúc phạm)</option>
                 <option value="Vulgarity">Vulgarity (Từ ngữ tục tĩu)</option>
@@ -113,7 +113,7 @@ export const KeywordModal: React.FC<KeywordModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
+                className="px-5 py-2.5 rounded-[8px] border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold text-xs cursor-pointer transition-colors"
                 disabled={submitting}
               >
                 Hủy bỏ
@@ -121,7 +121,7 @@ export const KeywordModal: React.FC<KeywordModalProps> = ({
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-full bg-primary hover:bg-primary/95 text-white font-bold text-xs cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-[8px] bg-primary hover:bg-primary/95 text-white font-bold text-xs cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
               >
                 {submitting && <Loader2 className="animate-spin" size={14} />}
                 <span>Xác nhận lưu</span>

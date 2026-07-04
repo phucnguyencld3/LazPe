@@ -49,7 +49,7 @@ export const AnalyticsTab: React.FC = () => {
 
   if (loadingStats && loadingModDashboard) {
     return (
-      <div className="flex flex-col justify-center items-center py-20 bg-white rounded-2xl border border-slate-100 min-h-[300px]">
+      <div className="flex flex-col justify-center items-center py-20 min-h-[300px]">
         <Loader2 className="animate-spin text-primary mb-2" size={32} />
         <span className="text-slate-400 font-bold text-xs">Đang tải báo cáo thống kê...</span>
       </div>
@@ -57,10 +57,10 @@ export const AnalyticsTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="flex flex-col animate-in fade-in duration-300 bg-slate-100 gap-[1px]">
       {/* Moderation Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px]">
+        <div className="bg-white p-6 flex flex-col gap-4 hover:bg-slate-50 transition-colors">
           <div className="flex justify-between items-start">
             <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
               <AlertOctagon size={24} />
@@ -72,7 +72,7 @@ export const AnalyticsTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 flex flex-col gap-4 hover:bg-slate-50 transition-colors">
           <div className="flex justify-between items-start">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-605">
               <EyeOff size={24} className="text-rose-600" />
@@ -84,7 +84,7 @@ export const AnalyticsTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 flex flex-col gap-4 hover:bg-slate-50 transition-colors">
           <div className="flex justify-between items-start">
             <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600">
               <Flag size={24} />
@@ -97,9 +97,9 @@ export const AnalyticsTab: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[1px]">
         {/* Star Rating distribution */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-8 hover:bg-slate-50/30 transition-colors">
           <h3 className="font-bold text-slate-700 text-sm md:text-base mb-6 flex items-center gap-2">
             <BarChart3 size={18} className="text-primary" />
             Phân bố điểm đánh giá (Sao)
@@ -136,7 +136,7 @@ export const AnalyticsTab: React.FC = () => {
         </div>
 
         {/* Top flagged keywords */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-8 hover:bg-slate-50/30 transition-colors">
           <h3 className="font-bold text-slate-700 text-sm md:text-base mb-6 flex items-center gap-2">
             <AlertTriangle size={18} className="text-rose-500" />
             Top từ khóa vi phạm nhiều nhất
@@ -165,7 +165,7 @@ export const AnalyticsTab: React.FC = () => {
         </div>
 
         {/* Top flagged products */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-8 hover:bg-slate-50/30 transition-colors">
           <h3 className="font-bold text-slate-700 text-sm md:text-base mb-6 flex items-center gap-2">
             <Box size={18} className="text-primary" />
             Sản phẩm có nhiều cảnh báo vi phạm
@@ -194,7 +194,7 @@ export const AnalyticsTab: React.FC = () => {
         </div>
 
         {/* Top flagged users */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-8 hover:bg-slate-50/30 transition-colors">
           <h3 className="font-bold text-slate-700 text-sm md:text-base mb-6 flex items-center gap-2">
             <User size={18} className="text-secondary" />
             Người dùng có nhiều đánh giá vi phạm

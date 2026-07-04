@@ -348,7 +348,7 @@ export default function AdminLayout({
           />
         </div>
         <Link href="/admin/profile" className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+          <div className="h-9 w-9 rounded-[8px] overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
             {user?.avatar ? (
               <img alt="Avatar" className="w-full h-full object-cover" src={user.avatar} />
             ) : (
@@ -359,7 +359,7 @@ export default function AdminLayout({
       </div>
 
       {/* Top Navigation Shell (Desktop) */}
-      <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between w-full h-16 px-margin-desktop bg-surface-container-lowest shadow-sm shadow-primary/10 transition-all duration-300">
+      <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between w-full h-16 px-margin-desktop bg-white shadow-sm border-b border-slate-100 transition-all duration-300">
         <div className={`flex items-center gap-4 flex-1 max-w-2xl pr-8 transition-all duration-300 ${marginLeft}`}>
           <button 
             onClick={handleTogglePin} 
@@ -372,23 +372,26 @@ export default function AdminLayout({
           </button>
           
           <div className="relative w-full group">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] group-focus-within:text-primary transition-colors">search</span>
             <input 
               type="text" 
               placeholder="Tìm kiếm nhanh mã đơn hàng, sản phẩm, email khách hàng..." 
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-[8px] focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm outline-none text-slate-700 font-medium" 
+              className="w-full h-11 pl-5 pr-14 rounded-[10px] border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400 font-medium" 
             />
+            <button type="button" className="absolute right-1 top-1 bottom-1 w-12 bg-primary hover:bg-primary/90 text-white rounded-[8px] flex items-center justify-center transition-colors">
+               <span className="material-symbols-outlined text-[20px]">search</span>
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-md">
           <div className="relative">
             <button
               onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
-              className={`material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300 relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
-              title="Thông báo">
-              notifications
+              className={`p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-[8px] transition-colors relative focus:outline-none ${unreadCount > 0 ? "animate-pulse" : ""}`}
+              title="Thông báo"
+            >
+              <span className="material-symbols-outlined text-[24px]">notifications</span>
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] w-4.5 h-4.5 rounded-[6px] flex items-center justify-center font-bold">
                   {unreadCount}
                 </span>
               )}
@@ -464,16 +467,18 @@ export default function AdminLayout({
               </div>
             )}
           </div>
-          <button className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/20 rounded-full transition-colors duration-300">settings</button>
+          <button className="p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-[8px] transition-colors" title="Cài đặt">
+            <span className="material-symbols-outlined text-[24px]">settings</span>
+          </button>
           
           <div 
             className="relative flex items-center h-full py-2"
             onMouseEnter={() => setIsUserDropdownOpen(true)}
             onMouseLeave={() => setIsUserDropdownOpen(false)}
           >
-            {/* Avatar / Circle Trigger */}
+            {/* Avatar / Trigger */}
             <div className="flex items-center gap-2 transition-opacity cursor-pointer">
-              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center hover:border-primary transition-all duration-200">
+              <div className="h-10 w-10 rounded-[8px] overflow-hidden border-2 border-primary-container bg-slate-100 flex items-center justify-center hover:border-primary transition-all duration-200">
                 {user?.avatar ? (
                   <img 
                     alt="Admin Profile Avatar" 

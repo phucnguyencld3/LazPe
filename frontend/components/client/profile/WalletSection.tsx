@@ -213,14 +213,14 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
+      <div className="flex items-center gap-2 p-5">
         <Wallet className="h-6 w-6 text-emerald-500" />
         <h1 className="text-xl font-bold text-slate-800">Ví LazPe của tôi</h1>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-slate-50/50">
         <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg shadow-emerald-500/20 relative overflow-hidden">
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start">
@@ -308,8 +308,8 @@ export function WalletSection({ token, uid }: { token: string; uid: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-8">
-        <div className="flex border-b border-slate-100">
+      <div>
+        <div className="flex border-b border-slate-100 bg-white">
           <button
             onClick={() => setActiveTab("history")}
             className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 transition-colors ${

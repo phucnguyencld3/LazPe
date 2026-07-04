@@ -171,6 +171,11 @@ export default function ProductVariantsPage() {
     e.preventDefault();
     if (!editModal.variant || actionLoading) return;
 
+    if (editForm.variantDiscountPercent > 50) {
+      toast.error("Chiết khấu không được vượt quá 50% theo quy định pháp luật.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
@@ -839,7 +844,6 @@ export default function ProductVariantsPage() {
                       <input
                         type="number"
                         min="0"
-                        max="100"
                         value={editForm.variantDiscountPercent}
                         onChange={(e) => setEditForm({ ...editForm, variantDiscountPercent: Number(e.target.value) })}
                         className="w-full px-4 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base font-semibold text-slate-800 transition-all"

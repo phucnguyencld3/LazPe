@@ -285,16 +285,16 @@ export default function AdminCategoriesPage() {
         </div>
       </header>
 
-      {/* Stats Cards */}
-      <CategoryStats
-        totalCategories={categories.length}
-        totalProducts={totalProducts}
-        hiddenCount={categories.filter(c => !c.status).length}
-      />
-
-      {/* Table grid area */}
-      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
+      {/* Master Card container */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8 animate-in fade-in duration-300">
         
+        {/* Stats Cards Grid */}
+        <CategoryStats
+          totalCategories={categories.length}
+          totalProducts={totalProducts}
+          hiddenCount={categories.filter(c => !c.status).length}
+        />
+
         {/* Search & Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
           {/* Search box */}
@@ -369,28 +369,27 @@ export default function AdminCategoriesPage() {
                 <th className="px-6 py-4 text-center w-[80px]">STT</th>
                 <th className="px-8 py-4 w-[50%]">Tên danh mục</th>
                 <th className="px-6 py-4 text-center">Thống kê sản phẩm</th>
-                <th className="px-6 py-4 text-center">Trạng thái</th>
                 <th className="px-8 py-4 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20">
+                  <td colSpan={4} className="text-center py-20">
                     <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
                     <p className="text-slate-400 mt-4 font-semibold text-sm">Đang tải dữ liệu danh mục...</p>
                   </td>
                 </tr>
               ) : categories.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20">
+                  <td colSpan={4} className="text-center py-20">
                     <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">category</span>
                     <p className="text-slate-400 font-bold text-sm">Chưa có danh mục nào được tạo.</p>
                   </td>
                 </tr>
               ) : visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20">
+                  <td colSpan={4} className="text-center py-20">
                     <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">search_off</span>
                     <p className="text-slate-400 font-bold text-sm">Không tìm thấy danh mục khớp với từ khóa.</p>
                   </td>
@@ -455,33 +454,33 @@ export default function AdminCategoriesPage() {
                         </span>
                       </td>
 
-                      {/* Status */}
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className={`text-[10px] font-bold uppercase min-w-[55px] text-right ${cat.status ? "text-secondary" : "text-slate-400"}`}>
-                            {cat.status ? "Hoạt động" : "Đã ẩn"}
-                          </span>
-                          <label className="relative inline-flex items-center cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={cat.status}
-                              disabled={togglingId === cat.categoryID}
-                              onChange={() => handleToggleStatus(cat.categoryID)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                          </label>
-                        </div>
-                      </td>
+                      {/* Thao tác (Gộp Trạng thái và Hành động) */}
+                      <td className="px-8 py-5 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Toggle trạng thái */}
+                          <div className="flex flex-col items-center gap-1 px-1">
+                            <label className="relative inline-flex items-center cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={cat.status}
+                                disabled={togglingId === cat.categoryID}
+                                onChange={() => handleToggleStatus(cat.categoryID)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                            <span className={`text-[9px] font-bold uppercase ${cat.status ? "text-secondary" : "text-slate-400"}`}>
+                              {cat.status ? "Hoạt động" : "Đã ẩn"}
+                            </span>
+                          </div>
 
-                      {/* Actions */}
-                      <td className="px-8 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                          <div className="w-px h-8 bg-slate-100 mx-1"></div>
+
                           {/* Create Subcategory button (level < 2) */}
                           {level < 2 && (
                             <button
                               onClick={() => router.push(`/admin/categories/new?parentId=${cat.categoryID}`)}
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
                               title="Thêm danh mục con"
                             >
                               <span className="material-symbols-outlined text-[18px]">add_box</span>
@@ -489,14 +488,14 @@ export default function AdminCategoriesPage() {
                           )}
                           <Link
                             href={`/admin/categories/${cat.categoryID}`}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
                             title="Xem chi tiết"
                           >
                             <span className="material-symbols-outlined text-[18px]">visibility</span>
                           </Link>
                           <button
                             onClick={() => router.push(`/admin/categories/edit/${cat.categoryID}`)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all cursor-pointer"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
                             title="Chỉnh sửa"
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -504,12 +503,12 @@ export default function AdminCategoriesPage() {
                           <button
                             onClick={() => setCategoryToDelete({ id: cat.categoryID, name: cat.categoryName })}
                             disabled={(cat.productCount ?? 0) > 0}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                               (cat.productCount ?? 0) > 0
                                 ? "opacity-30 cursor-not-allowed text-slate-300"
                                 : "text-error hover:bg-error-container/20 cursor-pointer"
                             }`}
-                            title={(cat.productCount ?? 0) > 0 ? "Không thể xóa danh mục có liên kết sản phẩm" : "Xóa danh mục"}
+                            title={(cat.productCount ?? 0) > 0 ? "Không thể xóa do đã có sản phẩm" : "Xóa"}
                           >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
@@ -522,7 +521,7 @@ export default function AdminCategoriesPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* Delete Confirmation Modal */}
       <CategoryDeleteModal

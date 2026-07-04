@@ -19,10 +19,10 @@ export function SecurityAndSettings({
   onNotificationToggle,
 }: SecurityAndSettingsProps) {
   return (
-    <aside className="space-y-3">
+    <>
       
       {/* Security Section */}
-      <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60">
+      <section className="p-5">
         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
           <span className="material-symbols-outlined text-rose-500 text-xl">shield</span> Bảo mật
         </h2>
@@ -94,6 +94,6 @@ export function SecurityAndSettings({
           </div>
         </div>
       </section>
-    </aside>
+    </>
   );
 }

@@ -233,11 +233,11 @@ export function SpendingSection({ token }: SpendingSectionProps) {
   const categoryChart = getCategoryChartConfig();
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
       {/* 4 Thẻ KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-slate-100">
         {/* Tổng chi tiêu */}
-        <div className="bg-white p-4 rounded-[12px] border border-slate-100/60 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+        <div className="p-5 flex items-center gap-3 hover:bg-slate-50/50 transition-colors">
           <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
             <Wallet size={20} />
           </div>
@@ -250,7 +250,7 @@ export function SpendingSection({ token }: SpendingSectionProps) {
         </div>
 
         {/* Số đơn hàng */}
-        <div className="bg-white p-4 rounded-[12px] border border-slate-100/60 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+        <div className="p-5 flex items-center gap-3 hover:bg-slate-50/50 transition-colors">
           <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0">
             <ShoppingBag size={20} />
           </div>
@@ -263,7 +263,7 @@ export function SpendingSection({ token }: SpendingSectionProps) {
         </div>
 
         {/* Tiền tiết kiệm */}
-        <div className="bg-white p-4 rounded-[12px] border border-slate-100/60 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+        <div className="p-5 flex items-center gap-3 hover:bg-slate-50/50 transition-colors">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
             <Gift size={20} />
           </div>
@@ -276,7 +276,7 @@ export function SpendingSection({ token }: SpendingSectionProps) {
         </div>
 
         {/* Cấp độ VIP */}
-        <div className="bg-white p-4 rounded-[12px] border border-slate-100/60 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+        <div className="p-5 flex items-center gap-3 hover:bg-slate-50/50 transition-colors">
           <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
             <Award size={20} />
           </div>
@@ -290,9 +290,9 @@ export function SpendingSection({ token }: SpendingSectionProps) {
       </div>
 
       {/* Grid Biểu đồ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
         {/* Biến động chi tiêu qua các tháng */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-[12px] border border-slate-100/60 shadow-sm">
+        <div className="lg:col-span-2 p-5 md:p-6">
           <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-50">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-pink-500" size={18} />
@@ -305,7 +305,7 @@ export function SpendingSection({ token }: SpendingSectionProps) {
         </div>
 
         {/* Tỉ trọng danh mục chi tiêu */}
-        <div className="bg-white p-5 rounded-[12px] border border-slate-100/60 shadow-sm flex flex-col">
+        <div className="p-5 md:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-50 shrink-0">
             <Wallet className="text-purple-500" size={18} />
             <h3 className="font-bold text-slate-800 text-sm">Cơ cấu chi tiêu danh mục</h3>
@@ -319,7 +319,7 @@ export function SpendingSection({ token }: SpendingSectionProps) {
       </div>
 
       {/* Top 5 sản phẩm mua nhiều nhất */}
-      <div className="bg-white p-5 rounded-[12px] border border-slate-100/60 shadow-sm">
+      <div className="p-5 md:p-6">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-50">
           <ShoppingBag className="text-pink-500" size={18} />
           <h3 className="font-bold text-slate-800 text-sm">Top 5 sản phẩm mua nhiều nhất</h3>

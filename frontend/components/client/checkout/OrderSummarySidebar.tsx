@@ -123,8 +123,17 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                       alt={name || "Sản phẩm"}
                       className="w-full h-full object-cover rounded-lg"
                       src={image || "/images/placeholder.jpg"}
+                      onError={(e) => {
+                        if (!e.currentTarget.dataset.fallbackApplied) {
+                          e.currentTarget.dataset.fallbackApplied = "true";
+                          e.currentTarget.src = item.product?.imageUrl || "/images/placeholder.jpg";
+                        } else if (!e.currentTarget.dataset.placeholderApplied) {
+                          e.currentTarget.dataset.placeholderApplied = "true";
+                          e.currentTarget.src = "/images/placeholder.jpg";
+                        }
+                      }}
                     />
-                    <span className={`absolute -top-2 -right-2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[6px] border-2 border-white shadow-sm ${item.isGift ? "bg-emerald-500" : "bg-rose-500"}`}>
+                    <span className={`absolute -top-2 -right-2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[6px] border-2 border-white shadow-sm ${item.isGift ? "bg-emerald-500" : "bg-primary"}`}>
                       x{item.quantity}
                     </span>
                   </div>
@@ -151,7 +160,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                       )}
                     </div>
                     
-                    <div className={`text-xs font-extrabold mt-1 ${item.isGift ? "text-emerald-500" : "text-rose-500"}`}>
+                    <div className={`text-xs font-extrabold mt-1 ${item.isGift ? "text-emerald-500" : "text-slate-900"}`}>
                       {item.isGift ? "Miễn phí" : formatVND(item.unitPrice)}
                     </div>
                   </div>
@@ -165,7 +174,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
         <div className="px-6 py-4 space-y-3 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-              <span className="material-symbols-outlined text-rose-500 text-base font-bold">local_activity</span>
+              <span className="material-symbols-outlined text-slate-900 text-base font-bold">local_activity</span>
               <span>Mã giảm giá LazPe</span>
             </div>
             <div className="flex gap-3 items-center">
@@ -174,7 +183,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                   type="button"
                   onClick={handleAutoApplyVouchers}
                   disabled={submitting}
-                  className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-primary hover:from-orange-600 hover:to-primary/90 flex items-center gap-1 cursor-pointer disabled:opacity-50"
                 >
                   ✨ Tự động áp mã
                 </button>
@@ -182,7 +191,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               <button 
                 type="button"
                 onClick={handleOpenVoucherModal}
-                className="text-[10px] font-bold text-rose-500 hover:text-rose-600 active:scale-95 transition-all flex items-center cursor-pointer"
+                className="text-[10px] font-bold text-slate-900 hover:text-slate-900 active:scale-95 transition-all flex items-center cursor-pointer"
               >
                 Chọn mã <span className="material-symbols-outlined text-sm">chevron_right</span>
               </button>
@@ -192,13 +201,13 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
           {(cart?.voucher || cart?.shippingVoucher) && (
             <div className="flex flex-wrap gap-2 mt-2">
               {cart?.voucher && (
-                <div className="py-1 px-2 rounded-[4px] border border-dashed border-rose-200 bg-rose-50 flex items-center gap-1.5 w-fit">
-                  <Sparkles className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                  <span className="text-[11px] font-extrabold text-rose-600">{cart.voucher.code}</span>
+                <div className="py-1 px-2 rounded-[4px] border border-dashed border-primary/20 bg-primary/5 flex items-center gap-1.5 w-fit">
+                  <Sparkles className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                  <span className="text-[11px] font-extrabold text-slate-900">{cart.voucher.code}</span>
                   <button 
                     type="button"
                     onClick={() => handleRemoveVoucher(1)}
-                    className="text-slate-400 hover:text-rose-500 transition-colors flex items-center"
+                    className="text-slate-400 hover:text-slate-900 transition-colors flex items-center"
                   >
                     <span className="material-symbols-outlined text-[14px]">close</span>
                   </button>
@@ -227,16 +236,16 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
                 <div className="w-6 flex justify-center items-center shrink-0">
-                  <span className="material-symbols-outlined text-rose-500 text-[22px] font-bold">military_tech</span>
+                  <span className="material-symbols-outlined text-slate-900 text-[22px] font-bold">military_tech</span>
                 </div>
                 <span>Dùng điểm tích lũy</span>
               </div>
               <span className="text-[10px] text-slate-400 font-bold">
-                Có sẵn: <span className="text-rose-500 font-extrabold">{availablePoints.toLocaleString("vi-VN")}</span>
+                Có sẵn: <span className="text-slate-900 font-extrabold">{availablePoints.toLocaleString("vi-VN")}</span>
               </span>
             </div>
 
-            <div className="flex items-center bg-white rounded-[6px] border border-slate-200 p-1 focus-within:border-rose-400 focus-within:ring-1 focus-within:ring-rose-400/20 transition-all">
+            <div className="flex items-center bg-white rounded-[6px] border border-slate-200 p-1 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all">
               <input
                 type="number"
                 placeholder="Tối thiểu 1.000đ"
@@ -255,7 +264,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                     const maxPoints = Math.min(availablePoints, subTotal - discountAmount);
                     setInputPoints(maxPoints);
                   }}
-                  className="text-[10px] font-bold text-rose-500 hover:text-rose-600 px-2 transition-colors whitespace-nowrap"
+                  className="text-[10px] font-bold text-slate-900 hover:text-slate-900 px-2 transition-colors whitespace-nowrap"
                   disabled={isApplyingPoints || submitting}
                 >
                   Tối đa
@@ -276,11 +285,11 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             </div>
             
             {inputPoints > 0 && inputPoints < 1000 && (
-              <p className="text-[10px] text-rose-500 font-semibold px-1 mt-1">Mức áp dụng tối thiểu là 1.000 điểm</p>
+              <p className="text-[10px] text-slate-900 font-semibold px-1 mt-1">Mức áp dụng tối thiểu là 1.000 điểm</p>
             )}
 
             {loyaltyError && (
-              <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1">
+              <p className="text-[10px] text-slate-900 font-semibold flex items-center gap-1">
                 <span>⚠</span> {loyaltyError}
               </p>
             )}
@@ -372,7 +381,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                       Dùng số dư Ví để thanh toán
                     </label>
                     {isWalletLocked && (
-                      <span className="text-[10px] text-rose-500 font-semibold mt-0.5">
+                      <span className="text-[10px] text-slate-900 font-semibold mt-0.5">
                         (Ví đang bị khóa 15 phút. Vui lòng mở khóa trong phần quản lý Ví)
                       </span>
                     )}
@@ -411,7 +420,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
 
             {/* Voucher Discount */}
             {discountAmount > 0 && (
-              <div className="flex justify-between items-center text-rose-500">
+              <div className="flex justify-between items-center text-slate-900">
                 <span>Giảm giá từ Voucher:</span>
                 <span className="font-bold">- {formatVND(discountAmount)}</span>
               </div>
@@ -419,7 +428,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
 
             {/* Loyalty Points Discount */}
             {loyaltyDiscount > 0 && (
-              <div className="flex justify-between items-center text-rose-500">
+              <div className="flex justify-between items-center text-slate-900">
                 <span>Giảm từ điểm tích lũy:</span>
                 <span className="font-bold">- {formatVND(loyaltyDiscount)}</span>
               </div>
@@ -453,9 +462,12 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             <div className="h-px bg-slate-100 my-2" />
 
             {/* Total Payment */}
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-base font-bold text-slate-800">Tổng thanh toán:</span>
-              <span className="text-xl font-extrabold text-rose-500">{formatVND(totalPrice)}</span>
+            <div className="flex justify-between items-end pt-1">
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-slate-800">Tổng thanh toán:</span>
+                <span className="text-[10px] text-slate-400 font-medium">(Đã bao gồm thuế GTGT)</span>
+              </div>
+              <span className="text-xl font-extrabold text-slate-900 leading-none">{formatVND(totalPrice)}</span>
             </div>
           </div>
 
@@ -464,7 +476,7 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             <button
               onClick={handlePlaceOrder}
               disabled={submitting}
-              className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white rounded-[8px] py-3.5 font-bold text-sm shadow-md hover:shadow-lg shadow-rose-500/10 flex items-center justify-center gap-2 bouncy-hover transition-all"
+              className="w-full bg-primary hover:bg-primary/90 disabled:bg-rose-300 text-white rounded-[8px] py-3.5 font-bold text-sm shadow-md hover:shadow-lg shadow-primary/10 flex items-center justify-center gap-2 bouncy-hover transition-all"
             >
               {submitting ? (
                 <>

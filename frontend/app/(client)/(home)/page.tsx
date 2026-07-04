@@ -72,18 +72,34 @@ export default function HomePageV2() {
           if (topWishlistData?.items) setTopWishlistProducts(topWishlistData.items);
         }
 
-        // Fetch dữ liệu cho tab hiện tại (từ URL)
         let initialTab: TabKey = 'all';
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const tabParam = params.get('tab') as TabKey;
+          const cachedTab = sessionStorage.getItem('lazpe_home_activeTab') as TabKey;
+          
           if (tabParam && ['all', 'foryou', 'combo', 'bestseller', 'newest', 'discount'].includes(tabParam)) {
             initialTab = tabParam;
-            setActiveTab(initialTab);
+          } else if (cachedTab && ['all', 'foryou', 'combo', 'bestseller', 'newest', 'discount'].includes(cachedTab)) {
+            initialTab = cachedTab;
           }
+          setActiveTab(initialTab);
         }
 
-        let dataItems: Product[] = [];
+        const cachedStr = typeof window !== 'undefined' ? sessionStorage.getItem('lazpe_home_tabData') : null;
+        let usedCache = false;
+        if (cachedStr) {
+          try {
+            const parsedCache = JSON.parse(cachedStr);
+            if (isMounted && parsedCache && parsedCache['all']) {
+              setTabData(parsedCache);
+              usedCache = true;
+            }
+          } catch(e) {}
+        }
+
+        if (!usedCache) {
+          let dataItems: Product[] = [];
         if (initialTab === 'foryou') {
           dataItems = await getRecommendations(10);
           if (!dataItems || dataItems.length === 0) {
@@ -103,16 +119,17 @@ export default function HomePageV2() {
           dataItems = data?.items || [];
         }
 
-        if (isMounted && dataItems.length > 0) {
-          setTabData(prev => ({
-            ...prev,
-            [initialTab]: {
-              ...prev[initialTab],
-              products: dataItems,
-              hasMore: initialTab === 'foryou' || initialTab === 'combo' ? false : dataItems.length >= 30,
-              displayedCount: initialTab === 'foryou' ? 10 : 30
-            }
-          }));
+          if (isMounted && dataItems.length > 0) {
+            setTabData(prev => ({
+              ...prev,
+              [initialTab]: {
+                ...prev[initialTab],
+                products: dataItems,
+                hasMore: initialTab === 'foryou' || initialTab === 'combo' ? false : dataItems.length >= 30,
+                displayedCount: initialTab === 'foryou' ? 10 : 30
+              }
+            }));
+          }
         }
       } catch (err) {
         console.error("Error fetching homepage data:", err);
@@ -128,6 +145,16 @@ export default function HomePageV2() {
     fetchInitialData();
     return () => { isMounted = false; };
   }, []);
+
+  // Save to sessionStorage when tabData or activeTab changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('lazpe_home_activeTab', activeTab);
+      if (Object.values(tabData).some(tab => tab.products.length > 0)) {
+        sessionStorage.setItem('lazpe_home_tabData', JSON.stringify(tabData));
+      }
+    }
+  }, [tabData, activeTab]);
 
   const handleTabChange = async (tab: TabKey) => {
     setActiveTab(tab);

@@ -39,7 +39,7 @@ export const TopRandomBanner: React.FC<TopRandomBannerProps> = ({ products }) =>
   const marqueeItems = [...baseItems, ...baseItems];
 
   return (
-    <div className="w-full overflow-hidden bg-white rounded-[10px] shadow-sm border border-slate-100 py-6 relative">
+    <div className="w-full overflow-hidden bg-white py-6 relative">
       {/* Title Badge */}
       <div className="absolute top-0 left-0 bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-br-lg z-10 shadow-sm tracking-wide">
         GỢI Ý HÔM NAY

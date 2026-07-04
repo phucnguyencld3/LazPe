@@ -1019,6 +1019,7 @@ namespace PolyBabyAPI.Controllers
                 VariantName = review.Variant?.VariantName,
                 BundleName = review.Bundle?.Name,
                 ImageUrl = review.Variant?.ImageUrl 
+                    ?? review.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl
                     ?? review.Variant?.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl 
                     ?? review.Bundle?.ImageUrl 
                     ?? ""
