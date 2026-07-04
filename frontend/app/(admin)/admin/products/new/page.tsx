@@ -583,6 +583,16 @@ const handleSubmit = async (e?: React.FormEvent, skipConflictCheck = false) => {
     return;
   }
 
+  if (Number(discountPercent) > 50) {
+    toast.error("Chiết khấu sản phẩm không được vượt quá 50% theo quy định pháp luật.");
+    return;
+  }
+
+  if (variants.some(v => v.variantDiscountPercent > 50)) {
+    toast.error("Chiết khấu của biến thể không được vượt quá 50% theo quy định pháp luật.");
+    return;
+  }
+
   // Option validations
   const optionNamesList = options.map(o => o.name.trim().toLowerCase()).filter(Boolean);
   if (optionNamesList.length !== new Set(optionNamesList).size) {
@@ -693,7 +703,7 @@ if (loading) {
 
 return (
     <>
-    <div className="w-full pb-32 animate-in fade-in duration-300">
+    <form onSubmit={handleSubmit} className="w-full pb-12 animate-in fade-in duration-300">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1.5 text-slate-400 mb-6 font-bold text-xs">
         <span
@@ -707,27 +717,58 @@ return (
       </nav>
 
       {/* Header */}
-      <header className="flex items-center gap-4 mb-8">
-        <button
-          onClick={() => router.push("/admin/products")}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm cursor-pointer active:scale-95"
-          title="Quay lại danh sách sản phẩm"
-        >
-          <span className="material-symbols-outlined text-lg">arrow_back</span>
-        </button>
-        <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Thêm sản phẩm mới</h2>
-          <p className="text-slate-500 text-xs mt-1">Khởi tạo sản phẩm, các tùy chọn thuộc tính và tự động sinh danh sách biến thể trong một màn hình.</p>
+      <header className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => router.push("/admin/products")}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm cursor-pointer active:scale-95"
+            title="Quay lại danh sách sản phẩm"
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+          </button>
+          <div>
+            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Thêm sản phẩm mới</h2>
+            <p className="text-slate-500 text-xs mt-1">Khởi tạo sản phẩm, các tùy chọn thuộc tính và tự động sinh danh sách biến thể trong một màn hình.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/admin/products")}
+            className="px-6 py-2.5 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer active:scale-95"
+            disabled={saving}
+          >
+            Hủy bỏ
+          </button>
+          <button
+            type="submit"
+            disabled={saving || !productName.trim() || !selectedCategoryId || !supplierId || hasDuplicates}
+            className="px-8 py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
+          >
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                <span>Đang lưu...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-sm font-bold">add_circle</span>
+                <span>Tạo sản phẩm</span>
+              </>
+            )}
+          </button>
         </div>
       </header>
 
-      {/* Main Form */}
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column - Product details */}
-          <div className="lg:col-span-8 space-y-8">
-            <ProductGeneralInfo
-              productName={productName}
+      {/* Main Form Content */}
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100">
+            {/* Left Column - Product details */}
+            <div className="lg:col-span-8 flex flex-col divide-y divide-slate-100">
+              <ProductGeneralInfo
+                productName={productName}
               onProductNameChange={setProductName}
               code={code}
               onCodeChange={setCode}
@@ -749,7 +790,7 @@ return (
           </div>
 
           {/* Right Column - Pricing and stock */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 bg-slate-50/30">
             <ProductPricingInventory
               price={price}
               onPriceChange={setPrice}
@@ -767,11 +808,11 @@ return (
         </div>
 
         {/* Side-by-Side Options & Variants Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
           {/* Left Column: Dynamic Options Configuration */}
-          <div className="lg:col-span-5 space-y-4">
-            <section className="bg-white rounded-[8px] p-5 border border-slate-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+          <div className="lg:col-span-4 p-6">
+            <div>
+              <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-4">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">tune</span>
                   <h3 className="text-base font-bold text-slate-800">Tùy chọn thuộc tính (Options)</h3>
@@ -947,14 +988,14 @@ return (
                   })}
                 </div>
               )}
-            </section>
+            </div>
           </div>
 
-          {/* Right Column: Variants combination dynamic list */}
-          <div className="lg:col-span-7">
+          {/* Right Column: Dynamic Variants Matrix */}
+          <div className="lg:col-span-8 p-6 bg-slate-50/10">
             {variants.length > 0 ? (
-              <section className="bg-white rounded-[8px] p-5 border border-slate-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-4">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">diversity_3</span>
                     <h3 className="text-base font-bold text-slate-800">Biến thể tự động sinh ({variants.length})</h3>
@@ -1071,7 +1112,6 @@ return (
                               <input
                                 type="number"
                                 min="0"
-                                max="100"
                                 value={v.variantDiscountPercent}
                                 onChange={(e) => handleUpdateVariantField(v.id, "variantDiscountPercent", Number(e.target.value))}
                                 className="w-12 px-1 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs font-semibold text-slate-800 text-center"
@@ -1107,9 +1147,9 @@ return (
                     </tbody>
                   </table>
                 </div>
-              </section>
+              </div>
             ) : (
-              <div className="bg-white rounded-[8px] p-12 text-center border border-slate-100 shadow-sm h-full flex flex-col justify-center items-center text-slate-400 font-semibold italic text-sm min-h-[250px]">
+              <div className="p-12 text-center h-full flex flex-col justify-center items-center text-slate-400 font-semibold italic text-sm min-h-[250px]">
                 <span className="material-symbols-outlined text-3xl mb-1.5 text-slate-300">diversity_3</span>
                 Chưa có biến thể nào được sinh ra.
                 <p className="text-slate-400 text-xs mt-0.5 leading-normal">Định cấu hình ít nhất một thuộc tính và giá trị ở cột bên trái để sinh tổ hợp tự động.</p>
@@ -1117,15 +1157,9 @@ return (
             )}
           </div>
         </div>
+        </div>
 
-        {/* Footer Actions */}
-        <ProductFormActions
-          onCancel={() => router.push("/admin/products")}
-          saving={saving}
-          disabled={!productName.trim() || !selectedCategoryId || !supplierId || hasDuplicates}
-        />
-      </form>
-    </div>
+    </form>
 
     <ImageConflictModal
         isOpen={showConflictModal}

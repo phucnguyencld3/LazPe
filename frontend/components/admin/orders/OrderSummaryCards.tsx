@@ -27,9 +27,10 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {/* Card 1: Tổng đơn hàng */}
-      <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+    <div className="border-b border-slate-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x lg:divide-x divide-slate-100">
+        {/* Card 1: Tổng đơn hàng */}
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[6px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
             <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
@@ -48,7 +49,7 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
 
       {/* Card 2: Đang xử lý */}
-      <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[6px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
             <span className="material-symbols-outlined text-[20px]">pending_actions</span>
@@ -64,7 +65,7 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
 
       {/* Card 3: Doanh thu hôm nay */}
-      <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[6px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
             <span className="material-symbols-outlined text-[20px]">payments</span>
@@ -82,10 +83,10 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
 
       {/* Card 4: Đơn hàng bị hủy */}
-      <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+      <div className={`px-5 py-4 flex items-center justify-between transition-all duration-300 ${
         cancelledCount > 0 
-          ? 'bg-rose-50/50 border-rose-100' 
-          : 'bg-white border-slate-100'
+          ? 'bg-rose-50/50' 
+          : 'hover:bg-slate-50'
       }`}>
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-[6px] flex items-center justify-center shrink-0 ${
@@ -112,6 +113,7 @@ export const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
         <span className={`text-2xl font-extrabold ${cancelledCount > 0 ? 'text-error' : 'text-slate-800'}`}>
           {cancelledCount.toString().padStart(2, "0")}
         </span>
+      </div>
       </div>
     </div>
   );

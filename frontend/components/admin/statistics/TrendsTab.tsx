@@ -147,9 +147,8 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({ trendData, isChartReady, l
   ];
 
   return (
-    <div className="space-y-6">
-
-      <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+    <div className="flex flex-col space-y-0 print-card">
+      <div className="p-6 border-b border-slate-100">
         <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -174,7 +173,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({ trendData, isChartReady, l
       </div>
 
       {trendData.trendingProducts && trendData.trendingProducts.length > 0 && (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 print-card">
+        <div className="p-6">
           <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">

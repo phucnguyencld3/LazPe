@@ -271,8 +271,10 @@ export default function UserDetailsPage() {
         Quay lại quản lý chung
       </button>
 
+      {/* Master Card combining Header, Information Grid, and Roles */}
+      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden w-full flex flex-col mb-6">
       {/* Header Section / Hero Profile */}
-      <section className="relative bg-surface-container-lowest rounded-[8px] p-lg shadow-xl shadow-primary/5 border border-primary-fixed/30 overflow-hidden mb-md">
+      <section className="relative p-6 overflow-hidden border-b border-slate-100">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         <div className="flex flex-col md:flex-row items-center gap-md relative z-10">
           <div className="relative">
@@ -320,9 +322,10 @@ export default function UserDetailsPage() {
       </section>
 
       {/* Information Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-        {/* Basic Info Card */}
-        <div className="bg-surface-container-lowest p-md rounded-[8px] shadow-sm border border-outline-variant/20">
+      <div className="w-full flex flex-col">
+        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
+          {/* Basic Info Card */}
+          <div className="p-6 bg-slate-50/30">
           <h3 className="font-headline-md text-headline-md text-primary mb-md flex items-center gap-2">
             <span className="material-symbols-outlined">badge</span>
             Thông tin cơ bản
@@ -348,7 +351,7 @@ export default function UserDetailsPage() {
         </div>
 
         {/* Account Status Card */}
-        <div className="bg-surface-container-lowest p-md rounded-[8px] shadow-sm border border-outline-variant/20">
+        <div className="p-6">
           <h3 className="font-headline-md text-headline-md text-primary mb-md flex items-center gap-2">
             <span className="material-symbols-outlined">account_box</span>
             Trạng thái hệ thống
@@ -396,8 +399,9 @@ export default function UserDetailsPage() {
           </div>
         </div>
 
+        </div>
         {/* Role/Permissions Section */}
-        <div className="md:col-span-2 bg-surface-container-lowest p-md rounded-[8px] shadow-sm border border-outline-variant/20">
+        <div className="p-6">
           <div className="flex items-center justify-between mb-md border-b border-outline-variant/20 pb-sm">
             <h3 className="font-headline-md text-headline-md text-primary flex items-center gap-2">
               <span className="material-symbols-outlined">key</span>
@@ -467,6 +471,7 @@ export default function UserDetailsPage() {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Lock Modal */}
@@ -736,7 +741,7 @@ export default function UserDetailsPage() {
             <div className="p-md border-t border-outline-variant/30 bg-surface-container-low flex justify-end">
               <button
                 onClick={() => setIsPermModalOpen(false)}
-                className="px-lg py-sm rounded-full font-bold font-label-md bg-primary text-on-primary hover:bg-[#7b444e] shadow-sm transition-colors hover:scale-105 active:scale-95"
+                className="px-lg py-sm rounded-[8px] font-bold font-label-md bg-primary text-on-primary hover:bg-[#7b444e] shadow-sm transition-colors hover:scale-105 active:scale-95"
               >
                 Hoàn tất &amp; Đóng
               </button>

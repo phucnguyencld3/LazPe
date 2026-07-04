@@ -277,7 +277,7 @@ export default function VoucherDetail({
   const isDirectAssignVoucher = voucher.exclusiveType === 2;
 
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300 min-h-[500px]">
+    <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300 min-h-[500px]">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
@@ -342,47 +342,48 @@ export default function VoucherDetail({
         </div>
 
         {/* Tab Content Panels */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30" style={{ scrollbarWidth: "thin" }}>
+        <div className="flex-1 overflow-y-auto p-8 bg-white" style={{ scrollbarWidth: "thin" }}>
           
           {/* TAB 1: General Details */}
           {activeTab === "details" && (
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Stats highlights */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
-                    <span className="material-symbols-outlined text-base">
-                      {voucher.voucherType === 2 ? "local_shipping" : "percent"}
-                    </span>
+              <div className="border-b border-slate-100 pb-4 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                  <div className="py-2 pr-5 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
+                      <span className="material-symbols-outlined text-base">
+                        {voucher.voucherType === 2 ? "local_shipping" : "percent"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mức giảm giá</p>
+                      <p className="text-lg font-bold text-slate-800 mt-0.5">
+                        {voucher.voucherType === 2 && voucher.isFreeShipping 
+                          ? "Free Shipping" 
+                          : voucher.discountType === 1 
+                            ? `${voucher.discountValue}%` 
+                            : formatCurrency(voucher.discountValue)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mức giảm giá</p>
-                    <p className="text-lg font-bold text-slate-800 mt-0.5">
-                      {voucher.voucherType === 2 && voucher.isFreeShipping 
-                        ? "Free Shipping" 
-                        : voucher.discountType === 1 
-                          ? `${voucher.discountValue}%` 
-                          : formatCurrency(voucher.discountValue)}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                    <span className="material-symbols-outlined text-base">shopping_bag</span>
+                  <div className="py-2 px-5 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                      <span className="material-symbols-outlined text-base">shopping_bag</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Đã sử dụng</p>
+                      <p className="text-lg font-bold text-slate-800 mt-0.5">
+                        {voucher.usedQuantity} / {voucher.totalQuantity} <span className="text-xs font-bold text-slate-400">({usedRatio}%)</span>
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Đã sử dụng</p>
-                    <p className="text-lg font-bold text-slate-800 mt-0.5">
-                      {voucher.usedQuantity} / {voucher.totalQuantity} <span className="text-xs font-bold text-slate-400">({usedRatio}%)</span>
-                    </p>
-                  </div>
-                </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                    <span className="material-symbols-outlined text-base">sell</span>
+                  <div className="py-2 pl-5 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                      <span className="material-symbols-outlined text-base">sell</span>
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Hình thức phân phối</p>
@@ -390,9 +391,10 @@ export default function VoucherDetail({
                   </div>
                 </div>
               </div>
+              </div>
 
-              {/* Basic config info */}
-              <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
+            {/* Basic config info */}
+              <div className="pt-6 space-y-4">
                 <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
                   Chi tiết cấu hình áp dụng
                 </h4>
@@ -479,8 +481,9 @@ export default function VoucherDetail({
             <div className="space-y-6 animate-in fade-in duration-200">
               
               {/* Stats summary inside usages */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between">
+              <div className="border-b border-slate-100 pb-4 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                  <div className="py-2 pr-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary">
                       <span className="material-symbols-outlined text-base">receipt_long</span>
@@ -489,10 +492,10 @@ export default function VoucherDetail({
                       <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Tổng số lượt áp dụng</p>
                       <p className="text-xl font-bold text-slate-800 mt-0.5">{usages.length} lượt</p>
                     </div>
+                    </div>
                   </div>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="py-2 pl-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                       <span className="material-symbols-outlined text-base">savings</span>
                     </div>
@@ -503,10 +506,11 @@ export default function VoucherDetail({
                   </div>
                 </div>
               </div>
+            </div>
 
               {/* Usages list table */}
-              <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-                <div className="p-5 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/20">
+              <div className="pt-6 overflow-hidden">
+                <div className="pb-4 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
                     Danh sách khách hàng sử dụng
                   </h4>
@@ -599,11 +603,10 @@ export default function VoucherDetail({
           {/* TAB 3: Direct Assignments */}
           {activeTab === "assign" && isDirectAssignVoucher && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                {/* Left block - Search and Issue vouchers */}
-                <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-100 flex flex-col gap-4">
+              {/* Active Tab: Direct Assign */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-200">
+                {/* Left block - Search & Select */}
+                <div className="lg:col-span-5 flex flex-col gap-5">
                   <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-50 pb-2">
                     Cấp phát voucher mới
                   </h4>
@@ -714,7 +717,7 @@ export default function VoucherDetail({
                 </div>
 
                 {/* Right block - List assignments */}
-                <div className="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-100 flex flex-col gap-4">
+                <div className="lg:col-span-7 flex flex-col gap-4">
                   <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-50 pb-2">
                     <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
                       Lịch sử phân phối trực tiếp

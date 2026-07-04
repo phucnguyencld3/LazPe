@@ -350,7 +350,6 @@ export default function CheckoutPage() {
   // Handle Apply Points
   const handleApplyPoints = async (pointsInput: number) => {
     console.log("handleApplyPoints called with:", pointsInput, "token:", token ? "exists" : "null");
-    toast.info(`Đang xác thực ${pointsInput.toLocaleString("vi-VN")} điểm...`);
 
     if (!token) {
       toast.error("Vui lòng đăng nhập lại để sử dụng điểm!");
@@ -615,7 +614,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4">
-          <Loader className="animate-spin h-10 w-10 text-rose-500 mx-auto" />
+          <Loader className="animate-spin h-10 w-10 text-slate-900 mx-auto" />
           <p className="text-slate-600 font-medium animate-pulse">Đang tải thông tin thanh toán...</p>
         </div>
       </div>
@@ -623,15 +622,15 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16 font-sans selection:bg-rose-100 selection:text-rose-900">
+    <div className="min-h-screen bg-slate-50/60 pb-16 font-sans selection:bg-primary/10 selection:text-rose-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         <CheckoutHeader />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           
           {/* Left Column: Checkout Forms */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
             <ShippingAddressSection
               selectedAddress={selectedAddress}
               setAddressModalOpen={setAddressModalOpen}

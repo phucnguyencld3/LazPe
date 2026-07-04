@@ -88,13 +88,13 @@ export function OrderDetailView({
 
   const getStatusColor = (statusCode: number) => {
     switch (statusCode) {
-      case 0: return "text-amber-700 bg-amber-50 border-amber-200";
-      case 1: return "text-blue-700 bg-blue-50 border-blue-200";
-      case 2: return "text-sky-700 bg-sky-50 border-sky-200";
-      case 3: return "text-emerald-700 bg-emerald-50 border-emerald-200";
-      case 4: return "text-rose-600 bg-rose-50 border-rose-200";
-      case 5: return "text-rose-700 bg-rose-50 border-rose-200";
-      default: return "text-slate-700 bg-slate-50 border-slate-200";
+      case 0: return "text-slate-800 bg-white border-slate-300";
+      case 1: return "text-slate-800 bg-white border-slate-300";
+      case 2: return "text-slate-800 bg-white border-slate-300";
+      case 3: return "text-slate-800 bg-white border-slate-300";
+      case 4: return "text-slate-800 bg-white border-slate-300";
+      case 5: return "text-slate-800 bg-white border-slate-300";
+      default: return "text-slate-800 bg-white border-slate-300";
     }
   };
 
@@ -373,9 +373,11 @@ export function OrderDetailView({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Navigation Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col overflow-hidden">
+        {/* Mega Master Card: Wraps EVERYTHING */}
+        
+        {/* Navigation Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border-b border-slate-100">
         <div className="space-y-1 flex-1">
           <button
             onClick={onBack}
@@ -390,24 +392,14 @@ export function OrderDetailView({
             Ngày đặt hàng: {formatDate(order.createdAt)}
           </p>
         </div>
-        <div className="shrink-0">
-          {isExpired ? (
-            <span className="px-4 py-1.5 text-sm font-bold border rounded-lg text-rose-800 bg-rose-50 border-rose-300">
-              Đã hủy (Quá hạn)
-            </span>
-          ) : (
-            <span className={`px-4 py-1.5 text-sm font-bold border rounded-lg ${getStatusColor(order.statusCode)}`}>
-              {order.status}
-            </span>
-          )}
-        </div>
+
 
         {/* Action Buttons in Header */}
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {canCancelOrder && (
             <button
               onClick={() => setShowCancelModal(true)}
-              className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-all"
+              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all"
               disabled={actionLoading}
             >
               Hủy đơn hàng
@@ -416,7 +408,7 @@ export function OrderDetailView({
           {canRetryPayment && (
             <button
               onClick={handleRetryPayment}
-              className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary/95 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all flex items-center justify-center gap-1"
+              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all flex items-center justify-center gap-1"
               disabled={actionLoading}
             >
               Thanh toán lại VNPay
@@ -425,7 +417,7 @@ export function OrderDetailView({
           {canCompleteOrder && (
             <button
               onClick={() => setShowCompleteModal(true)}
-              className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary/95 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all flex items-center justify-center gap-1"
+              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all flex items-center justify-center gap-1"
               disabled={actionLoading}
             >
               Đã nhận được hàng
@@ -434,7 +426,7 @@ export function OrderDetailView({
           {canRequestReturn && (
             <button
               onClick={() => setShowReturnModal(true)}
-              className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-orange-600 hover:bg-orange-50 border border-orange-200 rounded-xl transition-all"
+              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all"
               disabled={actionLoading}
             >
               Yêu cầu hoàn hàng
@@ -443,7 +435,7 @@ export function OrderDetailView({
           {canCancelReturnRequest && (
             <button
               onClick={handleCancelReturnSubmit}
-              className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-xl transition-all"
+              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all"
               disabled={actionLoading}
             >
               Hủy yêu cầu hoàn hàng
@@ -451,7 +443,7 @@ export function OrderDetailView({
           )}
           <button
             onClick={() => onSupportOrder?.(order)}
-            className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-sky-600 hover:bg-sky-50 border border-sky-200 rounded-xl transition-all flex items-center justify-center gap-1"
+            className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all flex items-center justify-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">support_agent</span>
             Khiếu nại / CSKH
@@ -461,37 +453,29 @@ export function OrderDetailView({
 
       {/* Expiration Countdown/Expired Warning Banners */}
       {baseCanRetryPayment && !isExpired && (
-        <div className="bg-amber-50 border border-amber-200 p-5 rounded-3xl flex items-start gap-4 shadow-sm animate-pulse">
-          <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={22} />
-          <div className="space-y-1">
-            <h3 className="font-bold text-amber-800 text-sm md:text-base">
-              Chờ thanh toán VNPay
-            </h3>
-            <p className="text-xs md:text-sm text-amber-700 font-semibold leading-relaxed">
-              Đơn hàng này chưa hoàn tất thanh toán. Vui lòng thanh toán qua cổng VNPay trong vòng: <span className="font-extrabold text-rose-600 bg-white border border-amber-250 px-2.5 py-0.5 rounded-lg shadow-2xs font-mono">{formatTimeLeft(timeLeft)}</span> để tránh đơn hàng bị hủy tự động.
-            </p>
-          </div>
+        <div className="bg-amber-50/40 border-b border-slate-100 px-5 py-3 flex items-center gap-3">
+          <AlertTriangle className="text-amber-500 shrink-0" size={20} />
+          <p className="text-xs md:text-sm text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+            Vui lòng thanh toán VNPay trong <span className="font-bold text-rose-600">{formatTimeLeft(timeLeft)}</span> để tránh hủy đơn.
+          </p>
         </div>
       )}
 
       {isExpired && (
-        <div className="bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-start gap-4 shadow-sm">
-          <XCircle className="text-rose-500 shrink-0 mt-0.5" size={22} />
-          <div className="space-y-1">
-            <h3 className="font-bold text-rose-800 text-sm md:text-base">
-              Đơn hàng đã hết hạn
-            </h3>
-            <p className="text-xs md:text-sm text-rose-700 font-semibold leading-relaxed">
-              Đơn hàng này đã bị hủy tự động do quá hạn 24 giờ chưa hoàn tất thanh toán qua cổng VNPay.
-            </p>
-          </div>
+        <div className="bg-rose-50/40 border-b border-slate-100 px-5 py-3 flex items-center gap-3">
+          <XCircle className="text-rose-500 shrink-0" size={20} />
+          <p className="text-xs md:text-sm text-rose-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+            Đơn hàng đã bị hủy tự động do quá hạn thanh toán VNPay.
+          </p>
         </div>
       )}
+
+
 
       {/* Timeline or Cancel Alert */}
       {!isTimelineVisible ? (
         !isExpired && (
-          <div className="bg-white border border-rose-100 shadow-sm p-5 rounded-2xl flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+          <div className="bg-rose-50/30 p-5 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <div className="flex items-start gap-4 md:w-1/3 shrink-0">
               <XCircle className="text-rose-500 shrink-0 mt-0.5" size={24} />
               <div className="space-y-1">
@@ -518,9 +502,10 @@ export function OrderDetailView({
           </div>
         )
       ) : (
-        <div className="bg-white p-4 md:py-5 md:px-8 rounded-2xl border border-slate-100 shadow-sm">
-          {/* Progress Timeline Graphic */}
-          <div className="relative flex justify-between items-center max-w-4xl mx-auto">
+        <div className="flex flex-col">
+          <div className="p-4 md:py-5 md:px-8 border-b border-slate-100">
+            {/* Progress Timeline Graphic */}
+            <div className="relative flex justify-between items-center max-w-4xl mx-auto">
             {/* Background Line Connector */}
             <div className="absolute top-5 left-0 w-full h-1 bg-slate-100 -z-0">
               <div
@@ -645,14 +630,13 @@ export function OrderDetailView({
                 </div>
               </div>
             )}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Return Request Details */}
-      {order?.returnReason && ([6,7,9,10].includes(order.statusCode)) && (
-        <div className="bg-white border border-orange-200 p-4 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
+          {/* Return Request Details */}
+          {order?.returnReason && ([6,7,9,10].includes(order.statusCode)) && (
+            <div className="bg-orange-50/30 border-b border-slate-100 p-4 md:px-8">
+              <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="text-orange-500 shrink-0" size={20} />
             <h3 className="font-bold text-orange-800 text-sm md:text-base">
               Yêu cầu hoàn trả {
@@ -688,14 +672,14 @@ export function OrderDetailView({
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          )}
 
-      {/* Info Cards (Recipient & Shipping Delivery) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Recipient Card */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+          {/* Info Cards (Recipient & Shipping Delivery) */}
+          <div className="flex flex-col md:flex-row">
+            {/* Recipient Card */}
+            <div className="flex-1 p-5 md:px-8 space-y-3">
           <div className="flex items-center gap-2 text-primary font-bold border-b border-slate-50 pb-2.5">
             <span className="material-symbols-outlined text-lg">location_on</span>
             <h3 className="text-sm md:text-base text-slate-800">Địa chỉ nhận hàng</h3>
@@ -714,7 +698,7 @@ export function OrderDetailView({
         </div>
 
         {/* Carrier Info Card (Note: Vận chuyển chưa làm, đang hiển thị Đang cập nhật) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+        <div className="flex-1 p-5 space-y-3 md:border-l border-t md:border-t-0 border-slate-100 bg-slate-50/30">
           <div className="flex items-center gap-2 text-secondary font-bold border-b border-slate-50 pb-2.5">
             <span className="material-symbols-outlined text-lg">local_shipping</span>
             <h3 className="text-sm md:text-base text-slate-800">Thông tin vận chuyển</h3>
@@ -731,22 +715,24 @@ export function OrderDetailView({
               <span className="font-bold text-primary">{order.trackingCode || 'Đang cập nhật'}</span>
             </div>
 
-            <div className="flex justify-between items-start gap-2">
-              <span className="text-slate-400 font-semibold whitespace-nowrap">Dự kiến giao hàng:</span>
-              <span className="font-bold text-slate-500 italic text-right text-[11px] xl:text-xs">Từ 3-5 ngày kể từ ngày vận chuyển tùy khu vực</span>
+              <div className="flex justify-between items-start gap-2">
+                <span className="text-slate-400 font-semibold whitespace-nowrap">Dự kiến giao hàng:</span>
+                <span className="font-bold text-slate-500 italic text-right text-[11px] xl:text-xs">Từ 3-5 ngày kể từ ngày vận chuyển tùy khu vực</span>
+              </div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Grid Content (Left Side: Products & Logs | Right Side: Summary Sticky) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* Main Grid Content (Products & Summary) */}
+      <div className="flex flex-col lg:flex-row border-t border-slate-100">
 
         {/* Left Side: Product List Table & Notes/Logs */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="w-full lg:w-2/3 flex flex-col">
 
           {/* Product List Table */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div>
             <div className="px-5 py-4 bg-slate-50/50 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 text-sm md:text-base">
                 Sản phẩm đã mua ({order.invoiceDetails?.length || 0})
@@ -838,7 +824,7 @@ export function OrderDetailView({
 
           {/* Notes Card */}
           {order.note && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+            <div className="p-5 border-t border-slate-100 space-y-2">
               <h4 className="font-bold text-slate-800 text-xs md:text-sm flex items-center gap-1">
                 <span className="material-symbols-outlined text-primary text-sm">edit_note</span> Ghi chú đơn hàng
               </h4>
@@ -850,7 +836,7 @@ export function OrderDetailView({
 
           {/* Payment Transactions Card */}
           {order.paymentTransactions && order.paymentTransactions.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+            <div className="p-5 border-t border-slate-100 space-y-3">
               <h4 className="font-bold text-slate-800 text-xs md:text-sm flex items-center gap-1.5 border-b border-slate-50 pb-2.5">
                 <span className="material-symbols-outlined text-primary text-sm">account_balance_wallet</span>
                 Lịch sử giao dịch thanh toán
@@ -886,9 +872,9 @@ export function OrderDetailView({
           )}
         </div>
 
-        {/* Right Side: Totals Summary (Sticky - Tối ưu khoảng trống bên dưới) */}
-        <aside className="lg:sticky lg:top-6 space-y-6 self-start w-full">
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_12px_24px_rgba(135,78,88,0.02)] space-y-4">
+        {/* Right Side: Totals Summary */}
+        <aside className="w-full lg:w-1/3 lg:border-l border-t lg:border-t-0 border-slate-100 bg-slate-50/20">
+          <div className="p-6 space-y-4 lg:sticky lg:top-6">
             <h3 className="font-bold text-slate-800 text-base md:text-lg border-b border-slate-50 pb-3">
               Tóm tắt chi phí
             </h3>
@@ -993,42 +979,43 @@ export function OrderDetailView({
 
       {/* Cancel Order Dialog Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div
-            className={`bg-white rounded-3xl shadow-2xl flex flex-col w-full min-w-[320px] md:min-w-[500px] relative animate-in zoom-in-95 duration-200 ${
+            className={`bg-white rounded-[12px] shadow-xl border border-slate-100 overflow-hidden flex flex-col w-full min-w-[320px] md:min-w-[500px] relative animate-in zoom-in-95 duration-200 ${
               order?.payMethodCode === 2
                 ? "max-w-4xl md:min-w-[800px]"
                 : "max-w-xl"
             }`}
           >
-            <div className="bg-white p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-                <AlertTriangle className="text-rose-500 h-5 w-5" />
+            <div className="flex justify-between items-center p-5 border-b border-slate-100/80 bg-white">
+              <h3 className="font-bold text-[15px] text-slate-800 flex items-center gap-2">
+                <span className="material-symbols-outlined text-rose-500 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
                 Yêu cầu hủy đơn hàng
               </h3>
               <button
+                type="button"
                 onClick={() => setShowCancelModal(false)}
-                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 hover:bg-slate-100 p-1.5 rounded-md flex items-center justify-center"
               >
-                <X size={18} />
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleCancelSubmit} className="p-5 sm:p-6">
-              <div className={`grid gap-6 ${order?.payMethodCode === 2 ? "md:grid-cols-2" : "grid-cols-1"}`}>
+            <form onSubmit={handleCancelSubmit} className="p-5">
+              <div className={`grid gap-4 ${order?.payMethodCode === 2 ? "md:grid-cols-2" : "grid-cols-1"}`}>
                 
                 {/* Left Column: Refund Method (Only for prepaid orders) */}
                 {order?.payMethodCode === 2 && (
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
+                  <div className="space-y-3">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-800 mb-1">Hình thức hoàn tiền</h4>
-                      <p className="text-xs text-slate-500 font-medium mb-4">
+                      <h4 className="text-[13px] font-bold text-slate-800 mb-1">Hình thức hoàn tiền</h4>
+                      <p className="text-[12px] text-slate-500 font-medium mb-3">
                         Vui lòng chọn nơi bạn muốn nhận lại tiền hoàn.
                       </p>
                     </div>
 
-                    <div className="space-y-3">
-                      <label className={`block relative p-4 rounded-xl border-2 cursor-pointer transition-all ${refundMethod === 'wallet' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
+                    <div className="space-y-2.5">
+                      <label className={`block relative p-3 rounded-[8px] border-2 cursor-pointer transition-all ${refundMethod === 'wallet' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
                         <input
                           type="radio"
                           name="refundMethod"
@@ -1048,7 +1035,7 @@ export function OrderDetailView({
                         </div>
                       </label>
 
-                      <label className={`block relative p-4 rounded-xl border-2 cursor-pointer transition-all ${refundMethod === 'coins' ? 'border-amber-500 bg-amber-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
+                      <label className={`block relative p-3 rounded-[8px] border-2 cursor-pointer transition-all ${refundMethod === 'coins' ? 'border-amber-500 bg-amber-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}>
                         <input
                           type="radio"
                           name="refundMethod"
@@ -1081,10 +1068,10 @@ export function OrderDetailView({
                 )}
 
                 {/* Right Column: Cancel Reason */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800 mb-1">Lý do hủy đơn hàng</h4>
-                    <p className="text-xs text-slate-500 font-medium mb-4">
+                    <h4 className="text-[13px] font-bold text-slate-800 mb-1">Lý do hủy đơn hàng</h4>
+                    <p className="text-[12px] text-slate-500 font-medium mb-3">
                       Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn.
                     </p>
                   </div>
@@ -1098,7 +1085,7 @@ export function OrderDetailView({
                           setCancelReason("");
                         }
                       }}
-                      className="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-medium transition-all bg-white cursor-pointer text-slate-700"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[13px] font-medium transition-all bg-white cursor-pointer text-slate-700"
                     >
                       <option value="" disabled>-- Chọn lý do hủy đơn --</option>
                       {[
@@ -1125,7 +1112,7 @@ export function OrderDetailView({
                         placeholder="Vui lòng nhập lý do cụ thể của bạn..."
                         rows={3}
                         maxLength={500}
-                        className="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-medium placeholder-slate-400 transition-all bg-white"
+                        className="w-full px-3.5 py-2.5 border border-slate-200 rounded-[8px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[13px] font-medium placeholder-slate-400 transition-all bg-white"
                         required={selectedReason === "other"}
                       />
                       <p className="text-[10px] text-right text-slate-400 font-semibold mt-1">
@@ -1136,18 +1123,18 @@ export function OrderDetailView({
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end mt-6 pt-5 border-t border-slate-200">
+              <div className="flex gap-3 justify-end pt-5 mt-2 border-t border-slate-100/80">
                 <button
                   type="button"
                   onClick={() => setShowCancelModal(false)}
-                  className="px-5 py-2.5 border-2 border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                  className="px-6 py-2.5 border border-slate-200 rounded-[8px] font-bold text-slate-600 hover:bg-slate-50 transition-colors text-[13px]"
                   disabled={actionLoading}
                 >
                   Không, giữ lại đơn
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm shadow-rose-600/20 active:scale-[0.98]"
+                  className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-[8px] font-bold transition-all shadow-sm text-[13px] active:scale-95 flex items-center gap-2 justify-center"
                   disabled={actionLoading}
                 >
                   {actionLoading ? <Loader size={16} className="animate-spin" /> : null}

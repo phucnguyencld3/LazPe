@@ -283,10 +283,13 @@ export default function AdminProductsPage() {
         </div>
       </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Card 1: Total */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      {/* Master Card container */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8 animate-in fade-in duration-300">
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
+          {/* Card 1: Total */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">inventory</span>
@@ -296,8 +299,8 @@ export default function AdminProductsPage() {
           <span className="text-2xl font-extrabold text-slate-800">{stats?.totalProducts ?? "..."}</span>
         </div>
 
-        {/* Card 2: Active */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          {/* Card 2: Active */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
@@ -307,12 +310,12 @@ export default function AdminProductsPage() {
           <span className="text-2xl font-extrabold text-slate-800">{stats?.activeProducts ?? "..."}</span>
         </div>
 
-        {/* Card 3: Out of stock */}
-        <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
-          (stats?.outOfStockProducts ?? 0) > 0
-            ? "bg-rose-50/50 border-rose-100"
-            : "bg-white border-slate-100"
-        }`}>
+          {/* Card 3: Out of stock */}
+          <div className={`px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300 ${
+            (stats?.outOfStockProducts ?? 0) > 0
+              ? "bg-rose-50/50"
+              : ""
+          }`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 ${
               (stats?.outOfStockProducts ?? 0) > 0
@@ -337,8 +340,8 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        {/* Card 4: New products */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+          {/* Card 4: New products */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">new_releases</span>
@@ -349,10 +352,10 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Filters & Product Table Area */}
-      <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
-        
-        {/* Filter Bar */}
+        {/* Filters & Product Table Area */}
+        <div>
+          
+          {/* Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
           {/* Search box */}
           <div className="flex-1 min-w-[260px] relative">
@@ -592,6 +595,7 @@ export default function AdminProductsPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+      </section>
       {/* Custom Delete Confirmation Modal */}
       {productToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">

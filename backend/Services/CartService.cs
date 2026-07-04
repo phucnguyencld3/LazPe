@@ -51,6 +51,10 @@ namespace PolyBabyAPI.Services
                             .ThenInclude(p => p.Images)
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Variants)
+                .Include(c => c.CartDetails)
+                    .ThenInclude(cd => cd.Variant)
                         .ThenInclude(v => v.VariantOptionValues)
                             .ThenInclude(vov => vov.ProductOptionValue)
                                 .ThenInclude(pov => pov.ProductOption)
@@ -60,9 +64,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
-
-
-
+        
         public async Task<Cart> GetCartByIdAsync(int cartId)
         {
             return await _context.Carts

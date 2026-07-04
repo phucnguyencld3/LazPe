@@ -83,18 +83,35 @@ function ProductsContent() {
       setLoading(true);
       setError("");
       try {
+        // If it's the first time loading and the URL says we are on page > 1, 
+        // fetch all items from page 1 to the current page to preserve the loaded state.
+        const isInitialLoadPaginated = products.length === 0 && currentPage > 1;
+        const fetchPage = isInitialLoadPaginated ? 1 : currentPage;
+        const fetchSize = isInitialLoadPaginated ? currentPage * 15 : 15;
+
         const result = await getProducts(
-          currentPage,
-          15, // pageSize
+          fetchPage,
+          fetchSize,
           activeSearch,
           selectedCategory || undefined,
           sortBy,
-          sortDirection
+          sortDirection,
+          filterSale // Pass filterSale to backend so it fetches only discounted items
         );
 
         if (result) {
-          setProducts(result.items || []);
-          setTotalPages(result.totalPages || 1);
+          if (currentPage === 1 || isInitialLoadPaginated) {
+            setProducts(result.items || []);
+          } else {
+            setProducts(prev => {
+              const existingIds = new Set(prev.map(p => p.id));
+              const newItems = (result.items || []).filter((p: Product) => !existingIds.has(p.id));
+              return [...prev, ...newItems];
+            });
+          }
+          // Always calculate totalPages based on standard pageSize = 15
+          const calculatedTotalPages = Math.ceil((result.totalItems || 0) / 15);
+          setTotalPages(calculatedTotalPages || 1);
           setTotalItems(result.totalItems || 0);
         } else {
           setError("Tải danh sách sản phẩm thất bại.");
@@ -108,7 +125,7 @@ function ProductsContent() {
     };
 
     loadProducts();
-  }, [currentPage, activeSearch, selectedCategory, sortBy, sortDirection]);
+  }, [currentPage, activeSearch, selectedCategory, sortBy, sortDirection, filterSale]);
 
   // Sync state back to URL for shareability
   useEffect(() => {
@@ -168,15 +185,16 @@ function ProductsContent() {
         return false;
       }
 
-      if (filterSale) {
-        if (!product.discountPrice || product.discountPrice >= product.price) {
-          return false;
-        }
-      }
-
-      // Sale filter from url param (legacy)
-      if (sortParam === "sale" && !filterSale) {
-        if (!product.discountPrice || product.discountPrice >= product.price) {
+      // We still keep client-side filtering for extra safety and for sortParam === "sale"
+      if (filterSale || sortParam === "sale") {
+        const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
+        const isDiscounted = hasVariants 
+          ? ((product.minPrice !== undefined && product.minEffectivePrice !== undefined && product.minEffectivePrice < product.minPrice) || 
+             (product.maxPrice !== undefined && product.maxEffectivePrice !== undefined && product.maxEffectivePrice < product.maxPrice) || 
+             (product.discountPercent !== undefined && product.discountPercent > 0))
+          : ((product.discountPrice !== undefined && product.discountPrice < product.price) || (product.discountPercent !== undefined && product.discountPercent > 0));
+          
+        if (!isDiscounted) {
           return false;
         }
       }
@@ -251,16 +269,19 @@ function ProductsContent() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <ProductsHero sortParam={sortParam} categoryName={currentCategoryName} />
-
       {/* Main Grid Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pt-6">
         <div className="flex flex-col gap-4">
 
-          {/* Top Random Banner */}
-          {!loading && !error && products.length > 0 && (
-            <TopRandomBanner products={products} />
-          )}
+          {/* Hero & Banner Wrapper */}
+          <div className="bg-white rounded-[10px] shadow-sm border border-slate-100 overflow-hidden">
+            <ProductsHero sortParam={sortParam} categoryName={currentCategoryName} />
+            
+            {/* Top Random Banner */}
+            {!loading && !error && products.length > 0 && (
+              <TopRandomBanner products={products} />
+            )}
+          </div>
 
           {/* Filter and Control Bar Wrapper */}
           <div className="bg-white rounded-[10px] shadow-sm border border-slate-100">
@@ -269,9 +290,9 @@ function ProductsContent() {
               selectedCategory={selectedCategory}
               handleCategorySelect={handleCategorySelect}
               filter4Star={filter4Star}
-              setFilter4Star={setFilter4Star}
+              setFilter4Star={(val) => { setFilter4Star(val); setCurrentPage(1); }}
               filterSale={filterSale}
-              setFilterSale={setFilterSale}
+              setFilterSale={(val) => { setFilterSale(val); setCurrentPage(1); }}
             />
 
             <hr className="border-slate-100 mx-4 sm:mx-5" />
@@ -297,12 +318,15 @@ function ProductsContent() {
               handleRetry={() => window.location.reload()}
             />
 
-            {!loading && !error && filteredProducts.length > 0 && (
-              <ProductPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={setCurrentPage}
-              />
+            {!loading && !error && filteredProducts.length > 0 && currentPage < totalPages && (
+              <div className="flex justify-center mt-6 mb-8">
+                <button
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="border-2 border-primary text-primary font-bold py-2 px-12 rounded-[8px] hover:bg-primary/5 transition-colors"
+                >
+                  Xem thêm
+                </button>
+              </div>
             )}
           </div>
         </div>

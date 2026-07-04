@@ -249,14 +249,15 @@ export default function AdminOrdersPage() {
         </div>
         <button
           onClick={handleExportExcel}
-          className="flex items-center gap-2 px-6 py-3 bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-bold rounded-[8px] shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
         >
-          <span className="material-symbols-outlined">ios_share</span>
+          <span className="material-symbols-outlined text-[18px]">file_export</span>
           Xuất file Excel
         </button>
       </div>
 
-      <OrderSummaryCards 
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 mb-8 overflow-hidden animate-in fade-in duration-300">
+        <OrderSummaryCards 
         totalOrders={metrics.totalOrders}
         pending={metrics.pending}
         todayRevenue={metrics.todayRevenue}
@@ -304,6 +305,7 @@ export default function AdminOrdersPage() {
         onBulkConfirm={handleBulkConfirm}
         onBulkMarkShipped={handleBulkMarkShipped}
       />
+      </section>
     </main>
   );
 }

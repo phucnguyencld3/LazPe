@@ -63,7 +63,7 @@ export const SettingsTab: React.FC = () => {
 
   if (loadingSettings) {
     return (
-      <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 max-w-3xl flex flex-col items-center justify-center min-h-[300px]">
+      <div className="w-full flex flex-col items-center justify-center min-h-[300px]">
         <Loader2 className="animate-spin text-primary mb-2" size={32} />
         <span className="text-slate-400 font-bold text-xs">Đang tải cấu hình...</span>
       </div>
@@ -71,7 +71,7 @@ export const SettingsTab: React.FC = () => {
   }
 
   return (
-    <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 max-w-3xl animate-in fade-in duration-300">
+    <div className="p-8 w-full animate-in fade-in duration-300">
       <form onSubmit={handleSaveSettings} className="space-y-6">
         {/* Reward Point Enable Toggle */}
         <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
@@ -207,14 +207,16 @@ export const SettingsTab: React.FC = () => {
         </div>
 
         {/* Save Button */}
-        <button
-          type="submit"
-          disabled={savingSettings}
-          className="w-full bg-primary hover:bg-primary/95 text-white py-3 rounded-full font-bold text-sm hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 mt-6 cursor-pointer"
-        >
-          {savingSettings && <Loader2 className="animate-spin" size={16} />}
-          Lưu cấu hình cài đặt
-        </button>
+        <div className="flex justify-end mt-6">
+          <button
+            type="submit"
+            disabled={savingSettings}
+            className="px-8 py-3 bg-primary hover:bg-primary/95 text-white rounded-[8px] font-bold text-sm hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          >
+            {savingSettings && <Loader2 className="animate-spin" size={16} />}
+            Lưu cấu hình cài đặt
+          </button>
+        </div>
       </form>
     </div>
   );

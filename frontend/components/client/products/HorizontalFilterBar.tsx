@@ -61,13 +61,13 @@ export const HorizontalFilterBar: React.FC<HorizontalFilterBarProps> = ({
   }, [categories, selectedCategory]);
 
   return (
-    <div className="p-4 sm:p-5">
+    <div className="px-4 py-1 sm:px-5 sm:py-1">
       {/* Top Row: Side-by-side Filters */}
-      <div className="flex flex-col md:flex-row gap-6 relative">
+      <div className="flex flex-col md:flex-row gap-2 relative">
         
         {/* Categories Column */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-0.5">
             <h4 className="text-[13px] font-semibold text-rose-500">{categoryBreadcrumb}</h4>
             {selectedCategory !== null && (
               <span className="text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Đang chọn</span>
@@ -84,7 +84,7 @@ export const HorizontalFilterBar: React.FC<HorizontalFilterBarProps> = ({
                     : "border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
-                {cat.name}
+                {cat.name.trim()}
               </button>
             ))}
           </div>
@@ -96,7 +96,7 @@ export const HorizontalFilterBar: React.FC<HorizontalFilterBarProps> = ({
             onClick={() => {
               handleCategorySelect(null);
             }}
-            className="flex items-center gap-1.5 px-4 py-1.5 border border-slate-200 rounded text-[13px] text-slate-600 hover:bg-slate-50 transition-colors h-[34px]"
+            className="flex items-center gap-1 px-3 py-1 border border-slate-200 rounded text-[13px] text-slate-600 hover:bg-slate-50 transition-colors h-8"
           >
             <Filter size={14} />
             <span>Tất cả</span>
@@ -104,11 +104,11 @@ export const HorizontalFilterBar: React.FC<HorizontalFilterBarProps> = ({
         </div>
       </div>
 
-      <hr className="border-slate-100 my-4" />
+      <hr className="border-slate-100 my-1" />
 
       {/* Bottom Row: Quick Filters */}
       <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button 
             onClick={() => setFilter4Star(!filter4Star)}
             className={`flex items-center gap-1.5 px-3 py-1.5 border rounded text-[13px] font-medium transition-colors ${

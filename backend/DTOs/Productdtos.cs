@@ -158,7 +158,7 @@ namespace PolyBabyAPI.DTOs
         [Range(0, double.MaxValue, ErrorMessage = "Giá không hợp lệ")]
         public decimal Price { get; set; } = 0;
 
-        [Range(0, 100, ErrorMessage = "Giảm giá sản phẩm phải từ 0 đến 100")]
+        [Range(0, 50, ErrorMessage = "Giảm giá sản phẩm không được vượt quá 50% theo quy định.")]
         public decimal ProductDiscountPercent { get; set; } = 0;
 
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]
@@ -196,7 +196,7 @@ namespace PolyBabyAPI.DTOs
         [Range(0, double.MaxValue, ErrorMessage = "Giá không hợp lệ")]
         public decimal Price { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Giảm giá sản phẩm phải từ 0 đến 100")]
+        [Range(0, 50, ErrorMessage = "Giảm giá sản phẩm không được vượt quá 50% theo quy định.")]
         public decimal ProductDiscountPercent { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]

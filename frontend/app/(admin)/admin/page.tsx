@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getProducts } from "@/lib/api";
-
+import { getStatusLabel } from "@/lib/features/orders/orderApi";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
 async function getAdminDashboardStats() {
@@ -98,87 +98,91 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* Stats Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Doanh thu */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[8px] bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <span className="material-symbols-outlined text-[20px]">trending_up</span>
+      {/* Main Dashboard Card */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 mb-8 overflow-hidden animate-in fade-in duration-300">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x lg:divide-x divide-slate-100 border-b border-slate-100">
+          {/* Doanh thu */}
+          <div className="px-5 py-4 flex flex-col justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">trending_up</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu</span>
               </div>
-              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu</span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-[8px] flex items-center gap-0.5">
+                <span className="material-symbols-outlined text-[12px]">arrow_upward</span> 12%
+              </span>
             </div>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-[8px] flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-[12px]">arrow_upward</span> 12%
-            </span>
+            <div className="flex items-end justify-between mt-1">
+              <h2 className="text-2xl font-extrabold text-slate-800">{stats.revenue.toLocaleString()}₫</h2>
+              <p className="text-[11px] text-slate-400 font-bold mb-1">
+                <span className="text-emerald-500">{stats.completedOrders}</span> hoàn tất
+              </p>
+            </div>
           </div>
-          <div className="flex items-end justify-between mt-1">
-            <h2 className="text-2xl font-extrabold text-slate-800">{stats.revenue.toLocaleString()}₫</h2>
-            <p className="text-[11px] text-slate-400 font-bold mb-1">
-              <span className="text-emerald-500">{stats.completedOrders}</span> hoàn tất
-            </p>
+
+          {/* Tổng đơn hàng */}
+          <div className="px-5 py-4 flex flex-col justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đơn hàng</span>
+              </div>
+            </div>
+            <div className="flex items-end justify-between mt-1">
+              <h2 className="text-2xl font-extrabold text-slate-800">{stats.totalOrders}</h2>
+              <p className="text-[11px] text-slate-400 font-bold mb-1">
+                <span className="text-amber-500">{stats.pendingOrders}</span> chờ xử lý
+              </p>
+            </div>
+          </div>
+
+          {/* Khách hàng */}
+          <div className="px-5 py-4 flex flex-col justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">group</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Khách hàng</span>
+              </div>
+            </div>
+            <div className="flex items-end justify-between mt-1">
+              <h2 className="text-2xl font-extrabold text-slate-800">{stats.totalUsers}</h2>
+              <p className="text-[11px] text-slate-400 font-bold mb-1">
+                <span className="text-blue-500">+{stats.newUsers}</span> tháng này
+              </p>
+            </div>
+          </div>
+
+          {/* Sản phẩm */}
+          <div className="px-5 py-4 flex flex-col justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[8px] bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">inventory</span>
+                </div>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm</span>
+              </div>
+            </div>
+            <div className="flex items-end justify-between mt-1">
+              <h2 className="text-2xl font-extrabold text-slate-800">{stats.productsCount.toLocaleString()}</h2>
+              <p className="text-[11px] text-slate-400 font-bold mb-1">
+                Đang kinh doanh
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Tổng đơn hàng */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[8px] bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
-                <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
-              </div>
-              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng đơn hàng</span>
-            </div>
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <h2 className="text-2xl font-extrabold text-slate-800">{stats.totalOrders}</h2>
-            <p className="text-[11px] text-slate-400 font-bold mb-1">
-              <span className="text-amber-500">{stats.pendingOrders}</span> chờ xử lý
-            </p>
-          </div>
-        </div>
 
-        {/* Khách hàng */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[8px] bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0">
-                <span className="material-symbols-outlined text-[20px]">group</span>
-              </div>
-              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Khách hàng</span>
-            </div>
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <h2 className="text-2xl font-extrabold text-slate-800">{stats.totalUsers}</h2>
-            <p className="text-[11px] text-slate-400 font-bold mb-1">
-              <span className="text-blue-500">+{stats.newUsers}</span> tháng này
-            </p>
-          </div>
-        </div>
-
-        {/* Sản phẩm */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-300 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[8px] bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                <span className="material-symbols-outlined text-[20px]">inventory</span>
-              </div>
-              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm</span>
-            </div>
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <h2 className="text-2xl font-extrabold text-slate-800">{stats.productsCount.toLocaleString()}</h2>
-            <p className="text-[11px] text-slate-400 font-bold mb-1">
-              Đang kinh doanh
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Bottom Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
         {/* Recent Orders Table */}
-        <section className="lg:col-span-2 bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
+        <div className="lg:col-span-2">
           <div className="flex justify-between items-center p-6 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-slate-800 text-lg">Đơn hàng gần đây</h3>
@@ -208,9 +212,17 @@ export default async function AdminDashboardPage() {
                       <td className="px-6 py-5 font-bold text-primary text-sm">#{order.invoiceCode}</td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm">
-                            {(order.userFullName || order.userName || 'K')[0].toUpperCase()}
-                          </div>
+                          {order.userAvatar && order.userAvatar.trim() !== "" ? (
+                            <img
+                              src={order.userAvatar}
+                              alt={order.userFullName || order.userName || 'Khách hàng'}
+                              className="w-10 h-10 shrink-0 rounded-full object-cover border border-slate-100"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm border border-slate-100">
+                              {(order.userFullName || order.userName || 'K')[0].toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-800 text-sm">{order.userFullName || order.userName || 'Khách hàng'}</p>
                             <p className="text-[11px] text-slate-400 font-semibold">{order.itemCount || 0} sản phẩm</p>
@@ -219,12 +231,21 @@ export default async function AdminDashboardPage() {
                       </td>
                       <td className="px-6 py-5 font-bold text-slate-800 text-sm">{(order.totalPrice || 0).toLocaleString()}₫</td>
                       <td className="px-6 py-5 font-bold text-sm">
-                        {order.statusCode === 0 && <span className="text-amber-600">Chờ xử lý</span>}
-                        {order.statusCode === 1 && <span className="text-blue-600">Đã xác nhận</span>}
-                        {order.statusCode === 2 && <span className="text-purple-600">Đang giao</span>}
-                        {order.statusCode === 3 && <span className="text-emerald-600">Hoàn tất</span>}
-                        {order.statusCode === 4 && <span className="text-rose-600">Chờ duyệt hủy</span>}
-                        {order.statusCode === 5 && <span className="text-slate-500">Đã hủy</span>}
+                        <span className={
+                          order.statusCode === 0 ? "text-amber-600" :
+                            order.statusCode === 1 ? "text-blue-600" :
+                              order.statusCode === 2 ? "text-purple-600" :
+                                order.statusCode === 3 ? "text-emerald-600" :
+                                  order.statusCode === 4 ? "text-rose-600" :
+                                    (order.statusCode === 5 || order.statusCode === 10) ? "text-red-600" :
+                                      order.statusCode === 6 ? "text-orange-600" :
+                                        order.statusCode === 7 ? "text-pink-600" :
+                                          order.statusCode === 8 ? "text-red-700" :
+                                            order.statusCode === 9 ? "text-teal-600" :
+                                              "text-slate-500"
+                        }>
+                          {getStatusLabel(order.statusCode)}
+                        </span>
                       </td>
                       <td className="px-6 py-5 text-sm text-slate-500 font-semibold">{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
                     </tr>
@@ -237,12 +258,12 @@ export default async function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </div>
 
         {/* Quick Actions & User Stats */}
-        <div className="space-y-6">
+        <div className="flex flex-col h-full">
           {/* Quick Actions */}
-          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6">
+          <div className="p-6 border-b border-slate-100">
             <h3 className="font-bold text-slate-800 text-lg mb-4">Hành động nhanh</h3>
             <div className="grid grid-cols-2 gap-3">
               <Link href="/admin/products/new" className="bg-primary/5 hover:bg-primary/10 text-primary p-4 rounded-[8px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer border border-primary/10 hover:border-primary/20 hover:shadow-sm group">
@@ -270,10 +291,10 @@ export default async function AdminDashboardPage() {
                 <span className="text-[12px] font-bold text-center leading-tight">Báo cáo thống kê</span>
               </Link>
             </div>
-          </section>
+          </div>
 
           {/* User Stats */}
-          <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6">
+          <div className="p-6 flex-1">
             <div className="flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-secondary">group</span>
               <h3 className="font-bold text-slate-800 text-lg">Thống kê người dùng</h3>
@@ -316,9 +337,10 @@ export default async function AdminDashboardPage() {
                 <span className="font-extrabold text-blue-600">{stats.newUsers}</span>
               </div>
             </div>
-          </section>
+          </div>
         </div>
       </div>
-    </main>
+    </section>
+    </main >
   );
 }

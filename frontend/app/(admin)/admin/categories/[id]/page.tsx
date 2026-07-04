@@ -264,11 +264,11 @@ export default function CategoryDetailPage() {
       </div>
 
       {category && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Side: Category Profile Card */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <div className="bg-white rounded-[8px] border border-slate-100 p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100">
+            
+            {/* Left Side: Category Profile Card */}
+            <div className="lg:col-span-4 flex flex-col p-8 space-y-6 bg-slate-50/30">
               
               {/* Header profile info */}
               <div className="flex flex-col items-center text-center">
@@ -348,11 +348,9 @@ export default function CategoryDetailPage() {
                 </>
               )}
             </div>
-          </div>
 
-          {/* Right Side: Linked Products list */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
-            <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden">
+            {/* Right Side: Linked Products list */}
+            <div className="lg:col-span-8 flex flex-col">
               
               {/* Product header & filters */}
               <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 items-center justify-between">

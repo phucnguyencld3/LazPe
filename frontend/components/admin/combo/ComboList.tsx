@@ -204,35 +204,37 @@ export const ComboList: React.FC<ComboListProps> = ({
             Tạo và cấu hình các gói sản phẩm đi kèm với giá ưu đãi để tăng doanh thu
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-sm shrink-0">
           <button
             onClick={handleExportExcel}
             disabled={exporting}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+            className="border border-primary text-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50"
           >
             {exporting ? (
-              <Loader className="animate-spin h-4.5 w-4.5" />
+              <Loader className="animate-spin h-[18px] w-[18px]" />
             ) : (
-              <span className="material-symbols-outlined text-[18px]">download</span>
+              <span className="material-symbols-outlined text-[18px]">file_export</span>
             )}
-            <span>Xuất Excel</span>
+            Xuất Excel
           </button>
           <button
             onClick={onCreateClick}
-            className="bg-primary text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >
-            <Plus size={18} />
-            <span>Tạo Combo mới</span>
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            Tạo Combo mới
           </button>
         </div>
       </header>
 
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Combos */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      {/* Master Card container */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8 animate-in fade-in duration-300">
+        {/* Stats Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
+          {/* Total Combos */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-primary shrink-0">
               <Tag size={18} />
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng số Combo</span>
@@ -241,9 +243,9 @@ export const ComboList: React.FC<ComboListProps> = ({
         </div>
 
         {/* Active Combos */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
@@ -252,9 +254,9 @@ export const ComboList: React.FC<ComboListProps> = ({
         </div>
 
         {/* Inactive Combos */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
               <span className="material-symbols-outlined text-[20px]">pause_circle</span>
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tạm ẩn</span>
@@ -263,19 +265,19 @@ export const ComboList: React.FC<ComboListProps> = ({
         </div>
 
         {/* Average Discount */}
-        <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
               <TrendingDown size={18} />
             </div>
             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Giảm giá trung bình</span>
           </div>
           <span className="text-2xl font-extrabold text-rose-500">{loading ? "..." : `${avgDiscount}%`}</span>
         </div>
-      </div>
+        </div>
 
-      {/* Filter and Content Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        {/* Filter and Content Area */}
+        <div>
         {/* Tool Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex flex-wrap items-center gap-4 flex-1">
@@ -507,8 +509,7 @@ export const ComboList: React.FC<ComboListProps> = ({
                   <th className="px-6 py-4">Giá gốc</th>
                   <th className="px-6 py-4">Giá Combo</th>
                   <th className="px-6 py-4 text-center">Giảm giá</th>
-                  <th className="px-6 py-4 text-center">Trạng thái</th>
-                  <th className="px-8 py-4 text-center">Hành động</th>
+                  <th className="px-8 py-4 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -577,41 +578,41 @@ export const ComboList: React.FC<ComboListProps> = ({
                       )}
                     </td>
 
-                    {/* Status Switch */}
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className={`text-[10px] font-bold uppercase min-w-[50px] text-right ${bundle.status ? "text-secondary" : "text-slate-400"}`}>
-                          {bundle.status ? "Đang bán" : "Tạm ẩn"}
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={bundle.status}
-                            disabled={togglingId === bundle.bundleID}
-                            onChange={() => handleToggleStatus(bundle.bundleID, bundle.status)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                        </label>
-                      </div>
-                    </td>
+                    {/* Thao tác (Gộp Trạng thái và Hành động) */}
+                    <td className="px-8 py-5 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {/* Toggle trạng thái */}
+                        <div className="flex flex-col items-center gap-1 px-1">
+                          <label className="relative inline-flex items-center cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={bundle.status}
+                              disabled={togglingId === bundle.bundleID}
+                              onChange={() => handleToggleStatus(bundle.bundleID, bundle.status)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                          </label>
+                          <span className={`text-[9px] font-bold uppercase ${bundle.status ? "text-secondary" : "text-slate-400"}`}>
+                            {bundle.status ? "Đang bán" : "Tạm ẩn"}
+                          </span>
+                        </div>
 
-                    {/* Actions */}
-                    <td className="px-8 py-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                        <div className="w-px h-8 bg-slate-100 mx-1"></div>
+
                         <button
                           onClick={() => onEditClick(bundle.bundleID)}
-                          className="p-2 text-slate-450 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
                           title="Sửa"
                         >
-                          <Edit size={15} />
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteClick(bundle)}
-                          className="p-2 text-slate-450 hover:text-error hover:bg-rose-50 rounded-lg transition-colors"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-error hover:bg-error-container/20 transition-all cursor-pointer"
                           title="Xóa"
                         >
-                          <Trash2 size={15} />
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
                       </div>
                     </td>
@@ -621,7 +622,8 @@ export const ComboList: React.FC<ComboListProps> = ({
             </table>
           </div>
         )}
-      </div>
+        </div>
+      </section>
 
       {/* Custom Delete Confirmation Modal */}
       {bundleToDelete && (

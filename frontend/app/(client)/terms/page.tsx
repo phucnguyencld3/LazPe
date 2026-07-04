@@ -131,6 +131,41 @@ export default function TermsAndConditions() {
                 </div>
               </div>
             </section>
+            
+            {/* Section 4 */}
+            <section className="scroll-mt-32" id="dispute">
+              <div className="flex items-center gap-sm mb-md">
+                <span className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary-container text-secondary font-bold">
+                  4
+                </span>
+                <h2 className="font-headline-md text-headline-md text-on-background">Giải quyết khiếu nại và Tranh chấp</h2>
+              </div>
+              <div className="bg-surface-container-lowest p-md md:p-lg rounded-xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-surface-variant/50">
+                <p className="mb-md font-body-md text-on-surface-variant leading-relaxed">
+                  LazPe luôn đề cao quyền lợi hợp pháp của người tiêu dùng. Mọi khiếu nại, phản ánh liên quan đến sản phẩm, dịch vụ hoặc giao dịch trên nền tảng sẽ được tiếp nhận và xử lý theo quy trình sau:
+                </p>
+                <ul className="space-y-md">
+                  <li className="flex items-start gap-sm">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs mt-0.5">1</span>
+                    <span className="text-on-surface-variant font-body-md">
+                      <strong>Tiếp nhận:</strong> Khách hàng có thể gửi khiếu nại qua Hotline (1900 1234) hoặc Email (lazpevn@gmail.com) trong vòng 14 ngày kể từ ngày nhận hàng.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-sm">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs mt-0.5">2</span>
+                    <span className="text-on-surface-variant font-body-md">
+                      <strong>Xử lý:</strong> Bộ phận CSKH sẽ xác minh thông tin, liên hệ với các bên liên quan và đề xuất phương án giải quyết (đổi trả, hoàn tiền, hoặc bồi thường) trong thời hạn 3 - 5 ngày làm việc.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-sm">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs mt-0.5">3</span>
+                    <span className="text-on-surface-variant font-body-md">
+                      <strong>Giải quyết tranh chấp:</strong> Nếu các bên không thể tự thỏa thuận, tranh chấp sẽ được chuyển đến cơ quan nhà nước có thẩm quyền để giải quyết theo quy định của pháp luật Việt Nam.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </section>
 
           </div>
         </div>

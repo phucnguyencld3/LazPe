@@ -1571,7 +1571,11 @@ namespace PolyBabyAPI.Controllers
                     d.TotalPrice,
                     ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
                     VariantName = d.Variant?.VariantName,
-                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? d.Bundle?.ImageUrl)
+                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl 
+                        : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl 
+                        ?? d.Variant?.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl 
+                        ?? d.Bundle?.ImageUrl 
+                        ?? "")
                 }).ToList()
             };
         }
@@ -1925,7 +1929,11 @@ namespace PolyBabyAPI.Controllers
                     d.TotalPrice,
                     ProductName = d.Variant?.Product?.ProductName ?? d.Bundle?.Name ?? "N/A",
                     VariantName = d.Variant?.VariantName,
-                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? d.Bundle?.ImageUrl)
+                    ImageUrl = !string.IsNullOrEmpty(d.Variant?.ImageUrl) ? d.Variant.ImageUrl 
+                        : (d.Variant?.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl 
+                        ?? d.Variant?.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl 
+                        ?? d.Bundle?.ImageUrl 
+                        ?? "")
                 }).ToList()
             };
         }
