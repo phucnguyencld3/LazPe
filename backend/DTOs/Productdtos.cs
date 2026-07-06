@@ -21,6 +21,7 @@ namespace PolyBabyAPI.DTOs
         public decimal ProductDiscountPercent { get; set; }
         public int Stock { get; set; }
         public bool Status { get; set; }
+        public bool SupportsSubscription { get; set; }
 
         public int CategoryID { get; set; }
         public string CategoryName { get; set; } = string.Empty;
@@ -60,6 +61,7 @@ namespace PolyBabyAPI.DTOs
         public decimal ProductDiscountPercent { get; set; }
         public int Stock { get; set; }
         public bool Status { get; set; }
+        public bool SupportsSubscription { get; set; }
         public int CategoryID { get; set; }
         public int SupplierID { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -164,6 +166,8 @@ namespace PolyBabyAPI.DTOs
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]
         public int Stock { get; set; } = 0;
 
+        public bool SupportsSubscription { get; set; } = false;
+
         [Required(ErrorMessage = "Danh mục là bắt buộc")]
         public int CategoryID { get; set; }
 
@@ -201,6 +205,8 @@ namespace PolyBabyAPI.DTOs
 
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]
         public int Stock { get; set; }
+
+        public bool SupportsSubscription { get; set; } = false;
 
         [Required(ErrorMessage = "Danh mục là bắt buộc")]
         public int CategoryID { get; set; }
