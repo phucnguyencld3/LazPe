@@ -495,11 +495,11 @@ try
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
-        // 9. Job gửi thông báo Tổng kết cuối năm (Chạy mỗi 5 phút để test)
+        // 9. Job gửi thông báo Tổng kết cuối năm (Chạy lúc 10:00 sáng ngày 31/12 hàng năm)
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.BabyTimelineYearEndJob>(
             "baby-timeline-year-end-job",
             job => job.ExecuteAsync(),
-            "*/5 * * * *", 
+            "0 10 31 12 *", 
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }
