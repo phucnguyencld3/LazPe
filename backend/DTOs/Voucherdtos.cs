@@ -7,9 +7,8 @@ namespace PolyBabyAPI.DTOs
     {
         public class CreateVoucherRequest
         {
-            [Required(ErrorMessage = "Mã voucher là bắt buộc")]
             [StringLength(50)]
-            public string Code { get; set; }
+            public string? Code { get; set; }
 
             [Required(ErrorMessage = "Tên voucher là bắt buộc")]
             [StringLength(200)]

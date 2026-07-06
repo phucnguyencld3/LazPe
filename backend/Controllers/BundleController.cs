@@ -95,7 +95,7 @@ namespace PolyBabyAPI.Controllers
                         variantName = bi.Variant?.VariantName ?? "Unknown",
                         unitPrice = bi.Variant?.UnitPrice ?? 0,
                         stock = bi.Variant?.Stock ?? 0,
-                        imageUrl = bi.Variant?.ImageUrl ?? "",
+                        imageUrl = !string.IsNullOrEmpty(bi.Variant?.ImageUrl) ? bi.Variant.ImageUrl : (bi.Variant?.Product?.Images?.FirstOrDefault()?.ImageUrl ?? ""),
                         productName = bi.Variant?.Product?.ProductName ?? "",
                         sku = bi.Variant?.SKU ?? ""
                     }).ToList()
@@ -249,7 +249,7 @@ namespace PolyBabyAPI.Controllers
                         variantName = bi.Variant?.VariantName ?? "Unknown",
                         unitPrice = bi.Variant?.UnitPrice ?? 0,
                         stock = bi.Variant?.Stock ?? 0,
-                        imageUrl = bi.Variant?.ImageUrl ?? "",
+                        imageUrl = !string.IsNullOrEmpty(bi.Variant?.ImageUrl) ? bi.Variant.ImageUrl : (bi.Variant?.Product?.Images?.FirstOrDefault()?.ImageUrl ?? ""),
                         productName = bi.Variant?.Product?.ProductName ?? "",
                         sku = bi.Variant?.SKU ?? ""
                     }).ToList()
@@ -283,7 +283,7 @@ namespace PolyBabyAPI.Controllers
                     sku = v.SKU,
                     unitPrice = v.UnitPrice,
                     stock = v.Stock,
-                    imageUrl = v.ImageUrl ?? "",
+                    imageUrl = !string.IsNullOrEmpty(v.ImageUrl) ? v.ImageUrl : (v.Product?.Images?.FirstOrDefault()?.ImageUrl ?? ""),
                     productName = v.Product?.ProductName ?? "",
                     productID = v.ProductID
                 }).ToList();
@@ -616,7 +616,19 @@ namespace PolyBabyAPI.Controllers
             imageUrl = b.ImageUrl ?? "",
             stock = b.BundleItems == null || !b.BundleItems.Any()
                 ? 0
-                : b.BundleItems.Min(bi => bi.Variant != null && bi.Quantity > 0 ? (bi.Variant.Stock / bi.Quantity) : 0)
+                : b.BundleItems.Min(bi => bi.Variant != null && bi.Quantity > 0 ? (bi.Variant.Stock / bi.Quantity) : 0),
+            items = b.BundleItems?.Select(bi => new
+            {
+                bundleItemID = bi.BundleItemID,
+                variantID = bi.VariantID,
+                quantity = bi.Quantity,
+                variantName = bi.Variant?.VariantName ?? "Unknown",
+                unitPrice = bi.Variant?.UnitPrice ?? 0,
+                stock = bi.Variant?.Stock ?? 0,
+                imageUrl = !string.IsNullOrEmpty(bi.Variant?.ImageUrl) ? bi.Variant.ImageUrl : (bi.Variant?.Product?.Images?.FirstOrDefault()?.ImageUrl ?? ""),
+                productName = bi.Variant?.Product?.ProductName ?? "",
+                sku = bi.Variant?.SKU ?? ""
+            }).ToList()
         };
 
         #endregion

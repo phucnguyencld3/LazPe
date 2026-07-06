@@ -66,7 +66,7 @@ export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) =
   const errorMessage = hasPaymentError ? getVnPayErrorMessage(latestTx.responseCode) : null;
 
   return (
-    <div className="p-5 relative">
+    <div className="p-8 relative">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           {order.userAvatar && order.userAvatar.trim() !== "" ? (

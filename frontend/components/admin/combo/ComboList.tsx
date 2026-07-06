@@ -12,7 +12,8 @@ import {
   Tag, 
   AlertTriangle,
   Check,
-  X
+  X,
+  Eye
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { formatCurrency } from "@/lib/utils/formatters";
@@ -28,12 +29,14 @@ interface ComboListProps {
   token: string;
   onCreateClick: () => void;
   onEditClick: (bundleId: number) => void;
+  onViewClick: (bundleId: number) => void;
 }
 
 export const ComboList: React.FC<ComboListProps> = ({
   token,
   onCreateClick,
   onEditClick,
+  onViewClick
 }) => {
   const [bundles, setBundles] = useState<BundleResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -401,6 +404,13 @@ export const ComboList: React.FC<ComboListProps> = ({
                   {/* Quick Edit Overlay */}
                   <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-3">
                     <button
+                      onClick={() => onViewClick(bundle.bundleID)}
+                      className="p-2.5 bg-white text-slate-700 hover:text-primary rounded-full shadow-md hover:scale-110 active:scale-95 transition-all font-bold"
+                      title="Xem chi tiết Combo"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
                       onClick={() => onEditClick(bundle.bundleID)}
                       className="p-2.5 bg-white text-slate-700 hover:text-primary rounded-full shadow-md hover:scale-110 active:scale-95 transition-all font-bold"
                       title="Sửa Combo"
@@ -600,6 +610,13 @@ export const ComboList: React.FC<ComboListProps> = ({
 
                         <div className="w-px h-8 bg-slate-100 mx-1"></div>
 
+                        <button
+                          onClick={() => onViewClick(bundle.bundleID)}
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 transition-all cursor-pointer"
+                          title="Xem chi tiết"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                        </button>
                         <button
                           onClick={() => onEditClick(bundle.bundleID)}
                           className="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-all cursor-pointer"
