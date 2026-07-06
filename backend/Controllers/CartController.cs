@@ -61,7 +61,7 @@ namespace PolyBabyAPI.Controllers
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ", errors = ModelState });
             }
 
-            _logger.LogInformation("Received AddToCart: VariantID={VariantID}, BundleID={BundleID}, Quantity={Quantity}, SelectedGiftVariantId={SelectedGiftVariantId}", dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId);
+            _logger.LogInformation("Received AddToCart: VariantID={VariantID}, BundleID={BundleID}, Quantity={Quantity}, SelectedGiftVariantId={SelectedGiftVariantId}, Source={Source}", dto.VariantID, dto.BundleID, dto.Quantity, dto.SelectedGiftVariantId, dto.Source ?? "direct");
 
             // ✅ Kiểm tra phải có ít nhất VariantID hoặc BundleID
             if (!dto.IsValid)

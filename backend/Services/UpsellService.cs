@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs.Upsell;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.Services.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,17 +16,27 @@ namespace PolyBabyAPI.Services
     public class UpsellService : IUpsellService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMemoryCache _cache;
         
         // Trọng số chấm điểm
-        private const int CategoryWeight = 3;
-        private const int SupplierWeight = 2;
-        private const int BestSellerWeight = 2;
-        private const int PriceWeight = 1;
-        private const int StockWeight = 1;
+        private readonly int _categoryWeight;
+        private readonly int _supplierWeight;
+        private readonly int _bestSellerWeight;
+        private readonly int _priceWeight;
+        private readonly int _stockWeight;
+        private readonly int _cacheDurationMinutes;
 
-        public UpsellService(ApplicationDbContext context)
+        public UpsellService(ApplicationDbContext context, IMemoryCache cache, IConfiguration configuration)
         {
             _context = context;
+            _cache = cache;
+            
+            _categoryWeight = configuration.GetValue<int?>("UpsellConfig:CategoryWeight") ?? 3;
+            _supplierWeight = configuration.GetValue<int?>("UpsellConfig:SupplierWeight") ?? 2;
+            _bestSellerWeight = configuration.GetValue<int?>("UpsellConfig:BestSellerWeight") ?? 2;
+            _priceWeight = configuration.GetValue<int?>("UpsellConfig:PriceWeight") ?? 1;
+            _stockWeight = configuration.GetValue<int?>("UpsellConfig:StockWeight") ?? 1;
+            _cacheDurationMinutes = configuration.GetValue<int?>("UpsellConfig:CacheDurationMinutes") ?? 60;
         }
 
         public async Task<List<UpsellProductDto>> GetCheckoutUpsellAsync(string userId)
@@ -99,14 +112,24 @@ namespace PolyBabyAPI.Services
 
         private async Task<Dictionary<int, int>> LoadBestSellerAsync()
         {
-            // Lấy top 50 variant bán chạy nhất để chấm điểm (O(1) lookup), tránh N+1
-            var bestSellers = await _context.InvoiceDetails
-                .Where(id => id.VariantID.HasValue)
-                .GroupBy(id => id.VariantID.Value)
-                .Select(g => new { VariantID = g.Key, SoldQuantity = g.Sum(x => x.Quantity) })
-                .OrderByDescending(x => x.SoldQuantity)
-                .Take(50)
-                .ToDictionaryAsync(x => x.VariantID, x => x.SoldQuantity);
+            const string cacheKey = "BestSellers_Top50";
+            
+            if (!_cache.TryGetValue(cacheKey, out Dictionary<int, int> bestSellers))
+            {
+                // Lấy top 50 variant bán chạy nhất để chấm điểm (O(1) lookup), tránh N+1
+                bestSellers = await _context.InvoiceDetails
+                    .Where(id => id.VariantID.HasValue)
+                    .GroupBy(id => id.VariantID.Value)
+                    .Select(g => new { VariantID = g.Key, SoldQuantity = g.Sum(x => x.Quantity) })
+                    .OrderByDescending(x => x.SoldQuantity)
+                    .Take(50)
+                    .ToDictionaryAsync(x => x.VariantID, x => x.SoldQuantity);
+                    
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(_cacheDurationMinutes));
+                    
+                _cache.Set(cacheKey, bestSellers, cacheOptions);
+            }
                 
             return bestSellers;
         }
@@ -120,19 +143,19 @@ namespace PolyBabyAPI.Services
                 var product = candidate.Variant.Product;
                 
                 if (context.CategoryIds.Contains(product.CategoryID))
-                    candidate.Score += CategoryWeight;
+                    candidate.Score += _categoryWeight;
                     
                 if (context.SupplierIds.Contains(product.SupplierID))
-                    candidate.Score += SupplierWeight;
+                    candidate.Score += _supplierWeight;
                     
                 if (bestSellers.ContainsKey(candidate.Variant.VariantID))
-                    candidate.Score += BestSellerWeight;
+                    candidate.Score += _bestSellerWeight;
                     
                 if (candidate.Variant.UnitPrice < priceThreshold)
-                    candidate.Score += PriceWeight;
+                    candidate.Score += _priceWeight;
                     
                 if (candidate.Variant.Stock >= 10)
-                    candidate.Score += StockWeight;
+                    candidate.Score += _stockWeight;
             }
         }
 
@@ -154,17 +177,29 @@ namespace PolyBabyAPI.Services
 
         private List<UpsellProductDto> BuildUpsellDtos(List<UpsellCandidate> topUpsells)
         {
-            return topUpsells.Select(c => new UpsellProductDto
+            return topUpsells.Select(c => 
             {
-                VariantID = c.Variant.VariantID,
-                ProductID = c.Variant.ProductID,
-                ProductName = c.Variant.Product.ProductName,
-                VariantName = c.Variant.VariantName,
-                ImageUrl = c.Variant.ImageUrl ?? string.Empty,
-                UnitPrice = c.Variant.UnitPrice,
-                OriginalPrice = c.Variant.UnitPrice, // Simplified for MVP
-                DiscountPercent = c.Variant.VariantDiscountPercent,
-                Stock = c.Variant.Stock
+                decimal originalPrice = c.Variant.UnitPrice;
+                decimal discountPercent = c.Variant.VariantDiscountPercent;
+                decimal sellingPrice = originalPrice;
+                
+                if (discountPercent > 0)
+                {
+                    sellingPrice = originalPrice * (1 - discountPercent / 100);
+                }
+
+                return new UpsellProductDto
+                {
+                    VariantID = c.Variant.VariantID,
+                    ProductID = c.Variant.ProductID,
+                    ProductName = c.Variant.Product.ProductName,
+                    VariantName = c.Variant.VariantName,
+                    ImageUrl = c.Variant.ImageUrl ?? string.Empty,
+                    UnitPrice = sellingPrice, // Giá bán
+                    OriginalPrice = originalPrice, // Giá gốc
+                    DiscountPercent = discountPercent,
+                    Stock = c.Variant.Stock
+                };
             }).ToList();
         }
     }

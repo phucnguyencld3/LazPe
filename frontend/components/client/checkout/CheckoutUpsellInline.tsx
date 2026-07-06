@@ -64,6 +64,7 @@ export const CheckoutUpsellInline: React.FC<Props> = ({ onUpsellAdded }) => {
         userId: userId,
         variantId: variantId,
         quantity: 1,
+        source: "checkout_upsell"
       };
       
       const res = await fetch(`${API_BASE_URL}/Cart/add`, {
