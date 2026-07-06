@@ -24,6 +24,7 @@ namespace PolyBabyAPI.Interfaces
         Task<bool> SendNotificationNowAsync(int notificationId);
         Task<bool> PublishNotificationAsync(int notificationId); // Hangfire or Immediate
         Task<bool> CancelScheduledNotificationAsync(int notificationId);
+        Task<bool> SendSystemNotificationAsync(string userId, string title, string message);
 
         // Client - Operations
         Task<IEnumerable<UserNotificationDto>> GetUserNotificationsAsync(string userId, string? type = null, bool? isRead = null, int page = 1, int pageSize = 20);

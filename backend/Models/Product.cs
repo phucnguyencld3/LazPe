@@ -71,6 +71,9 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Đã xóa")]
         public bool IsDeleted { get; set; } = false;
 
+        [Display(Name = "Hỗ trợ Mua định kỳ")]
+        public bool SupportsSubscription { get; set; } = false;
+
         // Navigation
         [ForeignKey(nameof(CategoryID))]
         public virtual Categories? Category { get; set; }

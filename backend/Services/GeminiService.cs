@@ -853,5 +853,183 @@ namespace PolyBabyAPI.Services
             }
             return Task.FromResult(fakeEmbed);
         }
+
+        public async Task<string> AnalyzeImageForSearchAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return string.Empty;
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            var base64Data = Convert.ToBase64String(memoryStream.ToArray());
+            var mimeType = file.ContentType;
+
+            var requestBody = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Role = "user",
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = "Hãy mô tả ngắn gọn và chính xác nhất sản phẩm chính trong bức ảnh này bằng 1 đến 4 từ khóa (ví dụ: xe đẩy em bé, bỉm moony, bình sữa, ...). Chỉ trả về từ khóa tìm kiếm cốt lõi, không giải thích gì thêm." },
+                            new GeminiPart 
+                            { 
+                                InlineData = new GeminiInlineData 
+                                { 
+                                    MimeType = mimeType, 
+                                    Data = base64Data 
+                                } 
+                            }
+                        }
+                    }
+                }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody, _jsonOptions), Encoding.UTF8, "application/json");
+            string currentKey = GetNextApiKey();
+            string requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={currentKey}";
+            
+            var response = await _httpClient.PostAsync(requestUrl, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini Vision API Error: {Error}", err);
+                return string.Empty;
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<GeminiResponse>(responseString, _jsonOptions);
+            return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+        }
+
+        public async Task<PolyBabyAPI.Models.Gemini.ImageSearchResponse> AnalyzeImageAdvancedAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            var base64Data = Convert.ToBase64String(memoryStream.ToArray());
+            var mimeType = file.ContentType;
+
+            var requestBody = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Role = "user",
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = "Bạn là hệ thống AI phân tích hình ảnh tìm kiếm sản phẩm. Hãy phân tích hình ảnh này và trả về JSON theo đúng định dạng sau (chỉ trả về JSON hợp lệ, không Markdown, không text khác):\n- Nếu ảnh là logo thương hiệu: { \"type\": \"brand\", \"brand\": \"tên thương hiệu\", \"confidence\": 0.98 }\n- Nếu ảnh là một sản phẩm cụ thể: { \"type\": \"product\", \"product_name\": \"tên sản phẩm\", \"brand\": \"tên thương hiệu (nếu có)\", \"confidence\": 0.95 }\n- Nếu không chắc chắn hoặc chỉ là đồ vật chung chung: { \"type\": \"unknown\", \"keywords\": [\"từ khóa 1\", \"từ khóa 2\"] }" },
+                            new GeminiPart 
+                            { 
+                                InlineData = new GeminiInlineData 
+                                { 
+                                    MimeType = mimeType, 
+                                    Data = base64Data 
+                                } 
+                            }
+                        }
+                    }
+                },
+                GenerationConfig = new GeminiGenerationConfig
+                {
+                    ResponseMimeType = "application/json"
+                }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody, _jsonOptions), Encoding.UTF8, "application/json");
+            string currentKey = GetNextApiKey();
+            string requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={currentKey}";
+            
+            var response = await _httpClient.PostAsync(requestUrl, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini Vision API Error: {Error}", err);
+                throw new Exception($"Gemini API Error: {err}");
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<GeminiResponse>(responseString, _jsonOptions);
+            var jsonText = result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text?.Trim();
+            
+            if (string.IsNullOrEmpty(jsonText)) throw new Exception("AI returned empty response.");
+
+            // Remove markdown code blocks if the AI returns them despite responseMimeType
+            if (jsonText.StartsWith("```json"))
+            {
+                jsonText = jsonText.Substring(7);
+            }
+            if (jsonText.StartsWith("```"))
+            {
+                jsonText = jsonText.Substring(3);
+            }
+            if (jsonText.EndsWith("```"))
+            {
+                jsonText = jsonText.Substring(0, jsonText.Length - 3);
+            }
+            jsonText = jsonText.Trim();
+
+            try
+            {
+                return JsonSerializer.Deserialize<PolyBabyAPI.Models.Gemini.ImageSearchResponse>(jsonText, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to parse Gemini Vision JSON response: {jsonText}", jsonText);
+                throw new Exception($"Lỗi Parse JSON: {jsonText}. Chi tiết: {ex.Message}");
+            }
+        }
+
+        public async Task<string> TranscribeAudioAsync(IFormFile audio)
+        {
+            if (audio == null || audio.Length == 0) return string.Empty;
+
+            using var memoryStream = new MemoryStream();
+            await audio.CopyToAsync(memoryStream);
+            var base64Data = Convert.ToBase64String(memoryStream.ToArray());
+            var mimeType = audio.ContentType;
+
+            var requestBody = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Role = "user",
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = "Hãy chuyển đoạn âm thanh sau thành văn bản tiếng Việt. Chỉ xuất kết quả là những từ đã nói, không giải thích gì thêm." },
+                            new GeminiPart 
+                            { 
+                                InlineData = new GeminiInlineData 
+                                { 
+                                    MimeType = mimeType, 
+                                    Data = base64Data 
+                                } 
+                            }
+                        }
+                    }
+                }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody, _jsonOptions), Encoding.UTF8, "application/json");
+            string currentKey = GetNextApiKey();
+            string requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={currentKey}";
+            
+            var response = await _httpClient.PostAsync(requestUrl, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini Audio API Error: {Error}", err);
+                return string.Empty;
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<GeminiResponse>(responseString, _jsonOptions);
+            return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+        }
     }
 }

@@ -45,6 +45,7 @@ import { SpendingSection } from "@/components/client/profile/SpendingSection";
 import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
 import { WalletSection } from "@/components/client/profile/WalletSection";
 import { BabyTrackerSection } from "@/components/client/profile/BabyTrackerSection";
+import { SubscriptionsSection } from "@/components/client/profile/SubscriptionsSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -623,6 +624,7 @@ export default function ProfilePage() {
                       { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
                       { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "subscriptions", label: "Mua định kỳ", icon: "autorenew" },
                       { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
                       { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
@@ -657,6 +659,7 @@ export default function ProfilePage() {
                       { id: "address", label: "Địa chỉ", icon: "location_on" },
                       { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                       { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                      { id: "subscriptions", label: "Mua định kỳ", icon: "autorenew" },
                       { id: "messages", label: "Tin nhắn", icon: "chat" },
                       { id: "alerts", label: "Báo giá", icon: "add_alert" },
                       { id: "notifications", label: "Thông báo", icon: "notifications" },
@@ -758,6 +761,10 @@ export default function ProfilePage() {
                   handleTabChange("messages");
                 }}
               />
+            )}
+
+            {activeTab === "subscriptions" && (
+              <SubscriptionsSection token={token} />
             )}
 
             {activeTab === "alerts" && (
