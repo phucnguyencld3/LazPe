@@ -10,6 +10,7 @@ export interface AdminProductInfo {
   productDiscountPercent: number;
   stock: number;
   status: boolean;
+  supportsSubscription?: boolean;
   categoryID: number;
   categoryName: string;
   supplierID: number;
@@ -183,6 +184,7 @@ export interface AdminProductDetailInfo {
   productDiscountPercent: number;
   stock: number;
   status: boolean;
+  supportsSubscription?: boolean;
   categoryID: number;
   supplierID: number;
   createdAt: string;
@@ -526,6 +528,7 @@ export interface CreateProductPayload {
   stock?: number;
   categoryID: number;
   supplierID?: number | null;
+  supportsSubscription?: boolean;
 }
 
 export interface CreateFullProductPayload {
@@ -539,6 +542,7 @@ export interface CreateFullProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status?: boolean;
+  supportsSubscription?: boolean;
   images?: string[];
   options: {
     name: string;
@@ -628,6 +632,7 @@ export interface UpdateProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status: boolean;
+  supportsSubscription?: boolean;
   images?: string[];
   clearVariantImages?: boolean;
 }

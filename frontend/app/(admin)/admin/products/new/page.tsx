@@ -78,6 +78,7 @@ export default function CreateProductPage() {
   const [discountPercent, setDiscountPercent] = useState<number | "">("");
   const [stock, setStock] = useState<number | "">("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [supportsSubscription, setSupportsSubscription] = useState(false);
 
   // Lists from API
   const [categories, setCategories] = useState<CategorySelectOption[]>([]);
@@ -655,6 +656,7 @@ const handleSubmit = async (e?: React.FormEvent, skipConflictCheck = false) => {
       productDiscountPercent: discountPercent === "" ? 0 : Number(discountPercent),
       stock: options.length > 0 ? totalStock : (stock === "" ? 0 : Number(stock)),
       status: true,
+      supportsSubscription: supportsSubscription,
       options: options
         .filter(o => o.name.trim() && o.values.some(v => v.value.trim()))
         .map(o => ({
@@ -787,6 +789,28 @@ return (
               onUploadProductImage={handleUploadProductImage}
               onRemoveProductImage={handleRemoveProductImage}
             />
+            
+            {/* Auto-Replenishment Setting */}
+            <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm mt-8">
+              <div className="flex flex-col gap-1 mb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">autorenew</span>
+                    <h3 className="text-lg font-bold text-slate-800">Auto-Replenishment</h3>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={supportsSubscription}
+                      onChange={(e) => setSupportsSubscription(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Bật tính năng mua định kỳ (Auto-Replenishment) cho sản phẩm này. Cho phép khách hàng đăng ký mua tự động theo chu kỳ (Tuần, Tháng...).</p>
+              </div>
+            </section>
           </div>
 
           {/* Right Column - Pricing and stock */}

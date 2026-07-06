@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Star, Minus, Plus, ShoppingCart, Heart, Sparkles } from "lucide-react";
 import { Product, Variant } from "@/types";
 import CountdownTimer from "@/components/client/common/CountdownTimer";
+import { getUserSubscriptions, SubscriptionItem } from "@/lib/api";
 
 interface ProductDetailInfoProps {
   product: Product;
@@ -60,6 +61,27 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   setSelectedGiftId = () => {},
   isAddingToCart = false,
 }) => {
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token || !product.supportsSubscription) return;
+      
+      const subs = await getUserSubscriptions(token);
+      // Status: 1 (Active), 2 (Paused)
+      const hasActive = subs.some(s => s.productID === product.id && (s.status === 1 || s.status === 2));
+      setIsSubscribed(hasActive);
+    };
+    
+    fetchSubscriptions();
+    
+    // Listen for custom event to update status if user subscribes on this page
+    const handleSubscriptionSuccess = () => setIsSubscribed(true);
+    window.addEventListener("subscription_success", handleSubscriptionSuccess);
+    return () => window.removeEventListener("subscription_success", handleSubscriptionSuccess);
+  }, [product.id, product.supportsSubscription]);
+
   const maxAllowedQuantity = useMemo(() => {
     let limit = displayStock;
     if (activeFlashSaleItem) {
@@ -479,6 +501,33 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             </button>
           </div>
         </div>
+
+        {product.supportsSubscription && (
+          <div className="mt-4 pt-4 border-t border-slate-100 border-dashed">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 border border-emerald-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-emerald-600">autorenew</span>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-800">Mua định kỳ (Tự động Giao)</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">Tiết kiệm thêm 5% và không lo hết hàng</p>
+                </div>
+              </div>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open_subscription_modal', { detail: { product, activeVariant, quantity } }))}
+                disabled={isSubscribed}
+                className={`px-4 py-2 text-xs font-bold rounded-md shadow-md transition-colors shrink-0 ${
+                  isSubscribed 
+                    ? "bg-slate-200 text-slate-500 shadow-none cursor-not-allowed" 
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200"
+                }`}
+              >
+                {isSubscribed ? "Đã đăng ký" : "Đăng ký ngay"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

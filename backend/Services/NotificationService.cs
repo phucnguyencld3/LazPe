@@ -269,6 +269,64 @@ namespace PolyBabyAPI.Services
 
         #region Dispatch & Scheduling
 
+        public async Task<bool> SendSystemNotificationAsync(string userId, string title, string message)
+        {
+            try
+            {
+                // Create a system notification campaign just for this message
+                var notif = new Notification
+                {
+                    Code = "SYS-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
+                    Title = title,
+                    ShortDescription = message.Length > 100 ? message.Substring(0, 97) + "..." : message,
+                    Content = message,
+                    Type = NotificationType.System,
+                    Priority = NotificationPriority.Medium,
+                    CreatedBy = "System",
+                    CreatedAt = DateTime.Now,
+                    PublishedAt = DateTime.Now,
+                    Status = NotificationStatus.Sent
+                };
+
+                _context.Notifications.Add(notif);
+                await _context.SaveChangesAsync();
+
+                // Create the user notification
+                var userNotif = new UserNotification
+                {
+                    UserId = userId,
+                    NotificationId = notif.Id,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                };
+                
+                _context.UserNotifications.Add(userNotif);
+                await _context.SaveChangesAsync();
+
+                // Send real-time using SignalR
+                var userNotifDto = new UserNotificationDto
+                {
+                    Id = userNotif.Id,
+                    NotificationId = notif.Id,
+                    Title = notif.Title,
+                    ShortDescription = notif.ShortDescription,
+                    ThumbnailImage = notif.ThumbnailImage,
+                    Type = notif.Type.ToString(),
+                    IsRead = false,
+                    CreatedAt = userNotif.CreatedAt,
+                    ActionUrl = notif.ActionUrl
+                };
+
+                await _hubContext.Clients.User(userId).SendAsync("ReceiveNotification", userNotifDto);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to send system notification to user {userId}");
+                return false;
+            }
+        }
+
         public async Task<bool> SendNotificationNowAsync(int notificationId)
         {
             var notif = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId && !n.IsDeleted);

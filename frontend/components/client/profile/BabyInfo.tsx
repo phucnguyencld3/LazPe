@@ -72,12 +72,36 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
               Cập nhật thông tin các bé cưng để hệ thống tự động cá nhân hóa trải nghiệm mua sắm và hỗ trợ chat tư vấn tốt nhất.
             </p>
           </div>
-          <button
-            onClick={onEditClick}
-            className="text-[13px] bg-primary text-white hover:bg-primary/95 font-bold px-6 py-2.5 rounded-[10px] transition-all shadow-md shadow-rose-500/15 hover:shadow-rose-500/20 active:scale-95"
-          >
-            Thêm bé ngay
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onEditClick}
+              className="text-[13px] bg-primary text-white hover:bg-primary/95 font-bold px-6 py-2.5 rounded-[10px] transition-all shadow-md shadow-rose-500/15 hover:shadow-rose-500/20 active:scale-95"
+            >
+              Thêm bé ngay
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                  const res = await fetch('http://localhost:5101/api/BabyTimeline/SeedDemoData', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                  });
+                  const json = await res.json();
+                  if (json.success) {
+                    alert("Tạo dữ liệu thành công! Vui lòng F5 tải lại trang.");
+                  } else {
+                    alert("Lỗi: " + json.message);
+                  }
+                } catch (e) {
+                  alert("Lỗi kết nối");
+                }
+              }}
+              className="text-[13px] bg-amber-500 text-white hover:bg-amber-600 font-bold px-6 py-2.5 rounded-[10px] transition-all shadow-md shadow-amber-500/15 hover:shadow-amber-500/20 active:scale-95"
+            >
+              Tạo dữ liệu Demo
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -160,8 +184,16 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                     </div>
                   </div>
 
-                  {/* Sổ tay sức khỏe Button */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex justify-end">
+                  {/* Sổ tay sức khỏe & Hành trình Button */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-2">
+                    <Link
+                      href={`/baby-timeline/${baby.babyProfileID}`}
+                      className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                        isBoy ? "bg-purple-500 hover:bg-purple-600" : "bg-purple-500 hover:bg-purple-600"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">auto_awesome</span> Hành trình
+                    </Link>
                     <button
                       onClick={() => onOpenTracker && onOpenTracker(baby.babyProfileID)}
                       className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${

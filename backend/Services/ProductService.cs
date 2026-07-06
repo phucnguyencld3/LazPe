@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.DTOs;
+using PolyBabyAPI.Helpers;
 using PolyBabyAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
@@ -69,6 +70,16 @@ namespace PolyBabyAPI.Services
                     try
                     {
                         var matchingIds = await _searchEngineService.SearchProductsAsync(searchTerm);
+                        if (!matchingIds.Any())
+                        {
+                            // Thử tìm kiếm bằng keyword không dấu trên Meilisearch
+                            var noTone = StringHelper.RemoveVietnameseTones(searchTerm);
+                            if (noTone != searchTerm)
+                            {
+                                matchingIds = await _searchEngineService.SearchProductsAsync(noTone);
+                            }
+                        }
+
                         if (matchingIds.Any())
                         {
                             query = query.Where(p => matchingIds.Contains(p.ProductID));
@@ -76,13 +87,28 @@ namespace PolyBabyAPI.Services
                         }
                         else
                         {
-                            query = query.Where(p => p.ProductID == 0); // Force empty
+                            // Nếu vẫn không có, fallback về SQL
+                            var noTone = StringHelper.RemoveVietnameseTones(searchTerm).ToLower();
+                            var allProducts = _context.Products.Select(x => new { x.ProductID, x.ProductName }).ToList();
+                            var matchedIds = allProducts.Where(x => 
+                                (x.ProductName ?? "").ToLower().Contains(searchTerm.ToLower()) || 
+                                StringHelper.RemoveVietnameseTones(x.ProductName ?? "").ToLower().Contains(noTone)
+                            ).Select(x => x.ProductID).ToList();
+                            
+                            query = query.Where(p => matchedIds.Contains(p.ProductID));
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Meilisearch query failed. Fallback to SQL Server LIKE.");
-                        query = query.Where(p => p.ProductName.Contains(searchTerm));
+                        var noTone = StringHelper.RemoveVietnameseTones(searchTerm).ToLower();
+                        var allProducts = _context.Products.Select(x => new { x.ProductID, x.ProductName }).ToList();
+                        var matchedIds = allProducts.Where(x => 
+                            (x.ProductName ?? "").ToLower().Contains(searchTerm.ToLower()) || 
+                            StringHelper.RemoveVietnameseTones(x.ProductName ?? "").ToLower().Contains(noTone)
+                        ).Select(x => x.ProductID).ToList();
+                        
+                        query = query.Where(p => matchedIds.Contains(p.ProductID));
                     }
                 }
 
@@ -205,6 +231,7 @@ namespace PolyBabyAPI.Services
                             ProductDiscountPercent = p.ProductDiscountPercent,
                             Stock = p.Stock,
                             Status = p.Status,
+                            SupportsSubscription = p.SupportsSubscription,
                             CategoryID = p.CategoryID,
                             CategoryName = p.Category?.CategoryName ?? "",
                             SupplierID = p.SupplierID,
@@ -316,6 +343,7 @@ namespace PolyBabyAPI.Services
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
                     Status = product.Status,
+                    SupportsSubscription = product.SupportsSubscription,
                     CategoryID = product.CategoryID,
                     SupplierID = product.SupplierID,
                     CreatedAt = product.CreatedAt,
@@ -386,6 +414,7 @@ namespace PolyBabyAPI.Services
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
                     Status = product.Status,
+                    SupportsSubscription = product.SupportsSubscription,
                     CategoryID = product.CategoryID,
                     SupplierID = product.SupplierID,
                     CreatedAt = product.CreatedAt,
@@ -496,7 +525,8 @@ namespace PolyBabyAPI.Services
                     SupplierID = dto.SupplierID ?? 0, // Default supplier if not provided
                     CreatedAt = DateTime.Now,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    Status = true
+                    Status = true,
+                    SupportsSubscription = dto.SupportsSubscription
                 };
 
                 _context.Products.Add(product);
@@ -649,7 +679,8 @@ namespace PolyBabyAPI.Services
                     SupplierID = dto.SupplierID ?? 0,
                     CreatedAt = DateTime.Now,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    Status = dto.Status
+                    Status = dto.Status,
+                    SupportsSubscription = dto.SupportsSubscription
                 };
 
                 _context.Products.Add(product);
@@ -836,6 +867,7 @@ namespace PolyBabyAPI.Services
                 product.CategoryID = dto.CategoryID;
                 product.SupplierID = dto.SupplierID ?? product.SupplierID;
                 product.Status = dto.Status;
+                product.SupportsSubscription = dto.SupportsSubscription;
 
                 var newFinalPrice = dto.Price * (1m - (dto.ProductDiscountPercent / 100m));
                 var priceDelta = dto.Price - oldBasePrice;

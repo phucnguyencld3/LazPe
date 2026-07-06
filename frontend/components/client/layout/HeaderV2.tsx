@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { getProducts } from "@/lib/api";
 import { Product } from "@/types";
+import { ImageSearchButton } from '@/components/search/ImageSearchButton';
+import { VoiceSearchButton } from '@/components/search/VoiceSearchButton';
 
 export default function HeaderV2() {
   const [isAuth, setIsAuth] = useState(false);
@@ -26,6 +28,7 @@ export default function HeaderV2() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [similarSuggestions, setSimilarSuggestions] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -75,18 +78,60 @@ export default function HeaderV2() {
 
   // Fetch search suggestions
   useEffect(() => {
+    const removeVietnameseTones = (str: string) => {
+        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+        str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+        str = str.replace(/đ/g, "d");
+        str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+        str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+        str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+        str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+        str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+        str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+        str = str.replace(/Đ/g, "D");
+        return str;
+    };
+
     const fetchSuggestions = async () => {
       if (!debouncedSearchQuery.trim()) {
         setSuggestions([]);
+        setSimilarSuggestions([]);
         setIsSearching(false);
         return;
       }
 
       setIsSearching(true);
       try {
-        const result = await getProducts(1, 5, debouncedSearchQuery.trim());
+        const result = await getProducts(1, 8, debouncedSearchQuery.trim());
         if (result && result.items) {
-          setSuggestions(result.items);
+          const query = debouncedSearchQuery.trim().toLowerCase();
+          const queryNoTones = removeVietnameseTones(query);
+          
+          const exacts: Product[] = [];
+          const similars: Product[] = [];
+          
+          result.items.forEach((p: Product) => {
+             const pName = p.name ? p.name.toLowerCase() : '';
+             const pNameNoTones = removeVietnameseTones(pName);
+             
+             // Nếu từ khóa có dấu và match chính xác
+             if (pName.includes(query)) {
+                exacts.push(p);
+             } 
+             // Nếu không match chính xác nhưng match khi bỏ dấu
+             else if (pNameNoTones.includes(queryNoTones)) {
+                similars.push(p);
+             } else {
+                similars.push(p); 
+             }
+          });
+
+          setSuggestions(exacts.slice(0, 5));
+          setSimilarSuggestions(similars.slice(0, 4));
           setShowSuggestions(true);
         }
       } catch (error) {
@@ -169,6 +214,7 @@ export default function HeaderV2() {
         accessTokenFactory: () => token
       })
       .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.None)
       .build();
 
     connection.on("ReceiveNotification", (notif: UserNotificationItem) => {
@@ -182,7 +228,7 @@ export default function HeaderV2() {
       try {
         const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
         audio.volume = 0.4;
-        audio.play();
+        audio.play().catch(e => { console.warn("Audio play blocked/failed:", e); });
       } catch (e) {
         // Trình duyệt có thể block tự động phát tiếng
       }
@@ -303,8 +349,20 @@ export default function HeaderV2() {
                   }
                 }}
                 placeholder="Ba mẹ muốn tìm mua gì hôm nay?" 
-                className="w-full h-11 pl-5 pr-14 rounded-[10px] border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400"
+                className="w-full h-11 pl-5 pr-[120px] rounded-[10px] border-2 border-primary/20 bg-slate-50 focus:bg-white focus:outline-none focus:border-primary transition-all text-sm placeholder:text-slate-400"
               />
+              <div className="absolute right-[52px] top-1 bottom-1 flex items-center">
+                <VoiceSearchButton onSearchSuccess={(keyword) => {
+                  setSearchQuery(keyword);
+                  setShowSuggestions(false);
+                  router.push(`/products?search=${encodeURIComponent(keyword)}`);
+                }} />
+                <ImageSearchButton onSearchSuccess={(keyword) => {
+                  setSearchQuery(keyword);
+                  setShowSuggestions(false);
+                  router.push(`/products?search=${encodeURIComponent(keyword)}`);
+                }} />
+              </div>
               <button type="submit" className="absolute right-1 top-1 bottom-1 w-12 bg-primary hover:bg-primary/90 text-white rounded-[8px] flex items-center justify-center transition-colors">
                 <Search size={20} />
               </button>
@@ -318,36 +376,73 @@ export default function HeaderV2() {
                     <div className="w-5 h-5 border-2 border-slate-200 border-t-primary rounded-full animate-spin mr-2"></div>
                     <span className="text-sm font-medium">Đang tìm kiếm...</span>
                   </div>
-                ) : suggestions.length > 0 ? (
+                ) : (suggestions.length > 0 || similarSuggestions.length > 0) ? (
                   <div className="py-2">
-                    <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Sản phẩm gợi ý
-                    </div>
-                    <ul>
-                      {suggestions.map((product) => (
-                        <li key={product.id}>
-                          <Link
-                            href={`/products/${product.slug || product.id}`}
-                            className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors"
-                            onClick={() => setShowSuggestions(false)}
-                          >
-                            <div className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden flex-shrink-0 bg-white">
-                              {product.image ? (
-                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                                  <ShoppingCart size={14} className="text-slate-300" />
+                    {suggestions.length > 0 && (
+                      <>
+                        <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          Sản phẩm gợi ý
+                        </div>
+                        <ul>
+                          {suggestions.map((product) => (
+                            <li key={product.id}>
+                              <Link
+                                href={`/products/${product.slug || product.id}`}
+                                className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors"
+                                onClick={() => setShowSuggestions(false)}
+                              >
+                                <div className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden flex-shrink-0 bg-white">
+                                  {product.image ? (
+                                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                      <ShoppingCart size={14} className="text-slate-300" />
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 line-clamp-1">{product.name}</p>
-                              <p className="text-xs font-bold text-primary">{(product.discountPrice || product.price).toLocaleString("vi-VN")}đ</p>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 line-clamp-1">{product.name}</p>
+                                  <p className="text-xs font-bold text-primary">{(product.discountPrice || product.price).toLocaleString("vi-VN")}đ</p>
+                                </div>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+
+                    {similarSuggestions.length > 0 && (
+                      <>
+                        <div className="px-4 py-2 text-xs font-bold text-amber-500 uppercase tracking-wider border-t border-slate-50 mt-1">
+                          Có phải bạn muốn tìm?
+                        </div>
+                        <ul>
+                          {similarSuggestions.map((product) => (
+                            <li key={product.id}>
+                              <Link
+                                href={`/products/${product.slug || product.id}`}
+                                className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors"
+                                onClick={() => setShowSuggestions(false)}
+                              >
+                                <div className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden flex-shrink-0 bg-white">
+                                  {product.image ? (
+                                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                      <ShoppingCart size={14} className="text-slate-300" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 line-clamp-1">{product.name}</p>
+                                  <p className="text-xs font-bold text-primary">{(product.discountPrice || product.price).toLocaleString("vi-VN")}đ</p>
+                                </div>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                     <div className="px-2 pt-2 border-t border-slate-50 mt-1">
                       <button
                         onClick={handleSearchSubmit}

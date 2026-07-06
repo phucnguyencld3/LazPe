@@ -431,6 +431,7 @@ export default function CustomerChatWidget() {
         transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
       })
       .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.None)
       .build();
 
     connection.on("ReceiveMessage", (message: Message) => {

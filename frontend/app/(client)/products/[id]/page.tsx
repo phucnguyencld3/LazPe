@@ -10,6 +10,7 @@ import { getProductDetail, getProducts } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
 import { ProductAlertModal } from "@/components/client/products/ProductAlertModal";
+import { SubscriptionModal } from "@/components/client/products/SubscriptionModal";
 import { CompareButton } from "@/components/client/compare/CompareButton";
 import { ProductTabs } from "@/components/client/products/ProductTabs";
 import { RelatedProducts } from "@/components/client/products/RelatedProducts";
@@ -44,6 +45,14 @@ export default function ProductDetailPage() {
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+
+  // Listen to open subscription modal event
+  useEffect(() => {
+    const handleOpenSub = () => setIsSubscriptionModalOpen(true);
+    window.addEventListener('open_subscription_modal', handleOpenSub);
+    return () => window.removeEventListener('open_subscription_modal', handleOpenSub);
+  }, []);
 
   // Fetch product detail
   useEffect(() => {
@@ -599,6 +608,16 @@ export default function ProductDetailPage() {
         isOutOfStock={!displayInStock}
         currentPrice={displayDiscountPrice || displayPrice}
       />
+
+      {product && (
+        <SubscriptionModal
+          isOpen={isSubscriptionModalOpen}
+          onClose={() => setIsSubscriptionModalOpen(false)}
+          product={product}
+          variant={activeVariant}
+          quantity={quantity === 0 ? 1 : quantity}
+        />
+      )}
     </div>
   );
 }
