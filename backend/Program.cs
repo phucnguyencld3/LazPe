@@ -244,6 +244,7 @@ try
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyProfileService, PolyBabyAPI.Services.BabyProfileService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTrackerService, PolyBabyAPI.Services.BabyTrackerService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTimelineService, PolyBabyAPI.Services.BabyTimelineService>();
 
     // Core business services
     builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -328,6 +329,7 @@ try
     builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
     builder.Services.AddScoped<PolyBabyAPI.Jobs.ModelTrainingJob>();
     builder.Services.AddScoped<TrendModelTrainingJob>();
+    builder.Services.AddScoped<PolyBabyAPI.Jobs.BabyTimelineYearEndJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -481,6 +483,14 @@ try
             "auto-replenishment-job",
             service => service.ExecuteDueSubscriptionsAsync(),
             "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 9. Job gửi thông báo Tổng kết cuối năm (Chạy mỗi 5 phút để test)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.BabyTimelineYearEndJob>(
+            "baby-timeline-year-end-job",
+            job => job.ExecuteAsync(),
+            "*/5 * * * *", 
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

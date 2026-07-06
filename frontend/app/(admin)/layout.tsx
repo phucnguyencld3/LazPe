@@ -129,7 +129,7 @@ export default function AdminLayout({
       try {
         const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
         audio.volume = 0.4;
-        audio.play();
+        audio.play().catch(e => { console.warn("Audio play blocked/failed:", e); });
       } catch (e) {
         // blocked by browser
       }
