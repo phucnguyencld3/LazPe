@@ -75,6 +75,8 @@ namespace PolyBabyAPI.Data
         public DbSet<LoyaltyAuditLog> LoyaltyAuditLogs { get; set; }
         public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
         public DbSet<LoyaltyBirthdayGiftLog> LoyaltyBirthdayGiftLogs { get; set; }
+        public DbSet<LoyaltyVoucherRedemption> LoyaltyVoucherRedemptions { get; set; }
+        public DbSet<LoyaltyVoucherRedemptionHistory> LoyaltyVoucherRedemptionHistories { get; set; }
 
         // ===== Referral System =====
         public DbSet<ReferralRecord> ReferralRecords { get; set; }

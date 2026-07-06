@@ -15,7 +15,8 @@ namespace PolyBabyAPI.Models
     {
         PublicSaved = 1,
         ExclusiveCode = 2,
-        DirectAssigned = 3
+        DirectAssigned = 3,
+        LoyaltyRedeemed = 4
     }
 
     public class UserVoucher

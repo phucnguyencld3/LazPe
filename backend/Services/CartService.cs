@@ -331,18 +331,18 @@ namespace PolyBabyAPI.Services
                 return (false, validation.Message);
             }
 
-            var voucher = await _voucherService.GetVoucherByCodeAsync(voucherCode);
+            var walletVoucher = await _context.UserVouchers
+                .Include(uv => uv.Voucher)
+                .Where(uv => uv.UserID == cart.UserID
+                    && (uv.IssuedCode == voucherCode || uv.Voucher.Code == voucherCode)
+                    && uv.Status == UserVoucherStatus.Unused)
+                .FirstOrDefaultAsync();
+
+            var voucher = walletVoucher?.Voucher ?? await _voucherService.GetVoucherByCodeAsync(voucherCode);
             if (voucher == null)
             {
                 return (false, "Mã giảm giá không tồn tại");
             }
-
-            var walletVoucher = await _context.UserVouchers
-                .Include(uv => uv.Voucher)
-                .Where(uv => uv.UserID == cart.UserID
-                    && uv.VoucherID == voucher.VoucherID
-                    && uv.Status == UserVoucherStatus.Unused)
-                .FirstOrDefaultAsync();
 
             if (walletVoucher == null)
             {

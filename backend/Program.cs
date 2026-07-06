@@ -256,6 +256,8 @@ try
     builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
     builder.Services.AddScoped<IBannerService, BannerService>();
+    builder.Services.AddScoped<ILoyaltyVoucherRedemptionService, LoyaltyVoucherRedemptionService>();
+    // builder.Services.AddScoped<IReferralService, ReferralService>();
     builder.Services.AddScoped<IWalletSecurityService, WalletSecurityService>();
     builder.Services.AddScoped<IWithdrawEmailService, WithdrawEmailService>();
 
@@ -430,6 +432,13 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
             "loyalty-end-of-cycle-reset",
             job => job.ExecuteAsync(),
             "0 0 1 1,7 *",
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Services.LoyaltyVoucherRedemptionResetJob>(
+            "loyalty-voucher-redemption-monthly-reset",
+            job => job.ExecuteAsync(),
+            Cron.Monthly(1, 0, 0),
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 

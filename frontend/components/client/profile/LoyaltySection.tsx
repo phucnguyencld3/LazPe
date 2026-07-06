@@ -18,6 +18,7 @@ import {
 import { getLoyaltyProfile, getLoyaltyHistory, getLoyaltyTiers, LoyaltyProfileResponse, LoyaltyPointHistoryItem, LoyaltyTierClientResponse } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { formatPrivilegeDetailLines } from "@/lib/utils/formatters";
+import { RedeemVoucherSection } from "./RedeemVoucherSection";
 
 interface LoyaltySectionProps {
   token: string;
@@ -446,6 +447,17 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             );
           })}
         </div>
+      </section>
+
+      {/* NEW: VOUCHER REDEMPTION SECTION */}
+      <section className="bg-slate-50/50 rounded-[10px] p-5 border border-slate-100/60 shadow-sm">
+        <RedeemVoucherSection 
+          token={token} 
+          onRedeemSuccess={() => {
+            fetchProfileData();
+            fetchHistoryData();
+          }} 
+        />
       </section>
 
       {/* 4. POINT HISTORY TABLE WITH FILTERS */}

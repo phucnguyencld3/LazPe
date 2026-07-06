@@ -6,6 +6,7 @@ import { toast } from "@/lib/toast";
 import { Loader } from "lucide-react";
 import { Pagination } from "@/components/admin/shared/Pagination";
 import { formatCurrency, formatPrivilegeDetailLines } from "@/lib/utils/formatters";
+import { VoucherRedemptionConfig } from "@/components/admin/loyalty/VoucherRedemptionConfig";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -163,8 +164,8 @@ const getAuditActionLabel = (action: string): string => {
 
 export default function AdminLoyaltyPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "policies" | "tiers" | "history" | "settings">("dashboard");
-  const [subTab, setSubTab] = useState<"privileges" | "redeem" | "vouchers">("privileges");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "policies" | "tiers" | "voucher_redemptions" | "history" | "settings">("dashboard");
+  const [subTab, setSubTab] = useState<"privileges" | "redeem">("privileges");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -622,6 +623,9 @@ export default function AdminLoyaltyPage() {
       fetchConfigs();
       fetchPolicies();
       fetchVouchersList();
+    }
+    if (activeTab === "voucher_redemptions") {
+      fetchTiers();
     }
     if (activeTab === "history") {
       if (historySubTab === "points") {
@@ -1325,6 +1329,16 @@ export default function AdminLoyaltyPage() {
           Hạng & Đặc quyền
         </button>
         <button
+          onClick={() => setActiveTab("voucher_redemptions")}
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "voucher_redemptions"
+            ? "border-primary text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
+            }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">local_activity</span>
+          Voucher Đổi Điểm
+        </button>
+        <button
           onClick={() => setActiveTab("history")}
           className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "history"
             ? "border-primary text-primary"
@@ -1910,7 +1924,7 @@ export default function AdminLoyaltyPage() {
                                             </button>
                                           </div>
                                         </div>
-                                      ))
+                                        ))
                                   )}
                                 </div>
                               </div>
@@ -1928,6 +1942,24 @@ export default function AdminLoyaltyPage() {
               </div>
             </div>
           )}
+        </section>
+      )}
+
+      {/* -------------------- TAB 6: VOUCHER ĐỔI ĐIỂM (New Tab) -------------------- */}
+      {activeTab === "voucher_redemptions" && (
+        <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white rounded-[12px] shadow-sm border border-slate-200 p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">local_activity</span>
+              Quản lý Voucher Đổi Điểm
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Thiết lập các voucher cho phép khách hàng đổi bằng điểm tích lũy. Bạn có thể gán voucher cho mọi hạng hoặc chỉ riêng một hạng cụ thể.
+            </p>
+            <VoucherRedemptionConfig 
+              token={getHeaders().Authorization.replace("Bearer ", "")}
+            />
+          </div>
         </section>
       )}
 

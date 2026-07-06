@@ -3577,3 +3577,70 @@ export async function addVaccinationRecord(babyId: number, data: VaccinationReco
     return false;
   }
 }
+
+// ============================================
+// LOYALTY VOUCHER REDEMPTION APIs
+// ============================================
+
+export async function getLoyaltyRedeemVouchers(token: string) {
+  const res = await fetch(`${API_BASE_URL}/Loyalty/redeem-vouchers`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch redeem vouchers");
+  return res.json();
+}
+
+export async function redeemLoyaltyVoucher(redemptionId: number, token: string) {
+  const res = await fetch(`${API_BASE_URL}/Loyalty/redeem-vouchers/${redemptionId}/redeem`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to redeem voucher");
+  }
+  return res.json();
+}
+
+export async function getAdminLoyaltyVoucherRedemptions(token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch admin redemptions");
+  return res.json();
+}
+
+export async function createAdminLoyaltyVoucherRedemption(data: any, token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Failed to create config");
+  return res.json();
+}
+
+export async function updateAdminLoyaltyVoucherRedemption(id: number, data: any, token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Failed to update config");
+  return res.json();
+}
+
+export async function deleteAdminLoyaltyVoucherRedemption(id: number, token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to delete config");
+  return res.json();
+}
