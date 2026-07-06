@@ -35,6 +35,7 @@ namespace PolyBabyAPI.DTOs
 
         public int? SupplierID { get; set; }
         public bool Status { get; set; } = true;
+        public bool SupportsSubscription { get; set; } = false;
         public string? CreatedBy { get; set; }
 
         public List<CreateFullProductOptionDto> Options { get; set; } = new();

@@ -229,6 +229,7 @@ namespace PolyBabyAPI.Services
                             ProductDiscountPercent = p.ProductDiscountPercent,
                             Stock = p.Stock,
                             Status = p.Status,
+                            SupportsSubscription = p.SupportsSubscription,
                             CategoryID = p.CategoryID,
                             CategoryName = p.Category?.CategoryName ?? "",
                             SupplierID = p.SupplierID,
@@ -340,6 +341,7 @@ namespace PolyBabyAPI.Services
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
                     Status = product.Status,
+                    SupportsSubscription = product.SupportsSubscription,
                     CategoryID = product.CategoryID,
                     SupplierID = product.SupplierID,
                     CreatedAt = product.CreatedAt,
@@ -410,6 +412,7 @@ namespace PolyBabyAPI.Services
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
                     Status = product.Status,
+                    SupportsSubscription = product.SupportsSubscription,
                     CategoryID = product.CategoryID,
                     SupplierID = product.SupplierID,
                     CreatedAt = product.CreatedAt,
@@ -520,7 +523,8 @@ namespace PolyBabyAPI.Services
                     SupplierID = dto.SupplierID ?? 0, // Default supplier if not provided
                     CreatedAt = DateTime.Now,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    Status = true
+                    Status = true,
+                    SupportsSubscription = dto.SupportsSubscription
                 };
 
                 _context.Products.Add(product);
@@ -673,7 +677,8 @@ namespace PolyBabyAPI.Services
                     SupplierID = dto.SupplierID ?? 0,
                     CreatedAt = DateTime.Now,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    Status = dto.Status
+                    Status = dto.Status,
+                    SupportsSubscription = dto.SupportsSubscription
                 };
 
                 _context.Products.Add(product);
@@ -860,6 +865,7 @@ namespace PolyBabyAPI.Services
                 product.CategoryID = dto.CategoryID;
                 product.SupplierID = dto.SupplierID ?? product.SupplierID;
                 product.Status = dto.Status;
+                product.SupportsSubscription = dto.SupportsSubscription;
 
                 var newFinalPrice = dto.Price * (1m - (dto.ProductDiscountPercent / 100m));
                 var priceDelta = dto.Price - oldBasePrice;

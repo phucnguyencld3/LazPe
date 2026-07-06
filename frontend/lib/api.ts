@@ -150,6 +150,7 @@ export async function getProducts(
           rating: item.rating,
           ratingCount: item.ratingCount,
           specifications: item.specifications,
+          supportsSubscription: item.supportsSubscription,
         })),
         totalItems: data.totalItems ?? 0,
         totalPages: data.totalPages ?? 0,
@@ -255,6 +256,7 @@ export async function getProductDetail(id: number | string): Promise<Product | n
         variants: variants,
         productOptions: item.productOptions ?? [],
         specifications: item.specifications,
+        supportsSubscription: item.supportsSubscription,
       };
     }
     return null;
@@ -3572,6 +3574,75 @@ export async function addVaccinationRecord(babyId: number, data: VaccinationReco
     return response.ok;
   } catch (error) {
     console.error("Error adding vaccination record:", error);
+    return false;
+  }
+}
+
+// SUBSCRIPTION APIs
+export interface SubscriptionItem {
+  subscriptionID: number;
+  productID: number;
+  productName: string;
+  variantID?: number;
+  variantName?: string;
+  quantity: number;
+  frequencyType: number; // 1: Days, 2: Weeks, 3: Months
+  frequencyValue: number;
+  startDate: string;
+  nextBillingDate: string;
+  status: number; // 1: Active, 2: Paused, 3: Cancelled, 4: Completed
+  shippingAddressId: number;
+}
+
+export async function getUserSubscriptions(token: string): Promise<SubscriptionItem[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    const result = await response.json();
+    return result.success ? result.data : [];
+  } catch (error) {
+    console.error("Error fetching subscriptions:", error);
+    return [];
+  }
+}
+
+export async function cancelSubscription(id: number, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error canceling subscription:", error);
+    return false;
+  }
+}
+
+export async function pauseSubscription(id: number, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions/${id}/pause`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error pausing subscription:", error);
+    return false;
+  }
+}
+
+export async function resumeSubscription(id: number, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions/${id}/resume`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error resuming subscription:", error);
     return false;
   }
 }

@@ -65,6 +65,7 @@ export interface Product {
   quantityNeeded?: number;
   note?: string | null;
   priority?: string;
+  supportsSubscription?: boolean;
 }
 
 export interface Category {

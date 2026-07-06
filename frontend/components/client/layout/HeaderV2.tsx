@@ -214,6 +214,7 @@ export default function HeaderV2() {
         accessTokenFactory: () => token
       })
       .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.None)
       .build();
 
     connection.on("ReceiveNotification", (notif: UserNotificationItem) => {

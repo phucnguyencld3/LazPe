@@ -263,6 +263,7 @@ try
     builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<ISupplierService, SupplierService>();
     builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
     builder.Services.AddScoped<IProductAlertService, ProductAlertService>();
     builder.Services.AddScoped<IProductOptionService, ProductOptionService>();
     builder.Services.AddScoped<IVariantService, VariantService>(); 
@@ -471,6 +472,13 @@ try
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.WithdrawAutoRejectJob>(
             "withdraw-auto-reject-expired",
             job => job.ExecuteAsync(),
+            "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+        // 8. Job mua hàng định kỳ (Chạy mỗi 1 giờ)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Interfaces.ISubscriptionService>(
+            "auto-replenishment-job",
+            service => service.ExecuteDueSubscriptionsAsync(),
             "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
