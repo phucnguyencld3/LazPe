@@ -37,7 +37,8 @@ export default function CartPage() {
     clearCart,
     applyVoucher,
     autoApplyVouchers,
-    removeVoucher
+    removeVoucher,
+    addToCart
   } = useCart();
   const [checkedDetails, setCheckedDetails] = useState<Record<number, boolean>>({});
   
@@ -399,6 +400,7 @@ export default function CartPage() {
     toast.success("Chuyển hướng đến trang thanh toán đơn hàng...");
     router.push("/checkout");
   };
+
 
   // Checkbox helpers
   const handleToggleCheck = (detailId: number, associatedGiftId?: number) => {

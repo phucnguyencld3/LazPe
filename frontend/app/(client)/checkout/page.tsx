@@ -681,6 +681,9 @@ export default function CheckoutPage() {
             walletDiscount={walletDiscount}
             coinsDiscount={coinsDiscount}
             isWalletLocked={isWalletLocked}
+            onUpsellAdded={() => {
+              if (userId && token) initializeData(userId, token);
+            }}
           />
         </div>
 

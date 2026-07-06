@@ -250,6 +250,7 @@ try
     builder.Services.AddScoped<IBundleService, BundleService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<ICartService, CartService>();
+    builder.Services.AddScoped<IUpsellService, UpsellService>();
     builder.Services.AddScoped<IVoucherService, VoucherService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
     builder.Services.AddScoped<IStatisticsService, StatisticsService>();
