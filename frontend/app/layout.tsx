@@ -86,7 +86,18 @@ export default function RootLayout({
           <ProgressBar>
             {children}
             <DisclaimerModal />
-            <Toaster richColors position="top-right" closeButton visibleToasts={3} className="print:hidden" />
+            <Toaster 
+              richColors 
+              position="top-right" 
+              closeButton 
+              visibleToasts={3} 
+              className="print:hidden" 
+              toastOptions={{
+                classNames: {
+                  loading: 'bg-blue-50 text-blue-600 border-blue-100',
+                }
+              }}
+            />
             <div id="modal-root"></div>
           </ProgressBar>
         </GoogleProvider>

@@ -8,6 +8,8 @@ interface VoucherRedemptionConfigProps {
 }
 
 export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps) {
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL !== 'undefined') ? process.env.NEXT_PUBLIC_API_URL : "http://localhost:5101/api";
+
   const [configs, setConfigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -35,7 +37,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
     tierID: null as number | null,
     limitPerUserPerPeriod: 1,
     totalQuotaPerPeriod: 100,
-    resetCycle: "Monthly",
+    resetCycle: 1,
     resetDayOfMonth: 1,
     isActive: true,
   });
@@ -53,7 +55,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
 
   const fetchTiers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/AdminLoyalty/tiers`, {
+      const res = await fetch(`${API_URL}/AdminLoyalty/tiers`, {
         headers: getHeaders()
       });
       if (res.ok) {
@@ -70,7 +72,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
   const fetchConfigs = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/AdminLoyaltyVoucherRedemption`, {
+      const res = await fetch(`${API_URL}/admin/loyalty/voucher-redemptions`, {
         headers: getHeaders()
       });
       if (res.ok) {
@@ -87,7 +89,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
 
   const fetchVouchers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vouchers`, {
+      const res = await fetch(`${API_URL}/vouchers`, {
         headers: getHeaders()
       });
       if (res.ok) {
@@ -105,7 +107,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
       let finalVoucherID = formData.voucherID;
       
       if (voucherMode === "NEW" && formData.id === 0) {
-        const voucherRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vouchers`, {
+        const voucherRes = await fetch(`${API_URL}/vouchers`, {
           method: "POST",
           headers: getHeaders(),
           body: JSON.stringify({
@@ -146,8 +148,8 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
 
       const isUpdate = formData.id > 0;
       const url = isUpdate 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/AdminLoyaltyVoucherRedemption/${formData.id}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/AdminLoyaltyVoucherRedemption`;
+        ? `${API_URL}/admin/loyalty/voucher-redemptions/${formData.id}`
+        : `${API_URL}/admin/loyalty/voucher-redemptions`;
       
       const method = isUpdate ? "PUT" : "POST";
       
@@ -177,7 +179,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
   const handleDelete = async (id: number) => {
     if (!confirm("Bạn có chắc chắn muốn xóa cấu hình này?")) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/AdminLoyaltyVoucherRedemption/${id}`, {
+      const res = await fetch(`${API_URL}/admin/loyalty/voucher-redemptions/${id}`, {
         method: "DELETE",
         headers: getHeaders()
       });
@@ -194,9 +196,9 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
   const openEdit = (item: any) => {
     setFormData({
       id: item.id,
-      voucherID: item.voucherID,
+      voucherID: item.voucherId || item.voucherID,
       pointCost: item.pointCost,
-      tierID: item.tierID,
+      tierID: item.tierId || item.tierID,
       limitPerUserPerPeriod: item.limitPerUserPerPeriod,
       totalQuotaPerPeriod: item.totalQuotaPerPeriod,
       resetCycle: item.resetCycle,
@@ -215,7 +217,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
       tierID: null,
       limitPerUserPerPeriod: 1,
       totalQuotaPerPeriod: 100,
-      resetCycle: "Monthly",
+      resetCycle: 1,
       resetDayOfMonth: 1,
       isActive: true,
     });
@@ -251,9 +253,9 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
               <div>
                 <h5 className="text-sm text-slate-800 font-bold">
                   {c.voucher?.code} - {c.voucher?.name || c.voucher?.description}
-                  {c.tierID ? (
+                  {(c.tierId || c.tierID) ? (
                     <span className="ml-2 px-2 py-0.5 text-[10px] bg-amber-100 text-amber-700 rounded-full font-bold">
-                      Hạng: {tiers.find(t => t.tierID === c.tierID)?.tierName || c.tierID}
+                      Hạng: {tiers.find((t: any) => (t.tierId || t.tierID) === (c.tierId || c.tierID))?.tierName || (c.tierId || c.tierID)}
                     </span>
                   ) : (
                     <span className="ml-2 px-2 py-0.5 text-[10px] bg-slate-100 text-slate-600 rounded-full font-bold">
@@ -263,7 +265,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                 </h5>
                 <p className="text-xs text-slate-600 mt-1.5 font-medium">
                   Điểm đổi: <strong className="text-rose-600">{c.pointCost.toLocaleString()} điểm</strong> | 
-                  Chu kỳ: <strong>{c.resetCycle === "Monthly" ? "Hàng tháng" : c.resetCycle}</strong>
+                  Chu kỳ: <strong>{c.resetCycle === 1 ? "Hàng tháng" : (c.resetCycle === 0 ? "Không reset" : c.resetCycle)}</strong>
                 </p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Giới hạn: {c.limitPerUserPerPeriod} lần/chu kỳ/user | 
@@ -400,25 +402,25 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                           </div>
                           <div>
                             <label className="text-xs font-bold text-slate-700 block mb-1">Mức giảm</label>
-                            <input type="number" required min={1} value={newVoucherData.discountValue} onChange={e => setNewVoucherData({...newVoucherData, discountValue: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
+                            <input type="number" required min={1} value={newVoucherData.discountValue} onChange={e => setNewVoucherData({...newVoucherData, discountValue: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
                           </div>
                         </>
                       )}
                       
                       <div>
                         <label className="text-xs font-bold text-slate-700 block mb-1">Đơn tối thiểu</label>
-                        <input type="number" required min={0} value={newVoucherData.minOrderValue} onChange={e => setNewVoucherData({...newVoucherData, minOrderValue: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
+                        <input type="number" required min={0} value={newVoucherData.minOrderValue} onChange={e => setNewVoucherData({...newVoucherData, minOrderValue: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
                       </div>
                       
                       {newVoucherData.discountType === 1 && !newVoucherData.isFreeShipping ? (
                         <div>
                           <label className="text-xs font-bold text-slate-700 block mb-1">Giảm tối đa</label>
-                          <input type="number" required min={1} value={newVoucherData.maxDiscount} onChange={e => setNewVoucherData({...newVoucherData, maxDiscount: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
+                          <input type="number" required min={1} value={newVoucherData.maxDiscount} onChange={e => setNewVoucherData({...newVoucherData, maxDiscount: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
                         </div>
                       ) : (
                         <div>
                           <label className="text-xs font-bold text-slate-700 block mb-1">Số lượng phát hành</label>
-                          <input type="number" required min={1} value={newVoucherData.totalQuantity} onChange={e => setNewVoucherData({...newVoucherData, totalQuantity: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
+                          <input type="number" required min={1} value={newVoucherData.totalQuantity} onChange={e => setNewVoucherData({...newVoucherData, totalQuantity: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
                         </div>
                       )}
                     </div>
@@ -426,7 +428,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-bold text-slate-700 block mb-1">Số lượng phát hành</label>
-                          <input type="number" required min={1} value={newVoucherData.totalQuantity} onChange={e => setNewVoucherData({...newVoucherData, totalQuantity: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
+                          <input type="number" required min={1} value={newVoucherData.totalQuantity} onChange={e => setNewVoucherData({...newVoucherData, totalQuantity: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[6px] text-sm" />
                         </div>
                       </div>
                     )}
@@ -441,8 +443,8 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px]"
                   >
                     <option value="">-- Mọi hạng --</option>
-                    {tiers.map(t => (
-                      <option key={t.tierID} value={t.tierID}>
+                    {tiers.map((t: any) => (
+                      <option key={t.tierId || t.tierID} value={t.tierId || t.tierID}>
                         {t.tierName}
                       </option>
                     ))}
@@ -455,7 +457,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                     <input 
                       type="number" required min={1}
                       value={formData.pointCost}
-                      onChange={e => setFormData({...formData, pointCost: parseInt(e.target.value)})}
+                      onChange={e => setFormData({...formData, pointCost: parseInt(e.target.value) || 0})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px]"
                     />
                   </div>
@@ -464,7 +466,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                     <input 
                       type="number" required min={1}
                       value={formData.limitPerUserPerPeriod}
-                      onChange={e => setFormData({...formData, limitPerUserPerPeriod: parseInt(e.target.value)})}
+                      onChange={e => setFormData({...formData, limitPerUserPerPeriod: parseInt(e.target.value) || 0})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px]"
                     />
                   </div>
@@ -475,11 +477,11 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                     <label className="text-sm font-bold text-slate-700 block mb-2">Chu kỳ reset</label>
                     <select 
                       value={formData.resetCycle}
-                      onChange={e => setFormData({...formData, resetCycle: e.target.value})}
+                      onChange={e => setFormData({...formData, resetCycle: parseInt(e.target.value)})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px]"
                     >
-                      <option value="None">Không reset (Chỉ dùng 1 lần)</option>
-                      <option value="Monthly">Hàng tháng</option>
+                      <option value={0}>Không bao giờ</option>
+                      <option value={1}>Hàng tháng</option>
                     </select>
                   </div>
                   <div>
@@ -487,7 +489,7 @@ export function VoucherRedemptionConfig({ token }: VoucherRedemptionConfigProps)
                     <input 
                       type="number" required min={1}
                       value={formData.totalQuotaPerPeriod}
-                      onChange={e => setFormData({...formData, totalQuotaPerPeriod: parseInt(e.target.value)})}
+                      onChange={e => setFormData({...formData, totalQuotaPerPeriod: parseInt(e.target.value) || 0})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[8px]"
                     />
                   </div>

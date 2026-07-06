@@ -1381,7 +1381,7 @@ export default function AdminLoyaltyPage() {
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng điểm phát hành</span>
                   </div>
-                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsIssued.toLocaleString()}đ</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsIssued.toLocaleString()} điểm</span>
                 </div>
 
                 {/* Spent */}
@@ -1392,7 +1392,7 @@ export default function AdminLoyaltyPage() {
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm đã sử dụng</span>
                   </div>
-                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsSpent.toLocaleString()}đ</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsSpent.toLocaleString()} điểm</span>
                 </div>
 
                 {/* Remaining */}
@@ -1403,7 +1403,7 @@ export default function AdminLoyaltyPage() {
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm tồn trong ví</span>
                   </div>
-                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsRemaining.toLocaleString()}đ</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsRemaining.toLocaleString()} điểm</span>
                 </div>
 
                 {/* Upgrade Rate */}

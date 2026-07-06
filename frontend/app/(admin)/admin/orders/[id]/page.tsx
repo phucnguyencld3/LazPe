@@ -206,201 +206,213 @@ export default function OrderDetailsPage() {
         />
       </header>
 
-      <div className="mt-2 space-y-5 animate-in fade-in duration-300">
+      <div className="mt-2 animate-in fade-in duration-300">
         
-        {/* Main Grid containing Stepper, Cost Summary, Customer Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-          
-          {/* Left Column: Stepper and Customer Info */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Progress Timeline Graphic */}
-            <div className="bg-white p-4 md:py-5 md:px-8 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="relative flex justify-between items-center max-w-4xl mx-auto">
-                {/* Background Line Connector */}
-                <div className="absolute top-5 left-0 w-full h-1 bg-slate-100 -z-0">
-                  <div
-                    className="h-full bg-primary/70 transition-all duration-500"
-                    style={{
-                      width: (order.statusCode === 6 || order.statusCode === 7 || order.statusCode === 9 || order.statusCode === 10 || order.returnReason) ? (
-                        order.statusCode === 0 ? "0%" :
-                        order.statusCode === 1 ? "20%" :
-                        order.statusCode === 2 ? "40%" :
-                        order.statusCode === 3 ? "60%" :
-                        [6, 9, 10].includes(order.statusCode) ? "80%" :
-                        order.statusCode === 7 ? "100%" : "60%"
-                      ) : (
-                        order.statusCode === 0 ? "0%" :
-                        order.statusCode === 1 ? "33.33%" :
-                        order.statusCode === 2 ? "66.66%" : "100%"
-                      )
-                    }}
-                  />
+        {/* Main Consolidated Wrapper */}
+        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100">
+            
+            {/* Left Column (8/12): Stepper, Customer, Return, Products */}
+            <div className="lg:col-span-8 flex flex-col divide-y divide-slate-100">
+              
+              {/* Progress Timeline Graphic */}
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-base font-bold text-slate-800 uppercase tracking-wider">Trạng thái đơn hàng</h3>
                 </div>
+                <div className="relative flex justify-between items-center max-w-4xl mx-auto mt-4">
+                  {/* Background Line Connector */}
+                  <div className="absolute top-5 left-0 w-full h-1 bg-slate-100 -z-0">
+                    <div
+                      className="h-full bg-primary/70 transition-all duration-500"
+                      style={{
+                        width: (order.statusCode === 6 || order.statusCode === 7 || order.statusCode === 9 || order.statusCode === 10 || order.returnReason) ? (
+                          order.statusCode === 0 ? "0%" :
+                          order.statusCode === 1 ? "20%" :
+                          order.statusCode === 2 ? "40%" :
+                          order.statusCode === 3 ? "60%" :
+                          [6, 9, 10].includes(order.statusCode) ? "80%" :
+                          order.statusCode === 7 ? "100%" : "60%"
+                        ) : (
+                          order.statusCode === 0 ? "0%" :
+                          order.statusCode === 1 ? "33.33%" :
+                          order.statusCode === 2 ? "66.66%" : "100%"
+                        )
+                      }}
+                    />
+                  </div>
 
-                {/* Step 1: Ordered */}
-                <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 0
-                    ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
-                    : "bg-white text-slate-300 border-slate-200"
-                    }`}>
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>list_alt</span>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${order.statusCode >= 0 ? "text-primary" : "text-slate-400"}`}>Đã đặt hàng</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{formatDate(order.createdAt).split(" ")[0]}</p>
-                  </div>
-                </div>
-
-                {/* Step 2: Confirmed */}
-                <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 1
-                    ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
-                    : "bg-white text-slate-300 border-slate-200"
-                    }`}>
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${order.statusCode >= 1 ? "text-primary" : "text-slate-400"}`}>Đã xác nhận</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">
-                      {order.confirmedAt ? formatDate(order.confirmedAt).split(" ")[0] : "--/--"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 3: Shipping */}
-                <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 2
-                    ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
-                    : "bg-white text-slate-300 border-slate-200"
-                    }`}>
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${order.statusCode >= 2 ? "text-primary" : "text-slate-400"}`}>Đang giao</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">
-                      {order.shippedAt ? formatDate(order.shippedAt).split(" ")[0] : "--/--"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 4: Completed */}
-                <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${(order.statusCode >= 3 || [6,7,9,10].includes(order.statusCode))
-                    ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm"
-                    : "bg-white text-slate-300 border-slate-200"
-                    }`}>
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${(order.statusCode >= 3 || [6,7,9,10].includes(order.statusCode)) ? "text-emerald-600" : "text-slate-400"}`}>Hoàn tất</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">
-                      {order.completedAt ? formatDate(order.completedAt).split(" ")[0] : "--/--"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 5: Return (Conditional) */}
-                {([6,7,9,10].includes(order.statusCode) || order.returnReason) && (
+                  {/* Step 1: Ordered */}
                   <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all 
-                      ${order.statusCode === 10 ? "bg-red-50 text-red-500 border-red-400 font-bold shadow-sm" : 
-                        ([6,7,9].includes(order.statusCode)) ? "bg-orange-50 text-orange-500 border-orange-400 font-bold shadow-sm"
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 0
+                      ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
                       : "bg-white text-slate-300 border-slate-200"
                       }`}>
-                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>{order.statusCode === 10 ? 'cancel' : 'assignment_return'}</span>
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>list_alt</span>
                     </div>
                     <div className="text-center">
-                      <p className={`text-xs font-bold ${order.statusCode === 10 ? "text-red-600" : ([6,7,9].includes(order.statusCode)) ? "text-orange-600" : "text-slate-400"}`}>
-                        {order.statusCode === 10 ? "Từ chối hoàn hàng" : 
-                         (order.statusCode === 9 || order.statusCode === 7) ? "Đã duyệt trả hàng" : "Yêu cầu trả hàng"}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-semibold">
-                        {order.statusCode === 7 || order.statusCode === 9 ? formatDate(order.cancelledAt || order.completedAt || order.createdAt).split(" ")[0] : "--/--"}
-                      </p>
+                      <p className={`text-xs font-bold ${order.statusCode >= 0 ? "text-primary" : "text-slate-400"}`}>Đã đặt hàng</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">{formatDate(order.createdAt).split(" ")[0]}</p>
                     </div>
                   </div>
-                )}
 
-                {/* Step 6: Refund (Conditional) */}
-                {([6,7,9,10].includes(order.statusCode) || order.returnReason) && (
+                  {/* Step 2: Confirmed */}
                   <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all 
-                      ${order.statusCode === 7 ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm" : 
-                      "bg-white text-slate-300 border-slate-200"
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 1
+                      ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
+                      : "bg-white text-slate-300 border-slate-200"
                       }`}>
-                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>paid</span>
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                     </div>
                     <div className="text-center">
-                      <p className={`text-xs font-bold ${order.statusCode === 7 ? "text-emerald-600" : "text-slate-400"}`}>
-                        Đã hoàn tiền
-                      </p>
+                      <p className={`text-xs font-bold ${order.statusCode >= 1 ? "text-primary" : "text-slate-400"}`}>Đã xác nhận</p>
                       <p className="text-[10px] text-slate-400 font-semibold">
-                        {order.statusCode === 7 ? formatDate(order.cancelledAt || order.completedAt || order.createdAt).split(" ")[0] : "--/--"}
+                        {order.confirmedAt ? formatDate(order.confirmedAt).split(" ")[0] : "--/--"}
                       </p>
                     </div>
                   </div>
-                )}
+
+                  {/* Step 3: Shipping */}
+                  <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${order.statusCode >= 2
+                      ? "bg-primary/5 text-primary border-primary font-bold shadow-sm"
+                      : "bg-white text-slate-300 border-slate-200"
+                      }`}>
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-xs font-bold ${order.statusCode >= 2 ? "text-primary" : "text-slate-400"}`}>Đang giao</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">
+                        {order.shippedAt ? formatDate(order.shippedAt).split(" ")[0] : "--/--"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 4: Completed */}
+                  <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${(order.statusCode >= 3 || [6,7,9,10].includes(order.statusCode))
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm"
+                      : "bg-white text-slate-300 border-slate-200"
+                      }`}>
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-xs font-bold ${(order.statusCode >= 3 || [6,7,9,10].includes(order.statusCode)) ? "text-emerald-600" : "text-slate-400"}`}>Hoàn tất</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">
+                        {order.completedAt ? formatDate(order.completedAt).split(" ")[0] : "--/--"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 5: Return (Conditional) */}
+                  {([6,7,9,10].includes(order.statusCode) || order.returnReason) && (
+                    <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all 
+                        ${order.statusCode === 10 ? "bg-red-50 text-red-500 border-red-400 font-bold shadow-sm" : 
+                          ([6,7,9].includes(order.statusCode)) ? "bg-orange-50 text-orange-500 border-orange-400 font-bold shadow-sm"
+                        : "bg-white text-slate-300 border-slate-200"
+                        }`}>
+                        <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>{order.statusCode === 10 ? 'cancel' : 'assignment_return'}</span>
+                      </div>
+                      <div className="text-center">
+                        <p className={`text-xs font-bold ${order.statusCode === 10 ? "text-red-600" : ([6,7,9].includes(order.statusCode)) ? "text-orange-600" : "text-slate-400"}`}>
+                          {order.statusCode === 10 ? "Từ chối hoàn hàng" : 
+                           (order.statusCode === 9 || order.statusCode === 7) ? "Đã duyệt trả hàng" : "Yêu cầu trả hàng"}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          {order.statusCode === 7 || order.statusCode === 9 ? formatDate(order.cancelledAt || order.completedAt || order.createdAt).split(" ")[0] : "--/--"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 6: Refund (Conditional) */}
+                  {([6,7,9,10].includes(order.statusCode) || order.returnReason) && (
+                    <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all 
+                        ${order.statusCode === 7 ? "bg-emerald-50 text-emerald-600 border-emerald-500 font-bold shadow-sm" : 
+                        "bg-white text-slate-300 border-slate-200"
+                        }`}>
+                        <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>paid</span>
+                      </div>
+                      <div className="text-center">
+                        <p className={`text-xs font-bold ${order.statusCode === 7 ? "text-emerald-600" : "text-slate-400"}`}>
+                          Đã hoàn tiền
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          {order.statusCode === 7 ? formatDate(order.cancelledAt || order.completedAt || order.createdAt).split(" ")[0] : "--/--"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Customer Info */}
-            <div className="bg-white rounded-[12px] shadow-sm border border-slate-100 overflow-hidden">
-              <OrderCustomerInfo order={order} />
-            </div>
-          </div>
-
-          {/* Right Column: Cost Summary */}
-          <div className="lg:col-span-1 h-full">
-            <OrderCostSummary order={order} />
-          </div>
-        </div>
-
-        {/* Return Request Details (Full Width) */}
-        {order?.returnReason && (order.statusCode === 6 || order.statusCode === 7 || order.statusCode === 9 || order.statusCode === 10) && (
-          <div className={`bg-white border p-4 rounded-[12px] shadow-sm ${order.statusCode === 9 ? 'border-slate-300' : 'border-orange-200'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className={`${order.statusCode === 9 ? 'text-slate-500' : 'text-orange-500'} shrink-0`} size={20} />
-              <h3 className={`font-bold text-sm md:text-base ${order.statusCode === 9 ? 'text-slate-700' : 'text-orange-800'}`}>
-                Yêu cầu hoàn trả {
-                  order.statusCode === 7 ? "đã được xử lý" 
-                  : order.statusCode === 9 ? "đã duyệt chờ nhận hàng"
-                  : order.statusCode === 10 ? "đã bị từ chối"
-                  : "đang chờ xử lý"
-                }
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-              <div className="space-y-2 text-sm text-slate-700 bg-white p-3 rounded-xl border border-slate-100">
-                <p className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Thông tin yêu cầu</p>
-                <p><strong>Lý do:</strong> {order.returnReason}</p>
-                {order.returnDescription && <p><strong>Mô tả chi tiết:</strong> {order.returnDescription}</p>}
-                {order.refundMethod !== undefined && (
-                  <p><strong>Phương thức nhận tiền hoàn:</strong> {order.refundMethod === 1 ? 'Ví LazPe' : 'Xu LazPe'}</p>
-                )}
+              {/* Customer Info */}
+              <div>
+                <OrderCustomerInfo order={order} />
               </div>
-              
-              {order.returnImageUrls && (
-                <div className="bg-white p-3 rounded-xl border border-slate-100">
-                  <p className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 text-sm">Hình ảnh minh chứng</p>
-                  <div className="flex flex-wrap gap-3">
-                    {order.returnImageUrls.split(",").map((url: string, idx: number) => (
-                      <img 
-                        key={idx} 
-                        src={url} 
-                        alt={`Minh chứng ${idx+1}`} 
-                        className="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-105 hover:opacity-80 transition-all duration-200" 
-                        onClick={() => setSelectedImage(url)}
-                      />
-                    ))}
+
+              {/* Return Request Details (If applicable) */}
+              {order?.returnReason && (order.statusCode === 6 || order.statusCode === 7 || order.statusCode === 9 || order.statusCode === 10) && (
+                <div className={`p-8 ${order.statusCode === 9 ? 'bg-slate-50' : 'bg-orange-50/30'}`}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertTriangle className={`${order.statusCode === 9 ? 'text-slate-500' : 'text-orange-500'} shrink-0`} size={20} />
+                    <h3 className={`font-bold text-sm md:text-base uppercase tracking-wider ${order.statusCode === 9 ? 'text-slate-700' : 'text-orange-800'}`}>
+                      Yêu cầu hoàn trả {
+                        order.statusCode === 7 ? "đã được xử lý" 
+                        : order.statusCode === 9 ? "đã duyệt chờ nhận hàng"
+                        : order.statusCode === 10 ? "đã bị từ chối"
+                        : "đang chờ xử lý"
+                      }
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    <div className="space-y-2 text-sm text-slate-700 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                      <p className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Thông tin yêu cầu</p>
+                      <p><strong>Lý do:</strong> {order.returnReason}</p>
+                      {order.returnDescription && <p><strong>Mô tả chi tiết:</strong> {order.returnDescription}</p>}
+                      {order.refundMethod !== undefined && (
+                        <p><strong>Phương thức nhận tiền hoàn:</strong> {order.refundMethod === 1 ? 'Ví LazPe' : 'Xu LazPe'}</p>
+                      )}
+                    </div>
+                    
+                    {order.returnImageUrls && (
+                      <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                        <p className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 text-sm">Hình ảnh minh chứng</p>
+                        <div className="flex flex-wrap gap-3">
+                          {order.returnImageUrls.split(",").map((url: string, idx: number) => (
+                            <img 
+                              key={idx} 
+                              src={url} 
+                              alt={`Minh chứng ${idx+1}`} 
+                              className="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-105 hover:opacity-80 transition-all duration-200" 
+                              onClick={() => setSelectedImage(url)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        )}
 
-        <OrderProductList order={order} />
+              {/* Product List */}
+              <div className="bg-white">
+                <OrderProductList order={order} />
+              </div>
+            </div>
+
+            {/* Right Column (4/12): Cost Summary */}
+            <div className="lg:col-span-4 flex flex-col divide-y divide-slate-100 bg-slate-50/50">
+              <OrderCostSummary order={order} />
+            </div>
+            
+          </div>
+        </div>
       </div>
+
+
 
       <CancelOrderModal
         isOpen={showCancelModal}

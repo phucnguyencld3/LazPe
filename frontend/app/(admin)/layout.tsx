@@ -569,7 +569,7 @@ export default function AdminLayout({
 
           </div>
           
-          <nav className="flex-1 space-y-md pb-4">
+          <nav className="flex-1 space-y-2 pb-4">
             {/* TRUNG TÂM ĐIỀU HÀNH */}
             <div className="space-y-1">
               {isSidebarExpanded ? (

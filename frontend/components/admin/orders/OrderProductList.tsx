@@ -7,9 +7,9 @@ interface OrderProductListProps {
 
 export const OrderProductList: React.FC<OrderProductListProps> = ({ order }) => {
   return (
-    <div className="bg-white rounded-[12px] shadow-sm border border-slate-100 overflow-hidden">
-      <div className="p-4 border-b border-slate-100">
-        <h3 className="text-base font-bold text-slate-800">Danh sách sản phẩm</h3>
+    <div className="overflow-hidden">
+      <div className="p-8 border-b border-slate-100 flex items-center gap-2">
+        <h3 className="text-base font-bold text-slate-800 uppercase tracking-wider">Danh sách sản phẩm</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">

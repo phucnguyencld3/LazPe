@@ -6,9 +6,10 @@ import { Voucher } from '@/types';
 import { toast } from 'sonner';
 import { Ticket, Gift, Sparkles, Clock, CheckCircle, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { RedeemVoucherSection } from '@/components/client/profile/RedeemVoucherSection';
 
 export default function VoucherHubPage() {
-  const [activeTab, setActiveTab] = useState<'public' | 'wallet'>('public');
+  const [activeTab, setActiveTab] = useState<'public' | 'wallet' | 'redeem'>('public');
   const [publicVouchers, setPublicVouchers] = useState<Voucher[]>([]);
   const [walletVouchers, setWalletVouchers] = useState<UserWalletVoucher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,7 +216,7 @@ export default function VoucherHubPage() {
 
         {/* Tabs & Code Activation */}
         <div className="p-4 md:px-8 md:pb-6 flex flex-col gap-4 bg-white border-t border-slate-100">
-          <div className="bg-slate-50 rounded-[8px] p-1 flex w-full max-w-[400px] mx-auto border border-slate-100/50">
+          <div className="bg-slate-50 rounded-[8px] p-1 flex w-full max-w-[500px] mx-auto border border-slate-100/50">
             <button
               onClick={() => setActiveTab('public')}
               className={`flex-1 py-2 rounded-[6px] font-bold text-[13px] transition-all whitespace-nowrap text-center ${
@@ -225,6 +226,16 @@ export default function VoucherHubPage() {
               }`}
             >
               Voucher Săn Sale
+            </button>
+            <button
+              onClick={() => setActiveTab('redeem')}
+              className={`flex-1 py-2 rounded-[6px] font-bold text-[13px] transition-all whitespace-nowrap text-center ${
+                activeTab === 'redeem' 
+                  ? 'bg-white text-orange-600 shadow-sm border border-slate-100/50' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Voucher Đổi Điểm
             </button>
             <button
               onClick={() => setActiveTab('wallet')}
@@ -276,6 +287,27 @@ export default function VoucherHubPage() {
                   <Ticket size={48} className="mx-auto text-slate-300 mb-4" />
                   <h3 className="text-lg font-bold text-slate-700 mb-1">Chưa có voucher nào</h3>
                   <p className="text-slate-500 text-sm">Hiện tại hệ thống không có voucher công khai nào. Vui lòng quay lại sau!</p>
+                </div>
+              )
+            )}
+
+            {activeTab === 'redeem' && (
+              !token ? (
+                <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Gift className="text-orange-500" size={32} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-700 mb-2">Đăng nhập để Đổi Voucher</h3>
+                  <p className="text-slate-500 text-sm mb-6 max-w-[400px] mx-auto">
+                    Bạn cần đăng nhập để xem danh sách voucher có thể đổi bằng điểm tích lũy.
+                  </p>
+                  <a href="/login?redirect=/vouchers" className="inline-block bg-orange-500 text-white px-8 py-2.5 rounded-full font-bold hover:bg-orange-600 transition-colors shadow-sm shadow-orange-500/20">
+                    Đăng Nhập Ngay
+                  </a>
+                </div>
+              ) : (
+                <div className="bg-white rounded-[10px] p-2">
+                  <RedeemVoucherSection token={token} />
                 </div>
               )
             )}
