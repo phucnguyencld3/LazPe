@@ -514,7 +514,7 @@ namespace PolyBabyAPI.Services
                     Code = dto.Code,
                     Slug = slug,
                     MetaTitle = dto.MetaTitle ?? dto.ProductName,
-                    MetaDescription = dto.MetaDescription ?? dto.Description,
+                    MetaDescription = (dto.MetaDescription ?? dto.Description)?.Length > 500 ? (dto.MetaDescription ?? dto.Description).Substring(0, 500) : (dto.MetaDescription ?? dto.Description),
                     ProductName = dto.ProductName,
                     Description = dto.Description,
                     Specifications = dto.Specifications,
@@ -668,7 +668,7 @@ namespace PolyBabyAPI.Services
                     Code = productCode,
                     Slug = slug,
                     MetaTitle = dto.MetaTitle ?? dto.ProductName,
-                    MetaDescription = dto.MetaDescription ?? dto.Description,
+                    MetaDescription = (dto.MetaDescription ?? dto.Description)?.Length > 500 ? (dto.MetaDescription ?? dto.Description).Substring(0, 500) : (dto.MetaDescription ?? dto.Description),
                     ProductName = dto.ProductName,
                     Description = dto.Description ?? "",
                     Specifications = dto.Specifications ?? "",
@@ -857,7 +857,7 @@ namespace PolyBabyAPI.Services
                 product.Code = dto.Code ?? product.Code;
                 product.Slug = slug;
                 product.MetaTitle = dto.MetaTitle ?? dto.ProductName;
-                product.MetaDescription = dto.MetaDescription ?? dto.Description;
+                product.MetaDescription = (dto.MetaDescription ?? dto.Description)?.Length > 500 ? (dto.MetaDescription ?? dto.Description).Substring(0, 500) : (dto.MetaDescription ?? dto.Description);
                 product.ProductName = dto.ProductName;
                 product.Description = dto.Description;
                 product.Specifications = dto.Specifications;
