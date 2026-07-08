@@ -73,7 +73,7 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        toast.success(data.message);
+        // toast.success(data.message); // Đã có thông báo từ SignalR (HeaderV2)
         fetchSubscriptions();
       } else {
         toast.error(data.message || "Thao tác thất bại");

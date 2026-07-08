@@ -622,7 +622,7 @@ export default function ProfilePage() {
                       items: [
                         { id: "profile", label: "Thông tin tài khoản", icon: "person" },
                         { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
-                        7]
+                      ]
                     },
                     {
                       title: "Đơn hàng",

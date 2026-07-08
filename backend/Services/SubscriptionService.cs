@@ -174,12 +174,59 @@ namespace PolyBabyAPI.Services
 
         public async Task<bool> PauseSubscriptionAsync(string userId, int subscriptionId)
         {
-            var sub = await _context.Subscriptions.FirstOrDefaultAsync(s => s.SubscriptionID == subscriptionId && s.UserID == userId);
+            var sub = await _context.Subscriptions
+                .Include(s => s.User)
+                .Include(s => s.Product)
+                .FirstOrDefaultAsync(s => s.SubscriptionID == subscriptionId && s.UserID == userId);
             if (sub == null || sub.Status != SubscriptionStatus.Active) return false;
 
             sub.Status = SubscriptionStatus.Paused;
             sub.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _notificationService.SendSystemNotificationAsync(userId, "Tạm Dừng Mua Định Kỳ", $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã được tạm dừng thành công.");
+                
+                if (sub.User != null && !string.IsNullOrEmpty(sub.User.Email))
+                {
+                    string htmlBody = $@"
+<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
+  <div style=""background-color: #f59e0b; color: white; padding: 20px; text-align: center;"">
+    <h2 style=""margin: 0; font-size: 24px;"">Tạm Dừng Mua Định Kỳ</h2>
+  </div>
+  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
+    <p>Chào bạn <strong>{sub.User.FullName ?? sub.User.Email}</strong>,</p>
+    <p>Gói mua định kỳ của bạn đã được <strong>tạm dừng</strong> thành công theo yêu cầu.</p>
+    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
+      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin gói định kỳ</h3>
+      <table style=""width: 100%; border-collapse: collapse;"">
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Sản phẩm:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{sub.Product.ProductName}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Ngày tạm dừng:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{DateTime.Now:dd/MM/yyyy HH:mm}</td>
+        </tr>
+      </table>
+    </div>
+    <p>Trong thời gian tạm dừng, hệ thống sẽ không tự động giao hàng và trừ tiền. Bạn có thể kích hoạt lại gói bất kỳ lúc nào trên ứng dụng LazPe.</p>
+    <p>Cảm ơn bạn đã đồng hành cùng LazPe!</p>
+  </div>
+  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
+    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
+    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
+  </div>
+</div>";
+                    await _emailSender.SendEmailAsync(sub.User.Email, "[LazPe] Tạm Dừng Mua Định Kỳ", htmlBody);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi gửi thông báo khi tạm dừng mua định kỳ cho user {UserId}", userId);
+            }
+
             return true;
         }
 
@@ -203,12 +250,59 @@ namespace PolyBabyAPI.Services
 
         public async Task<bool> CancelSubscriptionAsync(string userId, int subscriptionId)
         {
-            var sub = await _context.Subscriptions.FirstOrDefaultAsync(s => s.SubscriptionID == subscriptionId && s.UserID == userId);
+            var sub = await _context.Subscriptions
+                .Include(s => s.User)
+                .Include(s => s.Product)
+                .FirstOrDefaultAsync(s => s.SubscriptionID == subscriptionId && s.UserID == userId);
             if (sub == null) return false;
 
             sub.Status = SubscriptionStatus.Cancelled;
             sub.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _notificationService.SendSystemNotificationAsync(userId, "Hủy Mua Định Kỳ", $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã bị hủy.");
+                
+                if (sub.User != null && !string.IsNullOrEmpty(sub.User.Email))
+                {
+                    string htmlBody = $@"
+<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
+  <div style=""background-color: #ef4444; color: white; padding: 20px; text-align: center;"">
+    <h2 style=""margin: 0; font-size: 24px;"">Hủy Mua Định Kỳ</h2>
+  </div>
+  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
+    <p>Chào bạn <strong>{sub.User.FullName ?? sub.User.Email}</strong>,</p>
+    <p>Gói mua định kỳ của bạn đã được <strong>hủy</strong> thành công.</p>
+    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
+      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin gói định kỳ</h3>
+      <table style=""width: 100%; border-collapse: collapse;"">
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Sản phẩm:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{sub.Product.ProductName}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Ngày hủy:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{DateTime.Now:dd/MM/yyyy HH:mm}</td>
+        </tr>
+      </table>
+    </div>
+    <p>Nếu bạn thay đổi ý định, bạn luôn có thể tạo lại gói mua định kỳ mới trên ứng dụng LazPe với nhiều ưu đãi hấp dẫn.</p>
+    <p>Cảm ơn bạn đã đồng hành cùng LazPe!</p>
+  </div>
+  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
+    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
+    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
+  </div>
+</div>";
+                    await _emailSender.SendEmailAsync(sub.User.Email, "[LazPe] Hủy Mua Định Kỳ", htmlBody);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi gửi thông báo khi hủy mua định kỳ cho user {UserId}", userId);
+            }
+
             return true;
         }
 
