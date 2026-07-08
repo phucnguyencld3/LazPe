@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Heart, Star, Minus, Plus, ShoppingCart, ShieldCheck, RotateCcw, Truck, Bell } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Product, Variant } from "@/types";
-import { getProductDetail, getProducts } from "@/lib/api";
+import { getProductDetail, getProducts, getUserSubscriptions } from "@/lib/api";
 import { ProductImageGallery } from "@/components/client/products/ProductImageGallery";
 import { ProductDetailInfo } from "@/components/client/products/ProductDetailInfo";
 import { ProductAlertModal } from "@/components/client/products/ProductAlertModal";
@@ -46,12 +46,35 @@ export default function ProductDetailPage() {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Check subscription status
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token || !product?.supportsSubscription) return;
+      
+      const subs = await getUserSubscriptions(token);
+      // Status: 1 (Active), 2 (Paused)
+      const hasActive = subs.some((s: any) => s.productID === product.id && (s.status === 1 || s.status === 2));
+      setIsSubscribed(hasActive);
+    };
+    
+    if (product?.supportsSubscription) {
+      fetchSubscriptions();
+    }
+  }, [product?.id, product?.supportsSubscription]);
 
   // Listen to open subscription modal event
   useEffect(() => {
     const handleOpenSub = () => setIsSubscriptionModalOpen(true);
+    const handleSubscriptionSuccess = () => setIsSubscribed(true);
     window.addEventListener('open_subscription_modal', handleOpenSub);
-    return () => window.removeEventListener('open_subscription_modal', handleOpenSub);
+    window.addEventListener('subscription_success', handleSubscriptionSuccess);
+    return () => {
+      window.removeEventListener('open_subscription_modal', handleOpenSub);
+      window.removeEventListener('subscription_success', handleSubscriptionSuccess);
+    };
   }, []);
 
   // Fetch product detail
@@ -523,7 +546,7 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6 lg:gap-10 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
+          <div className="grid grid-cols-1 lg:grid-cols-[32%_1fr] gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
             <ProductImageGallery
               displayImage={displayImage}
               productName={product.name}
@@ -582,6 +605,29 @@ export default function ProductDetailPage() {
               selectedGiftId={selectedGiftId}
               setSelectedGiftId={setSelectedGiftId}
               isAddingToCart={isAddingToCart}
+              subscriptionAction={
+                product.supportsSubscription ? (
+                  <div className="flex items-center justify-between px-3 h-10 sm:h-11 rounded-[8px] bg-white border border-slate-200 shadow-sm w-full gap-3 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[16px] text-primary">autorenew</span>
+                      </div>
+                      <p className="text-[13px] font-bold text-primary whitespace-nowrap">Mua định kỳ</p>
+                    </div>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent('open_subscription_modal', { detail: { product, activeVariant, quantity } }))}
+                      disabled={isSubscribed}
+                      className={`px-3 h-8 sm:h-9 text-[12px] font-bold rounded-[6px] transition-colors shrink-0 ${
+                        isSubscribed 
+                          ? "bg-slate-200 text-slate-500 cursor-not-allowed border-transparent" 
+                          : "bg-transparent border border-dashed border-red-500 text-red-500 hover:bg-red-50"
+                      }`}
+                    >
+                      {isSubscribed ? "Đã đăng ký" : "Đăng ký ngay"}
+                    </button>
+                  </div>
+                ) : null
+              }
             />
           </div>
         </div>
@@ -595,7 +641,7 @@ export default function ProductDetailPage() {
           relatedProducts={relatedProducts}
         />
 
-        <ProductRecommendations limit={5} excludeProductId={product.id} />
+        <ProductRecommendations limit={10} excludeProductId={product.id} />
       </div>
 
       <ProductAlertModal

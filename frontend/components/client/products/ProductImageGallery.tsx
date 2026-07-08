@@ -12,6 +12,7 @@ interface ProductImageGalleryProps {
   setIsWishlisted?: (wishlisted: boolean) => void;
   compareAction?: React.ReactNode;
   alertAction?: React.ReactNode;
+  subscriptionAction?: React.ReactNode;
 }
 
 export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
@@ -25,6 +26,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   setIsWishlisted,
   compareAction,
   alertAction,
+  subscriptionAction,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(displayImage);
 
@@ -83,7 +85,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   return (
     <div className="space-y-4">
       <div 
-        className="relative aspect-square rounded-[12px] bg-white overflow-hidden border border-slate-100 p-2 cursor-pointer group"
+        className="relative aspect-square w-full rounded-[12px] bg-white overflow-hidden border border-slate-100 p-2 cursor-pointer group"
         onDoubleClick={() => setIsModalOpen(true)}
       >
         {currentImage ? (
@@ -163,7 +165,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
       )}
 
       {/* Action Buttons (Wishlist & Share) */}
-      <div className="flex justify-start items-center gap-4 mt-4">
+      <div className="flex justify-start items-center gap-2 sm:gap-3 mt-4 w-full overflow-x-auto pb-1 hide-scrollbar">
         {/* Wishlist Toggle Button */}
         <button
           onClick={() => setIsWishlisted && setIsWishlisted(!isWishlisted)}

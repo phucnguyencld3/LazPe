@@ -112,28 +112,29 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
   );
 
   return (
-    <div className="bg-white rounded-[16px] border border-slate-100 p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-4">
-        <span className="material-symbols-outlined text-primary text-2xl">autorenew</span>
-        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Quản lý Mua Định Kỳ</h2>
+    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base">autorenew</span> Quản lý Mua Định Kỳ
+        </h2>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex overflow-x-auto gap-2 mb-6 pb-2 scrollbar-none">
+      <div className="flex border-b border-slate-100 mb-6 overflow-x-auto scrollbar-none w-full">
         {[
           { id: 0, label: "Tất cả" },
           { id: 1, label: "Đang hoạt động" },
           { id: 2, label: "Đang tạm dừng" },
-          { id: 3, label: "Đã hủy" },
           { id: 4, label: "Hoàn thành" },
+          { id: 3, label: "Đã hủy" },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => { setStatusFilter(tab.id); setCurrentPage(1); }}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+            className={`flex-1 py-3 px-2 text-[12px] sm:text-[13px] font-bold border-b-2 whitespace-nowrap text-center transition-all ${
               statusFilter === tab.id 
-                ? "bg-primary text-white" 
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "border-primary text-primary" 
+                : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
             {tab.label}
@@ -142,9 +143,9 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
       </div>
 
       {sortedSubscriptions.length === 0 ? (
-        <div className="text-center py-10 text-slate-500">
-          <Package className="mx-auto text-slate-300 mb-3" size={48} />
-          <p className="text-sm font-semibold">Không tìm thấy gói mua định kỳ nào</p>
+        <div className="text-center py-12 bg-slate-50 rounded-[10px] border border-dashed border-slate-200">
+          <Package className="mx-auto text-slate-300 mb-2" size={40} strokeWidth={1.5} />
+          <p className="text-slate-500 font-semibold text-sm">Không tìm thấy gói mua định kỳ nào trong mục này.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -221,6 +222,6 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 };
