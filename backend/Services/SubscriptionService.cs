@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace PolyBabyAPI.Services
 {
@@ -16,12 +17,14 @@ namespace PolyBabyAPI.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<SubscriptionService> _logger;
         private readonly INotificationService _notificationService;
+        private readonly IEmailSender _emailSender;
 
-        public SubscriptionService(ApplicationDbContext context, ILogger<SubscriptionService> logger, INotificationService notificationService)
+        public SubscriptionService(ApplicationDbContext context, ILogger<SubscriptionService> logger, INotificationService notificationService, IEmailSender emailSender)
         {
             _context = context;
             _logger = logger;
             _notificationService = notificationService;
+            _emailSender = emailSender;
         }
 
         public async Task<SubscriptionDto> CreateSubscriptionAsync(string userId, CreateSubscriptionDto dto)
@@ -52,6 +55,69 @@ namespace PolyBabyAPI.Services
 
             _context.Subscriptions.Add(subscription);
             await _context.SaveChangesAsync();
+
+            // Send notification to user about the successful subscription
+            try
+            {
+                await _notificationService.SendSystemNotificationAsync(
+                    userId, 
+                    "Đăng ký Mua Định Kỳ Thành Công", 
+                    $"Bạn đã đăng ký mua định kỳ sản phẩm {product.ProductName} thành công."
+                );
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user != null && !string.IsNullOrEmpty(user.Email))
+                {
+                    decimal shippingFee = 30000m;
+                    decimal totalAmount = (dto.SubscribedPrice * dto.Quantity) + shippingFee;
+                    string htmlBody = $@"
+<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
+  <div style=""background-color: #f43f5e; color: white; padding: 20px; text-align: center;"">
+    <h2 style=""margin: 0; font-size: 24px;"">Xác Nhận Đăng Ký Mua Định Kỳ</h2>
+  </div>
+  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
+    <p>Chào bạn <strong>{user.FullName ?? user.Email}</strong>,</p>
+    <p>Bạn vừa đăng ký mua hàng định kỳ thành công trên hệ thống <strong>LazPe</strong>.</p>
+    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
+      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin đăng ký</h3>
+      <table style=""width: 100%; border-collapse: collapse;"">
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Sản phẩm:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{product.ProductName}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Số lượng:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{dto.Quantity}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Hình thức thanh toán:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">Ví LazPe</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Kỳ thanh toán đầu tiên:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{dto.StartDate:dd/MM/yyyy}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Tổng tiền dự kiến (kèm ship):</strong></td>
+          <td style=""padding: 8px 0; color: #f43f5e; font-weight: bold;"">{totalAmount:N0} đ</td>
+        </tr>
+      </table>
+    </div>
+    <p>Hệ thống sẽ tự động trừ tiền trong Ví LazPe của bạn vào ngày thanh toán hàng kỳ. Vui lòng đảm bảo số dư ví luôn đủ để không bị gián đoạn đơn hàng.</p>
+    <p>Cảm ơn bạn đã đồng hành cùng LazPe!</p>
+  </div>
+  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
+    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
+    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
+  </div>
+</div>";
+                    await _emailSender.SendEmailAsync(user.Email, "[LazPe] Đăng Ký Mua Định Kỳ Thành Công", htmlBody);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi gửi thông báo khi tạo mua định kỳ cho user {UserId}", userId);
+            }
 
             return await GetSubscriptionByIdAsync(userId, subscription.SubscriptionID);
         }
@@ -282,6 +348,51 @@ namespace PolyBabyAPI.Services
 
                     // Notify success
                     await _notificationService.SendSystemNotificationAsync(sub.UserID, "Đơn hàng định kỳ được tạo", $"Đơn hàng {invoice.InvoiceCode} đã được thanh toán và tạo thành công.");
+
+                    if (user != null && !string.IsNullOrEmpty(user.Email))
+                    {
+                        string htmlBody = $@"
+<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
+  <div style=""background-color: #f43f5e; color: white; padding: 20px; text-align: center;"">
+    <h2 style=""margin: 0; font-size: 24px;"">Thanh Toán Mua Định Kỳ Thành Công</h2>
+  </div>
+  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
+    <p>Chào bạn <strong>{user.FullName ?? user.Email}</strong>,</p>
+    <p>Bạn vừa thanh toán định kỳ thành công cho sản phẩm <strong>{sub.Product.ProductName}</strong>.</p>
+    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
+      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin đơn hàng</h3>
+      <table style=""width: 100%; border-collapse: collapse;"">
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Mã đơn hàng:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{invoice.InvoiceCode}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Sản phẩm:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{sub.Product.ProductName} (x{sub.Quantity})</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Hình thức thanh toán:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">Ví LazPe</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Ngày thanh toán:</strong></td>
+          <td style=""padding: 8px 0; color: #111827;"">{DateTime.Now:dd/MM/yyyy HH:mm}</td>
+        </tr>
+        <tr>
+          <td style=""padding: 8px 0; color: #6b7280;""><strong>Tổng tiền đã thanh toán:</strong></td>
+          <td style=""padding: 8px 0; color: #f43f5e; font-weight: bold;"">{totalAmount:N0} đ</td>
+        </tr>
+      </table>
+    </div>
+    <p>Hệ thống đang tiến hành đóng gói và giao hàng đến bạn. Cảm ơn bạn đã sử dụng dịch vụ Mua Định Kỳ của LazPe!</p>
+  </div>
+  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
+    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
+    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
+  </div>
+</div>";
+                        await _emailSender.SendEmailAsync(user.Email, $"[LazPe] Thanh Toán Định Kỳ Thành Công - {invoice.InvoiceCode}", htmlBody);
+                    }
                 }
                 catch (Exception ex)
                 {

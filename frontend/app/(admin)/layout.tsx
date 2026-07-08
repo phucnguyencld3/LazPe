@@ -689,6 +689,15 @@ export default function AdminLayout({
                       <span className="text-[16.5px] font-medium whitespace-nowrap">Kho Sản phẩm</span>
                     </Link>
                   )}
+                  {hasPermission("Product.Read") && (
+                    <Link
+                      href="/admin/subscriptions"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/subscriptions") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">autorenew</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Mua định kỳ</span>
+                    </Link>
+                  )}
                   {hasPermission("Bundle.Read") && (
                     <Link
                       href="/admin/combo"

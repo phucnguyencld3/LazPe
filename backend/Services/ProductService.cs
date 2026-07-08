@@ -1050,8 +1050,7 @@ namespace PolyBabyAPI.Services
                 return new ServiceResult<bool>
                 {
                     Success = true,
-                    Data = true,
-                    Message = product.Status ? "Kích hoạt sản phẩm thành công" : "Vô hiệu hóa sản phẩm thành công"
+                    Data = product.Status
                 };
             }
             catch (Exception ex)
@@ -1061,6 +1060,82 @@ namespace PolyBabyAPI.Services
                 {
                     Success = false,
                     Message = "Có lỗi xảy ra khi cập nhật trạng thái sản phẩm"
+                };
+            }
+        }
+
+        public async Task<ServiceResult<bool>> ToggleProductSubscriptionAsync(int id)
+        {
+            try
+            {
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return new ServiceResult<bool>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy sản phẩm"
+                    };
+                }
+
+                product.SupportsSubscription = !product.SupportsSubscription;
+                await _context.SaveChangesAsync();
+                ClearProductCache();
+
+                return new ServiceResult<bool>
+                {
+                    Success = true,
+                    Data = product.SupportsSubscription,
+                    Message = product.SupportsSubscription ? "Bật tính năng mua định kỳ thành công" : "Tắt tính năng mua định kỳ thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling product subscription {ProductId}", id);
+                return new ServiceResult<bool>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi cập nhật tính năng mua định kỳ"
+                };
+            }
+        }
+
+        public async Task<ServiceResult<bool>> BulkSetSubscriptionStatusAsync(List<int> ids, bool isEnabled)
+        {
+            try
+            {
+                var products = await _context.Products.Where(p => ids.Contains(p.ProductID)).ToListAsync();
+                if (!products.Any())
+                {
+                    return new ServiceResult<bool>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy sản phẩm nào"
+                    };
+                }
+
+                foreach (var product in products)
+                {
+                    product.SupportsSubscription = isEnabled;
+                }
+
+                await _context.SaveChangesAsync();
+                ClearProductCache();
+
+                return new ServiceResult<bool>
+                {
+                    Success = true,
+                    Data = true,
+                    Message = $"Đã cập nhật trạng thái mua định kỳ cho {products.Count} sản phẩm"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk updating product subscription for {Count} products", ids.Count);
+                return new ServiceResult<bool>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi cập nhật nhiều sản phẩm"
                 };
             }
         }
@@ -1130,6 +1205,20 @@ namespace PolyBabyAPI.Services
                 activeProducts,
                 outOfStockProducts,
                 newProducts
+            };
+        }
+
+        public async Task<object> GetSubscriptionStatsAsync()
+        {
+            var totalProducts = await _context.Products.CountAsync(p => !p.IsDeleted);
+            var activeSubscriptions = await _context.Products.CountAsync(p => p.SupportsSubscription && !p.IsDeleted);
+            var inactiveSubscriptions = totalProducts - activeSubscriptions;
+            
+            return new
+            {
+                totalProducts,
+                activeSubscriptions,
+                inactiveSubscriptions
             };
         }
 

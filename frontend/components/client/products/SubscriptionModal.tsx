@@ -121,7 +121,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success("Đăng ký mua định kỳ thành công!");
         window.dispatchEvent(new CustomEvent("subscription_success"));
         onClose();
         // Option: redirect to profile/subscriptions
@@ -151,8 +150,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-emerald-600">autorenew</span>
+            <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[18px] text-primary">autorenew</span>
             </div>
             <h3 className="text-xl font-bold text-slate-800">Đăng ký Mua Định Kỳ</h3>
           </div>
@@ -307,7 +306,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !addressId}
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
+                className="w-full py-3.5 bg-primary hover:brightness-110 disabled:opacity-50 disabled:brightness-100 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
               >
                 {submitting ? (
                   <Loader2 className="animate-spin" size={20} />

@@ -25,6 +25,7 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<number>(0); // 0: All, 1: Active, 2: Paused, 3: Cancelled, 4: Completed
   const [currentPage, setCurrentPage] = useState(1);
+  const [cancelConfirmId, setCancelConfirmId] = useState<number | null>(null);
   const itemsPerPage = 3;
 
   const fetchSubscriptions = async () => {
@@ -188,7 +189,7 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
                   </button>
                 )}
                 {sub.status !== 3 && sub.status !== 4 && (
-                  <button onClick={() => { if (confirm("Bạn có chắc muốn hủy gói mua định kỳ này?")) handleAction(sub.subscriptionID, "cancel"); }} className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded text-xs font-bold transition-colors">
+                  <button onClick={() => setCancelConfirmId(sub.subscriptionID)} className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded text-xs font-bold transition-colors">
                     <XCircle size={14} /> Hủy gói
                   </button>
                 )}
@@ -220,6 +221,56 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {cancelConfirmId !== null && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center" 
+          style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
+          <div 
+            className="bg-white overflow-hidden shadow-lg"
+            style={{ width: '100%', maxWidth: '400px', borderRadius: '16px' }}
+          >
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <div 
+                className="mx-auto flex items-center justify-center"
+                style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fff1f2', marginBottom: '16px' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '32px', color: '#f43f5e' }}>warning</span>
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>Hủy Mua Định Kỳ</h3>
+              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
+                Bạn có chắc chắn muốn hủy gói mua định kỳ này không? Thao tác này sẽ dừng việc tự động giao hàng và thanh toán.
+              </p>
+            </div>
+            <div className="flex w-full" style={{ borderTop: '1px solid #f1f5f9' }}>
+              <button 
+                onClick={() => setCancelConfirmId(null)}
+                className="flex-1 transition-colors"
+                style={{ padding: '16px 0', color: '#475569', fontWeight: '600', backgroundColor: '#f8fafc' }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              >
+                Giữ lại
+              </button>
+              <div style={{ width: '1px', backgroundColor: '#e2e8f0' }}></div>
+              <button 
+                onClick={() => {
+                  handleAction(cancelConfirmId, "cancel");
+                  setCancelConfirmId(null);
+                }}
+                className="flex-1 transition-colors"
+                style={{ padding: '16px 0', color: '#e11d48', fontWeight: 'bold', backgroundColor: '#fff' }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fff1f2'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+              >
+                Xác nhận hủy
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

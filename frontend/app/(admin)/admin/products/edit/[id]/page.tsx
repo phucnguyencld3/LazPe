@@ -473,28 +473,6 @@ export default function EditProductPage() {
                   </label>
                 </div>
               </section>
-
-              {/* Auto-Replenishment Setting */}
-              <section className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm mt-8">
-                <div className="flex flex-col gap-1 mb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary">autorenew</span>
-                      <h3 className="text-lg font-bold text-slate-800">Auto-Replenishment</h3>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={supportsSubscription}
-                        onChange={(e) => setSupportsSubscription(e.target.checked)}
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-2">Bật tính năng mua định kỳ (Auto-Replenishment) cho sản phẩm này.</p>
-                </div>
-              </section>
             </div>
           </div>
         </div>

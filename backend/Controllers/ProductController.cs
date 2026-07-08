@@ -427,6 +427,61 @@ namespace PolyBabyAPI.Controllers
         }
 
         /// <summary>
+        /// Chuyển trạng thái mua định kỳ của sản phẩm theo ID (admin)
+        /// </summary>
+        /// <param name="id">ID của sản phẩm</param>
+        /// <returns></returns>
+        [HttpPost("{id}/toggle-subscription")]
+        [Permission("Product.Update")]
+        public async Task<IActionResult> ToggleProductSubscription(int id)
+        {
+            try
+            {
+                if (id <= 0) return BadRequest(new { success = false, message = "ID sản phẩm không hợp lệ" });
+                var result = await _productService.ToggleProductSubscriptionAsync(id);
+                if (result.Success)
+                    return Ok(new { success = true, message = result.Message, data = result.Data });
+                return BadRequest(new { success = false, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling product subscription {ProductId}", id);
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật trạng thái mua định kỳ sản phẩm" });
+            }
+        }
+
+        public class BulkToggleSubscriptionRequest
+        {
+            public List<int> Ids { get; set; } = new();
+            public bool IsEnabled { get; set; }
+        }
+
+        /// <summary>
+        /// Bật/tắt nhanh mua định kỳ cho nhiều sản phẩm
+        /// </summary>
+        [HttpPost("bulk-toggle-subscription")]
+        [Permission("Product.Update")]
+        public async Task<IActionResult> BulkToggleSubscription([FromBody] BulkToggleSubscriptionRequest request)
+        {
+            try
+            {
+                if (request == null || request.Ids == null || !request.Ids.Any())
+                    return BadRequest(new { success = false, message = "Danh sách ID sản phẩm không hợp lệ" });
+
+                var result = await _productService.BulkSetSubscriptionStatusAsync(request.Ids, request.IsEnabled);
+                if (result.Success)
+                    return Ok(new { success = true, message = result.Message });
+                
+                return BadRequest(new { success = false, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk toggling product subscriptions");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi cập nhật trạng thái mua định kỳ hàng loạt" });
+            }
+        }
+
+        /// <summary>
         /// Đồng bộ dữ liệu lên Meilisearch (admin)
         /// </summary>
         [HttpPost("sync-meilisearch")]
@@ -462,6 +517,25 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error getting product stats");
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy thống kê sản phẩm" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy thống kê trạng thái mua định kỳ (admin)
+        /// </summary>
+        [HttpGet("subscription-stats")]
+        [Permission("Product.Read")]
+        public async Task<IActionResult> GetSubscriptionStats()
+        {
+            try
+            {
+                var stats = await _productService.GetSubscriptionStatsAsync();
+                return Ok(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting subscription stats");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi lấy thống kê mua định kỳ" });
             }
         }
 

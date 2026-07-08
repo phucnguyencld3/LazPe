@@ -607,20 +607,25 @@ export default function ProductDetailPage() {
               isAddingToCart={isAddingToCart}
               subscriptionAction={
                 product.supportsSubscription ? (
-                  <div className="flex items-center justify-between px-3 h-10 sm:h-11 rounded-[8px] bg-white border border-slate-200 shadow-sm w-full gap-3 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-[16px] text-primary">autorenew</span>
+                  <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 rounded-[8px] bg-white border border-rose-100 shadow-sm w-full gap-2 transition-all hover:border-primary/30 group">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
+                        <span className="material-symbols-outlined text-[15px] text-primary group-hover:text-white transition-colors">autorenew</span>
                       </div>
-                      <p className="text-[13px] font-bold text-primary whitespace-nowrap">Mua định kỳ</p>
+                      <div className="flex flex-col xl:flex-row xl:items-center gap-0 xl:gap-1.5">
+                        <p className="text-[12px] sm:text-[13px] font-bold text-primary whitespace-nowrap">Mua định kỳ</p>
+                        <p className="text-[10px] sm:text-[11px] text-rose-600/90 leading-tight truncate max-w-[130px] sm:max-w-[200px] xl:max-w-none">
+                          (Giảm thêm <span className="font-bold">5%</span> cho đơn đăng ký)
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent('open_subscription_modal', { detail: { product, activeVariant, quantity } }))}
                       disabled={isSubscribed}
-                      className={`px-3 h-8 sm:h-9 text-[12px] font-bold rounded-[6px] transition-colors shrink-0 ${
+                      className={`px-3 sm:px-4 h-7 sm:h-8 text-[11px] sm:text-[12px] font-bold rounded-[6px] transition-all shrink-0 shadow-sm ${
                         isSubscribed 
-                          ? "bg-slate-200 text-slate-500 cursor-not-allowed border-transparent" 
-                          : "bg-transparent border border-dashed border-red-500 text-red-500 hover:bg-red-50"
+                          ? "bg-slate-200 text-slate-500 cursor-not-allowed border-transparent shadow-none" 
+                          : "bg-white border border-primary text-primary hover:bg-primary hover:text-white active:scale-95"
                       }`}
                     >
                       {isSubscribed ? "Đã đăng ký" : "Đăng ký ngay"}

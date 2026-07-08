@@ -487,10 +487,8 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
             {/* Subscription Action */}
             {subscriptionAction && (
-              <div className="flex w-full justify-center">
-                <div className="w-[85%] sm:w-[75%] lg:w-[65%]">
-                  {subscriptionAction}
-                </div>
+              <div className="w-full mt-1.5">
+                {subscriptionAction}
               </div>
             )}
           </div>
