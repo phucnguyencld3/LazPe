@@ -649,7 +649,7 @@ export default function ProfilePage() {
                         { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
                       ]
                     }
-                  ]
+                  ] as { title: string; items: { id: string; label: string; icon: string; }[] }[]
                 ).map((group, idx) => (
                   <div key={idx} className={idx > 0 ? "mt-1" : ""}>
                     <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
