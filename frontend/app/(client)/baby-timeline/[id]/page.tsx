@@ -24,12 +24,27 @@ interface TimelineResponseDto {
   aiSummary: string | null;
 }
 
-const AI_IMAGES: Record<string, string> = {
+const STAGE_IMAGES = {
   intro: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783363106/timeline/intro_baby_wide.jpg",
-  Growth: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783363107/timeline/growth_baby_wide.jpg",
-  Vaccination: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783363108/timeline/vaccine_baby_wide.jpg",
-  Shopping: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783363109/timeline/shopping_baby_wide.jpg",
+  newborn: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783523185/chat_images/newborn_stage_vqxw1k.jpg",
+  infant: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783523141/chat_images/infant_stage_rvjclq.jpg",
+  toddler: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783523146/chat_images/toddler_stage_gnwkvs.jpg",
+  kid: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783523150/chat_images/kid_stage_tg8o0w.jpg",
   outro: "https://res.cloudinary.com/dmqow0hu4/image/upload/v1783363110/timeline/outro_baby_wide.jpg"
+};
+
+const getEventImage = (type: string, date: string, dob: string) => {
+  if (type === 'intro') return STAGE_IMAGES.intro;
+  if (type === 'outro') return STAGE_IMAGES.outro;
+  
+  const eventDate = date ? new Date(date) : new Date();
+  const birthDate = new Date(dob);
+  const months = (eventDate.getFullYear() - birthDate.getFullYear()) * 12 + eventDate.getMonth() - birthDate.getMonth();
+  
+  if (months <= 3) return STAGE_IMAGES.newborn;
+  if (months <= 12) return STAGE_IMAGES.infant;
+  if (months <= 36) return STAGE_IMAGES.toddler;
+  return STAGE_IMAGES.kid;
 };
 
 const FloatingParticles = () => {
@@ -74,13 +89,12 @@ export default function BabyTimelinePage() {
   const [data, setData] = useState<TimelineResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
   
-  const SLIDE_DURATION = 15000; // 15 seconds per slide (increased for Spotify Wrapped feel)
+  const SLIDE_DURATION = 15000; // 15 seconds per slide
   const UPDATE_INTERVAL = 16; // ~60fps
 
   // Fetch data
@@ -127,31 +141,38 @@ export default function BabyTimelinePage() {
         title: `Hành trình rực rỡ của ${data.babyName}`,
         description: data.aiSummary || `Năm vừa qua, bé yêu của chúng ta đã khôn lớn thật nhiều. Cùng nhìn lại những cột mốc đáng nhớ nhất nhé!`,
         date: null,
-        image: AI_IMAGES.intro,
+        image: getEventImage('intro', new Date().toISOString(), data.dateOfBirth),
         icon: <Sparkles size={24} className="text-white" />,
         color: "from-fuchsia-600 to-indigo-600"
       },
-      ...sortedEvents.map((evt, idx) => ({
-        id: `event-${idx}`,
-        type: evt.eventType,
-        title: evt.title,
-        description: evt.description,
-        date: evt.eventDate,
-        image: AI_IMAGES[evt.eventType] || AI_IMAGES.intro,
-        icon: evt.eventType === 'Growth' ? <Activity size={24} className="text-white" /> : 
-              evt.eventType === 'Vaccination' ? <Syringe size={24} className="text-white" /> : 
-              <ShoppingBag size={24} className="text-white" />,
-        color: evt.eventType === 'Growth' ? "from-emerald-500 to-teal-700" :
-               evt.eventType === 'Vaccination' ? "from-sky-500 to-blue-700" :
-               "from-rose-500 to-pink-700"
-      })),
+      ...sortedEvents.map((evt, idx) => {
+        let prodImg = null;
+        if (evt.eventType === 'Shopping' && evt.imageUrl) {
+            prodImg = evt.imageUrl.startsWith('http') ? evt.imageUrl : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5101') + evt.imageUrl;
+        }
+        return {
+          id: `event-${idx}`,
+          type: evt.eventType,
+          title: evt.title,
+          description: evt.description,
+          date: evt.eventDate,
+          image: getEventImage(evt.eventType, evt.eventDate, data.dateOfBirth),
+          productImage: prodImg,
+          icon: evt.eventType === 'Growth' ? <Activity size={24} className="text-white" /> : 
+                evt.eventType === 'Vaccination' ? <Syringe size={24} className="text-white" /> : 
+                <ShoppingBag size={24} className="text-white" />,
+          color: evt.eventType === 'Growth' ? "from-emerald-500 to-teal-700" :
+                 evt.eventType === 'Vaccination' ? "from-sky-500 to-blue-700" :
+                 "from-rose-500 to-pink-700"
+        };
+      }),
       {
         id: 'outro',
         type: 'outro',
         title: `Và hành trình còn tiếp tục...`,
         description: `LazPe sẽ luôn đồng hành cùng mẹ và bé ${data.babyName} trên mọi chặng đường phát triển!`,
         date: null,
-        image: AI_IMAGES.outro,
+        image: getEventImage('outro', new Date().toISOString(), data.dateOfBirth),
         icon: <Heart size={24} className="text-white" />,
         color: "from-amber-500 to-orange-600"
       }
@@ -290,6 +311,10 @@ export default function BabyTimelinePage() {
                   90% { opacity: 1; }
                   100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
                 }
+                @keyframes slideInRightCard {
+                  0% { opacity: 0; transform: translateX(100px) translateY(50px) rotate(25deg) scale(0.8); }
+                  100% { opacity: 1; transform: translateX(0) translateY(0) rotate(12deg) scale(1); }
+                }
                 .animate-slideUpFade {
                   animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
@@ -301,6 +326,15 @@ export default function BabyTimelinePage() {
                   {/* Dark overlay gradients for text readability (stronger on the left) */}
                   <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent pointer-events-none" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40 pointer-events-none sm:hidden" />
+
+                  {/* Optional: Tilted Product Card for Shopping Events */}
+                  {slide.type === 'Shopping' && (slide as any).productImage && (
+                    <div className="absolute right-[-10%] sm:right-[15%] top-[30%] sm:top-[20%] w-[55vw] sm:w-[320px] aspect-square opacity-0 animate-[slideInRightCard_1s_cubic-bezier(0.16,1,0.3,1)_0.6s_forwards] z-20 pointer-events-none drop-shadow-2xl">
+                      <div className="w-full h-full bg-white p-3 sm:p-4 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-transform duration-500 hover:rotate-0 hover:scale-105 pointer-events-auto">
+                         <div className="w-full h-full rounded-[20px] bg-cover bg-center bg-no-repeat border border-slate-100" style={{ backgroundImage: `url(${(slide as any).productImage})`, backgroundColor: '#fff', backgroundSize: 'contain' }} />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Main Content Area (Left aligned for horizontal frame) */}
                   <div className="absolute inset-y-0 left-0 w-full sm:w-[55%] p-6 sm:p-12 flex flex-col justify-end sm:justify-center z-30 pointer-events-none pb-12 sm:pb-12">
@@ -369,12 +403,14 @@ export default function BabyTimelinePage() {
               )}
             </div>
           </div>
-          <button 
-            onClick={(e) => { e.stopPropagation(); router.push("/profile?tab=profile"); }} 
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md transition-colors pointer-events-auto border border-white/10"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={(e) => { e.stopPropagation(); router.push("/profile?tab=profile"); }} 
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md transition-colors pointer-events-auto border border-white/10"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Tap areas for navigation */}

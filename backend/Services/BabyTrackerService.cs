@@ -20,6 +20,8 @@ namespace PolyBabyAPI.Services
         public async Task<BabyProfile?> GetTrackerDataAsync(int babyId)
         {
             return await _context.BabyProfiles
+                .Include(b => b.GrowthRecords)
+                .Include(b => b.VaccinationRecords)
                 .FirstOrDefaultAsync(b => b.BabyProfileID == babyId);
         }
 
@@ -30,6 +32,15 @@ namespace PolyBabyAPI.Services
                 .FirstOrDefaultAsync(b => b.BabyProfileID == babyId);
                 
             if (profile == null) return false;
+
+            if (profile.GrowthRecords != null && profile.GrowthRecords.Any())
+            {
+                var latest = profile.GrowthRecords.OrderByDescending(r => r.RecordedDate).FirstOrDefault();
+                if (latest != null && latest.RecordedDate.Year == DateTime.Now.Year && latest.RecordedDate.Month == DateTime.Now.Month)
+                {
+                    return false; // Already updated this month, prevent abuse
+                }
+            }
 
             if (profile.GrowthRecords == null)
             {
@@ -47,6 +58,24 @@ namespace PolyBabyAPI.Services
             {
                 profile.WeightKg = latestRecord.WeightKg;
                 profile.HeightCm = latestRecord.HeightCm;
+            }
+
+            // Gamification: Tặng 50 điểm Loyalty
+            var loyaltyProfile = await _context.Set<LoyaltyProfile>().FirstOrDefaultAsync(l => l.UserID == profile.UserID);
+            if (loyaltyProfile != null)
+            {
+                loyaltyProfile.AvailablePoints += 50;
+                loyaltyProfile.TotalPoints += 50;
+                
+                var history = new LoyaltyPointHistory
+                {
+                    UserID = profile.UserID,
+                    TransactionType = "EARN",
+                    Amount = 50,
+                    Description = "Thưởng cập nhật cân nặng bé " + profile.Name,
+                    CreatedAt = DateTime.Now
+                };
+                _context.Add(history);
             }
 
             await _context.SaveChangesAsync();

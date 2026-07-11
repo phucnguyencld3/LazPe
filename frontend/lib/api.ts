@@ -3299,6 +3299,7 @@ export interface BabyProfileDto {
   heightCm?: number;
   favoriteColors?: string;
   createdAt: string;
+  growthRecords?: { recordedDate: string }[];
 }
 
 export interface CreateBabyProfileDto {

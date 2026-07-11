@@ -332,6 +332,7 @@ try
     builder.Services.AddScoped<PolyBabyAPI.Jobs.ModelTrainingJob>();
     builder.Services.AddScoped<TrendModelTrainingJob>();
     builder.Services.AddScoped<PolyBabyAPI.Jobs.BabyTimelineYearEndJob>();
+    builder.Services.AddScoped<PolyBabyAPI.Jobs.BabyWeightReminderJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -500,6 +501,14 @@ try
             "baby-timeline-year-end-job",
             job => job.ExecuteAsync(),
             "0 10 31 12 *", 
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 10. Job nhắc nhở cập nhật cân nặng bé (Chạy hàng ngày lúc 09:00 sáng)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.BabyWeightReminderJob>(
+            "baby-weight-reminder-job",
+            job => job.ExecuteAsync(),
+            "0 9 * * *", // Chạy lúc 09:00 sáng mỗi ngày
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

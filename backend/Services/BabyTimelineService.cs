@@ -52,12 +52,21 @@ namespace PolyBabyAPI.Services
             {
                 foreach (var growth in baby.GrowthRecords)
                 {
+                    string[] growthTemplates = new string[] 
+                    {
+                        "Trộm vía bé yêu lớn nhanh quá! Hôm nay bé đạt {0}kg và cao {1}cm rồi nè. {2}",
+                        "Cột mốc mới của thiên thần nhỏ: Nặng {0}kg - Cao {1}cm. Cứ đà này chẳng mấy chốc bé lớn bổng luôn! {2}",
+                        "Tuyệt vời! Hành trình khôn lớn của bé ghi nhận thêm kỷ lục mới: {0}kg và {1}cm. {2}"
+                    };
+                    int gIndex = (int)(growth.WeightKg + growth.HeightCm) % growthTemplates.Length;
+                    string gDesc = string.Format(growthTemplates[gIndex], growth.WeightKg, growth.HeightCm, growth.Notes);
+
                     events.Add(new TimelineEventDto
                     {
                         EventDate = growth.RecordedDate,
                         EventType = "Growth",
                         Title = "Cập nhật chỉ số phát triển",
-                        Description = $"Cân nặng: {growth.WeightKg}kg - Chiều cao: {growth.HeightCm}cm. {growth.Notes}",
+                        Description = gDesc.Trim(),
                         ImageUrl = "/images/timeline/growth-icon.png" // Placeholder icon
                     });
                 }
@@ -68,12 +77,21 @@ namespace PolyBabyAPI.Services
             {
                 foreach (var vac in baby.VaccinationRecords.Where(v => v.Status == "Completed" && v.AdministeredDate.HasValue))
                 {
+                    string[] vacTemplates = new string[] 
+                    {
+                        "Dũng cảm quá đi! Bé đã hoàn thành mũi tiêm {0} rồi. {1}",
+                        "Thêm một lớp bảo vệ sức khỏe cho bé yêu với mũi {0}. {1}",
+                        "Bé cưng siêu ngoan đã vượt qua mũi tiêm {0} thành công! {1}"
+                    };
+                    int vIndex = Math.Abs(vac.VaccineName.GetHashCode()) % vacTemplates.Length;
+                    string vDesc = string.Format(vacTemplates[vIndex], vac.VaccineName, vac.Notes ?? "");
+
                     events.Add(new TimelineEventDto
                     {
                         EventDate = vac.AdministeredDate.Value,
                         EventType = "Vaccination",
                         Title = $"Tiêm phòng: {vac.VaccineName}",
-                        Description = vac.Notes ?? "Bé đã hoàn thành mũi tiêm dũng cảm!",
+                        Description = vDesc.Trim(),
                         ImageUrl = "/images/timeline/vaccine-icon.png"
                     });
                 }
@@ -102,12 +120,23 @@ namespace PolyBabyAPI.Services
                     var imageUrl = product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl 
                                    ?? detail.Variant.ImageUrl;
 
+                    string[] templates = new string[] 
+                    {
+                        "Yêu thương đong đầy! Mẹ vừa chọn {0} {1} để chăm sóc bé tốt hơn nè.",
+                        "Mẹ luôn dành những điều tuyệt vời nhất cho con! Mẹ đã sắm {0} {1}.",
+                        "Một món quà nhỏ từ tình yêu lớn của mẹ: {0} {1} đã về đội của bé!",
+                        "Bé yêu chắc sẽ thích lắm đây! Mẹ vừa rinh về {0} {1} cho cục cưng.",
+                        "Để con yêu luôn khỏe mạnh và vui vẻ, mẹ đã chuẩn bị sẵn {0} {1} rồi nhé."
+                    };
+                    int templateIndex = (detail.InvoiceID + product.ProductID) % templates.Length; // pseudo-random based on IDs
+                    string description = string.Format(templates[templateIndex], detail.Quantity, $"{product.ProductName} ({detail.Variant.VariantName})");
+
                     events.Add(new TimelineEventDto
                     {
                         EventDate = invoice.CreatedAt.Value,
                         EventType = "Shopping",
                         Title = "Món quà từ mẹ",
-                        Description = $"Mẹ đã sắm {detail.Quantity}x {product.ProductName} ({detail.Variant.VariantName}) cho bé.",
+                        Description = description,
                         ImageUrl = imageUrl,
                         RelatedId = product.ProductID
                     });

@@ -32,6 +32,7 @@ import { AddressList } from "@/components/client/profile/AddressList";
 import { SecurityAndSettings } from "@/components/client/profile/SecurityAndSettings";
 import { EditProfileModal } from "@/components/client/profile/modals/EditProfileModal";
 import { EditBabyInfoModal } from "@/components/client/profile/modals/EditBabyInfoModal";
+import { UpdateWeightModal } from "@/components/client/profile/modals/UpdateWeightModal";
 import { ProfileMessages } from "@/components/client/profile/ProfileMessages";
 import { ChangePasswordModal } from "@/components/client/profile/modals/ChangePasswordModal";
 import { ProfileAddressModal } from "@/components/client/profile/modals/ProfileAddressModal";
@@ -64,6 +65,16 @@ export default function ProfilePage() {
   const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
   const [pendingSupportOrder, setPendingSupportOrder] = useState<any>(null);
   const [activeBabyId, setActiveBabyId] = useState<number | null>(null);
+
+  // Modals States
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editBabyInfoOpen, setEditBabyInfoOpen] = useState(false);
+  const [updateWeightBabyId, setUpdateWeightBabyId] = useState<number | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -100,14 +111,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Modals States
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [editBabyInfoOpen, setEditBabyInfoOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [addressModalOpen, setAddressModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
+
 
   // Forms States
   const [profileForm, setProfileForm] = useState({
@@ -735,6 +739,7 @@ export default function ProfilePage() {
                   setActiveBabyId(id);
                   handleTabChange("baby-tracker");
                 }}
+                onUpdateWeightClick={(id) => setUpdateWeightBabyId(id)}
               />
               <SecurityAndSettings
                 hasPassword={hasPassword}
@@ -843,6 +848,17 @@ export default function ProfilePage() {
         token={token}
         userProfile={userProfile}
         onRefreshProfile={() => {
+          if (userProfile && token) {
+            fetchData(userProfile.userId, token);
+          }
+        }}
+      />
+
+      <UpdateWeightModal
+        isOpen={updateWeightBabyId !== null}
+        onClose={() => setUpdateWeightBabyId(null)}
+        babyId={updateWeightBabyId}
+        onSuccess={() => {
           if (userProfile && token) {
             fetchData(userProfile.userId, token);
           }

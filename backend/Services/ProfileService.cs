@@ -29,6 +29,7 @@ namespace PolyBabyAPI.Service
             {
                 var user = await _userManager.Users
                     .Include(u => u.BabyProfiles)
+                        .ThenInclude(b => b.GrowthRecords)
                     .FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
@@ -72,7 +73,8 @@ namespace PolyBabyAPI.Service
                         WeightKg = b.WeightKg,
                         HeightCm = b.HeightCm,
                         FavoriteColors = b.FavoriteColors,
-                        CreatedAt = b.CreatedAt
+                        CreatedAt = b.CreatedAt,
+                        GrowthRecords = b.GrowthRecords?.ToList()
                     }).ToList() ?? new List<BabyProfileDto>()
                 };
             }
@@ -292,6 +294,7 @@ namespace PolyBabyAPI.Service
             {
                 var user = await _userManager.Users
                     .Include(u => u.BabyProfiles)
+                        .ThenInclude(b => b.GrowthRecords)
                     .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper());
                 if (user == null)
                 {
@@ -335,7 +338,8 @@ namespace PolyBabyAPI.Service
                         WeightKg = b.WeightKg,
                         HeightCm = b.HeightCm,
                         FavoriteColors = b.FavoriteColors,
-                        CreatedAt = b.CreatedAt
+                        CreatedAt = b.CreatedAt,
+                        GrowthRecords = b.GrowthRecords?.ToList()
                     }).ToList() ?? new List<BabyProfileDto>()
                 };
             }

@@ -1,15 +1,17 @@
 import React from "react";
 import Link from "next/link";
 import { UserProfile } from "@/lib/api";
-import { Heart, Baby, Palette, Calendar, Scale, Ruler, Sparkles } from "lucide-react";
+import { Heart, Baby, Palette, Calendar, Scale, Ruler, Sparkles, Activity } from "lucide-react";
 
 interface BabyInfoProps {
   userProfile: UserProfile;
   onEditClick: () => void;
   onOpenTracker?: (babyId: number) => void;
+  onUpdateWeightClick?: (babyId: number) => void;
 }
 
-export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoProps) {
+export function BabyInfo({ userProfile, onEditClick, onOpenTracker, onUpdateWeightClick }: BabyInfoProps) {
+
   const getGenderLabel = (g?: string | null) => {
     if (!g) return "Chưa cập nhật";
     if (g === "Boy" || g === "Male" || g === "Nam") return "Bé trai";
@@ -42,7 +44,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
   const hasBabies = userProfile.babyProfiles && userProfile.babyProfiles.length > 0;
 
   return (
-    <section className="p-5 sm:p-6">
+    <section className="p-5 sm:p-6 relative">
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -185,7 +187,39 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                   </div>
 
                   {/* Sổ tay sức khỏe & Hành trình Button */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-2">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-2">
+                    {(() => {
+                      const latestRecord = baby.growthRecords ? [...baby.growthRecords].sort((a, b) => new Date(b.recordedDate).getTime() - new Date(a.recordedDate).getTime())[0] : null;
+                      let hasUpdatedThisMonth = false;
+                      if (latestRecord) {
+                        const latestDate = new Date(latestRecord.recordedDate);
+                        const now = new Date();
+                        if (latestDate.getFullYear() === now.getFullYear() && latestDate.getMonth() === now.getMonth()) {
+                          hasUpdatedThisMonth = true;
+                        }
+                      }
+                      
+                      return (
+                        <button
+                          onClick={() => {
+                            if (hasUpdatedThisMonth) return;
+                            if (onUpdateWeightClick) {
+                              onUpdateWeightClick(baby.babyProfileID);
+                            }
+                          }}
+                          disabled={hasUpdatedThisMonth}
+                          className={`text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors mr-auto ${
+                            hasUpdatedThisMonth 
+                            ? "text-slate-400 bg-slate-100 cursor-not-allowed border border-slate-200" 
+                            : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200"
+                          }`}
+                          title={hasUpdatedThisMonth ? "Tháng này mẹ đã cập nhật cân nặng rồi!" : "Cập nhật cân nặng mới nhất của bé"}
+                        >
+                          <Activity size={14} /> {hasUpdatedThisMonth ? "Đã cập nhật" : "Cập nhật cân nặng"}
+                        </button>
+                      );
+                    })()}
+                    
                     <Link
                       href={`/baby-timeline/${baby.babyProfileID}`}
                       className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
@@ -200,7 +234,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                         isBoy ? "bg-blue-500 hover:bg-blue-600" : "bg-pink-500 hover:bg-pink-600"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[14px]">medical_information</span> Sổ tay sức khỏe
+                      <span className="material-symbols-outlined text-[14px]">medical_information</span> Sổ tay
                     </button>
                   </div>
                 </div>
