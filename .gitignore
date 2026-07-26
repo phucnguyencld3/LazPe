@@ -106,6 +106,7 @@ logs/
 .DS_Store
 /mockups/
 /Local/
+/JwtGen/
 **/RecommendationModel.zip
 **/TrendModel.zip
 .env

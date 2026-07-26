@@ -97,11 +97,11 @@ export const RevenueTab: React.FC<RevenueTabProps> = ({ categoryStats, brandStat
   const supplierChart = getSupplierChartConfig();
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col space-y-0 print-card">
       {/* Category & Supplier share distributions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
         {/* Category Pie Chart */}
-        <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+        <div className="p-6">
           <h3 className="font-bold text-slate-800 text-base mb-6">Doanh thu theo Danh mục</h3>
           {isChartReady && categoryChart && categoryChart.series.length > 0 ? (
             <Chart
@@ -118,7 +118,7 @@ export const RevenueTab: React.FC<RevenueTabProps> = ({ categoryStats, brandStat
         </div>
 
         {/* Brand Pie Chart */}
-        <div className="bg-white rounded border border-slate-100 shadow-sm p-6 print-card">
+        <div className="p-6">
           <h3 className="font-bold text-slate-800 text-base mb-6">Doanh thu theo Thương hiệu</h3>
           {isChartReady && supplierChart && supplierChart.series.length > 0 ? (
             <Chart
@@ -136,9 +136,9 @@ export const RevenueTab: React.FC<RevenueTabProps> = ({ categoryStats, brandStat
       </div>
 
       {/* Category list table & Supplier ranking table */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
         {/* Categories list */}
-        <div className="lg:col-span-3 bg-white rounded border border-slate-100 shadow-sm p-6 print-card flex flex-col justify-between">
+        <div className="lg:col-span-3 p-6 flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-slate-800 text-base mb-6">Chi tiết Danh mục</h3>
             <div className="overflow-x-auto">
@@ -196,7 +196,7 @@ export const RevenueTab: React.FC<RevenueTabProps> = ({ categoryStats, brandStat
         </div>
 
         {/* Supplier list */}
-        <div className="lg:col-span-2 bg-white rounded border border-slate-100 shadow-sm p-6 print-card flex flex-col justify-between">
+        <div className="lg:col-span-2 p-6 flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-slate-800 text-base mb-6">Bảng xếp hạng Thương hiệu</h3>
             <div className="overflow-x-auto">

@@ -6,15 +6,16 @@ import { Loader } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { ComboList } from "@/components/admin/combo/ComboList";
 import { ComboForm } from "@/components/admin/combo/ComboForm";
+import { ComboDetailAdmin } from "@/components/admin/combo/ComboDetailAdmin";
 
 export default function AdminComboPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(true);
 
-  // Navigation state: "list" | "create" | "edit"
-  const [view, setView] = useState<"list" | "create" | "edit">("list");
-  // Selected combo ID for edit mode
+  // Navigation state: "list" | "create" | "edit" | "detail"
+  const [view, setView] = useState<"list" | "create" | "edit" | "detail">("list");
+  // Selected combo ID for edit/detail mode
   const [activeBundleId, setActiveBundleId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -50,6 +51,19 @@ export default function AdminComboPage() {
             setActiveBundleId(id);
             setView("edit");
           }}
+          onViewClick={(id) => {
+            setActiveBundleId(id);
+            setView("detail");
+          }}
+        />
+      ) : view === "detail" && activeBundleId !== null ? (
+        <ComboDetailAdmin 
+          bundleId={activeBundleId} 
+          token={token} 
+          onBack={() => {
+            setView("list");
+            setActiveBundleId(null);
+          }} 
         />
       ) : (
         <ComboForm

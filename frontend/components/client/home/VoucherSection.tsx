@@ -69,13 +69,13 @@ export const VoucherSection: React.FC<VoucherSectionProps> = ({
                   <button
                     onClick={() => handleCollectVoucher(voucher.voucherID)}
                     disabled={voucher.isCollected}
-                    className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 duration-200 flex items-center justify-center ${
+                    className={`w-full py-2.5 rounded-[4px] font-semibold text-sm transition-all active:scale-95 duration-200 flex items-center justify-center ${
                       voucher.isCollected
                         ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                        : "bg-rose-500 hover:bg-rose-600 text-white shadow-sm hover:shadow"
+                        : "bg-[#ff6a00] hover:bg-[#e65c00] text-white shadow-sm hover:shadow"
                     }`}
                   >
-                    {voucher.isCollected ? "Đã lưu" : "Lưu mã"}
+                    {voucher.isCollected ? "Đã lưu" : "Lưu Ngay"}
                   </button>
                 </div>
               </div>

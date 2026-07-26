@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Star, Minus, Plus, ShoppingCart, Heart, Sparkles } from "lucide-react";
 import { Product, Variant } from "@/types";
 import CountdownTimer from "@/components/client/common/CountdownTimer";
+import { getUserSubscriptions, SubscriptionItem } from "@/lib/api";
 
 interface ProductDetailInfoProps {
   product: Product;
@@ -30,6 +31,7 @@ interface ProductDetailInfoProps {
   selectedGiftId?: number | null;
   setSelectedGiftId?: (id: number | null) => void;
   isAddingToCart?: boolean;
+  subscriptionAction?: React.ReactNode;
 }
 
 export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
@@ -59,7 +61,10 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   selectedGiftId = null,
   setSelectedGiftId = () => {},
   isAddingToCart = false,
+  subscriptionAction,
 }) => {
+  // isSubscribed state moved to page.tsx
+
   const maxAllowedQuantity = useMemo(() => {
     let limit = displayStock;
     if (activeFlashSaleItem) {
@@ -74,7 +79,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
   }, [displayStock, activeFlashSaleItem]);
 
   return (
-    <div className="flex flex-col justify-between">
+    <div className="flex flex-col">
       <div>
         {/* Category & Stock Status */}
         <div className="flex justify-between items-center gap-4 mb-4">
@@ -104,7 +109,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
         </div>
 
         {/* Star Ratings & Ask AI */}
-        <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex items-center gap-4">
             {product.rating !== undefined && product.rating !== null && product.rating > 0 ? (
               <>
@@ -146,7 +151,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
         {/* Price Display / Flash Sale Widget */}
         {/* Price Display / Flash Sale Widget */}
         {activeFlashSaleItem && flashSaleEndTime && (
-          <div className={`rounded-[10px] border overflow-hidden mb-4 shadow-sm ${flashSaleStatus === 0 ? "border-blue-200 shadow-blue-500/5" : "border-rose-200 shadow-rose-500/5"}`}>
+          <div className={`rounded-[5px] border overflow-hidden shadow-sm ${flashSaleStatus === 0 ? "border-blue-200 shadow-blue-500/5" : "border-rose-200 shadow-rose-500/5"}`}>
             <div className={`px-2 py-1 flex flex-wrap items-center justify-between gap-2 text-white ${flashSaleStatus === 0 ? "bg-gradient-to-r from-blue-600 to-indigo-500" : "bg-gradient-to-r from-rose-600 to-orange-500"}`}>
               <div className="flex items-center gap-1 font-black uppercase text-[10px] sm:text-xs tracking-wider">
                 {flashSaleStatus === 0 ? (
@@ -173,7 +178,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
             <div className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${flashSaleStatus === 0 ? "bg-blue-50/20" : "bg-rose-50/20"}`}>
               <div className="flex items-baseline gap-2">
-                <span className={`text-xl sm:text-2xl font-black leading-none ${flashSaleStatus === 0 ? "text-blue-600" : "text-rose-600"}`}>
+                <span className={`text-xl sm:text-2xl font-black leading-none ${flashSaleStatus === 0 ? "text-blue-500" : "text-rose-500"}`}>
                   ₫{flashSaleStatus === 0 
                     ? activeFlashSaleItem.discountPrice.toLocaleString("vi-VN").replace(/^(\d)[^\d]*(\d)/, (m: string) => m.slice(0, -1) + "?") 
                     : activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
@@ -201,7 +206,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
                       className={`absolute left-0 top-0 h-full transition-all duration-500 ${flashSaleStatus === 0 ? "bg-slate-300" : "bg-gradient-to-r from-rose-500 to-orange-500"}`}
                       style={{ width: `${flashSaleStatus === 0 ? 0 : Math.min(100, Math.max(0, (activeFlashSaleItem.soldQuantity / activeFlashSaleItem.totalQuantity) * 100))}%` }}
                     ></div>
-                    <span className={`relative z-10 text-[8px] font-black uppercase tracking-wider ${flashSaleStatus === 0 ? "text-slate-500" : "text-slate-800"}`}>
+                    <span className={`relative z-10 text-[8px] font-black uppercase tracking-wider ${flashSaleStatus === 0 ? "text-slate-500" : "text-slate-600"}`}>
                       {flashSaleStatus === 0 
                         ? "Sắp mở bán"
                         : activeFlashSaleItem.soldQuantity >= activeFlashSaleItem.totalQuantity 
@@ -224,7 +229,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
         {/* Normal Price Display if not active flash sale */}
         {(!activeFlashSaleItem || flashSaleStatus === 0) && (
-          <div className="bg-slate-50/80 rounded-2xl p-4 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-slate-50/80 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {(() => {
               const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
               
@@ -309,7 +314,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
         {/* Gift Selection UI */}
         {activeFlashSaleItem?.discountType === 2 && activeFlashSaleItem?.giftVariantIds && activeFlashSaleItem.giftVariantIds.length > 0 && (
-          <div className="space-y-3 mb-6 pt-4 border-t border-slate-100">
+          <div className="space-y-2 pt-3 mt-3 border-t border-slate-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-slate-700">Quà tặng / Ưu đãi:</span>
@@ -321,7 +326,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
               )}
             </div>
             
-            <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex gap-2.5 overflow-x-auto snap-x" style={{ scrollbarWidth: 'none' }}>
               {activeFlashSaleItem.giftVariantIds.map((giftId: number, index: number) => {
                 const giftName = activeFlashSaleItem.giftNames?.[index] || "Quà tặng bí mật";
                 const giftImage = activeFlashSaleItem.giftImageUrls?.[index] || "/assets/img/products/default-product.jpg";
@@ -385,7 +390,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
 
         {/* Dynamic Variants Selectors (Text Only) */}
         {product.productOptions && product.productOptions.length > 0 && !(product.productOptions.length === 1 && product.productOptions[0].productOptionValues.length === 1) && (
-          <div className="space-y-4 mb-6 pt-4 border-t border-slate-100">
+          <div className="space-y-2 pb-1 pt-3 mt-3 border-t border-slate-100">
             {product.productOptions.map((option) => (
               <div key={option.productOptionID} className="flex flex-col gap-2">
                 <span className="text-sm font-semibold text-slate-700">
@@ -420,8 +425,8 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
       </div>
 
       {/* Action Section (Quantity & Add to Cart) */}
-      <div className="space-y-4 pt-6 border-t border-slate-100">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="space-y-3 pt-3 border-t border-slate-100">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
           {/* Quantity Counter */}
           <div className="flex items-center justify-between w-full sm:w-28 h-10 sm:h-11 bg-slate-50/80 rounded-[6px] px-3 border border-slate-200 hover:border-slate-300 transition-colors">
             <button
@@ -452,31 +457,40 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             </button>
           </div>
 
-          <div className="flex w-full gap-2">
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-10 sm:h-11 rounded-[8px] border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
-            >
-              {isAddingToCart ? (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  <span className="truncate">Thêm giỏ hàng</span>
-                </>
-              )}
-            </button>
+          <div className="flex flex-col w-full gap-3">
+            <div className="flex w-full gap-2">
+              {/* Add to Cart Button */}
+              <button
+                onClick={handleAddToCart}
+                disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
+                className="w-1/2 h-10 sm:h-11 rounded-[8px] border border-primary text-primary font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:bg-rose-50 active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+              >
+                {isAddingToCart ? (
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <span className="truncate">Thêm giỏ hàng</span>
+                  </>
+                )}
+              </button>
 
-            {/* Buy Now Button */}
-            <button
-              onClick={handleBuyNow}
-              disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
-              className="w-1/2 h-10 sm:h-11 rounded-[8px] bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
-            >
-              <span className="truncate">Mua ngay</span>
-            </button>
+              {/* Buy Now Button */}
+              <button
+                onClick={handleBuyNow}
+                disabled={!displayInStock || maxAllowedQuantity <= 0 || isAddingToCart}
+                className="w-1/2 h-10 sm:h-11 rounded-[8px] bg-primary text-white font-bold flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm px-2 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+              >
+                <span className="truncate">Mua ngay</span>
+              </button>
+            </div>
+
+            {/* Subscription Action */}
+            {subscriptionAction && (
+              <div className="w-full mt-1.5">
+                {subscriptionAction}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -28,8 +28,8 @@ export function PersonalInfo({ userProfile, onEditClick }: PersonalInfoProps) {
   };
 
   return (
-    <section className="bg-white rounded-[10px] p-5 shadow-sm border border-slate-100/60">
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+    <section className="px-5 py-4">
+      <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-100">
         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
           <span className="material-symbols-outlined text-rose-500 text-xl">person</span> Thông tin cá nhân
         </h2>
@@ -41,7 +41,7 @@ export function PersonalInfo({ userProfile, onEditClick }: PersonalInfoProps) {
         </button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
         <div className="flex flex-col gap-1 border-b border-slate-50 pb-2">
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Họ và Tên</span>
           <span className="font-semibold text-[13px] text-slate-800">{userProfile.fullName}</span>
@@ -60,6 +60,24 @@ export function PersonalInfo({ userProfile, onEditClick }: PersonalInfoProps) {
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ngày sinh</span>
           <span className="font-semibold text-[13px] text-slate-800">
             {formatDob(userProfile.dateOfBirth)}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 border-b border-slate-50 pb-2">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mã giới thiệu của bạn</span>
+          <span className="font-semibold text-[13px] text-slate-800 flex items-center gap-2">
+            {userProfile.referralCode || "Chưa có"}
+            {userProfile.referralCode && (
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(userProfile.referralCode || "");
+                  alert("Đã sao chép mã giới thiệu: " + userProfile.referralCode);
+                }}
+                className="text-primary hover:text-rose-600 transition-colors"
+                title="Sao chép mã"
+              >
+                <span className="material-symbols-outlined text-[14px]">content_copy</span>
+              </button>
+            )}
           </span>
         </div>
         <div className="flex flex-col gap-1 md:col-span-2 pt-1">

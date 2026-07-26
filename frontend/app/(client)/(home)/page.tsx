@@ -72,18 +72,34 @@ export default function HomePageV2() {
           if (topWishlistData?.items) setTopWishlistProducts(topWishlistData.items);
         }
 
-        // Fetch dữ liệu cho tab hiện tại (từ URL)
         let initialTab: TabKey = 'all';
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const tabParam = params.get('tab') as TabKey;
+          const cachedTab = sessionStorage.getItem('lazpe_home_activeTab') as TabKey;
+          
           if (tabParam && ['all', 'foryou', 'combo', 'bestseller', 'newest', 'discount'].includes(tabParam)) {
             initialTab = tabParam;
-            setActiveTab(initialTab);
+          } else if (cachedTab && ['all', 'foryou', 'combo', 'bestseller', 'newest', 'discount'].includes(cachedTab)) {
+            initialTab = cachedTab;
           }
+          setActiveTab(initialTab);
         }
 
-        let dataItems: Product[] = [];
+        const cachedStr = typeof window !== 'undefined' ? sessionStorage.getItem('lazpe_home_tabData') : null;
+        let usedCache = false;
+        if (cachedStr) {
+          try {
+            const parsedCache = JSON.parse(cachedStr);
+            if (isMounted && parsedCache && parsedCache['all']) {
+              setTabData(parsedCache);
+              usedCache = true;
+            }
+          } catch(e) {}
+        }
+
+        if (!usedCache) {
+          let dataItems: Product[] = [];
         if (initialTab === 'foryou') {
           dataItems = await getRecommendations(10);
           if (!dataItems || dataItems.length === 0) {
@@ -103,16 +119,17 @@ export default function HomePageV2() {
           dataItems = data?.items || [];
         }
 
-        if (isMounted && dataItems.length > 0) {
-          setTabData(prev => ({
-            ...prev,
-            [initialTab]: {
-              ...prev[initialTab],
-              products: dataItems,
-              hasMore: initialTab === 'foryou' || initialTab === 'combo' ? false : dataItems.length >= 30,
-              displayedCount: initialTab === 'foryou' ? 10 : 30
-            }
-          }));
+          if (isMounted && dataItems.length > 0) {
+            setTabData(prev => ({
+              ...prev,
+              [initialTab]: {
+                ...prev[initialTab],
+                products: dataItems,
+                hasMore: initialTab === 'foryou' || initialTab === 'combo' ? false : dataItems.length >= 30,
+                displayedCount: initialTab === 'foryou' ? 10 : 30
+              }
+            }));
+          }
         }
       } catch (err) {
         console.error("Error fetching homepage data:", err);
@@ -128,6 +145,16 @@ export default function HomePageV2() {
     fetchInitialData();
     return () => { isMounted = false; };
   }, []);
+
+  // Save to sessionStorage when tabData or activeTab changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('lazpe_home_activeTab', activeTab);
+      if (Object.values(tabData).some(tab => tab.products.length > 0)) {
+        sessionStorage.setItem('lazpe_home_tabData', JSON.stringify(tabData));
+      }
+    }
+  }, [tabData, activeTab]);
 
   const handleTabChange = async (tab: TabKey) => {
     setActiveTab(tab);
@@ -297,48 +324,48 @@ export default function HomePageV2() {
       {/* Tab Sản Phẩm */}
       <div className="bg-white rounded-[10px] shadow-sm mb-6">
         {/* Tabs Navigation */}
-        <div className="flex border-b overflow-x-auto hide-scrollbar sticky top-16 bg-white z-40 rounded-t-[10px] shadow-sm">
+        <div className="flex border-b border-slate-100 overflow-x-auto hide-scrollbar sticky top-16 bg-white z-40 rounded-t-[10px] shadow-sm px-2 sm:px-4">
           <button
             onClick={() => handleTabChange('all')}
-            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'all' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] py-2.5 px-2 flex flex-col items-center gap-1 border-b-[3px] transition-all duration-300 ${activeTab === 'all' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50'}`}
           >
-            <LayoutGrid size={18} className={activeTab === 'all' ? 'text-primary' : 'text-slate-400'} />
-            <span className="font-bold text-xs whitespace-nowrap">Tất Cả</span>
+            <LayoutGrid size={18} className={`transition-all duration-300 ${activeTab === 'all' ? 'text-primary scale-110' : 'text-slate-400'}`} />
+            <span className="font-bold text-[13px] whitespace-nowrap tracking-wide">Tất Cả</span>
           </button>
           <button
             onClick={() => handleTabChange('foryou')}
-            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'foryou' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] py-2.5 px-2 flex flex-col items-center gap-1 border-b-[3px] transition-all duration-300 ${activeTab === 'foryou' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50'}`}
           >
-            <Heart size={18} className={activeTab === 'foryou' ? 'text-primary' : 'text-slate-400'} />
-            <span className="font-bold text-xs whitespace-nowrap">Dành Cho Bạn</span>
+            <Heart size={18} className={`transition-all duration-300 ${activeTab === 'foryou' ? 'text-primary scale-110' : 'text-slate-400'}`} />
+            <span className="font-bold text-[13px] whitespace-nowrap tracking-wide">Dành Cho Bạn</span>
           </button>
           <button
             onClick={() => handleTabChange('bestseller')}
-            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'bestseller' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] py-2.5 px-2 flex flex-col items-center gap-1 border-b-[3px] transition-all duration-300 ${activeTab === 'bestseller' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50'}`}
           >
-            <Flame size={18} className={activeTab === 'bestseller' ? 'text-primary' : 'text-slate-400'} />
-            <span className="font-bold text-xs whitespace-nowrap">Bán Chạy</span>
+            <Flame size={18} className={`transition-all duration-300 ${activeTab === 'bestseller' ? 'text-primary scale-110' : 'text-slate-400'}`} />
+            <span className="font-bold text-[13px] whitespace-nowrap tracking-wide">Bán Chạy</span>
           </button>
           <button
             onClick={() => handleTabChange('newest')}
-            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'newest' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] py-2.5 px-2 flex flex-col items-center gap-1 border-b-[3px] transition-all duration-300 ${activeTab === 'newest' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50'}`}
           >
-            <Sparkles size={18} className={activeTab === 'newest' ? 'text-primary' : 'text-slate-400'} />
-            <span className="font-bold text-xs whitespace-nowrap">Mới Ra Mắt</span>
+            <Sparkles size={18} className={`transition-all duration-300 ${activeTab === 'newest' ? 'text-primary scale-110' : 'text-slate-400'}`} />
+            <span className="font-bold text-[13px] whitespace-nowrap tracking-wide">Mới Ra Mắt</span>
           </button>
           <button
             onClick={() => handleTabChange('discount')}
-            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'discount' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] py-2.5 px-2 flex flex-col items-center gap-1 border-b-[3px] transition-all duration-300 ${activeTab === 'discount' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50'}`}
           >
-            <Tag size={18} className={activeTab === 'discount' ? 'text-primary' : 'text-slate-400'} />
-            <span className="font-bold text-xs whitespace-nowrap">Ưu Đãi</span>
+            <Tag size={18} className={`transition-all duration-300 ${activeTab === 'discount' ? 'text-primary scale-110' : 'text-slate-400'}`} />
+            <span className="font-bold text-[13px] whitespace-nowrap tracking-wide">Ưu Đãi</span>
           </button>
           <button
             onClick={() => handleTabChange('combo')}
-            className={`flex-1 min-w-[120px] py-2 px-2 flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'combo' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] sm:min-w-[120px] py-2.5 px-2 flex flex-col items-center gap-1 border-b-[3px] transition-all duration-300 ${activeTab === 'combo' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50/50'}`}
           >
-            <Package size={18} className={activeTab === 'combo' ? 'text-primary' : 'text-slate-400'} />
-            <span className="font-bold text-xs whitespace-nowrap">Combo Tiết Kiệm</span>
+            <Package size={18} className={`transition-all duration-300 ${activeTab === 'combo' ? 'text-primary scale-110' : 'text-slate-400'}`} />
+            <span className="font-bold text-[13px] whitespace-nowrap tracking-wide">Combo Tiết Kiệm</span>
           </button>
         </div>
 

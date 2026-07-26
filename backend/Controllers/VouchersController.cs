@@ -416,6 +416,11 @@ namespace PolyBabyAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateVoucherRequest request)
         {
+            if (request.DiscountType == 1 && (request.DiscountValue < 0 || request.DiscountValue > 50))
+            {
+                return BadRequest(new { message = "Mức giảm giá theo phần trăm không được vượt quá 50% theo quy định pháp luật." });
+            }
+
             var visibilityType = Enum.IsDefined(typeof(VoucherVisibilityType), request.VisibilityType)
                 ? (VoucherVisibilityType)request.VisibilityType
                 : VoucherVisibilityType.Public;
@@ -501,6 +506,11 @@ namespace PolyBabyAPI.Controllers
             var voucher = await _voucherService.GetVoucherByIdAsync(id);
             if (voucher == null)
                 return NotFound();
+
+            if (request.DiscountType == 1 && (request.DiscountValue < 0 || request.DiscountValue > 50))
+            {
+                return BadRequest(new { message = "Mức giảm giá theo phần trăm không được vượt quá 50% theo quy định pháp luật." });
+            }
 
             voucher.Name = request.Name ?? voucher.Name;
             voucher.DiscountValue = request.DiscountValue;

@@ -403,6 +403,11 @@ namespace PolyBabyAPI.Controllers
                 return BadRequest(new { message = overlapError });
             }
 
+            if (dto.FlashSaleItems.Any(item => item.DiscountType == DiscountType.Percentage && (item.DiscountPrice < 0 || item.DiscountPrice > 50)))
+            {
+                return BadRequest(new { message = "Mức khuyến mãi phần trăm của sản phẩm trong Flash Sale không được vượt quá 50% theo quy định pháp luật." });
+            }
+
             var sale = new FlashSale
             {
                 Name = dto.Name,
@@ -477,6 +482,11 @@ namespace PolyBabyAPI.Controllers
             if (!string.IsNullOrEmpty(overlapError))
             {
                 return BadRequest(new { message = overlapError });
+            }
+
+            if (dto.FlashSaleItems.Any(item => item.DiscountType == DiscountType.Percentage && (item.DiscountPrice < 0 || item.DiscountPrice > 50)))
+            {
+                return BadRequest(new { message = "Mức khuyến mãi phần trăm của sản phẩm trong Flash Sale không được vượt quá 50% theo quy định pháp luật." });
             }
 
             sale.Name = dto.Name;

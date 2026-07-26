@@ -84,9 +84,9 @@ export function ProductGeneralInfo({
   };
 
   return (
-    <div className="space-y-8">
+    <>
       {/* General Information Card */}
-      <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+      <section className="p-8">
         <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
           <span className="material-symbols-outlined text-primary">description</span>
           <h3 className="text-lg font-bold text-slate-800">Thông tin chung</h3>
@@ -321,6 +321,6 @@ export function ProductGeneralInfo({
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 }

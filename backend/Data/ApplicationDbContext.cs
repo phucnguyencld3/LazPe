@@ -75,6 +75,11 @@ namespace PolyBabyAPI.Data
         public DbSet<LoyaltyAuditLog> LoyaltyAuditLogs { get; set; }
         public DbSet<LoyaltyManualRevocation> LoyaltyManualRevocations { get; set; }
         public DbSet<LoyaltyBirthdayGiftLog> LoyaltyBirthdayGiftLogs { get; set; }
+        public DbSet<LoyaltyVoucherRedemption> LoyaltyVoucherRedemptions { get; set; }
+        public DbSet<LoyaltyVoucherRedemptionHistory> LoyaltyVoucherRedemptionHistories { get; set; }
+
+        // ===== Referral System =====
+        public DbSet<ReferralRecord> ReferralRecords { get; set; }
 
         // ===== Notification Center =====
         public DbSet<Notification> Notifications { get; set; }
@@ -88,6 +93,10 @@ namespace PolyBabyAPI.Data
 
         // ===== Product Alerts =====
         public DbSet<ProductAlert> ProductAlerts { get; set; }
+        
+        // ===== Subscriptions =====
+        public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<SubscriptionPaymentHistory> SubscriptionPaymentHistories { get; set; }
         
         // ===== Banner =====
         public DbSet<Banner> Banners { get; set; }
@@ -119,6 +128,19 @@ namespace PolyBabyAPI.Data
                 .WithMany(fs => fs.FlashSaleItems)
                 .HasForeignKey(fsi => fsi.FlashSaleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ===== Referral System Relationships =====
+            builder.Entity<ReferralRecord>()
+                .HasOne(r => r.Referrer)
+                .WithMany()
+                .HasForeignKey(r => r.ReferrerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ReferralRecord>()
+                .HasOne(r => r.ReferredUser)
+                .WithMany()
+                .HasForeignKey(r => r.ReferredUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ===== Banner Configurations =====
             builder.Entity<Banner>(entity =>
@@ -500,6 +522,37 @@ namespace PolyBabyAPI.Data
 
                 entity.HasIndex(pa => new { pa.ProductId, pa.IsActive });
             });
+
+            // ===== Subscription Relationships =====
+            builder.Entity<Subscription>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Subscription>()
+                .HasOne(s => s.Product)
+                .WithMany()
+                .HasForeignKey(s => s.ProductID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Subscription>()
+                .HasOne(s => s.Variant)
+                .WithMany()
+                .HasForeignKey(s => s.VariantID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<SubscriptionPaymentHistory>()
+                .HasOne(sph => sph.Subscription)
+                .WithMany(s => s.PaymentHistories)
+                .HasForeignKey(sph => sph.SubscriptionID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SubscriptionPaymentHistory>()
+                .HasOne(sph => sph.Invoice)
+                .WithMany()
+                .HasForeignKey(sph => sph.InvoiceID)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ===== Loyalty Settings Seed =====
             builder.Entity<LoyaltySetting>(entity =>

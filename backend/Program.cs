@@ -244,18 +244,22 @@ try
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyProfileService, PolyBabyAPI.Services.BabyProfileService>();
     builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTrackerService, PolyBabyAPI.Services.BabyTrackerService>();
+    builder.Services.AddScoped<PolyBabyAPI.Interfaces.IBabyTimelineService, PolyBabyAPI.Services.BabyTimelineService>();
 
     // Core business services
     builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<IBundleService, BundleService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<ICartService, CartService>();
+    builder.Services.AddScoped<IUpsellService, UpsellService>();
     builder.Services.AddScoped<IVoucherService, VoucherService>();
     builder.Services.AddScoped<IInvoiceService, InvoiceService>();
     builder.Services.AddScoped<IStatisticsService, StatisticsService>();
     builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
     builder.Services.AddScoped<IBannerService, BannerService>();
+    builder.Services.AddScoped<ILoyaltyVoucherRedemptionService, LoyaltyVoucherRedemptionService>();
+    // builder.Services.AddScoped<IReferralService, ReferralService>();
     builder.Services.AddScoped<IWalletSecurityService, WalletSecurityService>();
     builder.Services.AddScoped<IWithdrawEmailService, WithdrawEmailService>();
 
@@ -263,6 +267,7 @@ try
     builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<ISupplierService, SupplierService>();
     builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
     builder.Services.AddScoped<IProductAlertService, ProductAlertService>();
     builder.Services.AddScoped<IProductOptionService, ProductOptionService>();
     builder.Services.AddScoped<IVariantService, VariantService>(); 
@@ -283,7 +288,9 @@ try
 
     //Đăng ký Permission Service
     builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
+    builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
+    builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+    builder.Services.AddScoped<IVoiceSearchService, VoiceSearchService>();
 
     //Đăng ký UserService
     builder.Services.AddScoped<IUserService, UserService>();
@@ -324,6 +331,8 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
     builder.Services.AddScoped<LoyaltyBirthdayGiftJob>();
     builder.Services.AddScoped<PolyBabyAPI.Jobs.ModelTrainingJob>();
     builder.Services.AddScoped<TrendModelTrainingJob>();
+    builder.Services.AddScoped<PolyBabyAPI.Jobs.BabyTimelineYearEndJob>();
+    builder.Services.AddScoped<PolyBabyAPI.Jobs.BabyWeightReminderJob>();
 
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
@@ -433,6 +442,13 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Services.LoyaltyVoucherRedemptionResetJob>(
+            "loyalty-voucher-redemption-monthly-reset",
+            job => job.ExecuteAsync(),
+            Cron.Monthly(1, 0, 0),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
         // 3. Job phát quà sinh nhật hàng ngày (Chạy 00:05 hàng ngày)
         recurringJobManager.AddOrUpdate<LoyaltyBirthdayGiftJob>(
             "loyalty-daily-birthday-gift-issuance",
@@ -470,6 +486,29 @@ builder.Services.AddScoped<ISearchEngineService, SearchEngineService>();
             "withdraw-auto-reject-expired",
             job => job.ExecuteAsync(),
             "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+        // 8. Job mua hàng định kỳ (Chạy mỗi 1 giờ)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Interfaces.ISubscriptionService>(
+            "auto-replenishment-job",
+            service => service.ExecuteDueSubscriptionsAsync(),
+            "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 9. Job gửi thông báo Tổng kết cuối năm (Chạy lúc 10:00 sáng ngày 31/12 hàng năm)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.BabyTimelineYearEndJob>(
+            "baby-timeline-year-end-job",
+            job => job.ExecuteAsync(),
+            "0 10 31 12 *", 
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
+        // 10. Job nhắc nhở cập nhật cân nặng bé (Chạy hàng ngày lúc 09:00 sáng)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.BabyWeightReminderJob>(
+            "baby-weight-reminder-job",
+            job => job.ExecuteAsync(),
+            "0 9 * * *", // Chạy lúc 09:00 sáng mỗi ngày
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
     }

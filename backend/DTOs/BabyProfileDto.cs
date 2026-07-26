@@ -15,6 +15,7 @@ namespace PolyBabyAPI.DTOs
         public double? HeightCm { get; set; }
         public string? FavoriteColors { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<PolyBabyAPI.Models.BabyGrowthRecord>? GrowthRecords { get; set; }
     }
 
     public class CreateBabyProfileDto

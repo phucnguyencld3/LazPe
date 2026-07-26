@@ -50,11 +50,29 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Discount Badge */}
-          {product.discountPrice && product.discountPrice < product.price && (
-            <div className={`absolute ${product.rating && product.rating >= 4.4 ? 'top-8 sm:top-12' : 'top-2 sm:top-3'} left-2 sm:left-3 bg-rose-600 text-white px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold shadow-sm z-10`}>
-              -{Math.round(((product.price - product.discountPrice) / product.price) * 100)}%
-            </div>
-          )}
+          {(() => {
+            const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
+            let percent = 0;
+            if (hasVariants && product.minPrice && product.minEffectivePrice && product.minEffectivePrice < product.minPrice) {
+              percent = Math.ceil(((product.minPrice - product.minEffectivePrice) / product.minPrice) * 100);
+            } else if (hasVariants && product.maxPrice && product.maxEffectivePrice && product.maxEffectivePrice < product.maxPrice) {
+              percent = Math.ceil(((product.maxPrice - product.maxEffectivePrice) / product.maxPrice) * 100);
+            } else if (!hasVariants && product.discountPrice && product.discountPrice < product.price) {
+              percent = Math.ceil(((product.price - product.discountPrice) / product.price) * 100);
+            }
+            
+            if (percent <= 0 && product.discountPercent && product.discountPercent > 0) {
+              percent = Math.ceil(product.discountPercent);
+            }
+            
+            if (percent <= 0) return null;
+
+            return (
+              <div className={`absolute ${product.rating && product.rating >= 4.4 ? 'top-8 sm:top-12' : 'top-2 sm:top-3'} left-2 sm:left-3 bg-rose-600 text-white px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold shadow-sm z-10`}>
+                -{percent}%
+              </div>
+            );
+          })()}
 
           {/* Stock Status */}
           {(!product.inStock || product.limitExceeded) && (
@@ -174,7 +192,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   if (hasDiscount) {
                     const discountRangeText = minEff === maxEff
                       ? `${minEff.toLocaleString("vi-VN")} ₫`
-                      : `${minEff.toLocaleString("vi-VN")} ₫ - ${maxEff.toLocaleString("vi-VN")} ₫`;
+                      : `Chỉ từ ${minEff.toLocaleString("vi-VN")} ₫`;
 
                     return (
                       <span className="text-[11px] sm:text-xs md:text-sm font-extrabold text-rose-600 whitespace-nowrap truncate" title={discountRangeText}>
@@ -184,7 +202,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   } else {
                     const priceRangeText = minOrig === maxOrig
                       ? `${minOrig.toLocaleString("vi-VN")} ₫`
-                      : `${minOrig.toLocaleString("vi-VN")} ₫ - ${maxOrig.toLocaleString("vi-VN")} ₫`;
+                      : `Chỉ từ ${minOrig.toLocaleString("vi-VN")} ₫`;
 
                     return (
                       <span className="text-[11px] sm:text-xs md:text-sm font-extrabold text-slate-900 whitespace-nowrap truncate" title={priceRangeText}>

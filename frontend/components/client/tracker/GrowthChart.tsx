@@ -140,7 +140,7 @@ export default function GrowthChart({ profile }: Props) {
   }, [latestActualWeight, latestWhoWeight]);
 
   return (
-    <div className="bg-slate-50/50 p-5 rounded-[14px] shadow-sm border border-slate-100/80 h-full flex flex-col">
+    <div className="p-5 md:p-6 h-full flex flex-col">
       <h3 className="text-[15px] font-bold mb-4 text-slate-800 flex items-center gap-2">
         <span className="material-symbols-outlined text-indigo-500 text-lg">monitoring</span> 
         Biểu đồ Cân nặng (kg)

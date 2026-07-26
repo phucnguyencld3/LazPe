@@ -45,6 +45,7 @@ export interface Product {
   specifications?: string;
   price: number;
   discountPrice?: number;
+  discountPercent?: number;
   minPrice?: number;
   maxPrice?: number;
   minEffectivePrice?: number;
@@ -65,6 +66,7 @@ export interface Product {
   quantityNeeded?: number;
   note?: string | null;
   priority?: string;
+  supportsSubscription?: boolean;
 }
 
 export interface Category {

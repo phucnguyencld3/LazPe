@@ -37,7 +37,8 @@ export default function CartPage() {
     clearCart,
     applyVoucher,
     autoApplyVouchers,
-    removeVoucher
+    removeVoucher,
+    addToCart
   } = useCart();
   const [checkedDetails, setCheckedDetails] = useState<Record<number, boolean>>({});
   
@@ -400,6 +401,7 @@ export default function CartPage() {
     router.push("/checkout");
   };
 
+
   // Checkbox helpers
   const handleToggleCheck = (detailId: number, associatedGiftId?: number) => {
     setCheckedDetails((prev) => {
@@ -499,7 +501,7 @@ export default function CartPage() {
     return (
       <div className="flex-grow flex items-center justify-center min-h-[calc(100vh-200px)] py-20 bg-slate-50">
         <div className="flex flex-col items-center gap-4">
-          <Loader className="animate-spin text-rose-500" size={40} />
+          <Loader className="animate-spin text-slate-900" size={40} />
           <p className="text-slate-600 font-medium animate-pulse">Đang tải giỏ hàng của bạn...</p>
         </div>
       </div>
@@ -507,7 +509,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="bg-slate-50/60 text-slate-800 font-sans min-h-screen pb-24 relative selection:bg-rose-100 selection:text-rose-900">
+    <div className="bg-slate-50/60 text-slate-800 font-sans min-h-screen pb-24 relative selection:bg-primary/10 selection:text-rose-900">
       <main className="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop pt-6 pb-12">
         {/* Cart Header & Progress */}
         <CartHeader />
@@ -560,7 +562,7 @@ export default function CartPage() {
               </div>
               <Link 
                 href="/products" 
-                className="text-rose-500 hover:text-rose-600 font-bold text-sm flex items-center gap-1 transition-colors"
+                className="text-slate-900 hover:text-slate-900 font-bold text-sm flex items-center gap-1 transition-colors"
               >
                 Xem tất cả sản phẩm
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -569,7 +571,7 @@ export default function CartPage() {
 
             {loadingRecs ? (
               <div className="flex justify-center py-10">
-                <Loader className="animate-spin text-rose-500" size={24} />
+                <Loader className="animate-spin text-slate-900" size={24} />
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-md">
@@ -599,8 +601,8 @@ export default function CartPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 max-w-[400px] w-full space-y-5 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 shrink-0">
-                <span className="material-symbols-outlined text-rose-500 text-lg">delete</span>
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-slate-900 shrink-0">
+                <span className="material-symbols-outlined text-slate-900 text-lg">delete</span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-slate-800">{confirmModal.title}</h3>
             </div>
@@ -623,7 +625,7 @@ export default function CartPage() {
                   confirmModal.onConfirm();
                   setConfirmModal((prev) => ({ ...prev, isOpen: false }));
                 }}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+                className="px-5 py-2.5 bg-primary/90 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
               >
                 Xác nhận
               </button>

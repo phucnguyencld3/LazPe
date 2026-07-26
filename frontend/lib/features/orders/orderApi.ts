@@ -271,7 +271,7 @@ export const exportOrdersToExcel = async (
   if (dateRange?.from) queryParams.append('startDate', dateRange.from.toISOString());
   if (dateRange?.to) queryParams.append('endDate', dateRange.to.toISOString());
 
-  const response = await fetch(`${API_BASE_URL}/AdminInvoice/export?${queryParams.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/Invoice/export?${queryParams.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }

@@ -81,10 +81,13 @@ export default function AdminReviewsPage() {
         </div>
       </header>
 
+      {/* Master Card container */}
+      <section className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden mb-8 animate-in fade-in duration-300">
+        
       {/* Stats Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
         {/* Total Reviews */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[8px] bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
               <span className="material-symbols-outlined text-[20px]">rate_review</span>
@@ -95,7 +98,7 @@ export default function AdminReviewsPage() {
         </div>
 
         {/* Visible Reviews */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[8px] bg-secondary-container/20 flex items-center justify-center text-secondary shrink-0">
               <span className="material-symbols-outlined text-[20px]">check_circle</span>
@@ -106,10 +109,10 @@ export default function AdminReviewsPage() {
         </div>
 
         {/* Hidden Reviews */}
-        <div className={`px-5 py-4 rounded-[8px] shadow-sm border flex items-center justify-between hover:shadow-md transition-all duration-300 ${
+        <div className={`px-5 py-4 flex items-center justify-between transition-all duration-300 ${
           (stats?.hiddenReviews ?? 0) > 0 
-            ? 'bg-rose-50/50 border-rose-100' 
-            : 'bg-white border-slate-100'
+            ? 'bg-rose-50/50' 
+            : 'hover:bg-slate-50'
         }`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 ${
@@ -136,7 +139,7 @@ export default function AdminReviewsPage() {
         </div>
 
         {/* Average Rating */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+        <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
@@ -239,6 +242,7 @@ export default function AdminReviewsPage() {
       {activeTab === "settings" && <SettingsTab />}
 
       {activeTab === "analytics" && <AnalyticsTab />}
+      </section>
     </main>
   );
 }

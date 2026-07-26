@@ -7,8 +7,8 @@ interface OrderCostSummaryProps {
 
 export const OrderCostSummary: React.FC<OrderCostSummaryProps> = ({ order }) => {
   return (
-    <div className="bg-white p-4 rounded-[12px] shadow-sm border border-slate-100">
-      <h2 className="text-base font-bold text-slate-800 mb-4">Tóm tắt chi phí</h2>
+    <div className="p-8">
+      <h2 className="text-base font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3 uppercase tracking-wider">Tóm tắt chi phí</h2>
       <div className="space-y-3 text-slate-600 font-medium text-sm">
         <div className="flex justify-between">
           <span>Tạm tính</span>

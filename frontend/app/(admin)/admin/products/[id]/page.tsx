@@ -227,12 +227,15 @@ export default function AdminProductDetailPage() {
         </div>
       </div>
 
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+      {/* Master Card container */}
+      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden mb-8">
         
-        {/* Left Card: Product Overview */}
-        <div className="lg:col-span-8 bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        {/* Top Split: Overview & Inventory */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100">
+          
+          {/* Left Card: Product Overview */}
+          <div className="lg:col-span-8 p-8">
+            <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">info</span>
               Tổng quan sản phẩm
@@ -364,9 +367,8 @@ export default function AdminProductDetailPage() {
           </div>
         </div>
 
-        {/* Right Card: Inventory & Pricing */}
-        <div className="lg:col-span-4 flex flex-col gap-8">
-          <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm flex-1 flex flex-col justify-between">
+          {/* Right Card: Inventory & Pricing */}
+          <div className="lg:col-span-4 p-8 bg-slate-50/30 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -430,11 +432,10 @@ export default function AdminProductDetailPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Specifications Section */}
-      <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm mb-8 animate-in fade-in duration-300">
-        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-6">
+        {/* Specifications Section */}
+        <div className="p-8 border-b border-slate-100">
+          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-6">
           <span className="material-symbols-outlined text-primary">fact_check</span>
           Thông số kỹ thuật sản phẩm
         </h3>
@@ -450,15 +451,15 @@ export default function AdminProductDetailPage() {
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Bottom Row: Variants & Attributes Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Left Side: Product Variants List (Max 2 newest) */}
-        <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-6">
+        {/* Bottom Row: Variants & Attributes Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+          
+          {/* Left Side: Product Variants List (Max 2 newest) */}
+          <div className="p-8 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">diversity_2</span>
                 Biến thể sản phẩm (Mới nhất)
@@ -526,11 +527,11 @@ export default function AdminProductDetailPage() {
             </p>
           )}
         </div>
-
-        {/* Right Side: Product Attributes/Options List (Max 2 newest) */}
-        <div className="bg-white rounded-[8px] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-6">
+          
+          {/* Right Side: Product Attributes/Options List (Max 2 newest) */}
+          <div className="p-8 bg-slate-50/30 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">list_alt</span>
                 Thuộc tính sản phẩm (Mới nhất)
@@ -594,6 +595,7 @@ export default function AdminProductDetailPage() {
           )}
         </div>
       </div>
+    </div>
       {/* Custom Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">

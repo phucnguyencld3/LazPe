@@ -51,6 +51,10 @@ namespace PolyBabyAPI.Services
                             .ThenInclude(p => p.Images)
                 .Include(c => c.CartDetails)
                     .ThenInclude(cd => cd.Variant)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Variants)
+                .Include(c => c.CartDetails)
+                    .ThenInclude(cd => cd.Variant)
                         .ThenInclude(v => v.VariantOptionValues)
                             .ThenInclude(vov => vov.ProductOptionValue)
                                 .ThenInclude(pov => pov.ProductOption)
@@ -60,9 +64,7 @@ namespace PolyBabyAPI.Services
                 .Include(c => c.ShippingVoucher)
                 .FirstOrDefaultAsync(c => c.CartID == cartId);
         }
-
-
-
+        
         public async Task<Cart> GetCartByIdAsync(int cartId)
         {
             return await _context.Carts
@@ -329,18 +331,18 @@ namespace PolyBabyAPI.Services
                 return (false, validation.Message);
             }
 
-            var voucher = await _voucherService.GetVoucherByCodeAsync(voucherCode);
+            var walletVoucher = await _context.UserVouchers
+                .Include(uv => uv.Voucher)
+                .Where(uv => uv.UserID == cart.UserID
+                    && (uv.IssuedCode == voucherCode || uv.Voucher.Code == voucherCode)
+                    && uv.Status == UserVoucherStatus.Unused)
+                .FirstOrDefaultAsync();
+
+            var voucher = walletVoucher?.Voucher ?? await _voucherService.GetVoucherByCodeAsync(voucherCode);
             if (voucher == null)
             {
                 return (false, "Mã giảm giá không tồn tại");
             }
-
-            var walletVoucher = await _context.UserVouchers
-                .Include(uv => uv.Voucher)
-                .Where(uv => uv.UserID == cart.UserID
-                    && uv.VoucherID == voucher.VoucherID
-                    && uv.Status == UserVoucherStatus.Unused)
-                .FirstOrDefaultAsync();
 
             if (walletVoucher == null)
             {

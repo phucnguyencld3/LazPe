@@ -100,10 +100,19 @@ namespace PolyBabyAPI.Services
                 return (false, "Mã giảm giá không tồn tại.");
             }
 
-            // Ngăn chặn dùng mã gốc của Voucher Độc quyền
-            if (!isUniqueCode && voucher.VisibilityType == VoucherVisibilityType.Exclusive)
+            // Ngăn chặn dùng mã gốc của Voucher Độc quyền hoặc Đổi điểm
+            if (!isUniqueCode)
             {
-                return (false, "Mã giảm giá này là mã độc quyền. Vui lòng sử dụng mã cá nhân của bạn.");
+                if (voucher.VisibilityType == VoucherVisibilityType.Exclusive)
+                {
+                    return (false, "Mã giảm giá này là mã độc quyền. Vui lòng sử dụng mã cá nhân của bạn.");
+                }
+
+                var isLoyaltyVoucher = await _context.LoyaltyVoucherRedemptions.AnyAsync(r => r.VoucherID == voucher.VoucherID && r.IsActive);
+                if (isLoyaltyVoucher)
+                {
+                    return (false, "Mã giảm giá này chỉ dành riêng cho việc đổi điểm. Vui lòng sử dụng mã cá nhân trong ví của bạn.");
+                }
             }
 
             if (!voucher.Status)

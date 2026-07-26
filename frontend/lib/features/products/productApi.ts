@@ -10,6 +10,7 @@ export interface AdminProductInfo {
   productDiscountPercent: number;
   stock: number;
   status: boolean;
+  supportsSubscription?: boolean;
   categoryID: number;
   categoryName: string;
   supplierID: number;
@@ -98,6 +99,22 @@ export const fetchProductStats = async (token: string): Promise<ProductStats> =>
   return data.data;
 };
 
+export interface SubscriptionStats {
+  totalProducts: number;
+  activeSubscriptions: number;
+  inactiveSubscriptions: number;
+}
+
+export const fetchSubscriptionStats = async (token: string): Promise<SubscriptionStats> => {
+  const res = await fetch(`${API_BASE_URL}/Product/subscription-stats`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch subscription stats");
+  const data = await res.json();
+  return data.data;
+};
+
 export const toggleProductStatus = async (token: string, id: number): Promise<any> => {
   const res = await fetch(`${API_BASE_URL}/Product/${id}/toggle-status`, {
     method: "POST",
@@ -105,6 +122,30 @@ export const toggleProductStatus = async (token: string, id: number): Promise<an
   });
 
   if (!res.ok) throw new Error("Failed to toggle product status");
+  return res.json();
+};
+
+export const toggleProductSubscription = async (token: string, id: number): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Product/${id}/toggle-subscription`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!res.ok) throw new Error("Failed to toggle product subscription");
+  return res.json();
+};
+
+export const bulkToggleSubscription = async (token: string, ids: number[], isEnabled: boolean): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Product/bulk-toggle-subscription`, {
+    method: "POST",
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ ids, isEnabled })
+  });
+
+  if (!res.ok) throw new Error("Failed to bulk toggle product subscriptions");
   return res.json();
 };
 
@@ -183,6 +224,7 @@ export interface AdminProductDetailInfo {
   productDiscountPercent: number;
   stock: number;
   status: boolean;
+  supportsSubscription?: boolean;
   categoryID: number;
   supplierID: number;
   createdAt: string;
@@ -526,6 +568,7 @@ export interface CreateProductPayload {
   stock?: number;
   categoryID: number;
   supplierID?: number | null;
+  supportsSubscription?: boolean;
 }
 
 export interface CreateFullProductPayload {
@@ -539,6 +582,7 @@ export interface CreateFullProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status?: boolean;
+  supportsSubscription?: boolean;
   images?: string[];
   options: {
     name: string;
@@ -628,6 +672,7 @@ export interface UpdateProductPayload {
   categoryID: number;
   supplierID?: number | null;
   status: boolean;
+  supportsSubscription?: boolean;
   images?: string[];
   clearVariantImages?: boolean;
 }

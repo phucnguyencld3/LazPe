@@ -8,8 +8,8 @@ export const CartHeader: React.FC = () => {
       
       {/* Checkout Steps */}
       <div className="flex items-center space-x-3 text-sm">
-        <div className="flex items-center text-rose-500 font-semibold">
-          <span className="w-6 h-6 rounded-[8px] bg-rose-500 text-white flex items-center justify-center font-bold text-xs mr-2 shadow-sm">1</span>
+        <div className="flex items-center text-slate-900 font-semibold">
+          <span className="w-6 h-6 rounded-[8px] bg-primary text-white flex items-center justify-center font-bold text-xs mr-2 shadow-sm">1</span>
           <span>Giỏ hàng</span>
         </div>
         <ChevronRight className="h-4 w-4 text-slate-300" />

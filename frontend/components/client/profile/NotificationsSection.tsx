@@ -369,11 +369,15 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
           </div>
 
           {/* Short description */}
-          <div className="p-4 bg-slate-50 rounded-[10px] border border-slate-100/50">
-            <p className="text-slate-600 text-xs font-semibold leading-relaxed">
-              {selectedNotif.shortDescription}
-            </p>
-          </div>
+          {selectedNotif.shortDescription && 
+           selectedNotif.shortDescription !== selectedNotif.content && 
+           !selectedNotif.content.startsWith(selectedNotif.shortDescription.replace("...", "")) && (
+            <div className="p-4 bg-slate-50 rounded-[10px] border border-slate-100/50">
+              <p className="text-slate-600 text-xs font-semibold leading-relaxed">
+                {selectedNotif.shortDescription}
+              </p>
+            </div>
+          )}
 
           {/* Editor/HTML Content */}
           <div

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace PolyBabyAPI.DTOs
 {
@@ -110,7 +110,7 @@ namespace PolyBabyAPI.DTOs
         [Range(0, double.MaxValue, ErrorMessage = "Đơn giá không hợp lệ")]
         public decimal UnitPrice { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Giảm giá biến thể phải từ 0 đến 100")]
+        [Range(0, 50, ErrorMessage = "Giảm giá biến thể không được vượt quá 50% theo quy định.")]
         public decimal VariantDiscountPercent { get; set; } = 0;
 
         public decimal Price { get; set; }
@@ -142,7 +142,7 @@ namespace PolyBabyAPI.DTOs
         [Range(0, double.MaxValue, ErrorMessage = "Đơn giá không hợp lệ")]
         public decimal Price { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Giảm giá biến thể phải từ 0 đến 100")]
+        [Range(0, 50, ErrorMessage = "Giảm giá biến thể không được vượt quá 50% theo quy định.")]
         public decimal VariantDiscountPercent { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không hợp lệ")]

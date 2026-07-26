@@ -224,7 +224,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
   };
 
   return (
-    <div className="w-full pb-10 animate-fadeIn">
+    <div className={`w-full animate-fadeIn ${showHeader ? "pb-10" : "p-6"}`}>
       {showHeader ? (
         <header className="mb-8 flex justify-between items-center">
           <div>
@@ -235,7 +235,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
           </div>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-[8px] font-bold hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">add</span>
             Tạo Gói Quyền
@@ -250,7 +250,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
           </div>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-sm hover:shadow-md shrink-0 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-[8px] font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-sm hover:shadow-md shrink-0 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             Tạo Gói Quyền
@@ -267,7 +267,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
           {templates.map(template => (
             <div
               key={template.id}
-              className="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/20 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+              className="bg-white rounded-[8px] p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
             >
               <div>
                 <div className="flex justify-between items-start mb-sm">
@@ -295,21 +295,21 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
                   </div>
                 </div>
 
-                <div className="bg-surface-container-low rounded-lg p-md mt-md">
-                  <div className="text-xs font-bold text-on-surface mb-sm">
+                <div className="bg-slate-50 rounded-[8px] p-4 mt-4">
+                  <div className="text-xs font-bold text-slate-700 mb-3">
                     Quyền hạn ({template.permissions.length}):
                   </div>
-                  <div className="flex flex-wrap gap-xs">
+                  <div className="flex flex-wrap gap-2">
                     {template.permissions.slice(0, 5).map((p: any) => (
                       <span
                         key={p.permissionId}
-                        className="px-sm py-0.5 bg-primary-container/20 text-primary rounded text-[11px] font-medium"
+                        className="px-2 py-1 bg-primary/10 text-primary rounded-[4px] text-[11px] font-bold"
                       >
                         {p.name}
                       </span>
                     ))}
                     {template.permissions.length > 5 && (
-                      <span className="px-sm py-0.5 bg-surface-variant text-on-surface-variant rounded text-[11px] font-medium">
+                      <span className="px-2 py-1 bg-slate-200 text-slate-600 rounded-[4px] text-[11px] font-bold">
                         +{template.permissions.length - 5} quyền khác
                       </span>
                     )}

@@ -32,6 +32,7 @@ import { AddressList } from "@/components/client/profile/AddressList";
 import { SecurityAndSettings } from "@/components/client/profile/SecurityAndSettings";
 import { EditProfileModal } from "@/components/client/profile/modals/EditProfileModal";
 import { EditBabyInfoModal } from "@/components/client/profile/modals/EditBabyInfoModal";
+import { UpdateWeightModal } from "@/components/client/profile/modals/UpdateWeightModal";
 import { ProfileMessages } from "@/components/client/profile/ProfileMessages";
 import { ChangePasswordModal } from "@/components/client/profile/modals/ChangePasswordModal";
 import { ProfileAddressModal } from "@/components/client/profile/modals/ProfileAddressModal";
@@ -45,6 +46,7 @@ import { SpendingSection } from "@/components/client/profile/SpendingSection";
 import { ProductAlertsSection } from "@/components/client/profile/ProductAlertsSection";
 import { WalletSection } from "@/components/client/profile/WalletSection";
 import { BabyTrackerSection } from "@/components/client/profile/BabyTrackerSection";
+import { SubscriptionsSection } from "@/components/client/profile/SubscriptionsSection";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -63,6 +65,16 @@ export default function ProfilePage() {
   const [initialNotifId, setInitialNotifId] = useState<number | null>(null);
   const [pendingSupportOrder, setPendingSupportOrder] = useState<any>(null);
   const [activeBabyId, setActiveBabyId] = useState<number | null>(null);
+
+  // Modals States
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editBabyInfoOpen, setEditBabyInfoOpen] = useState(false);
+  const [updateWeightBabyId, setUpdateWeightBabyId] = useState<number | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -99,14 +111,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Modals States
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [editBabyInfoOpen, setEditBabyInfoOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [addressModalOpen, setAddressModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<AddressItem | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
+
 
   // Forms States
   const [profileForm, setProfileForm] = useState({
@@ -601,197 +606,232 @@ export default function ProfilePage() {
       <div className="flex flex-col lg:flex-row gap-4 items-start">
         {/* Left Sidebar Menu */}
         <aside className="w-full lg:w-[240px] flex-shrink-0 lg:sticky lg:top-[90px] z-10">
-          <div className="bg-white rounded-[10px] border border-slate-100/60 shadow-sm pb-3 max-h-[calc(100vh-140px)] overflow-y-auto scrollbar-none">
+          <div className="bg-white rounded-[10px] border border-slate-100/60 shadow-sm pb-3 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-none">
             {/* Quick User Section */}
-              <div className="p-5 flex flex-col items-center text-center gap-2">
-                <div className="space-y-1 w-full">
-                  <h3 className="font-bold text-slate-800 text-base line-clamp-1">{userProfile.fullName}</h3>
-                  <p className="text-[11px] text-slate-400 font-medium truncate px-2">{userProfile.email}</p>
-                </div>
-              </div>
-
-              {/* Menu List Section */}
-              <div className="px-2">
-                {/* Desktop view */}
-                <nav className="hidden lg:flex flex-col gap-1">
-                  {(
-                    [
-                      { id: "profile", label: "Thông tin tài khoản", icon: "person" },
-                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
-                      { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
-                      { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
-                      { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
-                      { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
-                      { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
-                      { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
-                      { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
-                      { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
-                      { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
-                      { id: "privacy", label: "Chính sách bảo mật", icon: "policy" },
-                    ] as const
-                  ).map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleTabChange(item.id)}
-                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[8px] font-bold text-[13px] text-left transition-all ${activeTab === item.id
-                        ? "bg-primary text-white shadow-sm shadow-primary/20 scale-[1.01]"
-                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                        }`}
-                    >
-                      <span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? "text-white" : "text-slate-400"}`}>
-                        {item.icon}
-                      </span>
-                      {item.label}
-                    </button>
-                  ))}
-                </nav>
-
-                {/* Mobile view */}
-                <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 scrollbar-none px-1">
-                  {(
-                    [
-                      { id: "profile", label: "Tài khoản", icon: "person" },
-                      { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
-                      { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
-                      { id: "spending", label: "Chi tiêu", icon: "monitoring" },
-                      { id: "address", label: "Địa chỉ", icon: "location_on" },
-                      { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
-                      { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
-                      { id: "messages", label: "Tin nhắn", icon: "chat" },
-                      { id: "alerts", label: "Báo giá", icon: "add_alert" },
-                      { id: "notifications", label: "Thông báo", icon: "notifications" },
-                      { id: "reviews", label: "Đánh giá", icon: "reviews" },
-                      { id: "privacy", label: "Bảo mật", icon: "policy" },
-                    ] as const
-                  ).map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleTabChange(item.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] whitespace-nowrap transition-all ${activeTab === item.id
-                        ? "bg-primary text-white shadow-sm"
-                        : "bg-slate-100 text-slate-600 hover:text-primary hover:bg-slate-200"
-                        }`}
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {item.icon}
-                      </span>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+            <div className="p-3 flex flex-col items-center text-center gap-2">
+              <div className="space-y-1 w-full">
+                <h3 className="font-bold text-slate-800 text-base line-clamp-1">{userProfile.fullName}</h3>
+                <p className="text-[11px] text-slate-400 font-medium truncate px-2">{userProfile.email}</p>
               </div>
             </div>
-          </aside>
 
-          {/* Right Content Area */}
-          <main className="flex-1 min-w-0 w-full">
-            {activeTab === "profile" && (
-              <div className="space-y-3">
-                <ProfileHeader
-                  userProfile={userProfile}
-                  token={token}
-                  onAvatarUpdated={handleAvatarUpdated}
-                  loyaltyProfile={loyaltyProfile}
-                />
-                <PersonalInfo
-                  userProfile={userProfile}
-                  onEditClick={() => setEditProfileOpen(true)}
-                />
-                <BabyInfo
-                  userProfile={userProfile}
-                  onEditClick={() => setEditBabyInfoOpen(true)}
-                  onOpenTracker={(id) => {
-                    setActiveBabyId(id);
-                    handleTabChange("baby-tracker");
-                  }}
-                />
-                <SecurityAndSettings
-                  hasPassword={hasPassword}
-                  onChangePasswordClick={() => setChangePasswordOpen(true)}
-                  notificationSettings={notificationSettings}
-                  onNotificationToggle={handleNotificationToggle}
-                />
+            {/* Menu List Section */}
+            <div className="px-2">
+              {/* Desktop view */}
+              <nav className="hidden lg:flex flex-col gap-0 pb-2">
+                {(
+                  [
+                    {
+                      title: "Tài khoản của tôi",
+                      items: [
+                        { id: "profile", label: "Thông tin tài khoản", icon: "person" },
+                        { id: "address", label: "Địa chỉ nhận hàng", icon: "location_on" },
+                      ]
+                    },
+                    {
+                      title: "Đơn hàng",
+                      items: [
+                        { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                        { id: "subscriptions", label: "Mua định kỳ", icon: "autorenew" },
+                        { id: "reviews", label: "Đánh giá của tôi", icon: "reviews" },
+                      ]
+                    },
+                    {
+                      title: "Tài chính & Ưu đãi",
+                      items: [
+                        { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
+                        { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
+                        { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
+                        { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
+                      ]
+                    },
+                    {
+                      title: "Hỗ trợ & Thông báo",
+                      items: [
+                        { id: "notifications", label: "Thông báo của tôi", icon: "notifications" },
+                        { id: "alerts", label: "Thông báo giá/kho", icon: "add_alert" },
+                        { id: "messages", label: "Tin nhắn hỗ trợ", icon: "chat" },
+                      ]
+                    }
+                  ] as { title: string; items: { id: string; label: string; icon: string; }[] }[]
+                ).map((group, idx) => (
+                  <div key={idx} className={idx > 0 ? "mt-1" : ""}>
+                    <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      {group.title}
+                    </div>
+                    <div className="flex flex-col gap-0">
+                      {group.items.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => handleTabChange(item.id)}
+                          className={`flex items-center gap-2.5 px-3 py-1 rounded-[8px] font-bold text-[13px] text-left transition-all ${activeTab === item.id
+                            ? "bg-primary text-white shadow-sm shadow-primary/20 scale-[1.01]"
+                            : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                            }`}
+                        >
+                          <span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? "text-white" : "text-slate-400"}`}>
+                            {item.icon}
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </nav>
+
+              {/* Mobile view */}
+              <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 scrollbar-none px-1">
+                {(
+                  [
+                    { id: "profile", label: "Tài khoản", icon: "person" },
+                    { id: "address", label: "Địa chỉ", icon: "location_on" },
+                    { id: "privacy", label: "Bảo mật", icon: "policy" },
+                    { id: "orders", label: "Đơn mua", icon: "shopping_bag" },
+                    { id: "subscriptions", label: "Mua định kỳ", icon: "autorenew" },
+                    { id: "reviews", label: "Đánh giá", icon: "reviews" },
+                    { id: "wallet", label: "Ví LazPe", icon: "account_balance_wallet" },
+                    { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
+                    { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
+                    { id: "spending", label: "Chi tiêu", icon: "monitoring" },
+                    { id: "notifications", label: "Thông báo", icon: "notifications" },
+                    { id: "alerts", label: "Báo giá", icon: "add_alert" },
+                    { id: "messages", label: "Tin nhắn", icon: "chat" },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] whitespace-nowrap transition-all ${activeTab === item.id
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:text-primary hover:bg-slate-200"
+                      }`}
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </button>
+                ))}
               </div>
-            )}
-            
-            {activeTab === "messages" && (
-              <ProfileMessages 
-                token={token} 
-                pendingSupportOrder={pendingSupportOrder}
-                clearPendingSupportOrder={() => setPendingSupportOrder(null)}
-              />
-            )}
+            </div>
+          </div>
+        </aside>
 
-            {activeTab === "address" && (
-              <AddressList
-                addresses={addresses}
-                onAddClick={openNewAddressModal}
-                onEditClick={handleOpenEditAddressForm}
-                onDeleteClick={handleDeleteAddressClick}
-                onSetDefaultClick={handleSetDefaultAddressClick}
-              />
-            )}
-
-            {activeTab === "vouchers" && <VoucherSection token={token} />}
-
-            {activeTab === "wallet" && (
-              <WalletSection token={token} uid={userProfile.userId} />
-            )}
-
-            {activeTab === "loyalty" && (
-              <LoyaltySection token={token} />
-            )}
-
-            {activeTab === "spending" && (
-              <SpendingSection token={token} />
-            )}
-
-            {activeTab === "orders" && (
-              <OrdersSection
-                userId={userProfile.userId}
+        {/* Right Content Area */}
+        <main className="flex-1 min-w-0 w-full">
+          {activeTab === "profile" && (
+            <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
+              <ProfileHeader
+                userProfile={userProfile}
                 token={token}
-                initialOrderId={initialNotifId}
-                onClearInitialOrderId={handleClearInitialId}
-                onChangeTab={handleTabChange}
-                onSupportOrder={(order) => {
-                  setPendingSupportOrder(order);
-                  handleTabChange("messages");
+                onAvatarUpdated={handleAvatarUpdated}
+                loyaltyProfile={loyaltyProfile}
+              />
+              <PersonalInfo
+                userProfile={userProfile}
+                onEditClick={() => setEditProfileOpen(true)}
+              />
+              <BabyInfo
+                userProfile={userProfile}
+                onEditClick={() => setEditBabyInfoOpen(true)}
+                onOpenTracker={(id) => {
+                  setActiveBabyId(id);
+                  handleTabChange("baby-tracker");
                 }}
+                onUpdateWeightClick={(id) => setUpdateWeightBabyId(id)}
               />
-            )}
-
-            {activeTab === "alerts" && (
-              <ProductAlertsSection token={token} />
-            )}
-
-            {activeTab === "notifications" && (
-              <NotificationsSection
-                token={token}
-                initialSelectedId={initialNotifId}
-                onClearInitialId={handleClearInitialId}
+              <SecurityAndSettings
+                hasPassword={hasPassword}
+                onChangePasswordClick={() => setChangePasswordOpen(true)}
+                notificationSettings={notificationSettings}
+                onNotificationToggle={handleNotificationToggle}
               />
-            )}
+            </div>
+          )}
 
-            {activeTab === "reviews" && (
-              <ReviewsSection
-                userId={userProfile.userId}
-                token={token}
-              />
-            )}
+          {activeTab === "messages" && (
+            <ProfileMessages
+              token={token}
+              pendingSupportOrder={pendingSupportOrder}
+              clearPendingSupportOrder={() => setPendingSupportOrder(null)}
+            />
+          )}
 
-            {activeTab === "baby-tracker" && activeBabyId !== null && (
-              <BabyTrackerSection 
-                babyId={activeBabyId} 
-                onBack={() => handleTabChange("profile")} 
-                onUpdate={() => {
-                  if (userProfile && token) fetchData(userProfile.userId, token);
-                }}
-              />
-            )}
+          {activeTab === "address" && (
+            <AddressList
+              addresses={addresses}
+              onAddClick={openNewAddressModal}
+              onEditClick={handleOpenEditAddressForm}
+              onDeleteClick={handleDeleteAddressClick}
+              onSetDefaultClick={handleSetDefaultAddressClick}
+            />
+          )}
 
-            {activeTab === "privacy" && <PrivacySection />}
-          </main>
-        </div>
+          {activeTab === "vouchers" && <VoucherSection token={token} />}
+
+          {activeTab === "wallet" && (
+            <WalletSection token={token} uid={userProfile.userId} />
+          )}
+
+          {activeTab === "loyalty" && (
+            <LoyaltySection token={token} />
+          )}
+
+          {activeTab === "spending" && (
+            <SpendingSection token={token} />
+          )}
+
+          {activeTab === "orders" && (
+            <OrdersSection
+              userId={userProfile.userId}
+              token={token}
+              initialOrderId={initialNotifId}
+              onClearInitialOrderId={handleClearInitialId}
+              onChangeTab={handleTabChange}
+              onSupportOrder={(order) => {
+                setPendingSupportOrder(order);
+                handleTabChange("messages");
+              }}
+            />
+          )}
+
+          {activeTab === "subscriptions" && (
+            <SubscriptionsSection token={token} />
+          )}
+
+          {activeTab === "alerts" && (
+            <ProductAlertsSection token={token} />
+          )}
+
+          {activeTab === "notifications" && (
+            <NotificationsSection
+              token={token}
+              initialSelectedId={initialNotifId}
+              onClearInitialId={handleClearInitialId}
+            />
+          )}
+
+          {activeTab === "reviews" && (
+            <ReviewsSection
+              userId={userProfile.userId}
+              token={token}
+            />
+          )}
+
+          {activeTab === "baby-tracker" && activeBabyId !== null && (
+            <BabyTrackerSection
+              babyId={activeBabyId}
+              onBack={() => handleTabChange("profile")}
+              onUpdate={() => {
+                if (userProfile && token) fetchData(userProfile.userId, token);
+              }}
+            />
+          )}
+
+          {activeTab === "privacy" && <PrivacySection />}
+        </main>
+      </div>
 
       <EditProfileModal
         isOpen={editProfileOpen}
@@ -808,6 +848,17 @@ export default function ProfilePage() {
         token={token}
         userProfile={userProfile}
         onRefreshProfile={() => {
+          if (userProfile && token) {
+            fetchData(userProfile.userId, token);
+          }
+        }}
+      />
+
+      <UpdateWeightModal
+        isOpen={updateWeightBabyId !== null}
+        onClose={() => setUpdateWeightBabyId(null)}
+        babyId={updateWeightBabyId}
+        onSuccess={() => {
           if (userProfile && token) {
             fetchData(userProfile.userId, token);
           }

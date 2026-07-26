@@ -37,7 +37,7 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({
                 : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
-            Thông số kỹ thuật
+            Thông số sản phẩm
           </button>
         )}
         <button

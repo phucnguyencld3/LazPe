@@ -64,7 +64,7 @@ export function ProfileHeader({ userProfile, token, onAvatarUpdated, loyaltyProf
   };
 
   return (
-    <section className="flex flex-col md:flex-row items-center gap-4 bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm">
+    <section className="flex flex-col md:flex-row items-center gap-4 p-5">
       <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
         <div className="w-16 h-16 rounded-[16px] overflow-hidden shadow-sm relative bg-slate-50 flex items-center justify-center transition-transform hover:scale-105">
           {uploadingAvatar ? (

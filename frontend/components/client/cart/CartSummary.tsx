@@ -51,13 +51,13 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
       <div className="bg-white p-5 rounded-[12px] shadow-sm border border-slate-100 space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1">
-            <span className="material-symbols-outlined text-rose-500 text-base">confirmation_number</span> Voucher ưu đãi
+            <span className="material-symbols-outlined text-slate-900 text-base">confirmation_number</span> Voucher ưu đãi
           </h4>
           {handleAutoApplyVouchers && (
             <button
               onClick={handleAutoApplyVouchers}
               disabled={applyingCode}
-              className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-primary hover:from-orange-600 hover:to-primary/90 flex items-center gap-1 cursor-pointer disabled:opacity-50"
             >
               ✨ Tự động áp mã
             </button>
@@ -70,7 +70,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
               required
               value={voucherCodeInput}
               onChange={(e) => setVoucherCodeInput(e.target.value)}
-              className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-rose-200 focus:border-rose-400 text-xs text-slate-800 focus:outline-none"
+              className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-rose-200 focus:border-primary text-xs text-slate-800 focus:outline-none"
               placeholder="Nhập mã giảm giá..."
               type="text"
             />
@@ -87,7 +87,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
             <button
               type="submit"
               disabled={applyingCode || !voucherCodeInput}
-              className="bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-[8px] font-bold text-xs shadow-md shadow-rose-500/10 transition-all disabled:opacity-60 active:scale-95 whitespace-nowrap cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-[8px] font-bold text-xs shadow-md shadow-primary/10 transition-all disabled:opacity-60 active:scale-95 whitespace-nowrap cursor-pointer"
             >
               {applyingCode ? "Áp dụng..." : "Áp dụng"}
             </button>
@@ -98,7 +98,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         {hasAppliedVouchers && (
           <div className="space-y-2.5 pt-1">
             {cart.voucher && (
-              <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-[8px] flex items-center justify-between text-xs text-rose-600">
+              <div className="p-3 bg-primary/5/50 border border-primary/20 rounded-[8px] flex items-center justify-between text-xs text-slate-900">
                 <span className="font-bold flex items-center gap-1 min-w-0 truncate">
                   <Check size={12} className="shrink-0" /> Đã áp dụng: {cart.voucher.code}
                 </span>
@@ -112,7 +112,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
                         setVoucherCodeInput("");
                       }
                     }}
-                    className="hover:bg-rose-100 p-0.5 rounded-[4px] text-rose-500 transition-colors"
+                    className="hover:bg-primary/10 p-0.5 rounded-[4px] text-slate-900 transition-colors"
                   >
                     <X size={11} />
                   </button>
@@ -148,7 +148,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         {(!cart.voucher || !cart.shippingVoucher) && (
           <button
             onClick={handleOpenVoucherModal}
-            className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-rose-500 border border-dashed border-rose-200 rounded-[8px] font-bold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+            className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-900 border border-dashed border-primary/20 rounded-[8px] font-bold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
           >
             <Tag size={12} /> Xem danh sách mã giảm giá
           </button>
@@ -174,7 +174,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           </div>
           <div className="flex justify-between">
             <span>Giảm giá Voucher</span>
-            <span className="text-rose-500 font-bold">-₫{discount.toLocaleString("vi-VN")}</span>
+            <span className="text-slate-900 font-bold">-₫{discount.toLocaleString("vi-VN")}</span>
           </div>
 
           {shippingDiscount > 0 && (
@@ -186,7 +186,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
 
           <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
             <span className="font-bold text-slate-800 text-base">Tổng thanh toán</span>
-            <span className="text-rose-500 font-extrabold text-2xl tracking-tight">
+            <span className="text-slate-900 font-extrabold text-2xl tracking-tight">
               ₫{total.toLocaleString("vi-VN")}
             </span>
           </div>
@@ -195,7 +195,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         <button
           onClick={handleCheckout}
           disabled={selectedCount === 0}
-          className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-[8px] font-bold text-base shadow-lg shadow-rose-500/10 hover:scale-[1.02] active:scale-95 transition-all duration-200 uppercase tracking-wider disabled:opacity-60 disabled:hover:scale-100 cursor-pointer"
+          className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-[8px] font-bold text-base shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all duration-200 uppercase tracking-wider disabled:opacity-60 disabled:hover:scale-100 cursor-pointer"
         >
           Tiến hành thanh toán
         </button>

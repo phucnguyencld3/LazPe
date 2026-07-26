@@ -318,7 +318,7 @@ namespace PolyBabyAPI.Services
             }
         }
 
-        public async Task<bool> AddPointsAsync(string userId, int amount, string transactionType, string description, int? invoiceId = null)
+        public async Task<bool> AddPointsAsync(string userId, int amount, string transactionType, string description, int? invoiceId = null, bool addToTotalPoints = true)
         {
             if (amount <= 0) return false;
 
@@ -351,39 +351,44 @@ namespace PolyBabyAPI.Services
 
                 var oldTierID = profile.CurrentTierID;
                 var offset = profile.RankAdjustmentOffset;
-                var newTotalPoints = profile.TotalPoints + amount;
 
                 profile.AvailablePoints += amount;
-                profile.TotalPoints = newTotalPoints;
+
+                int newTierID = oldTierID;
+                if (addToTotalPoints)
+                {
+                    var newTotalPoints = profile.TotalPoints + amount;
+                    profile.TotalPoints = newTotalPoints;
+
+                    // Xác định Tier mới cao nhất mà khách hàng đạt điều kiện
+                    var activeTiers = await _context.LoyaltyTiers
+                        .Where(t => t.IsActive)
+                        .OrderByDescending(t => t.MinPoints)
+                        .ToListAsync();
+
+                    var newTier = activeTiers.FirstOrDefault(t => newTotalPoints >= (t.MinPoints - offset));
+                    newTierID = newTier?.TierID ?? 1;
+
+                    profile.CurrentTierID = newTierID;
+
+                    // Tính toán PointsToNextTier
+                    var nextTier = activeTiers
+                        .Where(t => t.MinPoints > (newTier?.MinPoints ?? 0))
+                        .OrderBy(t => t.MinPoints)
+                        .FirstOrDefault();
+
+                    if (nextTier != null)
+                    {
+                        var pointsToNext = (nextTier.MinPoints - offset) - newTotalPoints;
+                        profile.PointsToNextTier = pointsToNext < 0 ? 0 : pointsToNext;
+                    }
+                    else
+                    {
+                        profile.PointsToNextTier = 0;
+                    }
+                }
+
                 profile.LastUpdated = DateTime.Now;
-
-                // Xác định Tier mới cao nhất mà khách hàng đạt điều kiện
-                var activeTiers = await _context.LoyaltyTiers
-                    .Where(t => t.IsActive)
-                    .OrderByDescending(t => t.MinPoints)
-                    .ToListAsync();
-
-                var newTier = activeTiers.FirstOrDefault(t => newTotalPoints >= (t.MinPoints - offset));
-                var newTierID = newTier?.TierID ?? 1;
-
-                profile.CurrentTierID = newTierID;
-
-                // Tính toán PointsToNextTier
-                var nextTier = activeTiers
-                    .Where(t => t.MinPoints > (newTier?.MinPoints ?? 0))
-                    .OrderBy(t => t.MinPoints)
-                    .FirstOrDefault();
-
-                if (nextTier != null)
-                {
-                    var pointsToNext = (nextTier.MinPoints - offset) - newTotalPoints;
-                    profile.PointsToNextTier = pointsToNext < 0 ? 0 : pointsToNext;
-                }
-                else
-                {
-                    profile.PointsToNextTier = 0;
-                }
-
                 _context.LoyaltyProfiles.Update(profile);
 
                 // Lưu lịch sử biến động điểm
@@ -401,7 +406,11 @@ namespace PolyBabyAPI.Services
                 // Ghi nhận thăng hạng nếu có
                 if (newTierID > oldTierID)
                 {
-                    var tierName = newTier?.TierName ?? "";
+                    var tierName = await _context.LoyaltyTiers
+                        .Where(t => t.TierID == newTierID)
+                        .Select(t => t.TierName)
+                        .FirstOrDefaultAsync() ?? "";
+
                     var upgradeHistory = new LoyaltyPointHistory
                     {
                         UserID = userId,

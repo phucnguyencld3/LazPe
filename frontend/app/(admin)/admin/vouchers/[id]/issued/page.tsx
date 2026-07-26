@@ -81,14 +81,14 @@ export default function IssuedVouchersPage() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden p-6">
+      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col divide-y divide-slate-100">
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
           <>
-            <div className="mb-6 p-4 bg-indigo-50/50 rounded-[8px] border border-indigo-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-6 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Chi tiết Voucher Gốc</h3>
                 <div className="flex items-center gap-3">
@@ -103,7 +103,7 @@ export default function IssuedVouchersPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-[8px] border border-slate-100">
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-widest uppercase">

@@ -29,11 +29,19 @@ namespace PolyBabyAPI.Service
             {
                 var user = await _userManager.Users
                     .Include(u => u.BabyProfiles)
+                        .ThenInclude(b => b.GrowthRecords)
                     .FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with ID: {UserId}", userId);
                     return null;
+                }
+
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
                 }
 
                 return new UserProfileDto
@@ -51,6 +59,7 @@ namespace PolyBabyAPI.Service
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
                     IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode,
                     WalletBalance = user.WalletBalance,
                     CoinsBalance = user.CoinsBalance,
                     BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
@@ -64,7 +73,8 @@ namespace PolyBabyAPI.Service
                         WeightKg = b.WeightKg,
                         HeightCm = b.HeightCm,
                         FavoriteColors = b.FavoriteColors,
-                        CreatedAt = b.CreatedAt
+                        CreatedAt = b.CreatedAt,
+                        GrowthRecords = b.GrowthRecords?.ToList()
                     }).ToList() ?? new List<BabyProfileDto>()
                 };
             }
@@ -284,11 +294,19 @@ namespace PolyBabyAPI.Service
             {
                 var user = await _userManager.Users
                     .Include(u => u.BabyProfiles)
+                        .ThenInclude(b => b.GrowthRecords)
                     .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpper());
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with email: {Email}", email);
                     return null;
+                }
+
+                // Tự động tạo mã giới thiệu nếu chưa có (dành cho user cũ)
+                if (string.IsNullOrEmpty(user.ReferralCode))
+                {
+                    user.ReferralCode = $"REF{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 9999)}";
+                    await _userManager.UpdateAsync(user);
                 }
 
                 return new UserProfileDto
@@ -306,6 +324,7 @@ namespace PolyBabyAPI.Service
                     ReceiveOrderUpdates = user.ReceiveOrderUpdates,
                     ReceivePromotions = user.ReceivePromotions,
                     IsOnboarded = user.IsOnboarded,
+                    ReferralCode = user.ReferralCode,
                     WalletBalance = user.WalletBalance,
                     CoinsBalance = user.CoinsBalance,
                     BabyProfiles = user.BabyProfiles?.Select(b => new BabyProfileDto
@@ -319,7 +338,8 @@ namespace PolyBabyAPI.Service
                         WeightKg = b.WeightKg,
                         HeightCm = b.HeightCm,
                         FavoriteColors = b.FavoriteColors,
-                        CreatedAt = b.CreatedAt
+                        CreatedAt = b.CreatedAt,
+                        GrowthRecords = b.GrowthRecords?.ToList()
                     }).ToList() ?? new List<BabyProfileDto>()
                 };
             }

@@ -10,9 +10,9 @@ export const PermissionSummaryCards: React.FC<PermissionSummaryCardsProps> = ({
   totalGroups,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/30">
       {/* Card 1: Tổng số quyền hệ thống */}
-      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary shrink-0">
             <span className="material-symbols-outlined text-[20px]">vpn_key</span>
@@ -26,7 +26,7 @@ export const PermissionSummaryCards: React.FC<PermissionSummaryCardsProps> = ({
       </div>
 
       {/* Card 2: Nhóm tài nguyên */}
-      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
             <span className="material-symbols-outlined text-[20px]">grid_view</span>
@@ -40,7 +40,7 @@ export const PermissionSummaryCards: React.FC<PermissionSummaryCardsProps> = ({
       </div>
 
       {/* Card 3: Vai trò */}
-      <div className="bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+      <div className="px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
             <span className="material-symbols-outlined text-[20px]">shield</span>

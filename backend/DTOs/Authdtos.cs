@@ -61,6 +61,9 @@ namespace PolyBabyAPI.DTOs
         public string? PhoneNumber { get; set; }
 
         public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(20, ErrorMessage = "Mã giới thiệu không hợp lệ")]
+        public string? ReferralCode { get; set; }
     }
 
     /// <summary>

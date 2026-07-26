@@ -50,5 +50,36 @@ namespace PolyBabyAPI.Controllers
             if (!success) return BadRequest("Could not add vaccination record.");
             return Ok(new { message = "Vaccination record added successfully." });
         }
+
+        [HttpGet("{babyId}/growth/predict")]
+        public async Task<IActionResult> PredictGrowth(int babyId)
+        {
+            var data = await _trackerService.GetTrackerDataAsync(babyId);
+            if (data == null) return NotFound("Baby profile not found.");
+
+            // Calculate age in months
+            var ageInMonths = (DateTime.Now.Year - data.DateOfBirth.Year) * 12 + DateTime.Now.Month - data.DateOfBirth.Month;
+            if (ageInMonths < 0) ageInMonths = 0;
+
+            double predictedWeight = 3.5 + (ageInMonths * 0.5); // Baseline average
+            double predictedHeight = 50.0 + (ageInMonths * 2.0);
+
+            // If there's a recent record, we can do a better prediction based on the last record
+            var lastRecord = data.GrowthRecords?.OrderByDescending(r => r.RecordedDate).FirstOrDefault();
+            if (lastRecord != null)
+            {
+                var monthsSinceLast = (DateTime.Now.Year - lastRecord.RecordedDate.Year) * 12 + DateTime.Now.Month - lastRecord.RecordedDate.Month;
+                // [TESTING MODE] - Always pretend at least 1 month has passed so the UI always suggests a higher weight for testing.
+                if (monthsSinceLast <= 0) monthsSinceLast = 1;
+                
+                predictedWeight = lastRecord.WeightKg + (monthsSinceLast * 0.5); 
+                predictedHeight = lastRecord.HeightCm + (monthsSinceLast * 1.5);
+            }
+
+            return Ok(new { 
+                predictedWeight = Math.Round(predictedWeight, 1), 
+                predictedHeight = Math.Round(predictedHeight, 1) 
+            });
+        }
     }
 }

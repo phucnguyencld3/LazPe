@@ -18,6 +18,7 @@ import {
 import { getLoyaltyProfile, getLoyaltyHistory, getLoyaltyTiers, LoyaltyProfileResponse, LoyaltyPointHistoryItem, LoyaltyTierClientResponse } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { formatPrivilegeDetailLines } from "@/lib/utils/formatters";
+import { RedeemVoucherSection } from "./RedeemVoucherSection";
 
 interface LoyaltySectionProps {
   token: string;
@@ -231,9 +232,9 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
   if (dynamicProgress > 100) dynamicProgress = 100;
 
   return (
-    <div className="space-y-4">
+    <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
       {/* 1. MEMBERSHIP CARD & POINTS BANNER */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 md:p-6 bg-slate-50/50">
 
         {/* Virtual Membership Card */}
         <div
@@ -308,7 +309,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
 
       {/* 2. PROGRESS TO NEXT TIER */}
       {nextTier && profile && (
-        <section className="bg-white rounded-[10px] p-4 border border-slate-100/60 shadow-sm space-y-3">
+        <section className="p-5 md:p-6 space-y-3 bg-white">
           <div className="flex justify-between items-center text-[11px] font-bold text-slate-700">
             <span className="flex items-center gap-1.5 uppercase tracking-wide text-slate-500">
               <TrendingUp className="h-3.5 w-3.5 text-rose-500" />
@@ -336,7 +337,7 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
       )}
 
       {/* 3. TIER PRIVILEGES */}
-      <section className="bg-white rounded-[10px] p-5 border border-slate-100/60 shadow-sm space-y-4">
+      <section className="p-5 md:p-6 space-y-4 bg-white">
         <h3 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 pb-3 border-b border-slate-100">
           <Gift className="h-4 w-4 text-rose-500" />
           Đặc quyền VIP & Hạng thành viên
@@ -446,6 +447,17 @@ export function LoyaltySection({ token }: LoyaltySectionProps) {
             );
           })}
         </div>
+      </section>
+
+      {/* NEW: VOUCHER REDEMPTION SECTION */}
+      <section className="bg-slate-50/50 rounded-[10px] p-5 border border-slate-100/60 shadow-sm">
+        <RedeemVoucherSection 
+          token={token} 
+          onRedeemSuccess={() => {
+            fetchProfileData();
+            fetchHistoryData();
+          }} 
+        />
       </section>
 
       {/* 4. POINT HISTORY TABLE WITH FILTERS */}

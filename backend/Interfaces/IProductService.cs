@@ -18,10 +18,13 @@ namespace PolyBabyAPI.Interfaces
         Task<ServiceResult<ProductDto>> UpdateProductAsync(int id, UpdateProductDto dto, string userId);
         Task<ServiceResult<bool>> DeleteProductAsync(int id);
         Task<ServiceResult<bool>> ToggleProductStatusAsync(int id);
+        Task<ServiceResult<bool>> ToggleProductSubscriptionAsync(int id);
+        Task<ServiceResult<bool>> BulkSetSubscriptionStatusAsync(List<int> ids, bool isEnabled);
         Task<List<CategorySelectDto>> GetCategoriesForSelectAsync();
         Task<List<SupplierSelectDto>> GetSuppliersForSelectAsync();
         Task<bool> IsProductCodeExistAsync(string code, int? excludeId = null);
         Task<object> GetProductStatsAsync();
+        Task<object> GetSubscriptionStatsAsync();
         Task<ServiceResult<object>> SyncSeoFieldsAsync();
         void ClearProductCache();
     }

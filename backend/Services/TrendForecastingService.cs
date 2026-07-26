@@ -21,7 +21,7 @@ namespace PolyBabyAPI.Services
 
         // Forecast parameters
         private const int WindowSize = 7;      // Tuần
-        private const int SeriesLength = 30;   // Tháng
+        private const int SeriesLength = 60;   // Tháng/Quý (Tăng độ dài chuỗi để AI học chu kỳ dài hạn)
         private const int Horizon = 14;        // Số ngày dự đoán tương lai (2 tuần)
 
         public TrendForecastingService(ApplicationDbContext context, ILogger<TrendForecastingService> logger)
@@ -203,7 +203,8 @@ namespace PolyBabyAPI.Services
                     var l7Sales = g.Where(x => x.Date >= l7Start).Sum(x => x.Quantity);
                     var p7Sales = g.Where(x => x.Date >= p7Start && x.Date < l7Start).Sum(x => x.Quantity);
 
-                    if (l7Sales == 0 && p7Sales == 0) continue;
+                    // Lọc nhiễu: Phải bán được tối thiểu 3 sản phẩm trong tuần thì mới xét là Trend
+                    if (l7Sales < 3 && p7Sales < 3) continue;
 
                     // Tính tỷ lệ tăng trưởng (Growth Rate)
                     decimal growthRate = 0;
@@ -216,9 +217,20 @@ namespace PolyBabyAPI.Services
                         growthRate = 100; // Tăng trưởng 100% nếu kỳ trước không bán được
                     }
 
-                    // Tính điểm Xu hướng (Trend Score) = (L7 * 0.7) + (GrowthRate * 0.3)
-                    // Công thức ưu tiên khối lượng bán thực tế gần đây kết hợp với gia tốc tăng trưởng
-                    decimal trendScore = (l7Sales * 0.7m) + (growthRate * 0.3m);
+                    // Giới hạn tỷ lệ tăng trưởng tối đa (Max 300%) để tránh hiện tượng chia cho số quá nhỏ gây nhiễu điểm số
+                    decimal cappedGrowthRate = Math.Min(growthRate, 300m);
+
+                    // Vận tốc bán tuyệt đối (Absolute Velocity) = Sự chênh lệch số lượng bán ra
+                    decimal velocity = l7Sales - p7Sales;
+
+                    // Tính điểm Xu hướng (Momentum Score)
+                    // - 40% ưu tiên số lượng bán gần đây (giữ các sản phẩm thực sự bán chạy ở top)
+                    // - 40% ưu tiên gia tốc bán tuyệt đối (sản phẩm tăng đột biến số lượng lớn)
+                    // - 20% ưu tiên tỷ lệ phần trăm tăng trưởng (hỗ trợ các sản phẩm nhỏ đang lên)
+                    decimal trendScore = (l7Sales * 0.4m) + (velocity * 0.4m) + (cappedGrowthRate * 0.2m);
+
+                    // Đảm bảo điểm trend không bị âm
+                    trendScore = Math.Max(0, trendScore);
 
                     response.TrendingProducts.Add(new TrendingProductDto
                     {

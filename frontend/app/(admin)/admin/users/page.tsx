@@ -127,7 +127,7 @@ export default function AdminUsersPage() {
         </button>
       </header>
       
-      <div className="space-y-lg">
+      <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
         <UserStats stats={stats} />
         
         <UserTable 

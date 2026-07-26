@@ -81,13 +81,39 @@ namespace PolyBabyAPI.Controllers
                     { "Shop có chương trình khuyến mãi nào không?", "Hiện tại LazPe đang có nhiều chương trình ưu đãi hấp dẫn như miễn phí vận chuyển, voucher giảm giá cho thành viên mới và các combo tiết kiệm. Bạn có thể xem chi tiết tại trang chủ hoặc mục Voucher nhé!" }
                 };
 
+                var babyProfiles = await _dbContext.BabyProfiles.Include(b => b.GrowthRecords).Where(b => b.User.Id == request.SessionId || b.UserID != null).Take(1).ToListAsync(); // Attempt to find a baby profile (For a real system, you'd associate SessionId with UserID or have a context of the current user).
+                string context = "";
+                if (babyProfiles.Any())
+                {
+                    var baby = babyProfiles.First();
+                    var age = (DateTime.Now.Year - baby.DateOfBirth.Year) * 12 + DateTime.Now.Month - baby.DateOfBirth.Month;
+                    var lastWeight = baby.GrowthRecords.OrderByDescending(r => r.RecordedDate).FirstOrDefault()?.WeightKg;
+                    context = $"\\n[SYSTEM CONTEXT: Khách hàng đang có 1 bé tên là {baby.Name}, {age} tháng tuổi, cân nặng gần nhất là {lastWeight}kg. NẾU khách hàng báo cân nặng mới của bé, HÃY luôn thêm chuỗi `[UPDATE_WEIGHT: <số kg>]` vào cuối câu trả lời của bạn!]\\n";
+                }
+
                 if (faqMap.TryGetValue(request.Message.Trim(), out var staticResponse))
                 {
                     responseText = staticResponse;
                 }
                 else
                 {
-                    responseText = await _geminiService.GenerateTextAsync(request.SessionId, request.Message);
+                    responseText = await _geminiService.GenerateTextAsync(request.SessionId, request.Message + context);
+                }
+
+                // Check for [UPDATE_WEIGHT: X] tag
+                var match = System.Text.RegularExpressions.Regex.Match(responseText, @"\[UPDATE_WEIGHT:\s*([\d\.]+)\]");
+                if (match.Success && babyProfiles.Any())
+                {
+                    if (double.TryParse(match.Groups[1].Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double newWeight))
+                    {
+                        var baby = babyProfiles.First();
+                        var trackerService = HttpContext.RequestServices.GetService<PolyBabyAPI.Interfaces.IBabyTrackerService>();
+                        if (trackerService != null)
+                        {
+                            await trackerService.AddGrowthRecordAsync(baby.BabyProfileID, new BabyGrowthRecord { WeightKg = newWeight, HeightCm = baby.HeightCm ?? 50 });
+                        }
+                    }
+                    responseText = responseText.Replace(match.Value, "").Trim();
                 }
 
                 // Save AI message

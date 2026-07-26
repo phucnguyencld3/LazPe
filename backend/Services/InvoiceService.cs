@@ -85,7 +85,7 @@ namespace PolyBabyAPI.Services
         public async Task<(IEnumerable<Invoice> Items, int TotalCount)> GetByUserPaginatedAsync(string userId, OrderStatus? status = null, string? search = null, int page = 1, int pageSize = 10)
         {
             var query = _context.Invoices
-                .AsNoTracking()
+                .AsNoTrackingWithIdentityResolution()
                 .Where(i => i.UserID == userId && !i.IsDeleted);
 
             if (status.HasValue)
@@ -106,6 +106,7 @@ namespace PolyBabyAPI.Services
 
             var items = await query
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Variants)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .OrderByDescending(i => i.CreatedAt)
                 .Skip((page - 1) * pageSize)
@@ -119,13 +120,14 @@ namespace PolyBabyAPI.Services
         public async Task<Invoice?> GetByIdAsync(int id)
         {
             return await _context.Invoices
-                .AsNoTracking()
+                .AsNoTrackingWithIdentityResolution()
                 .AsSplitQuery()
                 .Include(i => i.User)
                 .Include(i => i.Voucher)
                 .Include(i => i.ShippingVoucher)
                 .Include(i => i.VoucherUsages).ThenInclude(vu => vu.Voucher)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Images)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Variant).ThenInclude(v => v.Product).ThenInclude(p => p.Variants)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Bundle)
                 .Include(i => i.PaymentTransactions)
                 .FirstOrDefaultAsync(i => i.InvoiceID == id && !i.IsDeleted);
@@ -932,11 +934,12 @@ namespace PolyBabyAPI.Services
                 if (!string.IsNullOrEmpty(invoice.UserID))
                 {
                     await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
+                    await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi tích điểm Loyalty khi hoàn thành đơn hàng {InvoiceId}", invoiceId);
+                _logger.LogError(ex, "Lỗi tích điểm Loyalty/Referral khi hoàn thành đơn hàng {InvoiceId}", invoiceId);
             }
 
             return true;
@@ -1428,7 +1431,7 @@ namespace PolyBabyAPI.Services
                 {
                     if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                     {
-                        throw new InvalidOperationException($"Combo sản phẩm đã đạt giới hạn số lượng Flash Sale. Chỉ còn {fsItem.TotalQuantity - fsItem.SoldQuantity} sản phẩm.");
+                        return; // Treat as normal purchase
                     }
 
                     if (fsItem.MaxQuantityPerUser > 0)
@@ -1436,7 +1439,7 @@ namespace PolyBabyAPI.Services
                         var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
                         if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
                         {
-                            throw new InvalidOperationException($"Bạn đã vượt quá số lượng mua tối đa cho Combo này trong đợt Flash Sale (Tối đa: {fsItem.MaxQuantityPerUser}).");
+                            return; // Treat as normal purchase
                         }
                     }
 
@@ -1475,7 +1478,7 @@ namespace PolyBabyAPI.Services
                 {
                     if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                     {
-                        throw new InvalidOperationException($"Sản phẩm đã đạt giới hạn số lượng Flash Sale. Chỉ còn {fsItem.TotalQuantity - fsItem.SoldQuantity} sản phẩm.");
+                        return; // Treat as normal purchase if flash sale quantity is exhausted
                     }
 
                     if (fsItem.MaxQuantityPerUser > 0)
@@ -1483,7 +1486,7 @@ namespace PolyBabyAPI.Services
                         var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
                         if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
                         {
-                            throw new InvalidOperationException($"Bạn đã vượt quá số lượng mua tối đa cho sản phẩm này trong đợt Flash Sale (Tối đa: {fsItem.MaxQuantityPerUser}).");
+                            return; // Treat as normal purchase if user exceeds their limit
                         }
                     }
 
@@ -1577,6 +1580,45 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        // ======== XỬ LÝ HOA HỒNG GIỚI THIỆU KHI ĐƠN HÀNG HOÀN TẤT ========
+        private async Task HandleReferralOnOrderCompletedAsync(string userId, decimal invoiceTotal, int invoiceId)
+        {
+            try
+            {
+                var referralRecord = await _context.ReferralRecords
+                    .FirstOrDefaultAsync(r => r.ReferredUserId == userId);
+
+                if (referralRecord == null) return;
+
+                if (!referralRecord.HasCompletedFirstOrder)
+                {
+                    // Đơn đầu tiên
+                    referralRecord.HasCompletedFirstOrder = true;
+                    
+                    // Nếu đơn đầu tiên này được hoàn tất trong vòng 7 ngày kể từ lúc đăng ký
+                    if ((DateTime.Now - referralRecord.CreatedAt).TotalDays <= 7)
+                    {
+                        // Thưởng cố định 50,000 điểm hiện có (không tích lũy xét hạng)
+                        int pointsToAdd = 50000;
+                        await _loyaltyService.AddPointsAsync(
+                            referralRecord.ReferrerId, 
+                            pointsToAdd, 
+                            "EARN", 
+                            $"Thưởng giới thiệu bạn bè (đơn đầu tiên trong 7 ngày) - #{invoiceId}", 
+                            invoiceId, 
+                            false // không cộng vào điểm tích lũy xét hạng
+                        );
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi xử lý điểm thưởng Referral cho hóa đơn {InvoiceId}", invoiceId);
+            }
+        }
+
         // ======== TỰ ĐỘNG HOÀN TẤT ĐƠN HÀNG SAU 7 NGÀY ĐANG GIAO ========
         public async Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken)
         {
@@ -1602,16 +1644,17 @@ namespace PolyBabyAPI.Services
 
                     _logger.LogInformation("Tự động hoàn tất hóa đơn {InvoiceId}", invoice.InvoiceID);
 
-                    // Tích lũy điểm Loyalty
+                    // Tích lũy điểm Loyalty và Referral
                     if (!string.IsNullOrEmpty(invoice.UserID))
                     {
                         try
                         {
                             await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
+                            await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
                         }
                         catch (Exception lEx)
                         {
-                            _logger.LogError(lEx, "Lỗi tích điểm Loyalty khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
+                            _logger.LogError(lEx, "Lỗi tích điểm Loyalty/Referral khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
                         }
                     }
                 }

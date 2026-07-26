@@ -137,6 +137,7 @@ export async function getProducts(
           description: item.description ?? "",
           price: item.price ?? 0,
           discountPrice: item.minEffectivePrice ?? (item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined),
+          discountPercent: item.productDiscountPercent,
           minPrice: item.minPrice,
           maxPrice: item.maxPrice,
           minEffectivePrice: item.minEffectivePrice,
@@ -150,6 +151,7 @@ export async function getProducts(
           rating: item.rating,
           ratingCount: item.ratingCount,
           specifications: item.specifications,
+          supportsSubscription: item.supportsSubscription,
         })),
         totalItems: data.totalItems ?? 0,
         totalPages: data.totalPages ?? 0,
@@ -239,6 +241,7 @@ export async function getProductDetail(id: number | string): Promise<Product | n
         description: item.description ?? "",
         price: item.price ?? 0,
         discountPrice: item.productDiscountPercent > 0 ? (item.price * (1 - item.productDiscountPercent / 100)) : undefined,
+        discountPercent: item.productDiscountPercent,
         minPrice,
         maxPrice,
         minEffectivePrice,
@@ -255,6 +258,7 @@ export async function getProductDetail(id: number | string): Promise<Product | n
         variants: variants,
         productOptions: item.productOptions ?? [],
         specifications: item.specifications,
+        supportsSubscription: item.supportsSubscription,
       };
     }
     return null;
@@ -578,6 +582,7 @@ export interface UserProfile {
   emailConfirmed: boolean;
   status: boolean;
   isOnboarded?: boolean;
+  referralCode?: string;
   babyProfiles?: BabyProfileDto[];
   walletBalance?: number;
   coinsBalance?: number;
@@ -3294,6 +3299,7 @@ export interface BabyProfileDto {
   heightCm?: number;
   favoriteColors?: string;
   createdAt: string;
+  growthRecords?: { recordedDate: string }[];
 }
 
 export interface CreateBabyProfileDto {
@@ -3571,6 +3577,142 @@ export async function addVaccinationRecord(babyId: number, data: VaccinationReco
     return response.ok;
   } catch (error) {
     console.error("Error adding vaccination record:", error);
+    return false;
+  }
+}
+
+// ============================================
+// LOYALTY VOUCHER REDEMPTION APIs
+// ============================================
+
+export async function getLoyaltyRedeemVouchers(token: string) {
+  const res = await fetch(`${API_BASE_URL}/Loyalty/redeem-vouchers`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch redeem vouchers");
+  return res.json();
+}
+
+export async function redeemLoyaltyVoucher(redemptionId: number, token: string) {
+  const res = await fetch(`${API_BASE_URL}/Loyalty/redeem-vouchers/${redemptionId}/redeem`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to redeem voucher");
+  }
+  return res.json();
+}
+
+export async function getAdminLoyaltyVoucherRedemptions(token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch admin redemptions");
+  return res.json();
+}
+
+export async function createAdminLoyaltyVoucherRedemption(data: any, token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Failed to create config");
+  return res.json();
+}
+
+export async function updateAdminLoyaltyVoucherRedemption(id: number, data: any, token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Failed to update config");
+  return res.json();
+}
+
+export async function deleteAdminLoyaltyVoucherRedemption(id: number, token: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/loyalty/voucher-redemptions/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to delete config");
+  return res.json();
+}
+
+// SUBSCRIPTION APIs
+export interface SubscriptionItem {
+  subscriptionID: number;
+  productID: number;
+  productName: string;
+  variantID?: number;
+  variantName?: string;
+  quantity: number;
+  frequencyType: number; // 1: Days, 2: Weeks, 3: Months
+  frequencyValue: number;
+  startDate: string;
+  nextBillingDate: string;
+  status: number; // 1: Active, 2: Paused, 3: Cancelled, 4: Completed
+  shippingAddressId: number;
+}
+
+export async function getUserSubscriptions(token: string): Promise<SubscriptionItem[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    const result = await response.json();
+    return result.success ? result.data : [];
+  } catch (error) {
+    console.error("Error fetching subscriptions:", error);
+    return [];
+  }
+}
+
+export async function cancelSubscription(id: number, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error canceling subscription:", error);
+    return false;
+  }
+}
+
+export async function pauseSubscription(id: number, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions/${id}/pause`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error pausing subscription:", error);
+    return false;
+  }
+}
+
+export async function resumeSubscription(id: number, token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Subscriptions/${id}/resume`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error resuming subscription:", error);
     return false;
   }
 }

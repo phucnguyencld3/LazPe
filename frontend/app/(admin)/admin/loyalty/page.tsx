@@ -6,6 +6,7 @@ import { toast } from "@/lib/toast";
 import { Loader } from "lucide-react";
 import { Pagination } from "@/components/admin/shared/Pagination";
 import { formatCurrency, formatPrivilegeDetailLines } from "@/lib/utils/formatters";
+import { VoucherRedemptionConfig } from "@/components/admin/loyalty/VoucherRedemptionConfig";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
@@ -163,8 +164,8 @@ const getAuditActionLabel = (action: string): string => {
 
 export default function AdminLoyaltyPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "policies" | "tiers" | "history" | "settings">("dashboard");
-  const [subTab, setSubTab] = useState<"privileges" | "redeem" | "vouchers">("privileges");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "policies" | "tiers" | "voucher_redemptions" | "history" | "settings">("dashboard");
+  const [subTab, setSubTab] = useState<"privileges" | "redeem">("privileges");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -622,6 +623,9 @@ export default function AdminLoyaltyPage() {
       fetchConfigs();
       fetchPolicies();
       fetchVouchersList();
+    }
+    if (activeTab === "voucher_redemptions") {
+      fetchTiers();
     }
     if (activeTab === "history") {
       if (historySubTab === "points") {
@@ -1325,6 +1329,16 @@ export default function AdminLoyaltyPage() {
           Hạng & Đặc quyền
         </button>
         <button
+          onClick={() => setActiveTab("voucher_redemptions")}
+          className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "voucher_redemptions"
+            ? "border-primary text-primary"
+            : "border-transparent text-slate-500 hover:text-primary hover:border-primary/30"
+            }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">local_activity</span>
+          Voucher Đổi Điểm
+        </button>
+        <button
           onClick={() => setActiveTab("history")}
           className={`px-6 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${activeTab === "history"
             ? "border-primary text-primary"
@@ -1355,43 +1369,45 @@ export default function AdminLoyaltyPage() {
             </div>
           ) : stats ? (
             <>
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {/* Dashboard Master Card */}
+              <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+                {/* Stats Grid */}
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/30">
                 {/* Issued */}
-                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="px-6 py-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">military_tech</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng điểm phát hành</span>
                   </div>
-                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsIssued.toLocaleString()}đ</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsIssued.toLocaleString()} điểm</span>
                 </div>
 
                 {/* Spent */}
-                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="px-6 py-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm đã sử dụng</span>
                   </div>
-                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsSpent.toLocaleString()}đ</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsSpent.toLocaleString()} điểm</span>
                 </div>
 
                 {/* Remaining */}
-                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="px-6 py-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
                     </div>
                     <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Điểm tồn trong ví</span>
                   </div>
-                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsRemaining.toLocaleString()}đ</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{stats.totalPointsRemaining.toLocaleString()} điểm</span>
                 </div>
 
                 {/* Upgrade Rate */}
-                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="px-6 py-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">trending_up</span>
@@ -1402,7 +1418,7 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Voucher Usage Rate */}
-                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="px-6 py-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">local_activity</span>
@@ -1413,7 +1429,7 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Revenue */}
-                <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
+                <div className="px-6 py-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
                       <span className="material-symbols-outlined text-[20px]">monetization_on</span>
@@ -1424,10 +1440,10 @@ export default function AdminLoyaltyPage() {
                 </div>
               </div>
 
-              {/* Members distributions & Leaderboard */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Members distributions & Leaderboard */}
+                <div className="w-full grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
                 {/* Member Distribution */}
-                <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm flex flex-col h-fit">
+                <div className="flex flex-col h-full">
                   <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="text-base font-bold text-slate-800">Phân bố thành viên</h3>
                     <span className="material-symbols-outlined text-slate-400 text-[20px]">pie_chart</span>
@@ -1451,7 +1467,7 @@ export default function AdminLoyaltyPage() {
                 </div>
 
                 {/* Leaderboard */}
-                <div className="lg:col-span-2 bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-fit">
+                <div className="lg:col-span-2 overflow-hidden flex flex-col h-full">
                   <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <h3 className="text-base font-bold text-slate-800">Bảng xếp hạng tích điểm cao nhất</h3>
                     <span className="material-symbols-outlined text-slate-400 text-[20px]">emoji_events</span>
@@ -1500,6 +1516,7 @@ export default function AdminLoyaltyPage() {
                     </table>
                   </div>
                 </div>
+                </div>
               </div>
             </>
           ) : (
@@ -1518,9 +1535,9 @@ export default function AdminLoyaltyPage() {
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
               {/* Accumulation Policies */}
-              <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
                     <h3 className="text-lg text-slate-800 font-bold">Cơ chế tích điểm</h3>
@@ -1593,7 +1610,7 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Redemption Policies */}
-              <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
                     <h3 className="text-lg text-slate-800 font-bold">Cơ chế đổi điểm</h3>
@@ -1679,9 +1696,9 @@ export default function AdminLoyaltyPage() {
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
               {/* Tiers list */}
-              <div className="lg:col-span-1 space-y-6">
+              <div className="lg:col-span-1 space-y-6 p-6 bg-slate-50/30">
                 <div className="flex items-center justify-between px-2">
                   <h3 className="text-lg text-slate-800 font-bold">Hạng thành viên</h3>
                   <button
@@ -1719,7 +1736,7 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Detail Tier Panel */}
-              <div className="lg:col-span-2 bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in duration-300">
+              <div className="lg:col-span-2 overflow-hidden flex flex-col animate-in fade-in duration-300 h-full">
                 {(() => {
                   const activeTier = tiers.find(t => t.tierID === selectedTierForPrivileges);
                   return (
@@ -1907,7 +1924,7 @@ export default function AdminLoyaltyPage() {
                                             </button>
                                           </div>
                                         </div>
-                                      ))
+                                        ))
                                   )}
                                 </div>
                               </div>
@@ -1928,11 +1945,31 @@ export default function AdminLoyaltyPage() {
         </section>
       )}
 
+      {/* -------------------- TAB 6: VOUCHER ĐỔI ĐIỂM (New Tab) -------------------- */}
+      {activeTab === "voucher_redemptions" && (
+        <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white rounded-[12px] shadow-sm border border-slate-200 p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">local_activity</span>
+              Quản lý Voucher Đổi Điểm
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Thiết lập các voucher cho phép khách hàng đổi bằng điểm tích lũy. Bạn có thể gán voucher cho mọi hạng hoặc chỉ riêng một hạng cụ thể.
+            </p>
+            <VoucherRedemptionConfig 
+              token={getHeaders().Authorization.replace("Bearer ", "")}
+            />
+          </div>
+        </section>
+      )}
+
       {/* -------------------- TAB 5: HISTORY & LOGS (Paginated Table) -------------------- */}
       {activeTab === "history" && (
         <section className="space-y-md">
+          {/* History Master Card */}
+          <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden">
           {/* Sub-tabs Navigation inside History tab */}
-          <div className="flex border-b border-slate-100 bg-slate-50/50 p-1 gap-2 rounded-[8px] mb-6 shadow-sm">
+          <div className="flex border-b border-slate-100 bg-slate-50/50 p-2 gap-2 shadow-sm">
             <button
               onClick={() => setHistorySubTab("points")}
               className={`flex-1 py-2 text-center rounded-lg font-bold text-sm transition-all cursor-pointer ${historySubTab === "points"
@@ -1964,7 +2001,7 @@ export default function AdminLoyaltyPage() {
 
           {/* Sub-tab 1: Points Transaction Log */}
           {historySubTab === "points" && (
-            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <div className="overflow-hidden flex flex-col">
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-slate-800">Lịch sử tích/đổi điểm của khách hàng</h3>
               </div>
@@ -2109,24 +2146,24 @@ export default function AdminLoyaltyPage() {
 
           {/* Sub-tab 2: Birthday Gift Logs */}
           {historySubTab === "birthday" && (
-            <div className="glass-card rounded-[8px] shadow-sm border border-outline-variant/20 overflow-hidden bg-surface-container-lowest flex flex-col">
-              <div className="p-md border-b border-outline-variant/20 bg-primary-container/5 flex items-center justify-between flex-wrap gap-2">
+            <div className="overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-wrap gap-2">
                 <div>
-                  <h3 className="font-headline-md text-on-surface font-bold">Lịch sử nhận quà sinh nhật</h3>
-                  <p className="text-on-surface-variant/60 text-xs font-semibold mt-xs">Danh sách thành viên nhận quà và trạng thái cấp phát hàng năm</p>
+                  <h3 className="text-lg font-bold text-slate-800">Lịch sử nhận quà sinh nhật</h3>
+                  <p className="text-xs text-slate-400 font-semibold mt-1">Danh sách thành viên nhận quà và trạng thái cấp phát hàng năm</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={handleTriggerBirthdayJob}
                     disabled={triggeringBirthdayJob}
-                    className="border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    className="border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">calendar_today</span>
                     {triggeringBirthdayJob ? "Đang chạy Job..." : "Chạy Job sinh nhật hôm nay"}
                   </button>
                   <button
                     onClick={() => setShowManualBirthdayModal(true)}
-                    className="bg-primary text-on-primary px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
+                    className="bg-primary text-white px-5 py-2.5 rounded-[8px] font-bold text-xs flex items-center gap-1.5 hover:opacity-90 transition-all shadow-md cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">card_giftcard</span>
                     Phát quà thủ công
@@ -2135,32 +2172,32 @@ export default function AdminLoyaltyPage() {
               </div>
 
               {/* Filters */}
-              <div className="p-md border-b border-outline-variant/20 flex flex-wrap items-center gap-md bg-surface-container-low/30">
-                <div className="relative min-w-[200px] flex-1">
-                  <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+              <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
+                <div className="relative min-w-[260px] flex-1">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                   <input
                     type="text"
                     placeholder="Tìm kiếm thành viên..."
                     value={birthdaySearch}
                     onChange={(e) => setBirthdaySearch(e.target.value)}
-                    className="w-full pl-xl pr-md py-md bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-[8px] font-semibold text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
               </div>
 
               <div className="overflow-x-auto flex-1">
                 <table className="w-full border-collapse">
-                  <thead className="bg-primary-container/10 border-b border-outline-variant/30 text-left">
+                  <thead className="bg-slate-50/50 border-b border-slate-100 text-left">
                     <tr>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Thành viên</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold text-center">Năm nhận</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Loại quà</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Giá trị quà</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Người phát</th>
-                      <th className="px-lg py-md font-label-md text-label-md text-primary font-bold">Thời gian nhận</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Thành viên</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Năm nhận</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Loại quà</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá trị quà</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Người phát</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Thời gian nhận</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant/20 text-sm">
+                  <tbody className="divide-y divide-slate-50 text-sm">
                     {loadingBirthdayLogs ? (
                       <tr>
                         <td colSpan={6} className="text-center py-20">
@@ -2169,22 +2206,22 @@ export default function AdminLoyaltyPage() {
                       </tr>
                     ) : birthdayLogs.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center py-20 text-on-surface-variant/60 font-bold">
+                        <td colSpan={6} className="text-center py-20 text-slate-400 font-bold">
                           Không tìm thấy lịch sử quà sinh nhật nào.
                         </td>
                       </tr>
                     ) : (
                       birthdayLogs.map((l) => (
-                        <tr key={l.giftLogID} className="hover:bg-primary-container/10 transition-colors">
-                          <td className="px-lg py-md">
-                            <p className="font-bold text-on-surface">{l.fullName}</p>
-                            <p className="text-[10px] text-on-surface-variant/60 font-semibold">{l.email}</p>
+                        <tr key={l.giftLogID} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-slate-800">{l.fullName}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{l.email}</p>
                           </td>
-                          <td className="px-lg py-md text-center font-bold text-primary">
+                          <td className="px-6 py-4 text-center font-bold text-slate-600">
                             {l.year}
                           </td>
-                          <td className="px-lg py-md">
-                            <span className="px-2 py-0.5 rounded-[8px] text-[9px] font-bold bg-secondary-container/20 text-on-secondary-container uppercase">
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-0.5 rounded-[8px] text-[9px] font-bold bg-slate-100 text-slate-600 uppercase">
                               {l.giftType}
                             </span>
                           </td>
@@ -2255,6 +2292,7 @@ export default function AdminLoyaltyPage() {
               />
             </div>
           )}
+          </div>
         </section>
       )}
 
@@ -2410,7 +2448,7 @@ export default function AdminLoyaltyPage() {
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="w-full bg-primary hover:bg-primary/95 text-white py-3 rounded-full font-bold text-sm hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 mt-6 cursor-pointer"
+                  className="w-full bg-primary hover:bg-primary/95 text-white py-3 rounded-[8px] font-bold text-sm hover:scale-[1.01] active:scale-95 transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 mt-6 cursor-pointer"
                 >
                   {savingSettings && <Loader className="animate-spin" size={16} />}
                   Lưu cấu hình cài đặt
@@ -2442,14 +2480,14 @@ export default function AdminLoyaltyPage() {
                 <button
                   type="button"
                   onClick={closeConfirmDialog}
-                  className="px-lg py-md rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-lg py-md rounded-[8px] border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
                 >
                   {confirmDialog.cancelLabel || "Hủy"}
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmDialog}
-                  className="px-lg py-md rounded-full bg-error text-on-error hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95"
+                  className="px-lg py-md rounded-[8px] bg-error text-on-error hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95"
                 >
                   {confirmDialog.confirmLabel || "Xác nhận"}
                 </button>
@@ -2591,7 +2629,7 @@ export default function AdminLoyaltyPage() {
                             setRevocationReason("");
                           }
                         }}
-                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                        className="w-full px-lg py-md bg-surface-container-low border-none rounded-[8px] focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
                       >
                         <option value="">-- Thu hồi tự do (Không theo lượt tích điểm) --</option>
                         {userEarnTransactions.map(t => (
@@ -2641,7 +2679,7 @@ export default function AdminLoyaltyPage() {
                             }
                           }}
                           required
-                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
+                          className="w-full px-lg py-md bg-surface-container-low border-none rounded-[8px] focus:ring-2 focus:ring-primary/30 transition-all font-body-md text-on-surface cursor-pointer"
                         >
                           <option value="">-- Chọn voucher trong ví --</option>
                           {userUnusedVouchers.map(uv => (
@@ -2683,7 +2721,7 @@ export default function AdminLoyaltyPage() {
                     setSelectedEarnTransactionId("");
                     setSelectedUserVoucherId("");
                   }}
-                  className="px-lg py-md rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
+                  className="px-lg py-md rounded-[8px] border border-outline-variant text-on-surface-variant hover:bg-surface-container-low font-bold text-xs cursor-pointer transition-colors"
                   disabled={submittingRevocation}
                 >
                   Hủy bỏ
@@ -2691,7 +2729,7 @@ export default function AdminLoyaltyPage() {
                 <button
                   type="submit"
                   disabled={submittingRevocation || !revocationUserID || (revocationType === "VOUCHER" && !selectedUserVoucherId)}
-                  className="px-lg py-md rounded-full bg-error text-on-error hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  className="px-lg py-md rounded-[8px] bg-error text-on-error hover:opacity-90 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
                 >
                   {submittingRevocation ? "Đang xử lý..." : "Xác nhận thu hồi"}
                 </button>

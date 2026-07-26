@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.Models;
 using PolyBabyAPI.DTOs;
+using PolyBabyAPI.Helpers;
 using PolyBabyAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
@@ -69,6 +70,16 @@ namespace PolyBabyAPI.Services
                     try
                     {
                         var matchingIds = await _searchEngineService.SearchProductsAsync(searchTerm);
+                        if (!matchingIds.Any())
+                        {
+                            // Thử tìm kiếm bằng keyword không dấu trên Meilisearch
+                            var noTone = StringHelper.RemoveVietnameseTones(searchTerm);
+                            if (noTone != searchTerm)
+                            {
+                                matchingIds = await _searchEngineService.SearchProductsAsync(noTone);
+                            }
+                        }
+
                         if (matchingIds.Any())
                         {
                             query = query.Where(p => matchingIds.Contains(p.ProductID));
@@ -76,13 +87,28 @@ namespace PolyBabyAPI.Services
                         }
                         else
                         {
-                            query = query.Where(p => p.ProductID == 0); // Force empty
+                            // Nếu vẫn không có, fallback về SQL
+                            var noTone = StringHelper.RemoveVietnameseTones(searchTerm).ToLower();
+                            var allProducts = _context.Products.Select(x => new { x.ProductID, x.ProductName }).ToList();
+                            var matchedIds = allProducts.Where(x => 
+                                (x.ProductName ?? "").ToLower().Contains(searchTerm.ToLower()) || 
+                                StringHelper.RemoveVietnameseTones(x.ProductName ?? "").ToLower().Contains(noTone)
+                            ).Select(x => x.ProductID).ToList();
+                            
+                            query = query.Where(p => matchedIds.Contains(p.ProductID));
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Meilisearch query failed. Fallback to SQL Server LIKE.");
-                        query = query.Where(p => p.ProductName.Contains(searchTerm));
+                        var noTone = StringHelper.RemoveVietnameseTones(searchTerm).ToLower();
+                        var allProducts = _context.Products.Select(x => new { x.ProductID, x.ProductName }).ToList();
+                        var matchedIds = allProducts.Where(x => 
+                            (x.ProductName ?? "").ToLower().Contains(searchTerm.ToLower()) || 
+                            StringHelper.RemoveVietnameseTones(x.ProductName ?? "").ToLower().Contains(noTone)
+                        ).Select(x => x.ProductID).ToList();
+                        
+                        query = query.Where(p => matchedIds.Contains(p.ProductID));
                     }
                 }
 
@@ -106,6 +132,9 @@ namespace PolyBabyAPI.Services
 
                 bool useRelevanceSort = meiliSortedIds != null && sortBy.ToLower() == "createdat";
 
+                var totalItems = await query.AsSingleQuery().CountAsync();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
                 // Apply sorting
                 if (!useRelevanceSort)
                 {
@@ -122,14 +151,12 @@ namespace PolyBabyAPI.Services
                     };
                 }
 
-                var totalItems = await query.CountAsync();
-                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
                 List<Product> productsBase;
                 if (useRelevanceSort)
                 {
                     // Lấy toàn bộ danh sách ID đã lọc (tối đa 100), sắp xếp trên RAM theo điểm relevance của Meilisearch, sau đó phân trang.
                     var allMatching = await query
+                        .AsSingleQuery()
                         .Include(p => p.Category)
                         .Include(p => p.Supplier)
                         .ToListAsync();
@@ -144,6 +171,7 @@ namespace PolyBabyAPI.Services
                 {
                     // Câu query 1: Lấy thông tin cơ bản của Product và include Category, Supplier
                     productsBase = await query
+                        .AsSingleQuery()
                         .Include(p => p.Category)
                         .Include(p => p.Supplier)
                         .Skip((page - 1) * pageSize)
@@ -203,6 +231,7 @@ namespace PolyBabyAPI.Services
                             ProductDiscountPercent = p.ProductDiscountPercent,
                             Stock = p.Stock,
                             Status = p.Status,
+                            SupportsSubscription = p.SupportsSubscription,
                             CategoryID = p.CategoryID,
                             CategoryName = p.Category?.CategoryName ?? "",
                             SupplierID = p.SupplierID,
@@ -314,6 +343,7 @@ namespace PolyBabyAPI.Services
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
                     Status = product.Status,
+                    SupportsSubscription = product.SupportsSubscription,
                     CategoryID = product.CategoryID,
                     SupplierID = product.SupplierID,
                     CreatedAt = product.CreatedAt,
@@ -384,6 +414,7 @@ namespace PolyBabyAPI.Services
                     ProductDiscountPercent = product.ProductDiscountPercent,
                     Stock = product.Stock,
                     Status = product.Status,
+                    SupportsSubscription = product.SupportsSubscription,
                     CategoryID = product.CategoryID,
                     SupplierID = product.SupplierID,
                     CreatedAt = product.CreatedAt,
@@ -483,7 +514,7 @@ namespace PolyBabyAPI.Services
                     Code = dto.Code,
                     Slug = slug,
                     MetaTitle = dto.MetaTitle ?? dto.ProductName,
-                    MetaDescription = dto.MetaDescription ?? dto.Description,
+                    MetaDescription = (dto.MetaDescription ?? dto.Description)?.Length > 500 ? (dto.MetaDescription ?? dto.Description).Substring(0, 500) : (dto.MetaDescription ?? dto.Description),
                     ProductName = dto.ProductName,
                     Description = dto.Description,
                     Specifications = dto.Specifications,
@@ -494,7 +525,8 @@ namespace PolyBabyAPI.Services
                     SupplierID = dto.SupplierID ?? 0, // Default supplier if not provided
                     CreatedAt = DateTime.Now,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    Status = true
+                    Status = true,
+                    SupportsSubscription = dto.SupportsSubscription
                 };
 
                 _context.Products.Add(product);
@@ -636,7 +668,7 @@ namespace PolyBabyAPI.Services
                     Code = productCode,
                     Slug = slug,
                     MetaTitle = dto.MetaTitle ?? dto.ProductName,
-                    MetaDescription = dto.MetaDescription ?? dto.Description,
+                    MetaDescription = (dto.MetaDescription ?? dto.Description)?.Length > 500 ? (dto.MetaDescription ?? dto.Description).Substring(0, 500) : (dto.MetaDescription ?? dto.Description),
                     ProductName = dto.ProductName,
                     Description = dto.Description ?? "",
                     Specifications = dto.Specifications ?? "",
@@ -647,7 +679,8 @@ namespace PolyBabyAPI.Services
                     SupplierID = dto.SupplierID ?? 0,
                     CreatedAt = DateTime.Now,
                     CreatedBy = dto.CreatedBy ?? "System",
-                    Status = dto.Status
+                    Status = dto.Status,
+                    SupportsSubscription = dto.SupportsSubscription
                 };
 
                 _context.Products.Add(product);
@@ -824,7 +857,7 @@ namespace PolyBabyAPI.Services
                 product.Code = dto.Code ?? product.Code;
                 product.Slug = slug;
                 product.MetaTitle = dto.MetaTitle ?? dto.ProductName;
-                product.MetaDescription = dto.MetaDescription ?? dto.Description;
+                product.MetaDescription = (dto.MetaDescription ?? dto.Description)?.Length > 500 ? (dto.MetaDescription ?? dto.Description).Substring(0, 500) : (dto.MetaDescription ?? dto.Description);
                 product.ProductName = dto.ProductName;
                 product.Description = dto.Description;
                 product.Specifications = dto.Specifications;
@@ -834,6 +867,7 @@ namespace PolyBabyAPI.Services
                 product.CategoryID = dto.CategoryID;
                 product.SupplierID = dto.SupplierID ?? product.SupplierID;
                 product.Status = dto.Status;
+                product.SupportsSubscription = dto.SupportsSubscription;
 
                 var newFinalPrice = dto.Price * (1m - (dto.ProductDiscountPercent / 100m));
                 var priceDelta = dto.Price - oldBasePrice;
@@ -1016,8 +1050,7 @@ namespace PolyBabyAPI.Services
                 return new ServiceResult<bool>
                 {
                     Success = true,
-                    Data = true,
-                    Message = product.Status ? "Kích hoạt sản phẩm thành công" : "Vô hiệu hóa sản phẩm thành công"
+                    Data = product.Status
                 };
             }
             catch (Exception ex)
@@ -1027,6 +1060,82 @@ namespace PolyBabyAPI.Services
                 {
                     Success = false,
                     Message = "Có lỗi xảy ra khi cập nhật trạng thái sản phẩm"
+                };
+            }
+        }
+
+        public async Task<ServiceResult<bool>> ToggleProductSubscriptionAsync(int id)
+        {
+            try
+            {
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return new ServiceResult<bool>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy sản phẩm"
+                    };
+                }
+
+                product.SupportsSubscription = !product.SupportsSubscription;
+                await _context.SaveChangesAsync();
+                ClearProductCache();
+
+                return new ServiceResult<bool>
+                {
+                    Success = true,
+                    Data = product.SupportsSubscription,
+                    Message = product.SupportsSubscription ? "Bật tính năng mua định kỳ thành công" : "Tắt tính năng mua định kỳ thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling product subscription {ProductId}", id);
+                return new ServiceResult<bool>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi cập nhật tính năng mua định kỳ"
+                };
+            }
+        }
+
+        public async Task<ServiceResult<bool>> BulkSetSubscriptionStatusAsync(List<int> ids, bool isEnabled)
+        {
+            try
+            {
+                var products = await _context.Products.Where(p => ids.Contains(p.ProductID)).ToListAsync();
+                if (!products.Any())
+                {
+                    return new ServiceResult<bool>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy sản phẩm nào"
+                    };
+                }
+
+                foreach (var product in products)
+                {
+                    product.SupportsSubscription = isEnabled;
+                }
+
+                await _context.SaveChangesAsync();
+                ClearProductCache();
+
+                return new ServiceResult<bool>
+                {
+                    Success = true,
+                    Data = true,
+                    Message = $"Đã cập nhật trạng thái mua định kỳ cho {products.Count} sản phẩm"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk updating product subscription for {Count} products", ids.Count);
+                return new ServiceResult<bool>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi cập nhật nhiều sản phẩm"
                 };
             }
         }
@@ -1096,6 +1205,20 @@ namespace PolyBabyAPI.Services
                 activeProducts,
                 outOfStockProducts,
                 newProducts
+            };
+        }
+
+        public async Task<object> GetSubscriptionStatsAsync()
+        {
+            var totalProducts = await _context.Products.CountAsync(p => !p.IsDeleted);
+            var activeSubscriptions = await _context.Products.CountAsync(p => p.SupportsSubscription && !p.IsDeleted);
+            var inactiveSubscriptions = totalProducts - activeSubscriptions;
+            
+            return new
+            {
+                totalProducts,
+                activeSubscriptions,
+                inactiveSubscriptions
             };
         }
 

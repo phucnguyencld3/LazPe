@@ -260,7 +260,7 @@ function EditCategoryForm() {
             <button
               type="button"
               onClick={() => router.push("/admin/categories")}
-              className="flex-1 py-3 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
+              className="flex-1 py-3 rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold text-xs cursor-pointer text-center"
               disabled={saving}
             >
               Hủy bỏ
@@ -268,7 +268,7 @@ function EditCategoryForm() {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-3 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              className="flex-1 py-3 rounded-[8px] bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>

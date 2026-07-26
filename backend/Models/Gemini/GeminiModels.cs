@@ -13,6 +13,16 @@ namespace PolyBabyAPI.Models.Gemini
 
         [JsonPropertyName("tools")]
         public List<GeminiTool>? Tools { get; set; }
+
+        [JsonPropertyName("generationConfig")]
+        public GeminiGenerationConfig? GenerationConfig { get; set; }
+    }
+
+    public class GeminiGenerationConfig
+    {
+        [JsonPropertyName("responseMimeType")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ResponseMimeType { get; set; }
     }
 
     public class GeminiContent
@@ -41,8 +51,21 @@ namespace PolyBabyAPI.Models.Gemini
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public GeminiFunctionResponse? FunctionResponse { get; set; }
 
+        [JsonPropertyName("inlineData")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public GeminiInlineData? InlineData { get; set; }
+
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    }
+
+    public class GeminiInlineData
+    {
+        [JsonPropertyName("mimeType")]
+        public string MimeType { get; set; } = string.Empty;
+
+        [JsonPropertyName("data")]
+        public string Data { get; set; } = string.Empty;
     }
 
     public class GeminiFunctionCall

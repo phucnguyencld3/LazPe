@@ -169,8 +169,8 @@ export default function VoucherForm({
     } else {
       if (discountValue <= 0) {
         errors.discountValue = "Giá trị giảm giá phải lớn hơn 0.";
-      } else if (discountType === 1 && discountValue > 100) {
-        errors.discountValue = "Giảm giá theo % không được vượt quá 100%.";
+      } else if (discountType === 1 && discountValue > 50) {
+        errors.discountValue = "Giảm giá theo phần trăm không được vượt quá 50% theo quy định pháp luật.";
       }
     }
 
@@ -291,7 +291,7 @@ export default function VoucherForm({
   };
 
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm w-full flex flex-col overflow-hidden animate-in fade-in duration-300">
 
         {/* Modal Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
@@ -314,14 +314,14 @@ export default function VoucherForm({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="border-t border-slate-100">
+          <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
 
             {/* Cột trái: Thông tin cơ bản & Phân phối */}
-            <div className="space-y-5">
+            <div className="flex flex-col divide-y divide-slate-100 bg-slate-50/30">
 
               {/* Thông tin cơ bản */}
-              <div className="bg-slate-50/30 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+              <div className="p-8 space-y-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-slate-400">info</span>
                   Thông tin cơ bản
@@ -476,7 +476,7 @@ export default function VoucherForm({
               </div>
 
               {/* Cấu hình phân phối */}
-              <div className="bg-slate-50/30 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+              <div className="p-8 space-y-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-slate-400">visibility</span>
                   Cấu hình phân phối
@@ -523,7 +523,7 @@ export default function VoucherForm({
               </div>
 
               {/* Active Status Toggle */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+              <div className="flex items-center justify-between p-8">
                 <div>
                   <p className="text-xs font-bold text-slate-800">Trạng thái hoạt động</p>
                   <p className="text-[9px] text-slate-400 mt-0.5">
@@ -544,10 +544,10 @@ export default function VoucherForm({
             </div>
 
             {/* Cột phải: Chính sách giảm giá & Thời gian áp dụng */}
-            <div className="space-y-5">
+            <div className="flex flex-col divide-y divide-slate-100 bg-white">
 
               {/* Chính sách giảm giá */}
-              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+              <div className="p-8 space-y-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-slate-400">payments</span>
                   Chính sách giảm giá
@@ -750,7 +750,7 @@ export default function VoucherForm({
               </div>
 
               {/* Thời gian áp dụng */}
-              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 space-y-4">
+              <div className="p-8 space-y-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-slate-400">schedule</span>
                   Thời gian áp dụng
@@ -818,33 +818,35 @@ export default function VoucherForm({
 
         {/* Modal Footer Actions */}
         <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/admin/vouchers")}
-            disabled={submitting}
-            className="px-5 py-2 rounded-full border border-slate-200 text-slate-550 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
-          >
-            Hủy bỏ
-          </button>
+          <div className="grid grid-cols-2 gap-3 w-[340px]">
+            <button
+              type="button"
+              onClick={() => router.push("/admin/vouchers")}
+              disabled={submitting}
+              className="w-full py-2.5 rounded-[8px] border border-slate-200 text-slate-550 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center"
+            >
+              Hủy bỏ
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-          >
-            {submitting ? (
-              <>
-                <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
-                <span>Đang lưu...</span>
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-outlined text-[16px]">save</span>
-                <span>{isEditing ? "Cập nhật" : "Tạo Voucher"}</span>
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full py-2.5 rounded-[8px] bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 hover:bg-primary/95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {submitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[16px]">save</span>
+                  <span>{isEditing ? "Cập nhật" : "Tạo Voucher"}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
   );

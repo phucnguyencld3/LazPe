@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
+using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 using System;
 using System.Linq;
@@ -594,6 +595,61 @@ namespace PolyBabyAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi thực hiện điểm danh");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách voucher có thể đổi bằng điểm
+        /// </summary>
+        [HttpGet("redeem-vouchers")]
+        public async Task<IActionResult> GetRedeemVouchers([FromServices] ILoyaltyVoucherRedemptionService redemptionService)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var vouchers = await redemptionService.GetAvailableRedemptionVouchersAsync(userId);
+                return Ok(new { success = true, data = vouchers });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy danh sách đổi voucher");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống" });
+            }
+        }
+
+        /// <summary>
+        /// Thực hiện đổi voucher bằng điểm
+        /// </summary>
+        [HttpPost("redeem-vouchers/{redemptionId}/redeem")]
+        public async Task<IActionResult> RedeemVoucher(int redemptionId, [FromServices] ILoyaltyVoucherRedemptionService redemptionService)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { success = false, message = "Người dùng chưa đăng nhập" });
+                }
+
+                var result = await redemptionService.RedeemVoucherAsync(userId, redemptionId);
+                if (result.Success)
+                {
+                    return Ok(new { success = true, data = result });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi đổi voucher");
                 return StatusCode(500, new { success = false, message = "Lỗi hệ thống" });
             }
         }

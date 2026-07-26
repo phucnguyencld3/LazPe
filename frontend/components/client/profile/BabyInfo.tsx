@@ -1,15 +1,17 @@
 import React from "react";
 import Link from "next/link";
 import { UserProfile } from "@/lib/api";
-import { Heart, Baby, Palette, Calendar, Scale, Ruler, Sparkles } from "lucide-react";
+import { Heart, Baby, Palette, Calendar, Scale, Ruler, Sparkles, Activity } from "lucide-react";
 
 interface BabyInfoProps {
   userProfile: UserProfile;
   onEditClick: () => void;
   onOpenTracker?: (babyId: number) => void;
+  onUpdateWeightClick?: (babyId: number) => void;
 }
 
-export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoProps) {
+export function BabyInfo({ userProfile, onEditClick, onOpenTracker, onUpdateWeightClick }: BabyInfoProps) {
+
   const getGenderLabel = (g?: string | null) => {
     if (!g) return "Chưa cập nhật";
     if (g === "Boy" || g === "Male" || g === "Nam") return "Bé trai";
@@ -42,7 +44,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
   const hasBabies = userProfile.babyProfiles && userProfile.babyProfiles.length > 0;
 
   return (
-    <section className="bg-white rounded-[16px] p-6 shadow-sm border border-slate-100/80">
+    <section className="p-5 sm:p-6 relative">
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -72,29 +74,49 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
               Cập nhật thông tin các bé cưng để hệ thống tự động cá nhân hóa trải nghiệm mua sắm và hỗ trợ chat tư vấn tốt nhất.
             </p>
           </div>
-          <button
-            onClick={onEditClick}
-            className="text-[13px] bg-primary text-white hover:bg-primary/95 font-bold px-6 py-2.5 rounded-[10px] transition-all shadow-md shadow-rose-500/15 hover:shadow-rose-500/20 active:scale-95"
-          >
-            Thêm bé ngay
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onEditClick}
+              className="text-[13px] bg-primary text-white hover:bg-primary/95 font-bold px-6 py-2.5 rounded-[10px] transition-all shadow-md shadow-rose-500/15 hover:shadow-rose-500/20 active:scale-95"
+            >
+              Thêm bé ngay
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                  const res = await fetch('http://localhost:5101/api/BabyTimeline/SeedDemoData', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                  });
+                  const json = await res.json();
+                  if (json.success) {
+                    alert("Tạo dữ liệu thành công! Vui lòng F5 tải lại trang.");
+                  } else {
+                    alert("Lỗi: " + json.message);
+                  }
+                } catch (e) {
+                  alert("Lỗi kết nối");
+                }
+              }}
+              className="text-[13px] bg-amber-500 text-white hover:bg-amber-600 font-bold px-6 py-2.5 rounded-[10px] transition-all shadow-md shadow-amber-500/15 hover:shadow-amber-500/20 active:scale-95"
+            >
+              Tạo dữ liệu Demo
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {userProfile.babyProfiles?.map((baby) => {
               const isBoy = baby.gender === "Boy" || baby.gender === "Male" || baby.gender === "Nam";
               return (
                 <div
                   key={baby.babyProfileID}
-                  className={`relative overflow-hidden rounded-[14px] p-5 border transition-all hover:shadow-md ${
-                    isBoy
-                      ? "bg-gradient-to-br from-blue-50/30 to-slate-50/50 border-blue-100/55 hover:border-blue-200"
-                      : "bg-gradient-to-br from-pink-50/30 to-slate-50/50 border-pink-100/55 hover:border-pink-200"
-                  }`}
+                  className="relative overflow-hidden rounded-[14px] px-4 py-3.5 border border-slate-200 bg-white transition-all hover:shadow-md"
                 >
                   {/* Card Header */}
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -115,8 +137,8 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                       </div>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                        isBoy ? "bg-blue-100/60 text-blue-700" : "bg-pink-100/60 text-pink-700"
+                      className={`text-[12px] font-bold ${
+                        isBoy ? "text-blue-600" : "text-pink-600"
                       }`}
                     >
                       {getGenderLabel(baby.gender)}
@@ -124,7 +146,7 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                   </div>
 
                   {/* Card Grid Details */}
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-[12px]">
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-[12px]">
                     <div className="flex items-center gap-2 text-slate-600">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <div>
@@ -164,15 +186,55 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
                     </div>
                   </div>
 
-                  {/* Sổ tay sức khỏe Button */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                  {/* Sổ tay sức khỏe & Hành trình Button */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-2">
+                    {(() => {
+                      const latestRecord = baby.growthRecords ? [...baby.growthRecords].sort((a, b) => new Date(b.recordedDate).getTime() - new Date(a.recordedDate).getTime())[0] : null;
+                      let hasUpdatedThisMonth = false;
+                      if (latestRecord) {
+                        const latestDate = new Date(latestRecord.recordedDate);
+                        const now = new Date();
+                        if (latestDate.getFullYear() === now.getFullYear() && latestDate.getMonth() === now.getMonth()) {
+                          hasUpdatedThisMonth = true;
+                        }
+                      }
+                      
+                      return (
+                        <button
+                          onClick={() => {
+                            if (hasUpdatedThisMonth) return;
+                            if (onUpdateWeightClick) {
+                              onUpdateWeightClick(baby.babyProfileID);
+                            }
+                          }}
+                          disabled={hasUpdatedThisMonth}
+                          className={`text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors mr-auto ${
+                            hasUpdatedThisMonth 
+                            ? "text-slate-400 bg-slate-100 cursor-not-allowed border border-slate-200" 
+                            : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200"
+                          }`}
+                          title={hasUpdatedThisMonth ? "Tháng này mẹ đã cập nhật cân nặng rồi!" : "Cập nhật cân nặng mới nhất của bé"}
+                        >
+                          <Activity size={14} /> {hasUpdatedThisMonth ? "Đã cập nhật" : "Cập nhật cân nặng"}
+                        </button>
+                      );
+                    })()}
+                    
+                    <Link
+                      href={`/baby-timeline/${baby.babyProfileID}`}
+                      className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                        isBoy ? "bg-purple-500 hover:bg-purple-600" : "bg-purple-500 hover:bg-purple-600"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">auto_awesome</span> Hành trình
+                    </Link>
                     <button
                       onClick={() => onOpenTracker && onOpenTracker(baby.babyProfileID)}
                       className={`text-[11px] font-bold text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
                         isBoy ? "bg-blue-500 hover:bg-blue-600" : "bg-pink-500 hover:bg-pink-600"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[14px]">medical_information</span> Sổ tay sức khỏe
+                      <span className="material-symbols-outlined text-[14px]">medical_information</span> Sổ tay
                     </button>
                   </div>
                 </div>
@@ -181,10 +243,12 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker }: BabyInfoPr
           </div>
 
           {/* Bottom Tip Banner */}
-          <div className="p-3 bg-gradient-to-r from-pink-50 to-indigo-50 rounded-[12px] border border-pink-100/20 flex items-center gap-3">
-            <span className="material-symbols-outlined text-rose-500 text-lg font-bold shrink-0 animate-pulse">sparkles</span>
-            <p className="text-slate-500 text-[11px] font-semibold leading-relaxed">
-              Các thông tin trên sẽ được tích hợp trực tiếp để cải tiến chất lượng đề xuất sản phẩm và giúp chatbot trợ lý ảo LazPe tư vấn hỗ trợ phù hợp tối ưu nhất cho bé cưng.
+          <div className="p-3 bg-gradient-to-r from-indigo-50/80 via-purple-50/40 to-pink-50/80 rounded-[12px] border border-indigo-100/50 flex items-center gap-3 shadow-[0_2px_10px_-4px_rgba(99,102,241,0.1)] overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-indigo-500">
+              <span className="material-symbols-outlined text-[18px] animate-pulse">auto_awesome</span>
+            </div>
+            <p className="text-slate-600 text-[11px] md:text-[12px] font-medium truncate">
+              Các thông tin trên sẽ được tích hợp trực tiếp để cải tiến chất lượng đề xuất sản phẩm và giúp chatbot trợ lý ảo <span className="font-bold text-indigo-600">LazPe</span> tư vấn hỗ trợ phù hợp tối ưu nhất cho bé cưng.
             </p>
           </div>
         </div>

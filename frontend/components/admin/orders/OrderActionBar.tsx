@@ -22,20 +22,21 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div></div>
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={onPrintOrder}
-          className="flex items-center gap-2 px-6 py-2.5 border border-primary text-primary font-bold rounded-[8px] hover:bg-primary-container/20 transition-all cursor-pointer active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer active:scale-95 shadow-sm"
         >
-          <span className="material-symbols-outlined text-xl">print</span>
+          <span className="material-symbols-outlined text-[18px]">print</span>
           In đơn hàng
         </button>
         
         {order.statusCode === 0 && (
           <button
             onClick={() => onUpdateStatus('confirm')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary font-bold rounded-[8px] shadow-md hover:bg-primary/95 transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all cursor-pointer active:scale-95"
           >
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
             Xác nhận đơn
           </button>
         )}
@@ -43,18 +44,19 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
         {order.statusCode === 1 && (
           <button
             onClick={() => onUpdateStatus('mark-shipped')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-secondary text-on-secondary font-bold rounded-[8px] shadow-md hover:bg-secondary/95 transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-500 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 hover:bg-blue-600 transition-all cursor-pointer active:scale-95"
           >
-            Bắt đầu giao hàng
+            <span className="material-symbols-outlined text-[18px]">local_shipping</span>
+            Bắt đầu giao
           </button>
         )}
 
         {(order.statusCode === 0 || order.statusCode === 1) && (
           <button 
             onClick={onShowCancelModal}
-            className="px-6 py-2.5 bg-error-container text-on-error-container hover:bg-error-container/80 font-bold rounded-[8px] transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold rounded-xl transition-colors cursor-pointer active:scale-95"
           >
-            <span className="material-symbols-outlined">cancel</span>
+            <span className="material-symbols-outlined text-[18px]">cancel</span>
             Hủy đơn
           </button>
         )}
@@ -62,9 +64,9 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
         {order.statusCode === 4 && (
           <button 
             onClick={onShowCancelModal}
-            className="px-6 py-2.5 bg-rose-500 text-white hover:bg-rose-600 font-bold rounded-[8px] shadow-md transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-rose-500 text-white hover:bg-rose-600 font-bold rounded-xl shadow-md shadow-rose-500/20 transition-colors cursor-pointer active:scale-95"
           >
-            <span className="material-symbols-outlined">gavel</span>
+            <span className="material-symbols-outlined text-[18px]">gavel</span>
             Duyệt hủy đơn
           </button>
         )}
@@ -72,9 +74,9 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
         {order.statusCode === 6 && onShowReturnModal && (
           <button 
             onClick={onShowReturnModal}
-            className="px-6 py-2.5 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-[8px] shadow-md transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white hover:bg-orange-600 font-bold rounded-xl shadow-md shadow-orange-500/20 transition-colors cursor-pointer active:scale-95"
           >
-            <span className="material-symbols-outlined">assignment_return</span>
+            <span className="material-symbols-outlined text-[18px]">assignment_return</span>
             Xử lý hoàn hàng
           </button>
         )}
@@ -82,9 +84,9 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
         {order.statusCode === 9 && onShowConfirmReturnModal && (
           <button 
             onClick={onShowConfirmReturnModal}
-            className="px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-[8px] shadow-md transition-colors flex items-center gap-2 ml-2 cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-500 text-white hover:bg-indigo-600 font-bold rounded-xl shadow-md shadow-indigo-500/20 transition-colors cursor-pointer active:scale-95"
           >
-            <span className="material-symbols-outlined">inventory_2</span>
+            <span className="material-symbols-outlined text-[18px]">inventory_2</span>
             Đã nhận hàng hoàn
           </button>
         )}
