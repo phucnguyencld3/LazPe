@@ -412,8 +412,9 @@ try
         FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(webRootPath),
         RequestPath = ""
     });
-    app.UseCors("AllowMVC");
+    
     app.UseRouting();
+    app.UseCors("AllowMVC");
     app.UseRateLimiter();
     app.UseAuthentication(); 
     app.UseAuthorization();  

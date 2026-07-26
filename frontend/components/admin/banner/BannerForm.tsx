@@ -44,7 +44,7 @@ export function BannerForm({
       uploadData.append('folder', 'banners');
       
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
-      const res = await fetch(`${API_BASE_URL}/Upload/image`, {
+      const res = await fetch(`${API_BASE_URL}/Upload/banner`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`

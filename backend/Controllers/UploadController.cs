@@ -160,6 +160,32 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        [HttpPost("banner")]
+        [Authorize]
+        public async Task<IActionResult> UploadBannerImage([FromForm] IFormFile file, [FromForm] string folder = "banners", [FromForm] string? oldImageUrl = null)
+        {
+            try
+            {
+                if (file == null || file.Length == 0) return BadRequest(new { success = false, message = "Không có file được chọn" });
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(fileExtension)) return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh JPG, PNG, GIF, WebP" });
+
+                if (file.Length > 10 * 1024 * 1024) return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
+
+                var uploadResult = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, folder);
+                if (!string.IsNullOrEmpty(uploadResult)) return Ok(new { success = true, url = uploadResult, message = "Upload thành công!" });
+
+                return BadRequest(new { success = false, message = "Không thể upload file lên Cloudinary" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading banner image");
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi upload file: " + ex.Message });
+            }
+        }
+
         [HttpPost("chat-image")]
         public async Task<IActionResult> UploadChatImage([FromForm] IFormFile file)
         {
