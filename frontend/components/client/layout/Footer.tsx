@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Mail, Phone, MessageCircle, CreditCard, Truck, ShieldCheck, BadgeCheck } from 'lucide-react';
 import { useBanners } from '@/hooks/useBanners';
 import { BannerRenderer } from '@/components/shared/banner/BannerRenderer';
@@ -126,11 +127,44 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="border-t border-surface-variant pt-4 flex flex-col md:flex-row justify-between items-center text-xs text-on-surface-variant">
-            <p>&copy; {new Date().getFullYear()} LazPe. Tất cả quyền được bảo vệ.</p>
-            <div className="mt-2 md:mt-0 space-x-4">
-              <Link href="/terms" className="hover:text-primary">Điều khoản sử dụng</Link>
-              <Link href="/privacy" className="hover:text-primary">Chính sách bảo mật</Link>
+          <div className="border-t border-surface-variant pt-4 pb-2 flex flex-col gap-2">
+            <div className="flex flex-col md:flex-row justify-between items-center text-xs text-on-surface-variant">
+              <p>&copy; {new Date().getFullYear()} LazPe. Tất cả quyền được bảo vệ.</p>
+              <div className="mt-2 md:mt-0 space-x-4">
+                <Link href="/terms" className="hover:text-primary transition-colors">Điều khoản sử dụng</Link>
+                <Link href="/privacy" className="hover:text-primary transition-colors">Chính sách bảo mật</Link>
+              </div>
+            </div>
+            
+            {/* Nhóm phát triển */}
+            <div className="border-t border-surface-variant/30 pt-2 flex flex-col lg:flex-row items-center justify-between gap-3 text-xs text-on-surface-variant/80">
+               <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-start">
+                 <span className="font-bold text-primary/70 uppercase tracking-wider">Đồ Án Tốt Nghiệp</span>
+                 <span className="w-1 h-1 rounded-full bg-surface-variant"></span>
+                 <span>Lớp SD20301 - Nhóm 10</span>
+                 <span className="w-1 h-1 rounded-full bg-surface-variant"></span>
+                 <span>GVHD: Cô Võ Thị Hồng Đoan</span>
+               </div>
+               <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end">
+                 <span>Phát triển bởi:</span>
+                 <div className="flex items-center -space-x-2">
+                   <div className="relative w-7 h-7 rounded-full border border-surface-container-lowest bg-surface-variant overflow-hidden hover:z-10 transition-transform hover:scale-110">
+                     <Image src="/team/Thanh.jpg" alt="Thanh" fill className="object-cover" />
+                   </div>
+                   <div className="relative w-7 h-7 rounded-full border border-surface-container-lowest bg-surface-variant overflow-hidden hover:z-10 transition-transform hover:scale-110">
+                     <Image src="/team/Hoang.jpg" alt="Hoang" fill className="object-cover" />
+                   </div>
+                   <div className="relative w-7 h-7 rounded-full border border-surface-container-lowest bg-surface-variant overflow-hidden hover:z-10 transition-transform hover:scale-110">
+                     <Image src="/team/Bao.jpg" alt="Bao" fill className="object-cover" />
+                   </div>
+                   <div className="relative w-7 h-7 rounded-full border border-surface-container-lowest bg-surface-variant overflow-hidden hover:z-10 transition-transform hover:scale-110">
+                     <Image src="/team/Phuc.jpg" alt="Phuc" fill className="object-cover" />
+                   </div>
+                   <div className="relative w-7 h-7 rounded-full border border-surface-container-lowest bg-surface-variant overflow-hidden hover:z-10 transition-transform hover:scale-110">
+                     <Image src="/team/Duc.jpg" alt="Duc" fill className="object-cover" />
+                   </div>
+                 </div>
+               </div>
             </div>
           </div>
         </div>

@@ -255,6 +255,21 @@ export default function HomePageV2() {
     }
   };
 
+  const projectInfo = {
+    title: "Hệ Thống Bán Lẻ Trực Tuyến Sản Phẩm Dành Cho Trẻ Em",
+    instructor: "Cô Võ Thị Hồng Đoan",
+    group: "10",
+    className: "SD20301"
+  };
+
+  const teamMembers = [
+    { name: "Lê Tuấn Thanh", role: "Nhóm Trưởng", studentId: "PC09634", image: "/team/Thanh.jpg" },
+    { name: "Nguyễn Huy Hoàng", role: "Thành Viên", studentId: "PC09851", image: "/team/Hoang.jpg" },
+    { name: "Quách Trần Kim Bảo", role: "Thành Viên", studentId: "PC1010342", image: "/team/Bao.jpg" },
+    { name: "Nguyễn Hoàng Phúc", role: "Thành Viên", studentId: "PC09637", image: "/team/Phuc.jpg" },
+    { name: "Phạm Minh Đức", role: "Thành Viên", studentId: "PC08256", image: "/team/Duc.jpg" },
+  ];
+
   return (
     <>
         {/* Ưu Đãi Mới */}
@@ -404,6 +419,8 @@ export default function HomePageV2() {
       <div className="mb-6">
         <RecentlyViewedProducts limit={10} />
       </div>
+
+
     </>
   );
 }

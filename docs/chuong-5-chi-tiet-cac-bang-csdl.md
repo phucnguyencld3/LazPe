@@ -2,7 +2,7 @@
 
 Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu của hệ thống LazPe. Mỗi bảng được trình bày theo các trường dữ liệu, kiểu dữ liệu, khóa chính/khóa ngoại và ý nghĩa sử dụng.
 
-**Mô tả:** Bảng dùng để lưu vai trò mặc định của ASP.NET Identity.
+**Mô tả:** Bảng có chức năng quản lý các vai trò đăng nhập mặc định của hệ thống, làm cơ sở phân nhóm tài khoản và kiểm soát phạm vi truy cập theo cơ chế xác thực ASP.NET Identity.
 
 *Bảng 5.1: Bảng AspNetRoles*
 
@@ -13,7 +13,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Name | nvarchar(256) |  | Tên |
 | NormalizedName | nvarchar(256) |  | Tên chuẩn hóa |
 
-**Mô tả:** Bảng dùng để lưu claim của vai trò.
+**Mô tả:** Bảng có chức năng khai báo các quyền mở rộng gắn với từng vai trò, giúp hệ thống xác định vai trò đó được phép thực hiện những thao tác nghiệp vụ nào.
 
 *Bảng 5.2: Bảng AspNetRoleClaims*
 
@@ -24,7 +24,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ClaimValue | nvarchar(max) |  | Giá trị claim |
 | RoleId | nvarchar(450) | Khóa ngoại | Mã vai trò |
 
-**Mô tả:** Bảng dùng để lưu claim của người dùng.
+**Mô tả:** Bảng có chức năng ghi nhận các quyền hoặc thuộc tính xác thực riêng của từng tài khoản, phục vụ các trường hợp cần phân quyền chi tiết hơn vai trò chung.
 
 *Bảng 5.3: Bảng AspNetUserClaims*
 
@@ -35,7 +35,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ClaimValue | nvarchar(max) |  | Giá trị claim |
 | UserId | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu thông tin đăng nhập ngoài như Google.
+**Mô tả:** Bảng có chức năng quản lý thông tin đăng nhập qua nhà cung cấp bên ngoài như Google, giúp người dùng có thể liên kết tài khoản hệ thống với tài khoản đăng nhập xã hội.
 
 *Bảng 5.4: Bảng AspNetUserLogins*
 
@@ -46,7 +46,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ProviderDisplayName | nvarchar(max) |  | Tên hiển thị nhà cung cấp |
 | UserId | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng trung gian liên kết người dùng và vai trò.
+**Mô tả:** Bảng có chức năng liên kết tài khoản người dùng với vai trò tương ứng, từ đó xác định người dùng thuộc nhóm quyền nào trong hệ thống.
 
 *Bảng 5.5: Bảng AspNetUserRoles*
 
@@ -55,7 +55,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserId | nvarchar(450) | Khóa chính, Khóa ngoại | Mã người dùng |
 | RoleId | nvarchar(450) | Khóa chính, Khóa ngoại | Mã vai trò |
 
-**Mô tả:** Bảng dùng để lưu token xác thực của người dùng.
+**Mô tả:** Bảng có chức năng quản lý các token xác thực của người dùng, hỗ trợ đăng nhập, xác minh tài khoản, khôi phục mật khẩu và các nghiệp vụ bảo mật liên quan.
 
 *Bảng 5.6: Bảng AspNetUserTokens*
 
@@ -66,7 +66,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Name | nvarchar(450) | Khóa chính | Tên |
 | Value | nvarchar(max) |  | Giá trị |
 
-**Mô tả:** Bảng dùng để lưu thông tin Address.
+**Mô tả:** Bảng có chức năng quản lý địa chỉ giao hàng chung, bao gồm thông tin người nhận, số điện thoại và khu vực giao nhận để phục vụ quá trình đặt hàng.
 
 *Bảng 5.7: Bảng Address*
 
@@ -83,7 +83,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | Ward | nvarchar(100) |  | Lưu thông tin ward |
 
-**Mô tả:** Bảng dùng để lưu thông tin tài khoản người dùng trong hệ thống.
+**Mô tả:** Bảng có chức năng quản lý tài khoản người dùng của hệ thống, bao gồm thông tin đăng nhập, thông tin cá nhân, trạng thái tài khoản, ví, xu, bảo mật và các thiết lập liên quan.
 
 *Bảng 5.8: Bảng AspNetUsers*
 
@@ -127,7 +127,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | WalletSignature | nvarchar(256) |  | Lưu thông tin wallet signature |
 | WishlistShareToken | nvarchar(max) |  | Lưu thông tin wishlist share token |
 
-**Mô tả:** Bảng dùng để lưu hồ sơ trẻ em của người dùng.
+**Mô tả:** Bảng có chức năng quản lý hồ sơ trẻ em của khách hàng, phục vụ cá nhân hóa gợi ý sản phẩm, theo dõi thông tin phát triển và chăm sóc bé.
 
 *Bảng 5.9: Bảng BabyProfiles*
 
@@ -144,7 +144,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | WeightKg | float |  | Lưu thông tin weight kg |
 
-**Mô tả:** Bảng dùng để lưu lịch sử biến động ví, xu và điểm.
+**Mô tả:** Bảng có chức năng ghi nhận biến động số dư ví, xu và điểm của người dùng, giúp đối soát các giao dịch cộng/trừ phát sinh trong hệ thống.
 
 *Bảng 5.10: Bảng BalanceTransactions*
 
@@ -161,7 +161,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SourceType | int |  | Lưu thông tin source type |
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu banner hiển thị trên website.
+**Mô tả:** Bảng có chức năng quản lý banner hiển thị trên website, phục vụ truyền thông chương trình khuyến mãi, danh mục nổi bật và nội dung quảng bá.
 
 *Bảng 5.11: Bảng Banners*
 
@@ -179,7 +179,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 | Version | nvarchar(50) |  | Lưu thông tin version |
 
-**Mô tả:** Bảng dùng để lưu thông tin BannerVersions.
+**Mô tả:** Bảng có chức năng quản lý các phiên bản của banner, hỗ trợ lưu bản nháp, xuất bản, khôi phục phiên bản cũ và kiểm soát lịch sử thay đổi nội dung hiển thị.
 
 *Bảng 5.12: Bảng BannerVersions*
 
@@ -191,7 +191,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | CreatedBy | nvarchar(max) |  | Người tạo |
 | Version | nvarchar(50) |  | Lưu thông tin version |
 
-**Mô tả:** Bảng dùng để lưu thông tin Bundles.
+**Mô tả:** Bảng có chức năng quản lý các gói combo sản phẩm, cho phép hệ thống bán nhiều sản phẩm theo nhóm với giá ưu đãi hoặc chương trình riêng.
 
 *Bảng 5.13: Bảng Bundles*
 
@@ -211,7 +211,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UpdatedBy | nvarchar(450) |  | Người cập nhật |
 | UpdatedDate | datetime2 |  | Ngày updated |
 
-**Mô tả:** Bảng dùng để lưu thông tin BundleItems.
+**Mô tả:** Bảng có chức năng quản lý danh sách sản phẩm thuộc từng combo, xác định sản phẩm, biến thể, số lượng và giá trị của từng thành phần trong gói.
 
 *Bảng 5.14: Bảng BundleItems*
 
@@ -223,7 +223,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SortOrder | int |  | Lưu thông tin sort order |
 | VariantID | int | Khóa ngoại | Mã biến thể |
 
-**Mô tả:** Bảng dùng để lưu giỏ hàng của người dùng.
+**Mô tả:** Bảng có chức năng quản lý giỏ hàng của từng khách hàng, làm nơi tập hợp các sản phẩm khách đã chọn trước khi chuyển sang thanh toán.
 
 *Bảng 5.15: Bảng Carts*
 
@@ -241,7 +241,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | VoucherID | int | Khóa ngoại | Mã voucher |
 
-**Mô tả:** Bảng dùng để lưu chi tiết sản phẩm trong giỏ hàng.
+**Mô tả:** Bảng có chức năng quản lý chi tiết từng sản phẩm trong giỏ hàng, bao gồm biến thể, số lượng, quà tặng và trạng thái chọn mua.
 
 *Bảng 5.16: Bảng CartDetails*
 
@@ -256,7 +256,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UnitPrice | decimal(18,2) |  | Lưu thông tin unit price |
 | VariantID | int | Khóa ngoại | Mã biến thể |
 
-**Mô tả:** Bảng dùng để lưu thông tin Categories.
+**Mô tả:** Bảng có chức năng quản lý danh mục sản phẩm, hỗ trợ phân loại hàng hóa, lọc sản phẩm, hiển thị menu và tổ chức cấu trúc kinh doanh.
 
 *Bảng 5.17: Bảng Categories*
 
@@ -272,7 +272,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SortOrder | nvarchar(50) |  | Lưu thông tin sort order |
 | Status | bit |  | Trạng thái |
 
-**Mô tả:** Bảng dùng để lưu thông tin ChatMessages.
+**Mô tả:** Bảng có chức năng ghi nhận nội dung tin nhắn trong các phiên chat, giúp khách hàng và quản trị viên trao đổi, hỗ trợ và theo dõi lịch sử tư vấn.
 
 *Bảng 5.18: Bảng ChatMessages*
 
@@ -287,7 +287,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SenderId | nvarchar(450) | Khóa ngoại | Lưu thông tin sender id |
 | SenderName | nvarchar(100) |  | Lưu thông tin sender name |
 
-**Mô tả:** Bảng dùng để lưu thông tin ChatSessions.
+**Mô tả:** Bảng có chức năng quản lý phiên trò chuyện giữa khách hàng và bộ phận hỗ trợ, theo dõi trạng thái xử lý, người phụ trách và thời điểm trao đổi.
 
 *Bảng 5.19: Bảng ChatSessions*
 
@@ -306,7 +306,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 | UserId | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu thông tin Districts.
+**Mô tả:** Bảng có chức năng quản lý dữ liệu quận/huyện, hỗ trợ chuẩn hóa địa chỉ giao hàng và liên kết với tỉnh/thành phố trong quy trình vận chuyển.
 
 *Bảng 5.20: Bảng Districts*
 
@@ -321,7 +321,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ProvinceID | int | Khóa ngoại | Mã tỉnh/thành |
 | ReplacedByCode | nvarchar(20) |  | Lưu thông tin replaced by code |
 
-**Mô tả:** Bảng dùng để lưu thông tin FlashSales.
+**Mô tả:** Bảng có chức năng quản lý chương trình flash sale, bao gồm thời gian diễn ra, trạng thái và cấu hình khuyến mãi theo từng đợt bán nhanh.
 
 *Bảng 5.21: Bảng FlashSales*
 
@@ -339,7 +339,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Status | int |  | Trạng thái |
 | Type | int |  | Loại |
 
-**Mô tả:** Bảng dùng để lưu thông tin FlashSaleItems.
+**Mô tả:** Bảng có chức năng quản lý các sản phẩm tham gia flash sale, xác định giá khuyến mãi, số lượng giới hạn và hiệu lực của từng sản phẩm trong chương trình.
 
 *Bảng 5.22: Bảng FlashSaleItems*
 
@@ -357,7 +357,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SoldQuantity | int |  | Lưu thông tin sold quantity |
 | TotalQuantity | int |  | Lưu thông tin total quantity |
 
-**Mô tả:** Bảng dùng để lưu thông tin đơn hàng.
+**Mô tả:** Bảng có chức năng quản lý đơn hàng/hóa đơn của khách hàng, bao gồm thông tin giao hàng, thanh toán, trạng thái xử lý, giảm giá và tổng tiền.
 
 *Bảng 5.23: Bảng Invoices*
 
@@ -407,7 +407,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | VoucherID | int | Khóa ngoại | Mã voucher |
 | WalletDiscountAmount | decimal(18,2) |  | Lưu thông tin wallet discount amount |
 
-**Mô tả:** Bảng dùng để lưu chi tiết sản phẩm trong đơn hàng.
+**Mô tả:** Bảng có chức năng quản lý chi tiết sản phẩm trong từng đơn hàng, giúp lưu lại mặt hàng, biến thể, số lượng, đơn giá và thành tiền tại thời điểm mua.
 
 *Bảng 5.24: Bảng InvoiceDetails*
 
@@ -421,7 +421,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UnitPrice | decimal(18,2) |  | Lưu thông tin unit price |
 | VariantID | int | Khóa ngoại | Mã biến thể |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyAuditLogs.
+**Mô tả:** Bảng có chức năng theo dõi nhật ký thay đổi trong phân hệ khách hàng thân thiết, giúp kiểm tra ai đã thay đổi chính sách, điểm, hạng hoặc voucher.
 
 *Bảng 5.25: Bảng LoyaltyAuditLogs*
 
@@ -438,7 +438,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | OldValue | nvarchar(max) |  | Lưu thông tin old value |
 | Timestamp | datetime2 |  | Lưu thông tin timestamp |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyBirthdayGiftLogs.
+**Mô tả:** Bảng có chức năng ghi nhận lịch sử phát quà sinh nhật cho khách hàng, hỗ trợ kiểm soát điều kiện nhận quà và tránh phát trùng.
 
 *Bảng 5.26: Bảng LoyaltyBirthdayGiftLogs*
 
@@ -452,7 +452,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | Year | int |  | Lưu thông tin year |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyEarnPolicies.
+**Mô tả:** Bảng có chức năng quản lý chính sách tích điểm, quy định người dùng được cộng điểm từ những hành động như mua hàng, đánh giá, điểm danh hoặc hoàn thiện hồ sơ.
 
 *Bảng 5.27: Bảng LoyaltyEarnPolicies*
 
@@ -470,7 +470,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | StartDate | datetime2 |  | Ngày bắt đầu |
 | VndAmount | decimal(18,2) |  | Lưu thông tin vnd amount |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyManualRevocations.
+**Mô tả:** Bảng có chức năng ghi nhận các thao tác thu hồi hoặc điều chỉnh điểm thủ công, phục vụ xử lý khiếu nại và kiểm soát nghiệp vụ của quản trị viên.
 
 *Bảng 5.28: Bảng LoyaltyManualRevocations*
 
@@ -483,7 +483,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Reason | nvarchar(500) |  | Lý do |
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyMonthlyVouchers.
+**Mô tả:** Bảng có chức năng quản lý voucher phát định kỳ hàng tháng cho thành viên, thường áp dụng theo hạng khách hàng hoặc chiến dịch chăm sóc khách hàng.
 
 *Bảng 5.29: Bảng LoyaltyMonthlyVouchers*
 
@@ -500,7 +500,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ValidityDays | int |  | Lưu thông tin validity days |
 | VoucherCount | int |  | Số lượng voucher |
 
-**Mô tả:** Bảng dùng để lưu lịch sử điểm thưởng.
+**Mô tả:** Bảng có chức năng ghi nhận lịch sử cộng, trừ và sử dụng điểm thưởng của khách hàng, giúp người dùng và quản trị viên tra cứu nguồn phát sinh điểm.
 
 *Bảng 5.30: Bảng LoyaltyPointHistories*
 
@@ -514,7 +514,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | TransactionType | nvarchar(20) |  | Lưu thông tin transaction type |
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu hồ sơ khách hàng thân thiết.
+**Mô tả:** Bảng có chức năng quản lý hồ sơ khách hàng thân thiết, bao gồm điểm hiện có, hạng thành viên, tiến độ nâng hạng và thông tin hoạt động loyalty.
 
 *Bảng 5.31: Bảng LoyaltyProfiles*
 
@@ -530,7 +530,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | RankAdjustmentOffset | int |  | Lưu thông tin rank adjustment offset |
 | TotalPoints | int |  | Lưu thông tin total points |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyRedeemPolicies.
+**Mô tả:** Bảng có chức năng quản lý chính sách đổi điểm, quy định tỷ lệ đổi, điều kiện áp dụng, giới hạn sử dụng và loại phần thưởng có thể quy đổi.
 
 *Bảng 5.32: Bảng LoyaltyRedeemPolicies*
 
@@ -547,7 +547,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | StartDate | datetime2 |  | Ngày bắt đầu |
 | TierID | int | Khóa ngoại | Lưu thông tin tier id |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltySettings.
+**Mô tả:** Bảng có chức năng quản lý cấu hình chung của phân hệ loyalty, giúp bật/tắt các cơ chế tích điểm, đổi điểm, điểm danh, sinh nhật và các giới hạn vận hành.
 
 *Bảng 5.33: Bảng LoyaltySettings*
 
@@ -568,7 +568,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 | WelcomeVoucherID | int | Khóa ngoại | Lưu thông tin welcome voucher id |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyTiers.
+**Mô tả:** Bảng có chức năng quản lý các hạng thành viên, xác định tên hạng, ngưỡng điểm, điều kiện đạt hạng và cách hiển thị cấp bậc khách hàng.
 
 *Bảng 5.34: Bảng LoyaltyTiers*
 
@@ -583,7 +583,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | TierName | nvarchar(100) |  | Lưu thông tin tier name |
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyTierPrivileges.
+**Mô tả:** Bảng có chức năng quản lý đặc quyền theo từng hạng thành viên, như ưu đãi giảm giá, freeship, quà tặng, voucher riêng hoặc quyền lợi chăm sóc khách hàng.
 
 *Bảng 5.35: Bảng LoyaltyTierPrivileges*
 
@@ -598,7 +598,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | TierID | int | Khóa ngoại | Lưu thông tin tier id |
 | Value | nvarchar(500) |  | Giá trị |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyVoucherRedemptions.
+**Mô tả:** Bảng có chức năng quản lý các voucher có thể đổi bằng điểm thưởng, xác định số điểm cần đổi, số lượng, thời hạn và điều kiện nhận voucher.
 
 *Bảng 5.36: Bảng LoyaltyVoucherRedemptions*
 
@@ -618,7 +618,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 | VoucherID | int | Khóa ngoại | Mã voucher |
 
-**Mô tả:** Bảng dùng để lưu thông tin LoyaltyVoucherRedemptionHistories.
+**Mô tả:** Bảng có chức năng ghi nhận lịch sử người dùng đổi điểm lấy voucher, giúp kiểm soát lượt đổi, điểm đã sử dụng và voucher đã cấp.
 
 *Bảng 5.37: Bảng LoyaltyVoucherRedemptionHistories*
 
@@ -632,7 +632,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserVoucherID | int | Khóa ngoại | Lưu thông tin user voucher id |
 | VoucherID | int | Khóa ngoại | Mã voucher |
 
-**Mô tả:** Bảng dùng để lưu thông báo hệ thống.
+**Mô tả:** Bảng có chức năng quản lý các thông báo hệ thống gửi đến người dùng hoặc quản trị viên, bao gồm nội dung, đối tượng nhận, trạng thái và thời gian gửi.
 
 *Bảng 5.38: Bảng Notifications*
 
@@ -662,7 +662,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Type | int |  | Loại |
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 
-**Mô tả:** Bảng dùng để lưu thông tin NotificationTemplates.
+**Mô tả:** Bảng có chức năng quản lý mẫu thông báo dùng lại, giúp chuẩn hóa nội dung gửi cho các nghiệp vụ như đơn hàng, voucher, bảo mật và chương trình khuyến mãi.
 
 *Bảng 5.39: Bảng NotificationTemplates*
 
@@ -676,7 +676,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | TemplateName | nvarchar(100) |  | Lưu thông tin template name |
 | UpdatedAt | datetime2 |  | Ngày cập nhật |
 
-**Mô tả:** Bảng dùng để lưu giao dịch thanh toán.
+**Mô tả:** Bảng có chức năng quản lý giao dịch thanh toán, ghi nhận kết quả thanh toán qua ví, VNPay hoặc phương thức khác để phục vụ đối soát đơn hàng.
 
 *Bảng 5.40: Bảng PaymentTransactions*
 
@@ -697,7 +697,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | TxnRef | nvarchar(50) |  | Lưu thông tin txn ref |
 | VnPayTransactionNo | nvarchar(50) |  | Lưu thông tin vn pay transaction no |
 
-**Mô tả:** Bảng dùng để lưu danh sách quyền chức năng.
+**Mô tả:** Bảng có chức năng quản lý danh mục quyền chức năng trong hệ thống, làm cơ sở để gán quyền cho người dùng hoặc tạo mẫu quyền quản trị.
 
 *Bảng 5.41: Bảng Permissions*
 
@@ -711,7 +711,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Name | nvarchar(100) |  | Tên |
 | Resource | nvarchar(50) |  | Tài nguyên áp dụng |
 
-**Mô tả:** Bảng dùng để lưu thông tin sản phẩm kinh doanh.
+**Mô tả:** Bảng có chức năng quản lý thông tin sản phẩm kinh doanh, bao gồm tên, mô tả, giá, danh mục, thương hiệu, tồn kho, SEO và trạng thái hiển thị.
 
 *Bảng 5.42: Bảng Products*
 
@@ -738,7 +738,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SupplierID | int | Khóa ngoại | Mã thương hiệu/nhà cung cấp |
 | SupportsSubscription | bit |  | Lưu thông tin supports subscription |
 
-**Mô tả:** Bảng dùng để lưu thông tin ProductAlerts.
+**Mô tả:** Bảng có chức năng quản lý các yêu cầu nhận cảnh báo sản phẩm của khách hàng, như thông báo khi sản phẩm còn hàng, giảm giá hoặc thay đổi thông tin.
 
 *Bảng 5.43: Bảng ProductAlerts*
 
@@ -754,7 +754,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserId | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | VariantId | int | Khóa ngoại | Mã biến thể |
 
-**Mô tả:** Bảng dùng để lưu thông tin ProductImages.
+**Mô tả:** Bảng có chức năng quản lý thư viện hình ảnh của sản phẩm, hỗ trợ hiển thị ảnh chính, ảnh phụ và thứ tự ảnh trên giao diện mua sắm.
 
 *Bảng 5.44: Bảng ProductImages*
 
@@ -765,7 +765,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ImageUrl | nvarchar(max) |  | Đường dẫn hình ảnh |
 | ProductID | int | Khóa ngoại | Mã sản phẩm |
 
-**Mô tả:** Bảng dùng để lưu thông tin ProductOptions.
+**Mô tả:** Bảng có chức năng quản lý các nhóm thuộc tính lựa chọn của sản phẩm như màu sắc, kích cỡ, độ tuổi hoặc dung tích, làm cơ sở tạo biến thể.
 
 *Bảng 5.45: Bảng ProductOptions*
 
@@ -778,7 +778,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Name | nvarchar(100) |  | Tên |
 | ProductID | int | Khóa ngoại | Mã sản phẩm |
 
-**Mô tả:** Bảng dùng để lưu thông tin ProductOptionValues.
+**Mô tả:** Bảng có chức năng quản lý các giá trị cụ thể của từng thuộc tính sản phẩm, ví dụ đỏ, xanh, size S, size M hoặc nhóm độ tuổi, để khách chọn đúng biến thể cần mua.
 
 *Bảng 5.46: Bảng ProductOptionValues*
 
@@ -793,7 +793,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ProductOptionID | int | Khóa ngoại | Lưu thông tin product option id |
 | Value | nvarchar(50) |  | Giá trị |
 
-**Mô tả:** Bảng dùng để lưu thông tin Provinces.
+**Mô tả:** Bảng có chức năng quản lý dữ liệu tỉnh/thành phố, hỗ trợ chuẩn hóa địa chỉ giao hàng và liên kết với quận/huyện, phường/xã trong hệ thống.
 
 *Bảng 5.47: Bảng Provinces*
 
@@ -807,7 +807,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Note | nvarchar(max) |  | Ghi chú |
 | ReplacedByCode | nvarchar(20) |  | Lưu thông tin replaced by code |
 
-**Mô tả:** Bảng dùng để lưu thông tin ReferralRecords.
+**Mô tả:** Bảng có chức năng ghi nhận hoạt động giới thiệu người dùng, theo dõi người giới thiệu, người được giới thiệu và phần thưởng phát sinh từ chương trình referral.
 
 *Bảng 5.48: Bảng ReferralRecords*
 
@@ -820,7 +820,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ReferredUserId | nvarchar(450) | Khóa ngoại | Lưu thông tin referred user id |
 | ReferrerId | nvarchar(450) | Khóa ngoại | Lưu thông tin referrer id |
 
-**Mô tả:** Bảng dùng để lưu đánh giá sản phẩm.
+**Mô tả:** Bảng có chức năng quản lý đánh giá sản phẩm của khách hàng, bao gồm điểm đánh giá, nội dung nhận xét, trạng thái kiểm duyệt và liên kết đơn hàng/sản phẩm.
 
 *Bảng 5.49: Bảng Reviews*
 
@@ -842,7 +842,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | VariantID | int | Khóa ngoại | Mã biến thể |
 | ViolationScore | int |  | Lưu thông tin violation score |
 
-**Mô tả:** Bảng dùng để lưu thông tin ReviewCensorshipLogs.
+**Mô tả:** Bảng có chức năng ghi nhận lịch sử kiểm duyệt đánh giá, giúp quản trị viên theo dõi quyết định duyệt, ẩn, từ chối hoặc xử lý nội dung vi phạm.
 
 *Bảng 5.50: Bảng ReviewCensorshipLogs*
 
@@ -855,7 +855,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ReviewID | int | Khóa ngoại | Mã đánh giá |
 | Timestamp | datetime2 |  | Lưu thông tin timestamp |
 
-**Mô tả:** Bảng dùng để lưu thông tin ReviewComments.
+**Mô tả:** Bảng có chức năng quản lý bình luận hoặc phản hồi dưới đánh giá, hỗ trợ trao đổi giữa khách hàng và quản trị viên về trải nghiệm sản phẩm.
 
 *Bảng 5.51: Bảng ReviewComments*
 
@@ -869,7 +869,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ReviewID | int | Khóa ngoại | Mã đánh giá |
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu thông tin ReviewLikes.
+**Mô tả:** Bảng có chức năng quản lý lượt thích đối với đánh giá, giúp hệ thống xác định đánh giá hữu ích và tăng tính tương tác của người dùng.
 
 *Bảng 5.52: Bảng ReviewLikes*
 
@@ -880,7 +880,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ReviewID | int | Khóa ngoại | Mã đánh giá |
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu thông tin ReviewMedia.
+**Mô tả:** Bảng có chức năng quản lý hình ảnh hoặc video đính kèm trong đánh giá, giúp khách hàng minh họa trải nghiệm thực tế khi sử dụng sản phẩm.
 
 *Bảng 5.53: Bảng ReviewMedia*
 
@@ -890,9 +890,9 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | CreatedAt | datetime2 |  | Ngày tạo |
 | MediaType | nvarchar(50) |  | Lưu thông tin media type |
 | ReviewID | int | Khóa ngoại | Mã đánh giá |
-| Url | nvarchar(2048) |  | Đường dẫn  |
+| Url | nvarchar(2048) |  | Đường dẫn |
 
-**Mô tả:** Bảng dùng để lưu thông tin ReviewSensitiveKeywords.
+**Mô tả:** Bảng có chức năng quản lý danh sách từ khóa nhạy cảm phục vụ kiểm duyệt tự động đánh giá, bình luận và nội dung người dùng nhập.
 
 *Bảng 5.54: Bảng ReviewSensitiveKeywords*
 
@@ -904,7 +904,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Severity | nvarchar(20) |  | Lưu thông tin severity |
 | Word | nvarchar(100) |  | Lưu thông tin word |
 
-**Mô tả:** Bảng dùng để lưu mẫu quyền.
+**Mô tả:** Bảng có chức năng quản lý mẫu quyền, giúp quản trị viên tạo sẵn bộ quyền theo nhóm chức năng để gán nhanh cho tài khoản quản trị.
 
 *Bảng 5.55: Bảng RoleTemplates*
 
@@ -916,7 +916,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | IsActive | bit |  | Trạng thái hoạt động |
 | Name | nvarchar(100) |  | Tên |
 
-**Mô tả:** Bảng dùng để lưu thông tin mua hàng định kỳ.
+**Mô tả:** Bảng có chức năng quản lý đăng ký mua hàng định kỳ của khách hàng, bao gồm sản phẩm, chu kỳ giao, ngày giao tiếp theo, trạng thái và thông tin thanh toán.
 
 *Bảng 5.56: Bảng Subscriptions*
 
@@ -940,7 +940,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | VariantID | int | Khóa ngoại | Mã biến thể |
 
-**Mô tả:** Bảng dùng để lưu thông tin SubscriptionPaymentHistories.
+**Mô tả:** Bảng có chức năng ghi nhận lịch sử thanh toán của các đơn mua định kỳ, giúp kiểm soát thanh toán thành công, thất bại hoặc cần xử lý lại.
 
 *Bảng 5.57: Bảng SubscriptionPaymentHistories*
 
@@ -956,7 +956,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | SubscriptionID | int | Khóa ngoại | Lưu thông tin subscription id |
 | WalletUsed | decimal(18,2) |  | Lưu thông tin wallet used |
 
-**Mô tả:** Bảng dùng để lưu thông tin Suppliers.
+**Mô tả:** Bảng có chức năng quản lý thương hiệu hoặc nhà cung cấp sản phẩm, hỗ trợ phân loại sản phẩm, lọc theo thương hiệu và quản lý nguồn hàng.
 
 *Bảng 5.58: Bảng Suppliers*
 
@@ -970,7 +970,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Status | bit |  | Trạng thái |
 | SupplierName | nvarchar(200) |  | Lưu thông tin supplier name |
 
-**Mô tả:** Bảng dùng để lưu các quyền thuộc mẫu quyền.
+**Mô tả:** Bảng có chức năng liên kết mẫu quyền với các quyền cụ thể, xác định một mẫu quyền bao gồm những quyền thao tác nào trong hệ thống.
 
 *Bảng 5.59: Bảng TemplatePermissions*
 
@@ -979,7 +979,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | TemplateId | int | Khóa chính, Khóa ngoại | Mã mẫu quyền |
 | PermissionId | int | Khóa chính, Khóa ngoại | Mã quyền |
 
-**Mô tả:** Bảng dùng để lưu thông tin UserAddresses.
+**Mô tả:** Bảng có chức năng quản lý các địa chỉ giao hàng riêng của từng người dùng, hỗ trợ thêm, sửa, xóa và chọn địa chỉ mặc định khi thanh toán.
 
 *Bảng 5.60: Bảng UserAddresses*
 
@@ -996,7 +996,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | WardID | int | Khóa ngoại | Mã phường/xã |
 
-**Mô tả:** Bảng dùng để lưu thông tin UserNotifications.
+**Mô tả:** Bảng có chức năng quản lý trạng thái thông báo theo từng người dùng, cho biết thông báo nào đã gửi, đã đọc, đã xóa hoặc còn hiển thị.
 
 *Bảng 5.61: Bảng UserNotifications*
 
@@ -1010,7 +1010,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ReadAt | datetime2 |  | Thời điểm read |
 | UserId | nvarchar(450) | Khóa ngoại | Mã người dùng |
 
-**Mô tả:** Bảng dùng để lưu quyền được gán cho từng người dùng.
+**Mô tả:** Bảng có chức năng quản lý quyền được gán trực tiếp cho từng người dùng, hỗ trợ phân quyền chi tiết ngoài vai trò hoặc mẫu quyền.
 
 *Bảng 5.62: Bảng UserPermissions*
 
@@ -1022,7 +1022,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | GrantedBy | nvarchar(max) |  | Lưu thông tin granted by |
 | IsGranted | bit |  | Đánh dấu granted |
 
-**Mô tả:** Bảng dùng để lưu voucher thuộc ví voucher của từng người dùng.
+**Mô tả:** Bảng có chức năng quản lý ví voucher của người dùng, ghi nhận voucher đã nhận, đã dùng, còn hạn hoặc hết hạn để áp dụng khi mua hàng.
 
 *Bảng 5.63: Bảng UserVouchers*
 
@@ -1038,7 +1038,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | VoucherID | int | Khóa ngoại | Mã voucher |
 
-**Mô tả:** Bảng dùng để lưu các biến thể của sản phẩm.
+**Mô tả:** Bảng có chức năng quản lý các biến thể sản phẩm, xác định SKU, giá, tồn kho, ảnh, trạng thái và tổ hợp lựa chọn mà khách hàng có thể mua.
 
 *Bảng 5.64: Bảng Variants*
 
@@ -1058,7 +1058,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | VariantDiscountPercent | decimal(5,2) |  | Lưu thông tin variant discount percent |
 | VariantName | nvarchar(300) |  | Lưu thông tin variant name |
 
-**Mô tả:** Bảng dùng để lưu thông tin VariantOptionValues.
+**Mô tả:** Bảng có chức năng liên kết biến thể với các giá trị thuộc tính, giúp xác định một biến thể cụ thể được tạo từ màu sắc, kích cỡ hoặc lựa chọn nào.
 
 *Bảng 5.65: Bảng VariantOptionValues*
 
@@ -1068,7 +1068,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ProductOptionValueID | int | Khóa chính, Khóa ngoại | Lưu thông tin product option value id |
 | VariantOptionValueID | int | Khóa ngoại | Lưu thông tin variant option value id |
 
-**Mô tả:** Bảng dùng để lưu thông tin voucher và mã giảm giá.
+**Mô tả:** Bảng có chức năng quản lý mã giảm giá và ưu đãi của hệ thống, bao gồm điều kiện áp dụng, loại giảm giá, số lượng, thời hạn và trạng thái phát hành.
 
 *Bảng 5.66: Bảng Vouchers*
 
@@ -1093,7 +1093,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | VisibilityType | int |  | Lưu thông tin visibility type |
 | VoucherType | int |  | Lưu thông tin voucher type |
 
-**Mô tả:** Bảng dùng để lưu lịch sử sử dụng voucher.
+**Mô tả:** Bảng có chức năng ghi nhận lịch sử sử dụng voucher trong đơn hàng, giúp kiểm soát lượt dùng, giới hạn theo người dùng và hiệu quả chương trình khuyến mãi.
 
 *Bảng 5.67: Bảng VoucherUsages*
 
@@ -1108,7 +1108,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | UserID | nvarchar(450) | Khóa ngoại | Mã người dùng |
 | VoucherID | int | Khóa ngoại | Mã voucher |
 
-**Mô tả:** Bảng dùng để lưu thông tin Wards.
+**Mô tả:** Bảng có chức năng quản lý dữ liệu phường/xã, hỗ trợ chuẩn hóa địa chỉ giao hàng chi tiết và liên kết với quận/huyện.
 
 *Bảng 5.68: Bảng Wards*
 
@@ -1123,7 +1123,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | Note | nvarchar(max) |  | Ghi chú |
 | ReplacedByCode | nvarchar(20) |  | Lưu thông tin replaced by code |
 
-**Mô tả:** Bảng dùng để lưu thông tin Wishlists.
+**Mô tả:** Bảng có chức năng quản lý danh sách sản phẩm yêu thích của người dùng, hỗ trợ lưu sản phẩm quan tâm, chia sẻ wishlist và chuyển sản phẩm sang giỏ hàng.
 
 *Bảng 5.69: Bảng Wishlists*
 
@@ -1133,7 +1133,7 @@ Phần này mô tả chi tiết các bảng chính trong cơ sở dữ liệu c�
 | ProductID | int | Khóa chính, Khóa ngoại | Mã sản phẩm |
 | CreatedAt | datetime2 |  | Ngày tạo |
 
-**Mô tả:** Bảng dùng để lưu thông tin WithdrawRequests.
+**Mô tả:** Bảng có chức năng quản lý yêu cầu rút tiền từ ví của người dùng, bao gồm số tiền, thông tin nhận tiền, trạng thái duyệt và lý do xử lý.
 
 *Bảng 5.70: Bảng WithdrawRequests*
 
