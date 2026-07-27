@@ -172,7 +172,7 @@ namespace PolyBabyAPI.Controllers
                 var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
                 if (!allowedExtensions.Contains(fileExtension)) return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh JPG, PNG, GIF, WebP" });
 
-                if (file.Length > 10 * 1024 * 1024) return BadRequest(new { success = false, message = "File không được vượt quá 10MB" });
+                if (file.Length > 5 * 1024 * 1024) return BadRequest(new { success = false, message = "File không được vượt quá 5MB" });
 
                 var uploadResult = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, folder);
                 if (!string.IsNullOrEmpty(uploadResult)) return Ok(new { success = true, url = uploadResult, message = "Upload thành công!" });

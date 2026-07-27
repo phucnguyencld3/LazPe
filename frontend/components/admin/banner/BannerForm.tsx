@@ -37,6 +37,20 @@ export function BannerForm({
       return;
     }
     
+    // Kiểm tra định dạng file
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!file.type || !allowedTypes.includes(file.type)) {
+      toast.error("Chỉ hỗ trợ file ảnh JPG, PNG, GIF, WebP");
+      return;
+    }
+
+    // Kiểm tra dung lượng (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File ảnh không được vượt quá 5MB");
+      return;
+    }
+    
     setUploadingIndex(index);
     try {
       const uploadData = new FormData();
@@ -449,7 +463,10 @@ export function BannerForm({
                         accept="image/*" 
                         className="hidden" 
                         onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], idx);
+                          if (e.target.files && e.target.files[0]) {
+                            handleImageUpload(e.target.files[0], idx);
+                          }
+                          e.target.value = '';
                         }}
                       />
                     </label>
