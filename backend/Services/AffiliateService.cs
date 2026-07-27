@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
@@ -15,11 +16,23 @@ namespace PolyBabyAPI.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AffiliateService> _logger;
+        private readonly IConfiguration _configuration;
 
-        public AffiliateService(ApplicationDbContext context, ILogger<AffiliateService> logger)
+        public AffiliateService(ApplicationDbContext context, ILogger<AffiliateService> logger, IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
+            _configuration = configuration;
+        }
+
+        private string GetFrontendBaseUrl()
+        {
+            var url = _configuration["VnPay:FrontendBaseUrl"] ?? _configuration["FrontendBaseUrl"];
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                url = "http://localhost:3000";
+            }
+            return url.TrimEnd('/');
         }
 
         public async Task<bool> RegisterAffiliateAsync(string userId)
@@ -42,7 +55,9 @@ namespace PolyBabyAPI.Services
             if (user == null || !user.IsAffiliate)
                 throw new InvalidOperationException("User is not a registered affiliate.");
 
-            var product = await _context.Products.FindAsync(productId);
+            var product = await _context.Products
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.ProductID == productId);
             if (product == null)
                 throw new InvalidOperationException("Product not found.");
 
@@ -56,21 +71,28 @@ namespace PolyBabyAPI.Services
                     UserId = userId,
                     ProductId = productId,
                     AffiliateLinkCode = "AFF_" + Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper(),
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 
                 _context.AffiliateLinks.Add(existingLink);
                 await _context.SaveChangesAsync();
             }
+            else if (!existingLink.IsActive)
+            {
+                existingLink.IsActive = true;
+                await _context.SaveChangesAsync();
+            }
 
-            // In real app, the Base URL should come from AppSettings
-            string baseUrl = "https://lazpe.com";
+            string baseUrl = GetFrontendBaseUrl();
+            string productIdentifier = !string.IsNullOrWhiteSpace(product.Slug) ? product.Slug : productId.ToString();
 
             return new AffiliateLinkResponseDto
             {
                 AffiliateLinkCode = existingLink.AffiliateLinkCode,
-                FullUrl = $"{baseUrl}/product/{productId}?ref={existingLink.AffiliateLinkCode}",
+                FullUrl = $"{baseUrl}/products/{productIdentifier}?ref={existingLink.AffiliateLinkCode}",
                 ProductId = productId,
+                ProductSlug = product.Slug,
                 ProductName = product.ProductName,
                 ProductImage = product.Images?.FirstOrDefault()?.ImageUrl ?? "",
                 ClickCount = existingLink.ClickCount,
@@ -88,20 +110,37 @@ namespace PolyBabyAPI.Services
                 .Where(l => l.UserId == userId && l.IsActive)
                 .ToListAsync();
 
-            string baseUrl = "https://lazpe.com";
+            string baseUrl = GetFrontendBaseUrl();
             
-            return links.Select(l => new AffiliateLinkResponseDto
+            return links.Select(l =>
             {
-                AffiliateLinkCode = l.AffiliateLinkCode,
-                FullUrl = $"{baseUrl}/product/{l.ProductId}?ref={l.AffiliateLinkCode}",
-                ProductId = l.ProductId,
-                ProductName = l.Product.ProductName,
-                ProductImage = l.Product.Images?.FirstOrDefault()?.ImageUrl ?? "",
-                ClickCount = l.ClickCount,
-                ConversionCount = l.ConversionCount,
-                Revenue = l.Revenue,
-                CreatedAt = l.CreatedAt
+                string productIdentifier = !string.IsNullOrWhiteSpace(l.Product?.Slug) ? l.Product.Slug : l.ProductId.ToString();
+                return new AffiliateLinkResponseDto
+                {
+                    AffiliateLinkCode = l.AffiliateLinkCode,
+                    FullUrl = $"{baseUrl}/products/{productIdentifier}?ref={l.AffiliateLinkCode}",
+                    ProductId = l.ProductId,
+                    ProductSlug = l.Product?.Slug,
+                    ProductName = l.Product?.ProductName ?? "",
+                    ProductImage = l.Product?.Images?.FirstOrDefault()?.ImageUrl ?? "",
+                    ClickCount = l.ClickCount,
+                    ConversionCount = l.ConversionCount,
+                    Revenue = l.Revenue,
+                    CreatedAt = l.CreatedAt
+                };
             }).ToList();
+        }
+
+        public async Task<bool> DeleteAffiliateLinkAsync(string userId, string affiliateLinkCode)
+        {
+            var link = await _context.AffiliateLinks
+                .FirstOrDefaultAsync(l => l.UserId == userId && l.AffiliateLinkCode == affiliateLinkCode);
+
+            if (link == null) return false;
+
+            link.IsActive = false;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> RecordClickAsync(string affiliateLinkCode)
@@ -197,14 +236,20 @@ namespace PolyBabyAPI.Services
                 user.LifetimeAffiliateRevenue += revenue;
 
                 // Update link stats
+                AffiliateLink? link = null;
                 if (latestInvoice.AffiliateLinkId.HasValue)
                 {
-                    var link = await _context.AffiliateLinks.FindAsync(latestInvoice.AffiliateLinkId.Value);
-                    if (link != null)
-                    {
-                        link.ConversionCount++;
-                        link.Revenue += revenue;
-                    }
+                    link = await _context.AffiliateLinks.FindAsync(latestInvoice.AffiliateLinkId.Value);
+                }
+                else
+                {
+                    link = await _context.AffiliateLinks.FirstOrDefaultAsync(l => l.UserId == affiliateUserId && l.IsActive);
+                }
+
+                if (link != null)
+                {
+                    link.ConversionCount++;
+                    link.Revenue += revenue;
                 }
 
                 // Update History
@@ -265,8 +310,31 @@ namespace PolyBabyAPI.Services
                         };
                         _context.UserVouchers.Add(userVoucher);
                         
-                        // NOTE: Email sending should be enqueued here if background job is available
-                        _logger.LogInformation($"Affiliate {affiliateUserId} achieved milestone {milestone.RequiredRevenue}. Voucher awarded.");
+                        // Gửi Email thông báo qua Background Job (Hangfire)
+                        if (!string.IsNullOrEmpty(user.Email))
+                        {
+                            string userEmail = user.Email;
+                            string userName = user.FullName ?? user.UserName ?? "Đối tác";
+                            decimal requiredRev = milestone.RequiredRevenue;
+                            string subject = $"[LazPe] Chúc mừng! Bạn đã đạt cột mốc doanh thu Affiliate {requiredRev:N0}đ";
+                            string htmlBody = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                                <h2 style='color: #ff6600; text-align: center;'>🎉 Chúc mừng Cột mốc Affiliate mới! 🎉</h2>
+                                <p>Xin chào <strong>{userName}</strong>,</p>
+                                <p>Chúc mừng bạn đã xuất sắc đạt cột mốc doanh thu tiếp thị liên kết (Affiliate) <strong>{requiredRev:N0} VNĐ</strong> trong tháng này!</p>
+                                <div style='background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ff6600; margin: 20px 0;'>
+                                    <p style='margin: 0;'><strong>Phần thưởng:</strong> Voucher đặc quyền đã được tự động thêm vào Ví Voucher của bạn.</p>
+                                </div>
+                                <p>Hãy tiếp tục chia sẻ link giới thiệu và chinh phục các mốc doanh thu cao hơn cùng LazPe!</p>
+                                <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                                <p style='font-size: 12px; color: #777; text-align: center;'>Đây là email tự động từ hệ thống LazPe, vui lòng không trả lời email này.</p>
+                            </div>";
+
+                            Hangfire.BackgroundJob.Enqueue<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender>(
+                                sender => sender.SendEmailAsync(userEmail, subject, htmlBody));
+                        }
+
+                        _logger.LogInformation($"Affiliate {affiliateUserId} achieved milestone {milestone.RequiredRevenue}. Voucher awarded and notification email enqueued.");
                     }
                 }
 

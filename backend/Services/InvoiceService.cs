@@ -362,6 +362,19 @@ namespace PolyBabyAPI.Services
                 ShippingDiscountAmount = shippingDiscountAmount,
             };
 
+            // ✅ Gắn thông tin Tiếp thị liên kết (Affiliate) nếu có mã giới thiệu
+            if (request != null && !string.IsNullOrWhiteSpace(request.AffiliateCode))
+            {
+                var affLink = await _context.AffiliateLinks
+                    .FirstOrDefaultAsync(l => l.AffiliateLinkCode == request.AffiliateCode && l.IsActive);
+
+                if (affLink != null && affLink.UserId != cart.UserID) // Bảo mật: Không tự giới thiệu chính mình
+                {
+                    invoice.AffiliateUserId = affLink.UserId;
+                    invoice.AffiliateLinkId = affLink.Id;
+                }
+            }
+
             foreach (var item in itemsToCheckout)
             {
                 var detail = new InvoiceDetail
@@ -1665,6 +1678,19 @@ namespace PolyBabyAPI.Services
                         catch (Exception lEx)
                         {
                             _logger.LogError(lEx, "Lỗi tích điểm Loyalty/Referral khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
+                        }
+                    }
+
+                    // Tích lũy doanh thu cho Affiliate
+                    if (!string.IsNullOrEmpty(invoice.AffiliateUserId))
+                    {
+                        try
+                        {
+                            await _affiliateService.ProcessAffiliateRevenueAsync(invoice.AffiliateUserId, invoice.InvoiceID, invoice.TotalPrice);
+                        }
+                        catch (Exception aEx)
+                        {
+                            _logger.LogError(aEx, "Lỗi tích điểm Affiliate khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
                         }
                     }
                 }

@@ -62,6 +62,19 @@ namespace PolyBabyAPI.Controllers
             return Ok(links);
         }
 
+        [HttpDelete("links/{code}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteLink(string code)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var success = await _affiliateService.DeleteAffiliateLinkAsync(userId, code);
+            if (!success) return NotFound(new { message = "Link không tồn tại hoặc không thuộc về bạn." });
+
+            return Ok(new { success = true, message = "Xóa link tiếp thị thành công." });
+        }
+
         [HttpGet("dashboard")]
         [Authorize]
         public async Task<IActionResult> GetDashboardStats()

@@ -15,6 +15,7 @@ namespace PolyBabyAPI.DTOs
         public string AffiliateLinkCode { get; set; } = string.Empty;
         public string FullUrl { get; set; } = string.Empty;
         public int ProductId { get; set; }
+        public string? ProductSlug { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string ProductImage { get; set; } = string.Empty;
         public int ClickCount { get; set; }

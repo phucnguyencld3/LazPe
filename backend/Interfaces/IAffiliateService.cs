@@ -12,6 +12,7 @@ namespace PolyBabyAPI.Interface
         Task<bool> RecordClickAsync(string affiliateLinkCode);
         Task<AffiliateDashboardStatsDto?> GetDashboardStatsAsync(string userId);
         Task<List<AffiliateLinkResponseDto>> GetUserAffiliateLinksAsync(string userId);
+        Task<bool> DeleteAffiliateLinkAsync(string userId, string affiliateLinkCode);
         Task<bool> ProcessAffiliateRevenueAsync(string affiliateUserId, int invoiceId, decimal revenue);
     }
 }

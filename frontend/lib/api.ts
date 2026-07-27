@@ -1453,7 +1453,8 @@ export async function createInvoiceFromCart(
         CoinsToUse: coinsToUse,
         UseWallet: useWallet,
         WalletToUse: walletToUse,
-        PaymentPin: paymentPin
+        PaymentPin: paymentPin,
+        AffiliateCode: typeof window !== 'undefined' ? (localStorage.getItem('lazpe_affiliate_ref') || sessionStorage.getItem('lazpe_affiliate_ref') || undefined) : undefined
       }),
     });
 
@@ -3598,6 +3599,7 @@ export interface AffiliateLink {
   affiliateLinkCode: string;
   fullUrl: string;
   productId: number;
+  productSlug?: string;
   productName: string;
   productImage: string;
   clickCount: number;
@@ -3671,5 +3673,38 @@ export async function generateAffiliateLink(token: string, productId: number): P
   } catch (error) {
     console.error("Error generating affiliate link:", error);
     return { success: false, message: "Network error" };
+  }
+}
+
+export async function deleteAffiliateLink(token: string, code: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/links/${code}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) return { success: true, message: result.message || "Đã xóa link thành công" };
+    return { success: false, message: result.message || `Lỗi server (${response.status})` };
+  } catch (error) {
+    console.error("Error deleting affiliate link:", error);
+    return { success: false, message: "Lỗi kết nối mạng" };
+  }
+}
+
+export async function trackAffiliateClick(code: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/track-click`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ code }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error tracking affiliate click:", error);
+    return false;
   }
 }

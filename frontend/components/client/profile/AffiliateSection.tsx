@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getAffiliateDashboard, getAffiliateLinks, registerAffiliate, AffiliateDashboardStats, AffiliateLink } from "@/lib/api";
+import { getAffiliateDashboard, getAffiliateLinks, registerAffiliate, generateAffiliateLink, deleteAffiliateLink, AffiliateDashboardStats, AffiliateLink } from "@/lib/api";
 import { toast } from "@/lib/toast";
+import { ProductSelectModal } from "./modals/ProductSelectModal";
+import { Product } from "@/types";
 
 interface Props {
   token: string;
@@ -14,8 +16,8 @@ export default function AffiliateSection({ token }: Props) {
   const [stats, setStats] = useState<AffiliateDashboardStats | null>(null);
   const [links, setLinks] = useState<AffiliateLink[]>([]);
   const [agreed, setAgreed] = useState(false);
-  const [newProductId, setNewProductId] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -56,24 +58,12 @@ export default function AffiliateSection({ token }: Props) {
     }
   };
 
-  const handleGenerateLink = async () => {
-    if (!newProductId) {
-      toast.error("Vui lòng nhập ID sản phẩm");
-      return;
-    }
-    const productId = parseInt(newProductId);
-    if (isNaN(productId) || productId <= 0) {
-      toast.error("ID sản phẩm không hợp lệ");
-      return;
-    }
-
+  const handleSelectProductFromModal = async (product: Product) => {
     setGenerating(true);
     try {
-      const res = await generateAffiliateLink(token, productId);
+      const res = await generateAffiliateLink(token, product.id);
       if (res.success) {
-        toast.success("Tạo link thành công!");
-        setNewProductId("");
-        // Tải lại danh sách link
+        toast.success(`Đã tạo link giới thiệu cho "${product.name}"!`);
         const myLinks = await getAffiliateLinks(token);
         setLinks(myLinks);
       } else {
@@ -81,9 +71,34 @@ export default function AffiliateSection({ token }: Props) {
       }
     } catch (e) {
       console.error(e);
-      toast.error("Lỗi kết nối");
+      toast.error("Lỗi kết nối khi tạo link");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const getLinkUrl = (link: AffiliateLink) => {
+    const identifier = link.productSlug || link.productId;
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/products/${identifier}?ref=${link.affiliateLinkCode}`;
+    }
+    return link.fullUrl || `/products/${identifier}?ref=${link.affiliateLinkCode}`;
+  };
+
+  const handleDeleteLink = async (code: string, productName: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa link tiếp thị cho sản phẩm "${productName}" không?`)) return;
+    try {
+      const res = await deleteAffiliateLink(token, code);
+      if (res.success) {
+        toast.success("Đã xóa link tiếp thị thành công!");
+        const myLinks = await getAffiliateLinks(token);
+        setLinks(myLinks);
+      } else {
+        toast.error(res.message || "Xóa link thất bại");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Lỗi kết nối khi xóa link");
     }
   };
 
@@ -249,21 +264,13 @@ export default function AffiliateSection({ token }: Props) {
             <span className="material-symbols-outlined text-primary">link</span>
             Link giới thiệu của bạn
           </h3>
-          <div className="flex items-center gap-2">
-            <input 
-              type="number" 
-              placeholder="Nhập ID sản phẩm..." 
-              value={newProductId}
-              onChange={(e) => setNewProductId(e.target.value)}
-              className="border border-slate-200 rounded-[8px] px-3 py-1.5 text-sm focus:outline-none focus:border-primary w-40"
-            />
+          <div>
             <button 
-              onClick={handleGenerateLink}
-              disabled={generating}
-              className={`bg-primary hover:bg-primary-dark text-white text-sm font-bold py-1.5 px-3 rounded-[8px] flex items-center gap-1 transition-colors ${generating ? "opacity-70 cursor-not-allowed" : ""}`}
+              onClick={() => setIsModalOpen(true)}
+              className="bg-primary hover:bg-primary-dark text-white text-sm font-bold py-2 px-4 rounded-[10px] flex items-center gap-2 transition-all shadow-sm hover:shadow-md hover:shadow-primary/20"
             >
-              <span className="material-symbols-outlined text-[16px]">{generating ? "progress_activity" : "add_link"}</span>
-              {generating ? "Đang tạo..." : "Tạo Link"}
+              <span className="material-symbols-outlined text-[20px]">add_link</span>
+              Tạo link tiếp thị mới
             </button>
           </div>
         </div>
@@ -272,7 +279,7 @@ export default function AffiliateSection({ token }: Props) {
           <div className="text-center py-8 bg-slate-50 rounded-[8px] border border-dashed border-slate-200">
             <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">link_off</span>
             <p className="text-sm text-slate-500">Bạn chưa tạo link tiếp thị nào.</p>
-            <p className="text-xs text-slate-400 mt-1">Hãy nhập ID sản phẩm ở trên hoặc tạo từ trang chi tiết sản phẩm nhé!</p>
+            <p className="text-xs text-slate-400 mt-1">Hãy bấm nút "Chọn sản phẩm" ở trên để tìm và tạo link nhé!</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -290,17 +297,25 @@ export default function AffiliateSection({ token }: Props) {
                     <input 
                       type="text" 
                       readOnly 
-                      value={link.fullUrl} 
+                      value={getLinkUrl(link)} 
                       className="flex-1 text-xs px-2 py-1 bg-white border border-slate-200 rounded text-slate-600 focus:outline-none"
                     />
                     <button 
                       onClick={() => {
-                        navigator.clipboard.writeText(link.fullUrl);
+                        const url = getLinkUrl(link);
+                        navigator.clipboard.writeText(url);
                         toast.success("Đã copy link!");
                       }}
                       className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded font-medium transition-colors whitespace-nowrap"
                     >
                       Copy
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteLink(link.affiliateLinkCode, link.productName)}
+                      className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 p-1 rounded font-medium transition-colors flex items-center justify-center"
+                      title="Xóa link tiếp thị"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
                     </button>
                   </div>
                 </div>
@@ -309,6 +324,13 @@ export default function AffiliateSection({ token }: Props) {
           </div>
         )}
       </div>
+
+      {/* Modal chọn sản phẩm */}
+      <ProductSelectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelectProduct={handleSelectProductFromModal}
+      />
     </div>
   );
 }
