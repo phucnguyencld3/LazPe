@@ -114,3 +114,5 @@ backend/wwwroot/uploads/
 backend/TrendModel.zip
 /.vscode
 /MyUnitTestLazPe/
+MyUnitTestLazPe/bin/
+MyUnitTestLazPe/obj/
