@@ -112,3 +112,4 @@ logs/
 .env
 backend/wwwroot/uploads/
 backend/TrendModel.zip
+/.vscode
