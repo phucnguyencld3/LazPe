@@ -44,10 +44,10 @@ export function BannerForm({
       return;
     }
 
-    // Kiểm tra dung lượng (5MB)
-    const maxSize = 5 * 1024 * 1024;
+    // Kiểm tra dung lượng (10MB)
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error("File ảnh không được vượt quá 5MB");
+      toast.error("File ảnh không được vượt quá 10MB");
       return;
     }
     
