@@ -325,8 +325,8 @@ export default function ProductVariantsPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Kích thước hình ảnh tối đa cho phép là 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Kích thước hình ảnh tối đa cho phép là 10MB.");
       return;
     }
 

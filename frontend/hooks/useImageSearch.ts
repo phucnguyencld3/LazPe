@@ -17,8 +17,8 @@ export const useImageSearch = (onSearchSuccess: (keyword: string) => void) => {
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            toast.error('Kích thước ảnh quá lớn, vui lòng chọn ảnh dưới 5MB.');
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            toast.error('File ảnh không được vượt quá 10MB');
             return;
         }
 
