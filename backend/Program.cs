@@ -18,6 +18,7 @@ using PolyBabyAPI.Services;
 using PolyBabyAPI.Settings;
 using System.Text;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -337,22 +338,48 @@ try
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews();
 
+    // Cấu hình Forwarded Headers để ASP.NET Core đọc đúng IP thực của Client từ Nginx
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+
     // Cấu hình Rate Limiter (Chống DDoS/Spam request)
     builder.Services.AddRateLimiter(options =>
     {
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+        {
+            // Bỏ qua Rate Limiting cho OPTIONS preflight requests để tránh lỗi CORS do browser tự gửi
+            if (HttpMethods.IsOptions(httpContext.Request.Method))
+            {
+                return RateLimitPartition.GetNoLimiter<string>("options");
+            }
+
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() 
+                           ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault() 
+                           ?? httpContext.Request.Headers.Host.ToString();
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: clientIp,
                 factory: partition => new FixedWindowRateLimiterOptions
                 {
                     AutoReplenishment = true,
-                    PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 1000, // Tăng lên 1000 request ở prod để tránh block Next.js SSR
-                    QueueLimit = 0, // Không cho xếp hàng, quá giới hạn là từ chối luôn
-                    Window = TimeSpan.FromMinutes(1) // Trong vòng 1 phút
-                }));
+                    PermitLimit = builder.Environment.IsDevelopment() ? 5000 : 5000, // Tăng lên 5000 request/phút theo yêu cầu
+                    QueueLimit = 0,
+                    Window = TimeSpan.FromMinutes(1)
+                });
+        });
                 
         options.OnRejected = async (context, token) =>
         {
+            var origin = context.HttpContext.Request.Headers.Origin.ToString();
+            if (!string.IsNullOrEmpty(origin))
+            {
+                context.HttpContext.Response.Headers.AccessControlAllowOrigin = origin;
+                context.HttpContext.Response.Headers.AccessControlAllowCredentials = "true";
+            }
             context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             context.HttpContext.Response.ContentType = "application/json";
             await context.HttpContext.Response.WriteAsync("{\"error\": \"Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.\"}", cancellationToken: token);
@@ -413,6 +440,7 @@ try
         RequestPath = ""
     });
     
+    app.UseForwardedHeaders();
     app.UseRouting();
     app.UseCors("AllowMVC");
     app.UseRateLimiter();
