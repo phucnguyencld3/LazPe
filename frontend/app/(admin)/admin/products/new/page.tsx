@@ -730,8 +730,8 @@ return (
             <span className="material-symbols-outlined text-lg">arrow_back</span>
           </button>
           <div>
-            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Thêm sản phẩm mới</h2>
-            <p className="text-slate-500 text-xs mt-1">Khởi tạo sản phẩm, các tùy chọn thuộc tính và tự động sinh danh sách biến thể trong một màn hình.</p>
+            <h2 className="font-headline-md text-headline-md text-primary font-bold">Thêm sản phẩm mới</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Khởi tạo sản phẩm, các tùy chọn thuộc tính và tự động sinh danh sách biến thể trong một màn hình.</p>
           </div>
         </div>
 

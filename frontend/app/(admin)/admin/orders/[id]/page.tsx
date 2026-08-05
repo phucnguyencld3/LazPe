@@ -194,7 +194,7 @@ export default function OrderDetailsPage() {
             <span className="font-bold">Quay lại</span>
           </button>
           <div className="h-6 w-px bg-outline-variant"></div>
-          <h2 className="text-2xl font-bold text-on-surface">Đơn hàng #{order.invoiceCode}</h2>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">Đơn hàng #{order.invoiceCode}</h2>
         </div>
         <OrderActionBar 
           order={order}

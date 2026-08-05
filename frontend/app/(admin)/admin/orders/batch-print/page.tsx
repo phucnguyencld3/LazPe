@@ -79,11 +79,11 @@ export default function BatchPrintPage() {
     <div className="p-6 w-full min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+          <h1 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-3xl">print</span>
             {activeTab === "waiting" ? "In Hàng Loạt" : "Hóa Đơn Lưu Trữ"}
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
             {activeTab === "waiting" 
               ? "Danh sách các đơn hàng đã xác nhận hoặc đang giao, chờ in phiếu giao hàng."
               : "Danh sách các hóa đơn đã được in và lưu trữ bản PDF trên hệ thống."}

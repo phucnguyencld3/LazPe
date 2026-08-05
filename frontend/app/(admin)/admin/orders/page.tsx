@@ -244,8 +244,8 @@ export default function AdminOrdersPage() {
       {/* Title & Description Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 pt-4">
         <div className="space-y-2">
-          <h1 className="text-headline-lg font-headline-lg text-on-background">Quản lý đơn hàng</h1>
-          <p className="text-body-lg font-body-lg text-on-surface-variant">Theo dõi và cập nhật trạng thái đơn hàng từ khách hàng của LazPe.</p>
+          <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý đơn hàng</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant/70">Theo dõi và cập nhật trạng thái đơn hàng từ khách hàng của LazPe.</p>
         </div>
         <button
           onClick={handleExportExcel}

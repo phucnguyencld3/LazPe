@@ -403,7 +403,7 @@ export default function ProductVariantsPage() {
             <span className="material-symbols-outlined text-lg">arrow_back</span>
           </button>
           <div className="flex flex-col">
-            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Quản lý biến thể</h2>
+            <h2 className="font-headline-md text-headline-md text-primary font-bold">Quản lý biến thể</h2>
             {product && (
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-slate-500 font-semibold text-sm">{product.productName}</span>

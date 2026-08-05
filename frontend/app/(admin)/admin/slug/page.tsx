@@ -41,8 +41,8 @@ export default function SlugAdminPage() {
   return (
     <div className="p-6 w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Công cụ tự động hóa SEO</h1>
-        <p className="text-slate-500 mt-2">Trang ẩn dành riêng cho quản trị viên. Công cụ này sẽ quét toàn bộ dữ liệu sản phẩm và tự động điền các trường Slug, Meta Title, Meta Description bị thiếu.</p>
+        <h1 className="font-headline-md text-headline-md text-primary font-bold">Công cụ tự động hóa SEO</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Trang ẩn dành riêng cho quản trị viên. Công cụ này sẽ quét toàn bộ dữ liệu sản phẩm và tự động điền các trường Slug, Meta Title, Meta Description bị thiếu.</p>
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">

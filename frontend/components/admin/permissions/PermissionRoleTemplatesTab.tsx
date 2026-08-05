@@ -228,8 +228,8 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       {showHeader ? (
         <header className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-primary">Quản lý Gói Quyền (Role Templates)</h1>
-            <p className="text-slate-500 mt-1">
+            <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý Gói Quyền (Role Templates)</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
               Thiết lập các gói quyền mặc định (ví dụ: Staff, Manager) để gán nhanh cho nhân sự.
             </p>
           </div>

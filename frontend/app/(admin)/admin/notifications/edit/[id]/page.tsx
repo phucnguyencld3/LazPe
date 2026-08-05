@@ -334,8 +334,8 @@ export default function EditCampaignPage() {
 
       <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-800">Chỉnh sửa Chiến dịch Thông báo</h2>
-          <p className="text-xs text-slate-400 font-semibold mt-1">Cập nhật nội dung hoặc thay đổi lịch gửi của thông báo</p>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">Chỉnh sửa Chiến dịch Thông báo</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Cập nhật nội dung hoặc thay đổi lịch gửi của thông báo</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

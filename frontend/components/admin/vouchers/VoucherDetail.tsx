@@ -286,7 +286,7 @@ export default function VoucherDetail({
               <span className="material-symbols-outlined text-lg">local_activity</span>
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <h3 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
                 <span>Voucher: {voucher.code}</span>
                 {getValidityStatusBadge(voucher.startDate, voucher.endDate, voucher.status)}
               </h3>

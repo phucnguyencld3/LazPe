@@ -180,11 +180,11 @@ export default function AdminWithdrawalsPage() {
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">account_balance</span>
             Quản lý Rút tiền
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
             Duyệt và quản lý yêu cầu rút tiền từ người bán / người dùng.
           </p>
         </div>

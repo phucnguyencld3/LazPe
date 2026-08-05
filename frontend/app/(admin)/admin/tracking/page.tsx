@@ -155,7 +155,7 @@ export default function AdminTrackingPage() {
         <div className="lg:col-span-5 sticky top-6">
           <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-8">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <h1 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-2xl">barcode_scanner</span>
                 Tra cứu Nhanh
               </h1>

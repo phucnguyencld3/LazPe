@@ -137,7 +137,7 @@ function CreateBrandForm() {
           <span className="material-symbols-outlined text-lg">arrow_back</span>
         </button>
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Thêm thương hiệu mới</h2>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">Thêm thương hiệu mới</h2>
           <p className="text-slate-500 text-xs mt-1">Tạo một thương hiệu mới trong hệ thống.</p>
         </div>
       </header>

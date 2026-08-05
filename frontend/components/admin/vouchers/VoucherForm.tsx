@@ -299,7 +299,7 @@ export default function VoucherForm({
             <span className="material-symbols-outlined text-primary text-2xl">
               {isEditing ? "edit_calendar" : "add_card"}
             </span>
-            <h3 className="text-lg font-bold text-slate-800">
+            <h3 className="font-headline-md text-headline-md text-primary font-bold">
               {isEditing ? `Chỉnh sửa Voucher: ${voucher?.code}` : "Tạo Voucher Mới"}
             </h3>
           </div>

@@ -680,11 +680,11 @@ export default function AdminFlashSalesPage() {
           {/* Header section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 border-b border-slate-100 bg-slate-50/50">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <h1 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-3xl">bolt</span>
                 Quản lý Chiến dịch Flash Sale
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
                 Tạo các khung giờ vàng giảm giá kịch sàn cho Sản phẩm, Biến thể hoặc các Combo để thu hút khách hàng.
               </p>
             </div>
@@ -925,11 +925,11 @@ export default function AdminFlashSalesPage() {
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <h1 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-4xl">bolt</span>
                 {view === "create" ? "Tạo Chiến dịch Flash Sale mới" : "Chỉnh sửa Chiến dịch Flash Sale"}
               </h1>
-              <p className="text-base text-slate-500 mt-1">
+              <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
                 Thiết lập thời gian và cấu hình giảm giá cho từng mặt hàng trong đợt sale.
               </p>
             </div>
