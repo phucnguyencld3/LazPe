@@ -1367,9 +1367,9 @@ export function OrderDetailView({
                             onChange={(e) => {
                               if (e.target.files) {
                                 const filesArray = Array.from(e.target.files);
-                                const validFiles = filesArray.filter(f => f.size <= 5 * 1024 * 1024);
+                                const validFiles = filesArray.filter(f => f.size <= 10 * 1024 * 1024);
                                 if (validFiles.length !== filesArray.length) {
-                                  toast.error("Một số ảnh quá kích thước 5MB đã bị loại bỏ");
+                                  toast.error("Một số ảnh quá kích thước 10MB đã bị loại bỏ");
                                 }
                                 
                                 setReturnImageFiles(prev => {

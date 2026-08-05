@@ -385,8 +385,8 @@ export default function CreateProductPage() {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast.warning("Dung lượng ảnh vượt quá 5MB.");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.warning("Dung lượng ảnh vượt quá 10MB.");
         return;
       }
 
@@ -428,8 +428,8 @@ export default function CreateProductPage() {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast.warning("Dung lượng ảnh vượt quá 5MB.");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.warning("Dung lượng ảnh vượt quá 10MB.");
         return;
       }
 
