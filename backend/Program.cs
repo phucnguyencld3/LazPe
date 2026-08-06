@@ -540,6 +540,14 @@ try
             "0 9 * * *", // Chạy lúc 09:00 sáng mỗi ngày
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
+
+        // 11. Job tự động hủy đơn hàng chờ xác nhận hoặc chờ xử lý quá 2 ngày (Chạy mỗi giờ)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Interface.IInvoiceService>(
+            "auto-cancel-stale-orders",
+            service => service.AutoCancelStaleOrdersAsync(CancellationToken.None),
+            "0 * * * *", // Chạy vào phút thứ 0 của mỗi giờ
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
     }
     catch (Exception ex)
     {

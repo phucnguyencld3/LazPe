@@ -58,5 +58,6 @@ namespace PolyBabyAPI.Interface
         Task AutoRestockAfterReturnAsync(int invoiceId);
 
         Task AutoCompleteShippedOrdersAsync(CancellationToken cancellationToken);
+        Task AutoCancelStaleOrdersAsync(CancellationToken cancellationToken);
     }
 }
