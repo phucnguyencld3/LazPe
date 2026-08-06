@@ -416,31 +416,12 @@ export default function OrderDetailsPage() {
                     </span>
                   </div>
                   
-                  <div className="bg-white p-5 rounded-xl border border-rose-100 shadow-sm space-y-3">
+                  <div className="bg-white p-5 rounded-xl border border-rose-100 shadow-sm">
                     <div>
                       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Lý do hủy từ khách hàng:</p>
                       <p className="text-base font-bold text-rose-900 mt-1">
                         "{order.cancelReason || "Không ghi rõ lý do"}"
                       </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
-                      <button
-                        onClick={handleApproveCancel}
-                        disabled={canceling}
-                        className="flex items-center gap-2 px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50 active:scale-95"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                        Duyệt hủy đơn
-                      </button>
-                      <button
-                        onClick={handleRejectCancel}
-                        disabled={canceling}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 active:scale-95"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">close</span>
-                        Từ chối yêu cầu hủy
-                      </button>
                     </div>
                   </div>
                 </div>
