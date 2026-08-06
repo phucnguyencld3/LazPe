@@ -33,6 +33,8 @@ export default function OrderDetailsPage() {
   
   // Cancel Modal State
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showApproveCancelModal, setShowApproveCancelModal] = useState(false);
+  const [showRejectCancelModal, setShowRejectCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("Sản phẩm hết hàng");
   const [otherReason, setOtherReason] = useState("");
   const [canceling, setCanceling] = useState(false);
@@ -91,16 +93,22 @@ export default function OrderDetailsPage() {
     }
   };
 
-  const handleApproveCancel = async () => {
-    if (!confirm(`Xác nhận duyệt yêu cầu hủy đơn hàng #${order?.invoiceCode || id}? Hàng và voucher (nếu có) sẽ được hoàn trả.`)) {
-      return;
-    }
+  const handleApproveCancel = () => {
+    setShowApproveCancelModal(true);
+  };
+
+  const handleRejectCancel = () => {
+    setShowRejectCancelModal(true);
+  };
+
+  const executeApproveCancel = async () => {
     setCanceling(true);
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
       await approveCancelOrder(token, id as string);
       toast.success("Đã phê duyệt hủy đơn hàng thành công.");
+      setShowApproveCancelModal(false);
       loadOrder();
     } catch (err: any) {
       console.error(err);
@@ -110,16 +118,14 @@ export default function OrderDetailsPage() {
     }
   };
 
-  const handleRejectCancel = async () => {
-    if (!confirm(`Xác nhận từ chối yêu cầu hủy đơn hàng #${order?.invoiceCode || id}? Đơn hàng sẽ quay trở về trạng thái xử lý.`)) {
-      return;
-    }
+  const executeRejectCancel = async () => {
     setCanceling(true);
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
       await rejectCancelOrder(token, id as string);
       toast.success("Đã từ chối yêu cầu hủy đơn hàng.");
+      setShowRejectCancelModal(false);
       loadOrder();
     } catch (err: any) {
       console.error(err);
@@ -600,6 +606,118 @@ export default function OrderDetailsPage() {
                 className="px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition-all shadow-md flex items-center gap-2"
               >
                 {processingReturn ? "Đang xử lý..." : "Xác nhận & Hoàn tiền"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Phê Duyệt Hủy Đơn */}
+      {showApproveCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[480px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-rose-600">check_circle</span>
+                </div>
+                <h2 className="text-xl font-bold text-slate-800">Phê duyệt hủy đơn hàng</h2>
+              </div>
+              <button
+                onClick={() => setShowApproveCancelModal(false)}
+                className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"
+              >
+                <X className="text-slate-400" size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-slate-600 text-sm">
+                Bạn có chắc chắn muốn phê duyệt yêu cầu hủy cho đơn hàng <strong className="text-slate-800">#{order?.invoiceCode || id}</strong>?
+              </p>
+              
+              <div className="p-4 bg-rose-50/70 border border-rose-100 rounded-xl space-y-1">
+                <p className="text-xs font-bold text-rose-800 uppercase tracking-wide">Lý do hủy từ khách hàng:</p>
+                <p className="text-sm font-semibold text-rose-900">
+                  "{order?.cancelReason || "Không ghi rõ lý do"}"
+                </p>
+              </div>
+
+              <p className="text-xs text-slate-500">
+                Lưu ý: Hàng hóa, voucher, điểm thưởng và tiền thanh toán (nếu có) sẽ được hoàn trả tự động về tài khoản khách hàng.
+              </p>
+            </div>
+            
+            <div className="p-6 bg-slate-50 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowApproveCancelModal(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors text-sm cursor-pointer"
+                disabled={canceling}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={executeApproveCancel}
+                disabled={canceling}
+                className="px-5 py-2.5 rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white text-sm active:scale-95 transition-all shadow-md shadow-rose-600/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {canceling ? "Đang xử lý..." : "Xác nhận duyệt hủy"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Từ Chối Hủy Đơn */}
+      {showRejectCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+          <div className="bg-white w-[calc(100vw-2rem)] md:w-[480px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-slate-600">close</span>
+                </div>
+                <h2 className="text-xl font-bold text-slate-800">Từ chối yêu cầu hủy</h2>
+              </div>
+              <button
+                onClick={() => setShowRejectCancelModal(false)}
+                className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"
+              >
+                <X className="text-slate-400" size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-slate-600 text-sm">
+                Bạn có chắc muốn từ chối yêu cầu hủy đơn hàng <strong className="text-slate-800">#{order?.invoiceCode || id}</strong>?
+              </p>
+              
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Lý do yêu cầu từ khách hàng:</p>
+                <p className="text-sm font-semibold text-slate-800">
+                  "{order?.cancelReason || "Không ghi rõ lý do"}"
+                </p>
+              </div>
+
+              <p className="text-xs text-slate-500">
+                Sau khi từ chối, đơn hàng sẽ quay trở về trạng thái xử lý và chuẩn bị đóng gói giao cho người mua.
+              </p>
+            </div>
+            
+            <div className="p-6 bg-slate-50 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowRejectCancelModal(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors text-sm cursor-pointer"
+                disabled={canceling}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={executeRejectCancel}
+                disabled={canceling}
+                className="px-5 py-2.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-900 text-white text-sm active:scale-95 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {canceling ? "Đang xử lý..." : "Xác nhận từ chối"}
               </button>
             </div>
           </div>
