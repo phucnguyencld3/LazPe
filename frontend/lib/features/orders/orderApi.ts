@@ -178,6 +178,42 @@ export const cancelOrder = async (token: string, id: string, reason: string): Pr
   return res.json();
 };
 
+export const approveCancelOrder = async (token: string, id: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/approve-cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!res.ok) {
+    let errorMsg = "Lỗi khi phê duyệt hủy";
+    try {
+      const data = await res.json();
+      if (data.message) errorMsg = data.message;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return res.json();
+};
+
+export const rejectCancelOrder = async (token: string, id: string): Promise<any> => {
+  const res = await fetch(`${API_BASE_URL}/Invoice/${id}/reject-cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!res.ok) {
+    let errorMsg = "Lỗi khi từ chối hủy";
+    try {
+      const data = await res.json();
+      if (data.message) errorMsg = data.message;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return res.json();
+};
+
 export const requestCancelOrder = async (token: string, id: string, reason: string): Promise<any> => {
   const res = await fetch(`${API_BASE_URL}/Invoice/${id}/request-cancel`, {
     method: 'POST',

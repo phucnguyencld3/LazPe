@@ -7,6 +7,8 @@ import {
   OrderInfo,
   fetchOrderDetails,
   cancelOrder,
+  approveCancelOrder,
+  rejectCancelOrder,
   updateOrderStatus,
   approveReturnOrder,
   rejectReturnOrder,
@@ -84,6 +86,44 @@ export default function OrderDetailsPage() {
     } catch (err) {
       console.error(err);
       toast.error("Lỗi khi hủy đơn hàng.");
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const handleApproveCancel = async () => {
+    if (!confirm(`Xác nhận duyệt yêu cầu hủy đơn hàng #${order?.invoiceCode || id}? Hàng và voucher (nếu có) sẽ được hoàn trả.`)) {
+      return;
+    }
+    setCanceling(true);
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+      await approveCancelOrder(token, id as string);
+      toast.success("Đã phê duyệt hủy đơn hàng thành công.");
+      loadOrder();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi phê duyệt hủy.");
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const handleRejectCancel = async () => {
+    if (!confirm(`Xác nhận từ chối yêu cầu hủy đơn hàng #${order?.invoiceCode || id}? Đơn hàng sẽ quay trở về trạng thái xử lý.`)) {
+      return;
+    }
+    setCanceling(true);
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return;
+      await rejectCancelOrder(token, id as string);
+      toast.success("Đã từ chối yêu cầu hủy đơn hàng.");
+      loadOrder();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi từ chối yêu cầu hủy.");
     } finally {
       setCanceling(false);
     }
@@ -200,6 +240,8 @@ export default function OrderDetailsPage() {
           order={order}
           onUpdateStatus={handleUpdateStatus}
           onShowCancelModal={() => setShowCancelModal(true)}
+          onApproveCancel={handleApproveCancel}
+          onRejectCancel={handleRejectCancel}
           onShowReturnModal={() => setShowReturnModal(true)}
           onShowConfirmReturnModal={() => setShowConfirmReturnModal(true)}
           onPrintOrder={() => router.push(`/admin/orders/${id}/print`)}
@@ -352,6 +394,76 @@ export default function OrderDetailsPage() {
               <div>
                 <OrderCustomerInfo order={order} />
               </div>
+
+              {/* Customer Cancel Request Section (statusCode === 4: Chờ duyệt hủy) */}
+              {order.statusCode === 4 && (
+                <div className="p-8 bg-rose-50/40">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="text-rose-500 shrink-0" size={20} />
+                      <h3 className="font-bold text-sm md:text-base uppercase tracking-wider text-rose-800">
+                        Yêu cầu hủy đơn hàng từ khách hàng
+                      </h3>
+                    </div>
+                    <span className="text-xs px-2.5 py-1 bg-rose-100 text-rose-700 font-bold rounded-full">
+                      Chờ duyệt hủy
+                    </span>
+                  </div>
+                  
+                  <div className="bg-white p-5 rounded-xl border border-rose-100 shadow-sm space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Lý do hủy từ khách hàng:</p>
+                      <p className="text-base font-bold text-rose-900 mt-1">
+                        "{order.cancelReason || "Không ghi rõ lý do"}"
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
+                      <button
+                        onClick={handleApproveCancel}
+                        disabled={canceling}
+                        className="flex items-center gap-2 px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                        Duyệt hủy đơn
+                      </button>
+                      <button
+                        onClick={handleRejectCancel}
+                        disabled={canceling}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                        Từ chối yêu cầu hủy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cancelled Order Reason Banner (statusCode === 5 or 8) */}
+              {(order.statusCode === 5 || order.statusCode === 8) && (
+                <div className="p-8 bg-rose-50/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="material-symbols-outlined text-rose-500 text-xl">cancel</span>
+                    <h3 className="font-bold text-sm md:text-base uppercase tracking-wider text-rose-800">
+                      Thông tin hủy đơn hàng {order.statusCode === 8 ? "& Hoàn tiền" : ""}
+                    </h3>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-2">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Lý do hủy:</p>
+                      <p className="text-sm font-bold text-slate-800 mt-0.5">
+                        "{order.cancelReason || "Không có lý do ghi nhận"}"
+                      </p>
+                    </div>
+                    {order.cancelledAt && (
+                      <p className="text-xs text-slate-400 pt-1">
+                        Thời gian hủy: {formatDate(order.cancelledAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Return Request Details (If applicable) */}
               {order?.returnReason && (order.statusCode === 6 || order.statusCode === 7 || order.statusCode === 9 || order.statusCode === 10) && (
