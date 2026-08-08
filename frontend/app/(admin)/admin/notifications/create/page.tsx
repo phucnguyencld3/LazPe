@@ -5,8 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Calendar, Upload, Loader, Image as ImageIcon, Sparkles, HelpCircle } from "lucide-react";
 import { toast } from "@/lib/toast";
+import dynamic from "next/dynamic";
 import { adminCreateNotification, adminGetTemplates } from "@/lib/api";
-import TiptapEditor from "@/components/admin/shared/TiptapEditor";
+
+const TiptapEditor = dynamic(() => import("@/components/admin/shared/TiptapEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 border border-slate-200 rounded-xl bg-slate-50 animate-pulse flex items-center justify-center text-xs text-slate-400 font-medium">
+      Đang tải trình soạn thảo...
+    </div>
+  ),
+});
 
 const BUILT_IN_TEMPLATES = [
   {
