@@ -453,7 +453,7 @@ export function BannerForm({
                     />
                     <label className="cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-[8px] transition-colors w-max">
                       {uploadingIndex === idx ? (
-                        <span className="material-symbols-outlined text-[16px] animate-spin text-primary">sync</span>
+                        <span className="material-symbols-outlined text-[16px] animate-spin text-primary -scale-x-100">sync</span>
                       ) : (
                         <span className="material-symbols-outlined text-[16px]">cloud_upload</span>
                       )}
@@ -475,7 +475,7 @@ export function BannerForm({
               ) : (
                 <div className="w-full p-4 flex flex-col items-center justify-center text-center gap-2">
                   {uploadingIndex === idx ? (
-                    <span className="material-symbols-outlined text-[28px] animate-spin text-primary mb-1">sync</span>
+                    <span className="material-symbols-outlined text-[28px] animate-spin text-primary mb-1 -scale-x-100">sync</span>
                   ) : (
                     <span className="material-symbols-outlined text-[28px] text-slate-300 mb-1">image</span>
                   )}
