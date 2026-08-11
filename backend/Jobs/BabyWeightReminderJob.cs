@@ -160,7 +160,7 @@ namespace PolyBabyAPI.Jobs
                         ActionUrl = notif.ActionUrl
                     };
 
-                    await _hubContext.Clients.User(baby.UserID).SendAsync("ReceiveNotification", userNotifDto);
+                    await _hubContext.Clients.Group($"User_{baby.UserID}").SendAsync("ReceiveNotification", userNotifDto);
                     
                     notificationCount++;
                 }
