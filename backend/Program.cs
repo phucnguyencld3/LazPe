@@ -533,11 +533,11 @@ try
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
-        // 10. Job nhắc nhở cập nhật cân nặng bé (Chạy hàng ngày lúc 09:00 sáng)
+        // 10. Job nhắc nhở cập nhật cân nặng bé (Chạy hàng ngày lúc 15:00 chiều)
         recurringJobManager.AddOrUpdate<PolyBabyAPI.Jobs.BabyWeightReminderJob>(
             "baby-weight-reminder-job",
             job => job.ExecuteAsync(),
-            "0 9 * * *", // Chạy lúc 09:00 sáng mỗi ngày
+            "0 15 * * *", // Chạy lúc 15:00 chiều mỗi ngày
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
