@@ -29,7 +29,7 @@ namespace PolyBabyAPI.Services
 
         public async Task<SubscriptionDto> CreateSubscriptionAsync(string userId, CreateSubscriptionDto dto)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductID == dto.ProductID);
+            var product = await _context.Products.Include(p => p.Images).FirstOrDefaultAsync(p => p.ProductID == dto.ProductID);
             if (product == null || !product.SupportsSubscription)
             {
                 throw new ArgumentException("Sản phẩm không hỗ trợ mua định kỳ.");
@@ -59,10 +59,20 @@ namespace PolyBabyAPI.Services
             // Send notification to user about the successful subscription
             try
             {
-                await _notificationService.SendSystemNotificationAsync(
+                string variantName = "Mặc định";
+                if (dto.VariantID.HasValue)
+                {
+                    var variant = await _context.Variants.FirstOrDefaultAsync(v => v.VariantID == dto.VariantID.Value);
+                    if (variant != null) variantName = variant.VariantName;
+                }
+
+                await _notificationService.SendRichSystemNotificationAsync(
                     userId, 
                     "Đăng ký Mua Định Kỳ Thành Công", 
-                    $"Bạn đã đăng ký mua định kỳ sản phẩm {product.ProductName} thành công."
+                    $"Bạn đã đăng ký mua định kỳ sản phẩm {product.ProductName} thành công.",
+                    $"Bạn đã đăng ký mua định kỳ sản phẩm {product.ProductName} thành công.",
+                    "/profile?tab=subscriptions",
+                    "CustomUrl"
                 );
 
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
@@ -176,7 +186,7 @@ namespace PolyBabyAPI.Services
         {
             var sub = await _context.Subscriptions
                 .Include(s => s.User)
-                .Include(s => s.Product)
+                .Include(s => s.Product).ThenInclude(p => p.Images)
                 .FirstOrDefaultAsync(s => s.SubscriptionID == subscriptionId && s.UserID == userId);
             if (sub == null || sub.Status != SubscriptionStatus.Active) return false;
 
@@ -186,7 +196,14 @@ namespace PolyBabyAPI.Services
 
             try
             {
-                await _notificationService.SendSystemNotificationAsync(userId, "Tạm Dừng Mua Định Kỳ", $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã được tạm dừng thành công.");
+                await _notificationService.SendRichSystemNotificationAsync(
+                    userId, 
+                    "Tạm Dừng Mua Định Kỳ", 
+                    $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã được tạm dừng thành công.",
+                    $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã được tạm dừng thành công.",
+                    "/profile?tab=subscriptions",
+                    "CustomUrl"
+                );
                 
                 if (sub.User != null && !string.IsNullOrEmpty(sub.User.Email))
                 {
@@ -252,7 +269,7 @@ namespace PolyBabyAPI.Services
         {
             var sub = await _context.Subscriptions
                 .Include(s => s.User)
-                .Include(s => s.Product)
+                .Include(s => s.Product).ThenInclude(p => p.Images)
                 .FirstOrDefaultAsync(s => s.SubscriptionID == subscriptionId && s.UserID == userId);
             if (sub == null) return false;
 
@@ -262,7 +279,14 @@ namespace PolyBabyAPI.Services
 
             try
             {
-                await _notificationService.SendSystemNotificationAsync(userId, "Hủy Mua Định Kỳ", $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã bị hủy.");
+                await _notificationService.SendRichSystemNotificationAsync(
+                    userId, 
+                    "Hủy Mua Định Kỳ", 
+                    $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã bị hủy.",
+                    $"Gói mua định kỳ sản phẩm {sub.Product.ProductName} đã bị hủy.",
+                    "/profile?tab=subscriptions",
+                    "CustomUrl"
+                );
                 
                 if (sub.User != null && !string.IsNullOrEmpty(sub.User.Email))
                 {
@@ -312,7 +336,7 @@ namespace PolyBabyAPI.Services
                 .Include(s => s.User)
                 .Include(s => s.Product)
                 .Include(s => s.Variant)
-                .Where(s => s.Status == SubscriptionStatus.Active && s.NextBillingDate <= DateTime.Now)
+                .Where(s => s.Status == SubscriptionStatus.Active /* && s.NextBillingDate <= DateTime.Now */)
                 .ToListAsync();
 
             foreach (var sub in dueSubscriptions)
@@ -379,10 +403,18 @@ namespace PolyBabyAPI.Services
                     }
 
                     // 4. Create Invoice
+                    var random = new Random();
+                    string digits = random.Next(100000, 999999).ToString();
+                    string dateStr = DateTime.Now.ToString("ddMM");
+                    
+                    string invoiceCode = $"AT{dateStr}{digits}"; // AT for Auto
+                    string trackingCode = $"LZP{dateStr}{digits}";
+                    
                     var invoice = new Invoice
                     {
                         UserID = sub.UserID,
-                        InvoiceCode = "AUTO" + DateTime.Now.ToString("yyyyMMddHHmmssfff"),
+                        InvoiceCode = invoiceCode,
+                        TrackingCode = trackingCode,
                         SubTotal = unitPrice * sub.Quantity,
                         DiscountAmount = (unitPrice - priceAfterDiscount) * sub.Quantity,
                         WalletDiscountAmount = walletUsed,
@@ -441,7 +473,30 @@ namespace PolyBabyAPI.Services
                     await transaction.CommitAsync();
 
                     // Notify success
-                    await _notificationService.SendSystemNotificationAsync(sub.UserID, "Đơn hàng định kỳ được tạo", $"Đơn hàng {invoice.InvoiceCode} đã được thanh toán và tạo thành công.");
+                    string imageUrl = sub.VariantID.HasValue && !string.IsNullOrEmpty(sub.Variant?.ImageUrl) 
+                        ? sub.Variant.ImageUrl 
+                        : (sub.Product?.Images?.FirstOrDefault()?.ImageUrl ?? "");
+                    string productName = sub.Product?.ProductName ?? "Sản phẩm";
+                    string variantName = sub.VariantID.HasValue ? (sub.Variant?.VariantName ?? "") : "";
+                    string htmlContent = $@"<div class=""space-y-4"">
+    <p>Đơn hàng <strong>{invoice.InvoiceCode}</strong> đã được thanh toán và tạo thành công từ gói mua định kỳ của bạn.</p>
+    <div class=""p-4 bg-slate-50 rounded-lg border border-slate-100 flex gap-4"">
+        <img src=""{imageUrl}"" alt=""Product"" class=""w-16 h-16 object-cover rounded-md border border-slate-200 flex-shrink-0"" />
+        <div>
+            <h4 class=""font-bold text-slate-800 text-sm mb-1"">{productName}</h4>
+            <p class=""text-xs text-slate-500 mb-1"">{variantName}</p>
+            <p class=""text-xs font-bold text-rose-500"">{unitPrice:N0}đ <span class=""text-slate-400 font-normal ml-2"">x {sub.Quantity}</span></p>
+        </div>
+    </div>
+</div>";
+                    await _notificationService.SendRichSystemNotificationAsync(
+                        sub.UserID, 
+                        "Đơn hàng định kỳ được tạo", 
+                        $"Đơn hàng {invoice.InvoiceCode} đã được thanh toán và tạo thành công.",
+                        htmlContent,
+                        "/profile?tab=orders",
+                        "CustomUrl"
+                    );
 
                     if (user != null && !string.IsNullOrEmpty(user.Email))
                     {

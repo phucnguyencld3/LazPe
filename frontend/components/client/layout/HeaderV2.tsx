@@ -278,7 +278,8 @@ export default function HeaderV2() {
     }
   };
 
-  const getNotifIcon = (type: string) => {
+  const getNotifIcon = (type?: string) => {
+    if (!type) return "notifications";
     switch (type.toLowerCase()) {
       case "system": return "settings";
       case "promotion": return "campaign";

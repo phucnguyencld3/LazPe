@@ -12,6 +12,7 @@ import CustomerChatWidget from "@/components/client/CustomerChatWidget";
 import ScrollToTopButton from "@/components/client/layout/ScrollToTopButton";
 import { useBanners } from "@/hooks/useBanners";
 import { BannerRenderer } from "@/components/shared/banner/BannerRenderer";
+import { CartReminder } from "@/components/cart/CartReminder";
 
 function GlobalPromoBanner() {
   const { banners } = useBanners("promo");
@@ -59,6 +60,7 @@ export default function ClientLayout({
             {!isAuthPage && <ScrollToTopButton />}
             {!isAuthPage && <Footer />}
             {!isAuthPage && <CompareFloatingBar />}
+            {!isAuthPage && <CartReminder />}
           </div>
         </CompareProvider>
       </CartProvider>

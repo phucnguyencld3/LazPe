@@ -1744,7 +1744,26 @@ namespace PolyBabyAPI.Services
                 {
                     Title = "Đơn hàng đã tự động bị hủy",
                     ShortDescription = $"Đơn hàng #{displayCode} đã bị hệ thống tự động hủy do quá hạn 2 ngày.",
-                    Content = $"<p>Đơn hàng <strong>#{displayCode}</strong> của bạn đã bị hệ thống tự động hủy do quá 2 ngày chưa được xử lý/giao hàng. Lý do: <em>{reason}</em>.</p><p>Toàn bộ số tiền thanh toán (nếu có), xu LazPe, điểm thưởng, voucher và tồn kho sản phẩm đã được hoàn trả đầy đủ về tài khoản của bạn.</p>",
+                    Content = $@"<div class=""space-y-4"">
+    <div class=""p-4 bg-red-50 rounded-lg border border-red-100"">
+        <div class=""flex items-start gap-3"">
+            <span class=""material-symbols-outlined text-red-500 mt-0.5"">error</span>
+            <div>
+                <h4 class=""font-bold text-red-800 text-sm mb-2"">Đơn hàng #{displayCode} bị hủy hệ thống</h4>
+                <p class=""text-xs text-red-700 leading-relaxed mb-3"">Đơn hàng đã quá hạn 2 ngày chưa được xử lý/giao hàng. Lý do: <strong>{reason}</strong>.</p>
+                <div class=""bg-white/60 p-3 rounded-md"">
+                    <p class=""text-[11px] font-bold text-slate-700 mb-1"">Các mục sau đã được hoàn trả tự động:</p>
+                    <ul class=""list-disc list-inside text-[11px] text-slate-600 space-y-1"">
+                        <li>Số tiền thanh toán vào ví LazPe</li>
+                        <li>Xu LazPe đã sử dụng</li>
+                        <li>Điểm thưởng (LazRewards)</li>
+                        <li>Voucher khuyến mãi</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>",
                     Type = NotificationType.Order,
                     Priority = NotificationPriority.High,
                     ActionType = ActionType.CustomUrl,

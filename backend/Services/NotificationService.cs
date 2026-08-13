@@ -327,6 +327,63 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        public async Task<bool> SendRichSystemNotificationAsync(string userId, string title, string shortDescription, string htmlContent, string? actionUrl = null, string? actionType = null)
+        {
+            try
+            {
+                var notif = new Notification
+                {
+                    Code = "SYS-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
+                    Title = title,
+                    ShortDescription = shortDescription,
+                    Content = htmlContent,
+                    Type = NotificationType.System,
+                    Priority = NotificationPriority.Medium,
+                    ActionUrl = actionUrl,
+                    ActionType = actionType != null && Enum.TryParse<ActionType>(actionType, out var parsedType) ? parsedType : (string.IsNullOrEmpty(actionUrl) ? PolyBabyAPI.Models.ActionType.None : PolyBabyAPI.Models.ActionType.CustomUrl),
+                    CreatedBy = "System",
+                    CreatedAt = DateTime.Now,
+                    PublishedAt = DateTime.Now,
+                    Status = NotificationStatus.Sent
+                };
+
+                _context.Notifications.Add(notif);
+                await _context.SaveChangesAsync();
+
+                var userNotif = new UserNotification
+                {
+                    UserId = userId,
+                    NotificationId = notif.Id,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.UserNotifications.Add(userNotif);
+                await _context.SaveChangesAsync();
+                
+                var userNotifDto = new UserNotificationDto
+                {
+                    Id = userNotif.Id,
+                    NotificationId = notif.Id,
+                    Title = notif.Title,
+                    ShortDescription = notif.ShortDescription,
+                    ThumbnailImage = notif.ThumbnailImage,
+                    Type = notif.Type.ToString(),
+                    IsRead = false,
+                    CreatedAt = userNotif.CreatedAt,
+                    ActionUrl = notif.ActionUrl
+                };
+
+                await _hubContext.Clients.Group($"User_{userId}").SendAsync("ReceiveNotification", userNotifDto);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Lỗi khi gửi thông báo hệ thống phong phú cho user {userId}");
+                return false;
+            }
+        }
+
         public async Task<bool> SendNotificationNowAsync(int notificationId)
         {
             var notif = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId && !n.IsDeleted);
