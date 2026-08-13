@@ -2500,7 +2500,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: MANUAL REVOCATION (Points & Voucher Revocation) -------------------- */}
       {showRevocationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[550px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-auto max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-md flex items-center justify-between border-b border-outline-variant/20 bg-primary-container/5 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
@@ -2742,7 +2742,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: EARN POLICY FORM -------------------- */}
       {showEarnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-auto max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingEarnPolicy ? "Cập nhật cơ chế tích điểm" : "Thêm cơ chế tích điểm mới"}
@@ -2884,7 +2884,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: REDEEM POLICY FORM -------------------- */}
       {showRedeemModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[520px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-auto max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingRedeemPolicy ? "Cập nhật quy tắc đổi điểm" : "Thêm quy tắc đổi điểm mới"}
@@ -3023,7 +3023,7 @@ export default function AdminLoyaltyPage() {
       {/* -------------------- MODAL: TIER CONFIG FORM -------------------- */}
       {showTierModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-[480px] max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-100 w-[calc(100vw-2rem)] md:w-[620px] lg:w-[720px] h-auto max-h-[90vh] flex flex-col rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-xl text-slate-800 font-extrabold">
                 {editingTier ? "Chỉnh sửa hạng thành viên" : "Tạo hạng thành viên mới"}
