@@ -280,8 +280,8 @@ export default function ProductOptionsPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Quản lý thuộc tính sản phẩm</h2>
-          <p className="text-slate-500 text-sm mt-1">Cấu hình các phân loại kích thước, màu sắc, chất liệu cho từng sản phẩm.</p>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">Quản lý thuộc tính sản phẩm</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Cấu hình các phân loại kích thước, màu sắc, chất liệu cho từng sản phẩm.</p>
         </div>
         <div className="flex items-center gap-3">
           <button

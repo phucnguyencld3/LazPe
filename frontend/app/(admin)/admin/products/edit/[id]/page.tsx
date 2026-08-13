@@ -377,8 +377,8 @@ export default function EditProductPage() {
               <span className="material-symbols-outlined text-lg">arrow_back</span>
             </button>
             <div>
-              <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Chỉnh sửa sản phẩm</h2>
-              <p className="text-slate-500 text-xs mt-1">Cập nhật thông tin gốc cho sản phẩm #{id}</p>
+              <h2 className="font-headline-md text-headline-md text-primary font-bold">Chỉnh sửa sản phẩm</h2>
+              <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Cập nhật thông tin gốc cho sản phẩm #{id}</p>
             </div>
           </div>
 

@@ -317,7 +317,7 @@ namespace PolyBabyAPI.Services
                     ActionUrl = notif.ActionUrl
                 };
 
-                await _hubContext.Clients.User(userId).SendAsync("ReceiveNotification", userNotifDto);
+                await _hubContext.Clients.Group($"User_{userId}").SendAsync("ReceiveNotification", userNotifDto);
                 return true;
             }
             catch (Exception ex)

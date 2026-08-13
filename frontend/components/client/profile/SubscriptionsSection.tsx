@@ -22,6 +22,7 @@ interface SubscriptionItem {
 
 export const SubscriptionsSection = ({ token }: { token: string | null }) => {
   const [loading, setLoading] = useState(true);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<number>(0); // 0: All, 1: Active, 2: Paused, 3: Cancelled, 4: Completed
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,6 +55,7 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
 
   const handleAction = async (id: number, action: "pause" | "resume" | "cancel") => {
     try {
+      setIsProcessingAction(true);
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
       let url = `${API_BASE_URL}/Subscriptions/${id}`;
       let method = "DELETE";
@@ -74,13 +76,15 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
 
       if (res.ok && data.success) {
         // toast.success(data.message); // Đã có thông báo từ SignalR (HeaderV2)
-        fetchSubscriptions();
+        await fetchSubscriptions();
       } else {
         toast.error(data.message || "Thao tác thất bại");
       }
     } catch (e) {
       console.error(e);
       toast.error("Lỗi kết nối");
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 
@@ -221,6 +225,19 @@ export const SubscriptionsSection = ({ token }: { token: string | null }) => {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Action Processing Overlay */}
+      {isProcessingAction && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center" 
+          style={{ zIndex: 99999, backgroundColor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(2px)' }}
+        >
+          <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col items-center gap-4">
+            <Loader2 className="animate-spin text-primary" size={40} />
+            <span className="text-[15px] font-bold text-slate-700">Đang xử lý yêu cầu...</span>
+          </div>
         </div>
       )}
 

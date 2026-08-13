@@ -69,8 +69,8 @@ export default function IssuedVouchersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Danh Sách Mã Đã Phát Hành</h1>
-          <p className="text-sm text-slate-500 mt-1">Quản lý các mã voucher bảo mật được cấp phát trực tiếp cho người dùng</p>
+          <h1 className="font-headline-md text-headline-md text-primary font-bold">Danh Sách Mã Đã Phát Hành</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Quản lý các mã voucher bảo mật được cấp phát trực tiếp cho người dùng</p>
         </div>
         <Link 
           href="/admin/vouchers"

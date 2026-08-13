@@ -232,7 +232,7 @@ export default function QuickCreateVariantsPage() {
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
           </button>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Tạo biến thể nhanh</h2>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">Tạo biến thể nhanh</h2>
         </div>
         <button
           onClick={() => router.push(`/admin/products/${id}/variants`)}

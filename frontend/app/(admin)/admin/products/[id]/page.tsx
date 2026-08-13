@@ -204,7 +204,7 @@ export default function AdminProductDetailPage() {
             <span className="material-symbols-outlined">arrow_back</span>
             <span>Quay lại</span>
           </button>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{product.productName}</h2>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">{product.productName}</h2>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button

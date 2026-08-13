@@ -228,8 +228,8 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       {showHeader ? (
         <header className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-primary">Quản lý Gói Quyền (Role Templates)</h1>
-            <p className="text-slate-500 mt-1">
+            <h1 className="font-headline-md text-headline-md text-primary font-bold">Quản lý Gói Quyền (Role Templates)</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
               Thiết lập các gói quyền mặc định (ví dụ: Staff, Manager) để gán nhanh cho nhân sự.
             </p>
           </div>
@@ -325,7 +325,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fadeIn">
           {/* Modal Container - Stable height and scroll constraint */}
-          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl w-full max-w-5xl h-[80vh] max-h-[800px] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl w-[calc(100vw-2rem)] max-w-5xl h-[80vh] max-h-[800px] shrink-0 flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header - Increased text size & spacing slightly */}
             <div className="py-3.5 px-6 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low shrink-0">
@@ -538,7 +538,7 @@ export const PermissionRoleTemplatesTab: React.FC<PermissionRoleTemplatesTabProp
       {/* Custom Delete Confirmation Modal - Legible Size */}
       {deleteConfirmOpen && deletingTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fadeIn">
-          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl w-[calc(100vw-2rem)] md:w-[450px] shrink-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="py-3 px-6 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low">
               <h2 className="text-sm text-rose-600 font-bold flex items-center gap-1.5 uppercase tracking-wider">
                 <span className="material-symbols-outlined text-[18px]">warning</span>
