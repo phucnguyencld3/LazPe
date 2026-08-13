@@ -31,6 +31,8 @@ namespace PolyBabyAPI.DTOs
             public decimal WalletToUse { get; set; }
 
             public string? PaymentPin { get; set; }
+
+            public string? AffiliateCode { get; set; }
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ namespace PolyBabyAPI.Services
         private readonly IAuditLogService _auditLogService;
         private readonly ICartService _cartService;
         private readonly IWalletSecurityService _walletSecurityService;
+        private readonly IAffiliateService _affiliateService;
 
         public InvoiceService(
             ApplicationDbContext context, 
@@ -27,7 +28,8 @@ namespace PolyBabyAPI.Services
             IRecommendationService recommendationService, 
             IAuditLogService auditLogService, 
             ICartService cartService,
-            IWalletSecurityService walletSecurityService)
+            IWalletSecurityService walletSecurityService,
+            IAffiliateService affiliateService)
         {
             _context = context;
             _logger = logger;
@@ -37,6 +39,7 @@ namespace PolyBabyAPI.Services
             _auditLogService = auditLogService;
             _cartService = cartService;
             _walletSecurityService = walletSecurityService;
+            _affiliateService = affiliateService;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -360,6 +363,19 @@ namespace PolyBabyAPI.Services
                 WalletDiscountAmount = walletDiscountAmount,
                 ShippingDiscountAmount = shippingDiscountAmount,
             };
+
+            // ✅ Gắn thông tin Tiếp thị liên kết (Affiliate) nếu có mã giới thiệu
+            if (request != null && !string.IsNullOrWhiteSpace(request.AffiliateCode))
+            {
+                var affLink = await _context.AffiliateLinks
+                    .FirstOrDefaultAsync(l => l.AffiliateLinkCode == request.AffiliateCode && l.IsActive);
+
+                if (affLink != null && affLink.UserId != cart.UserID) // Bảo mật: Không tự giới thiệu chính mình
+                {
+                    invoice.AffiliateUserId = affLink.UserId;
+                    invoice.AffiliateLinkId = affLink.Id;
+                }
+            }
 
             foreach (var item in itemsToCheckout)
             {
@@ -935,6 +951,15 @@ namespace PolyBabyAPI.Services
                 {
                     await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
                     await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
+                }
+
+                if (!string.IsNullOrEmpty(invoice.AffiliateUserId))
+                {
+                    // Formula: Revenue = FinalPaidAmount - ShippingFee (assuming TotalPrice = SubTotal - Discount)
+                    // If invoice.AmountToPay is used, we subtract ShippingFee.
+                    // Wait, earlier the rule was FinalPaid - ShippingFee.
+                    // Let's use invoice.TotalPrice.
+                    await _affiliateService.ProcessAffiliateRevenueAsync(invoice.AffiliateUserId, invoice.InvoiceID, invoice.TotalPrice);
                 }
             }
             catch (Exception ex)
@@ -1655,6 +1680,19 @@ namespace PolyBabyAPI.Services
                         catch (Exception lEx)
                         {
                             _logger.LogError(lEx, "Lỗi tích điểm Loyalty/Referral khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
+                        }
+                    }
+
+                    // Tích lũy doanh thu cho Affiliate
+                    if (!string.IsNullOrEmpty(invoice.AffiliateUserId))
+                    {
+                        try
+                        {
+                            await _affiliateService.ProcessAffiliateRevenueAsync(invoice.AffiliateUserId, invoice.InvoiceID, invoice.TotalPrice);
+                        }
+                        catch (Exception aEx)
+                        {
+                            _logger.LogError(aEx, "Lỗi tích điểm Affiliate khi tự động hoàn thành đơn hàng {InvoiceId}", invoice.InvoiceID);
                         }
                     }
                 }

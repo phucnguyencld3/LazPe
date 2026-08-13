@@ -81,6 +81,12 @@ namespace PolyBabyAPI.Data
         // ===== Referral System =====
         public DbSet<ReferralRecord> ReferralRecords { get; set; }
 
+        // ===== Affiliate Marketing =====
+        public DbSet<AffiliateLink> AffiliateLinks { get; set; }
+        public DbSet<AffiliateMilestone> AffiliateMilestones { get; set; }
+        public DbSet<UserAffiliateMilestone> UserAffiliateMilestones { get; set; }
+        public DbSet<AffiliateRevenueHistory> AffiliateRevenueHistories { get; set; }
+
         // ===== Notification Center =====
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserNotification> UserNotifications { get; set; }
@@ -141,6 +147,28 @@ namespace PolyBabyAPI.Data
                 .WithMany()
                 .HasForeignKey(r => r.ReferredUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ===== Affiliate Marketing Configurations =====
+            builder.Entity<AffiliateLink>(entity =>
+            {
+                entity.HasIndex(al => al.AffiliateLinkCode).IsUnique();
+                entity.HasIndex(al => new { al.UserId, al.ProductId }).IsUnique();
+            });
+
+            builder.Entity<AffiliateMilestone>(entity =>
+            {
+                // Milestones should be created dynamically by Admin to avoid FK errors with non-existent Vouchers
+            });
+
+            builder.Entity<UserAffiliateMilestone>(entity =>
+            {
+                entity.HasIndex(uam => new { uam.UserId, uam.MilestoneId, uam.Month, uam.Year }).IsUnique();
+            });
+
+            builder.Entity<AffiliateRevenueHistory>(entity =>
+            {
+                entity.HasIndex(arh => new { arh.UserId, arh.Month, arh.Year }).IsUnique();
+            });
 
             // ===== Banner Configurations =====
             builder.Entity<Banner>(entity =>

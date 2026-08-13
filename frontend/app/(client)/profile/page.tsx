@@ -40,6 +40,7 @@ import { VoucherSection } from "@/components/client/profile/VoucherSection";
 import { OrdersSection } from "@/components/client/profile/OrdersSection";
 import { ReviewsSection } from "@/components/client/profile/ReviewsSection";
 import { PrivacySection } from "@/components/client/profile/PrivacySection";
+import AffiliateSection from "@/components/client/profile/AffiliateSection";
 import { LoyaltySection } from "@/components/client/profile/LoyaltySection";
 import { NotificationsSection } from "@/components/client/profile/NotificationsSection";
 import { SpendingSection } from "@/components/client/profile/SpendingSection";
@@ -643,6 +644,7 @@ export default function ProfilePage() {
                         { id: "vouchers", label: "Voucher của tôi", icon: "confirmation_number" },
                         { id: "loyalty", label: "Khách hàng thân thiết", icon: "military_tech" },
                         { id: "spending", label: "Phân tích chi tiêu", icon: "monitoring" },
+                        { id: "affiliate", label: "Tiếp thị liên kết", icon: "campaign" },
                       ]
                     },
                     {
@@ -694,6 +696,7 @@ export default function ProfilePage() {
                     { id: "vouchers", label: "Voucher", icon: "confirmation_number" },
                     { id: "loyalty", label: "Tích điểm", icon: "military_tech" },
                     { id: "spending", label: "Chi tiêu", icon: "monitoring" },
+                    { id: "affiliate", label: "Affiliate", icon: "campaign" },
                     { id: "notifications", label: "Thông báo", icon: "notifications" },
                     { id: "alerts", label: "Báo giá", icon: "add_alert" },
                     { id: "messages", label: "Tin nhắn", icon: "chat" },
@@ -780,6 +783,10 @@ export default function ProfilePage() {
 
           {activeTab === "spending" && (
             <SpendingSection token={token} />
+          )}
+
+          {activeTab === "affiliate" && (
+            <AffiliateSection token={token} />
           )}
 
           {activeTab === "orders" && (
