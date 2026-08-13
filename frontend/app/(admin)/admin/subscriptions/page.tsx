@@ -322,7 +322,7 @@ export default function AdminSubscriptionsPage() {
                 <th className="px-2 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center w-16">STT</th>
                 <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sản phẩm</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Giá bán</th>
-                <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest min-w-[340px]">Thiết lập Mua định kỳ</th>
+                <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -394,32 +394,19 @@ export default function AdminSubscriptionsPage() {
                         </div>
                       </td>
 
-                      <td className="px-8 py-5">
-                        <div className={`flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-4 rounded-xl border transition-colors ${product.supportsSubscription ? 'bg-primary/5 border-primary/20' : 'bg-slate-50 border-slate-100'}`}>
-                          <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-full flex-shrink-0 transition-colors ${product.supportsSubscription ? 'bg-primary/10 text-primary' : 'bg-slate-200 text-slate-400'}`}>
-                              <span className="material-symbols-outlined text-[20px] leading-none">
-                                {product.supportsSubscription ? 'autorenew' : 'block'}
-                              </span>
-                            </div>
-                            <div>
-                              <p className={`font-bold text-sm transition-colors ${product.supportsSubscription ? 'text-primary' : 'text-slate-700'}`}>
-                                Mua định kỳ
-                              </p>
-                              <p className="text-[11px] mt-1 text-slate-500 max-w-[200px] leading-relaxed">
-                                Giảm thêm <span className="font-bold text-secondary">5%</span> cho các đơn hàng đã đăng ký mua định kỳ
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <label className="relative inline-flex items-center cursor-pointer select-none shrink-0 self-start xl:self-auto mt-2 xl:mt-0">
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className={`text-[10px] font-bold uppercase min-w-[55px] text-right ${product.supportsSubscription ? "text-secondary" : "text-slate-400"}`}>
+                            {product.supportsSubscription ? "Đã bật" : "Đã tắt"}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer select-none">
                             <input
                               type="checkbox"
                               checked={!!product.supportsSubscription}
                               onChange={() => handleToggleSubscription(product.productID)}
                               className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                           </label>
                         </div>
                       </td>
