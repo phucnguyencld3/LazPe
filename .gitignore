@@ -116,3 +116,6 @@ backend/TrendModel.zip
 /MyUnitTestLazPe/
 MyUnitTestLazPe/bin/
 MyUnitTestLazPe/obj/
+/test_output.txt
+/.config
+/docs
