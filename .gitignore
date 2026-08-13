@@ -112,3 +112,10 @@ logs/
 .env
 backend/wwwroot/uploads/
 backend/TrendModel.zip
+/.vscode
+/MyUnitTestLazPe/
+MyUnitTestLazPe/bin/
+MyUnitTestLazPe/obj/
+/test_output.txt
+/.config
+/docs

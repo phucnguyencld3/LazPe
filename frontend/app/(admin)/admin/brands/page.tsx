@@ -246,56 +246,55 @@ export default function AdminBrandsPage() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Card 1: Total */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">verified</span>
+      {/* Master Card container */}
+      <section className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-in fade-in duration-300">
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100">
+          {/* Card 1: Total */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">verified</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng thương hiệu</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng thương hiệu</span>
+            <span className="text-2xl font-extrabold text-slate-800">{stats?.total ?? "..."}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{stats?.total ?? "..."}</span>
-        </div>
 
-        {/* Card 2: Active */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">check_circle</span>
+          {/* Card 2: Active */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">check_circle</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đang hoạt động</span>
+            <span className="text-2xl font-extrabold text-slate-800">{stats?.active ?? "..."}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{stats?.active ?? "..."}</span>
-        </div>
 
-        {/* Card 3: Inactive */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">unpublished</span>
+          {/* Card 3: Inactive */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-rose-50 flex items-center justify-center text-rose-500 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">unpublished</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Ngừng hoạt động</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Ngừng hoạt động</span>
+            <span className="text-2xl font-extrabold text-slate-800">{stats?.inactive ?? "..."}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{stats?.inactive ?? "..."}</span>
-        </div>
 
-        {/* Card 4: Linked Products */}
-        <div className="bg-white px-5 py-4 rounded-[8px] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">inventory</span>
+          {/* Card 4: Linked Products */}
+          <div className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">inventory</span>
+              </div>
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm liên kết</span>
             </div>
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Sản phẩm liên kết</span>
+            <span className="text-2xl font-extrabold text-slate-800">{stats?.totalProducts ?? "..."}</span>
           </div>
-          <span className="text-2xl font-extrabold text-slate-800">{stats?.totalProducts ?? "..."}</span>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-12 flex flex-col gap-6 transition-all duration-300">
-          <div className="bg-white rounded-[8px] border border-slate-100 shadow-sm overflow-hidden">
             {/* Search and Filters */}
             <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-4 bg-slate-50/50">
               {/* Search box */}
@@ -455,11 +454,7 @@ export default function AdminBrandsPage() {
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
             />
-          </div>
-        </div>
-
-
-      </div>
+      </section>
 
       {/* Deletion Confirmation Modal */}
       {brandToDelete && (
