@@ -236,7 +236,7 @@ export function ProfileAddressModal({
             {/* Span both columns: Detail Address & default checkbox */}
             <div className="md:col-span-2 space-y-3.5 pt-1">
               <div className="space-y-1">
-                <label className="font-bold text-xs text-slate-700 ml-1">Địa chỉ chi tiết</label>
+                <label className="font-bold text-xs text-slate-700 ml-1">Địa chỉ chi tiết <span className="text-red-500">*</span></label>
                 <textarea
                   required
                   value={addressForm.detailAddress}

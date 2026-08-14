@@ -351,8 +351,14 @@ export const AddressModal: React.FC<AddressModalProps> = ({
     e.preventDefault();
     if (!token || !userId) return;
 
-    if (!addressForm.recipientName || !addressForm.phoneNumber || !addressForm.detailAddress) {
+    if (!addressForm.recipientName.trim() || !addressForm.phoneNumber.trim() || !addressForm.detailAddress.trim()) {
       setAddressFormError("Vui lòng điền đầy đủ các trường thông tin bắt buộc!");
+      return;
+    }
+
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(addressForm.phoneNumber.trim())) {
+      setAddressFormError("Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 số và bắt đầu bằng số 0.");
       return;
     }
     if (!addressForm.provinceCode || !addressForm.districtCode || (addressForm.apiVersion !== 'v2' && !addressForm.wardCode)) {
