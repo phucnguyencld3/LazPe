@@ -37,7 +37,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://157.66.46.82:5101/api
+        - NEXT_PUBLIC_API_URL=https://api.lazpe.store/api
     container_name: lazpe-frontend-prod
     restart: always
     ports:
