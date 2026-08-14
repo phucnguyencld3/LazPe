@@ -21,8 +21,6 @@ services:
     restart: always
     ports:
       - "5101:8080"
-    volumes:
-      - ./Local:/Local
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - Meilisearch__Url=http://meilisearch:7700
@@ -39,7 +37,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://api.lazpe.store/api
+        - NEXT_PUBLIC_API_URL=http://157.66.46.82:5101/api
     container_name: lazpe-frontend-prod
     restart: always
     ports:
