@@ -33,6 +33,7 @@ namespace PolyBabyAPI.Controllers
                 _logger.LogInformation("Getting all categories...");
 
                 var categories = await _categoryService.GetAllCategoriesAsync();
+                var productCounts = await _categoryService.GetTotalProductCountsAsync();
 
                 var result = categories.Select(c => new CategoryDto
                 {
@@ -45,7 +46,7 @@ namespace PolyBabyAPI.Controllers
                     Status = c.Status,
                     CreatedAt = c.CreatedAt,
                     CreatedBy = c.CreatedBy,
-                    ProductCount = c.Products?.Count ?? 0
+                    ProductCount = productCounts.TryGetValue(c.CategoryID, out var cnt) ? cnt : 0
                 }).ToList();
 
                 return Ok(new
@@ -182,6 +183,8 @@ namespace PolyBabyAPI.Controllers
                 if (category == null)
                     return NotFound(new { success = false, message = "Không tìm thấy danh mục" });
 
+                var productCounts = await _categoryService.GetTotalProductCountsAsync();
+
                 var result = new CategoryDto
                 {
                     CategoryID = category.CategoryID,
@@ -193,7 +196,7 @@ namespace PolyBabyAPI.Controllers
                     Status = category.Status,
                     CreatedAt = category.CreatedAt,
                     CreatedBy = category.CreatedBy,
-                    ProductCount = category.Products?.Count ?? 0
+                    ProductCount = productCounts.TryGetValue(category.CategoryID, out var cnt) ? cnt : 0
                 };
 
                 return Ok(new

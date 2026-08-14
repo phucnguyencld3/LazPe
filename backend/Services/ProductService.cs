@@ -1142,8 +1142,32 @@ namespace PolyBabyAPI.Services
 
         public async Task<List<CategorySelectDto>> GetCategoriesForSelectAsync()
         {
-            return await _context.Categories
-                .Where(c => c.Status)
+            var categories = await _context.Categories.AsNoTracking().Where(c => c.Status).ToListAsync();
+            var directCounts = await _context.Products.AsNoTracking()
+                .Where(p => p.Status)
+                .GroupBy(p => p.CategoryID)
+                .Select(g => new { CategoryID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CategoryID, x => x.Count);
+
+            var childrenMap = categories
+                .Where(c => c.ParentID.HasValue)
+                .GroupBy(c => c.ParentID!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(c => c.CategoryID).ToList());
+
+            int GetCount(int catId)
+            {
+                int count = directCounts.TryGetValue(catId, out var direct) ? direct : 0;
+                if (childrenMap.TryGetValue(catId, out var children))
+                {
+                    foreach (var childId in children)
+                    {
+                        count += GetCount(childId);
+                    }
+                }
+                return count;
+            }
+
+            return categories
                 .OrderBy(c => c.Level)
                 .ThenBy(c => c.CategoryName)
                 .Select(c => new CategorySelectDto
@@ -1153,9 +1177,9 @@ namespace PolyBabyAPI.Services
                     ParentID = c.ParentID,
                     Level = c.Level,
                     Status = c.Status,
-                    ProductCount = c.Products.Count(p => p.Status)
+                    ProductCount = GetCount(c.CategoryID)
                 })
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<List<SupplierSelectDto>> GetSuppliersForSelectAsync()

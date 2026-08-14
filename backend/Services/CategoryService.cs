@@ -160,6 +160,48 @@ namespace PolyBabyAPI.Services
             }
         }
 
+        public async Task<Dictionary<int, int>> GetTotalProductCountsAsync(bool activeOnly = false)
+        {
+            var categories = await _context.Categories.AsNoTracking().ToListAsync();
+
+            var productsQuery = _context.Products.AsNoTracking();
+            if (activeOnly)
+            {
+                productsQuery = productsQuery.Where(p => p.Status);
+            }
+
+            var directCounts = await productsQuery
+                .GroupBy(p => p.CategoryID)
+                .Select(g => new { CategoryID = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CategoryID, x => x.Count);
+
+            var childrenMap = categories
+                .Where(c => c.ParentID.HasValue)
+                .GroupBy(c => c.ParentID!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(c => c.CategoryID).ToList());
+
+            int GetCount(int catId)
+            {
+                int count = directCounts.TryGetValue(catId, out var direct) ? direct : 0;
+                if (childrenMap.TryGetValue(catId, out var children))
+                {
+                    foreach (var childId in children)
+                    {
+                        count += GetCount(childId);
+                    }
+                }
+                return count;
+            }
+
+            var result = new Dictionary<int, int>();
+            foreach (var cat in categories)
+            {
+                result[cat.CategoryID] = GetCount(cat.CategoryID);
+            }
+
+            return result;
+        }
+
         public async Task<CategoriesPaginationDto> GetCategoriesPaginatedAsync(int page, int pageSize, string searchTerm = "", bool? status = null)
         {
             var query = _context.Categories.AsQueryable();
@@ -179,8 +221,9 @@ namespace PolyBabyAPI.Services
             var totalItems = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
+            var productCounts = await GetTotalProductCountsAsync();
+
             var categories = await query
-                .Include(c => c.Products)
                 .OrderBy(c => c.Level)
                 .ThenBy(c => c.SortOrder)
                 .ThenBy(c => c.CategoryName)
@@ -199,7 +242,7 @@ namespace PolyBabyAPI.Services
                     Status = c.Status,
                     CreatedAt = c.CreatedAt,
                     CreatedBy = c.CreatedBy,
-                    ProductCount = c.Products.Count,
+                    ProductCount = productCounts.ContainsKey(c.CategoryID) ? productCounts[c.CategoryID] : 0,
                     HasSubCategories = _context.Categories.Any(sub => sub.ParentID == c.CategoryID)
                 })
                 .ToListAsync();
@@ -235,11 +278,16 @@ namespace PolyBabyAPI.Services
 
         public async Task<List<CategorySelectDto>> GetCategoriesForSelectAsync()
         {
-            return await _context.Categories
+            var productCounts = await GetTotalProductCountsAsync(activeOnly: true);
+
+            var rawCategories = await _context.Categories
                 .Where(c => c.Status)
                 .OrderBy(c => c.Level)
                 .ThenBy(c => c.SortOrder)
                 .ThenBy(c => c.CategoryName)
+                .ToListAsync();
+
+            return rawCategories
                 .Select(c => new CategorySelectDto
                 {
                     CategoryID = c.CategoryID,
@@ -247,9 +295,9 @@ namespace PolyBabyAPI.Services
                     ParentID = c.ParentID,
                     Level = c.Level,
                     Status = c.Status,
-                    ProductCount = c.Products.Count(p => p.Status)
+                    ProductCount = productCounts.TryGetValue(c.CategoryID, out var cnt) ? cnt : 0
                 })
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<List<Categories>> GetParentCategoriesAsync()
@@ -269,8 +317,13 @@ namespace PolyBabyAPI.Services
 
             if (category == null) return null;
 
-            var subCategories = await _context.Categories
+            var productCounts = await GetTotalProductCountsAsync();
+
+            var rawSubCategories = await _context.Categories
                 .Where(c => c.ParentID == id)
+                .ToListAsync();
+
+            var subCategories = rawSubCategories
                 .Select(c => new CategoryListItemDto
                 {
                     CategoryID = c.CategoryID,
@@ -279,9 +332,9 @@ namespace PolyBabyAPI.Services
                     Level = c.Level,
                     Status = c.Status,
                     CreatedAt = c.CreatedAt,
-                    ProductCount = c.Products.Count
+                    ProductCount = productCounts.TryGetValue(c.CategoryID, out var subCnt) ? subCnt : 0
                 })
-                .ToListAsync();
+                .ToList();
 
             var products = category.Products
                 .Take(10)
@@ -317,7 +370,7 @@ namespace PolyBabyAPI.Services
                 Status = category.Status,
                 CreatedAt = category.CreatedAt,
                 CreatedBy = createdByDisplay,
-                ProductCount = category.Products.Count,
+                ProductCount = productCounts.TryGetValue(category.CategoryID, out var cnt) ? cnt : 0,
                 SubCategories = subCategories,
                 Products = products
             };
@@ -407,6 +460,8 @@ namespace PolyBabyAPI.Services
                 .ThenBy(c => c.CategoryName)
                 .ToListAsync();
 
+            var productCounts = await GetTotalProductCountsAsync();
+
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Danh sách danh mục");
 
@@ -469,7 +524,7 @@ namespace PolyBabyAPI.Services
 
                 worksheet.Cell(row, 8).Value = cat.Description ?? "";
                 
-                worksheet.Cell(row, 9).Value = cat.Products?.Count ?? 0;
+                worksheet.Cell(row, 9).Value = productCounts.TryGetValue(cat.CategoryID, out var cnt) ? cnt : 0;
                 worksheet.Cell(row, 9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 var createdByDisplay = await ResolveCreatedByDisplayAsync(cat.CreatedBy);
