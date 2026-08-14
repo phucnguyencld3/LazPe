@@ -501,6 +501,17 @@ export default function ProfilePage() {
     if (!userProfile || !token) return;
     setAddressError(null);
 
+    if (!addressForm.recipientName.trim() || !addressForm.phoneNumber.trim() || !addressForm.detailAddress.trim()) {
+      setAddressError("Vui lòng điền đầy đủ các trường thông tin bắt buộc!");
+      return;
+    }
+
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(addressForm.phoneNumber.trim())) {
+      setAddressError("Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 số và bắt đầu bằng số 0.");
+      return;
+    }
+
     if (!addressForm.provinceCode || !addressForm.districtCode || (addressForm.apiVersion === "v1" && !addressForm.wardCode)) {
       setAddressError(addressForm.apiVersion === "v2" ? "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã" : "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã");
       return;
