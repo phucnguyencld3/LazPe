@@ -351,8 +351,14 @@ export const AddressModal: React.FC<AddressModalProps> = ({
     e.preventDefault();
     if (!token || !userId) return;
 
-    if (!addressForm.recipientName || !addressForm.phoneNumber || !addressForm.detailAddress) {
+    if (!addressForm.recipientName.trim() || !addressForm.phoneNumber.trim() || !addressForm.detailAddress.trim()) {
       setAddressFormError("Vui lòng điền đầy đủ các trường thông tin bắt buộc!");
+      return;
+    }
+
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(addressForm.phoneNumber.trim())) {
+      setAddressFormError("Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 số và bắt đầu bằng số 0.");
       return;
     }
     if (!addressForm.provinceCode || !addressForm.districtCode || (addressForm.apiVersion !== 'v2' && !addressForm.wardCode)) {
@@ -449,137 +455,129 @@ export const AddressModal: React.FC<AddressModalProps> = ({
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
-                {/* Left Column: Contact Information */}
-                <div className="space-y-4">
-                  {/* Name */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Tên người nhận <span className="text-slate-900">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={addressForm.recipientName}
-                      onChange={(e) => setAddressForm({ ...addressForm, recipientName: e.target.value })}
-                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-[#824f5a] focus:border-[#824f5a] outline-none"
-                      placeholder="Nguyễn Văn A"
-                    />
-                  </div>
-                  
-                  {/* Phone */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Số điện thoại <span className="text-slate-900">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={addressForm.phoneNumber}
-                      onChange={(e) => setAddressForm({ ...addressForm, phoneNumber: e.target.value })}
-                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-[#824f5a] focus:border-[#824f5a] outline-none"
-                      placeholder="0987654321"
-                    />
-                  </div>
-
-                  {/* Version Toggle */}
-                  <div className="space-y-2 pt-1">
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Nguồn dữ liệu địa chỉ <span className="text-slate-400 font-normal normal-case">(Tùy chọn)</span>
-                    </label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="apiVersion"
-                          value="v2"
-                          checked={addressForm.apiVersion === "v2"}
-                          onChange={async (e) => {
-                            const newVer = e.target.value;
-                            setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
-                            setDistricts([]);
-                            setWards([]);
-                            const provList = await getProvinces(newVer);
-                            if (provList) setProvinces(provList);
-                          }}
-                          className="text-[#824f5a] focus:ring-[#824f5a] w-4 h-4"
-                        />
-                        <span className="text-sm font-medium text-slate-700">Phiên bản mới (V2)</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="apiVersion"
-                          value="v1"
-                          checked={addressForm.apiVersion === "v1"}
-                          onChange={async (e) => {
-                            const newVer = e.target.value;
-                            setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
-                            setDistricts([]);
-                            setWards([]);
-                            const provList = await getProvinces(newVer);
-                            if (provList) setProvinces(provList);
-                          }}
-                          className="text-[#824f5a] focus:ring-[#824f5a] w-4 h-4"
-                        />
-                        <span className="text-sm font-medium text-slate-700">Phiên bản cũ (V1)</span>
-                      </label>
-                    </div>
-                  </div>
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                    Tên người nhận <span className="text-slate-900">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={addressForm.recipientName}
+                    onChange={(e) => setAddressForm({ ...addressForm, recipientName: e.target.value })}
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-[#824f5a] focus:border-[#824f5a] outline-none"
+                    placeholder="Nguyễn Văn A"
+                  />
                 </div>
 
-                {/* Right Column: Geolocation Selects */}
-                <div className="space-y-4">
-                  {/* Province */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                      Tỉnh / Thành phố <span className="text-slate-900">*</span>
-                    </label>
-                    <SearchableSelect
-                      options={provinces}
-                      value={addressForm.provinceCode}
-                      onChange={onProvinceSelect}
-                      placeholder="Chọn Tỉnh / Thành phố"
-                      searchPlaceholder="Tìm kiếm tỉnh/thành..."
-                      accentColor="primary"
-                    />
-                  </div>
+                {/* Province */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                    Tỉnh / Thành phố <span className="text-slate-900">*</span>
+                  </label>
+                  <SearchableSelect
+                    options={provinces}
+                    value={addressForm.provinceCode}
+                    onChange={onProvinceSelect}
+                    placeholder="Chọn Tỉnh / Thành phố"
+                    searchPlaceholder="Tìm kiếm tỉnh/thành..."
+                    accentColor="primary"
+                  />
+                </div>
 
-                  {/* District */}
-                  {districts.length > 1 && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                        {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'} <span className="text-slate-900">*</span>
-                      </label>
-                      <SearchableSelect
-                        options={districts}
-                        value={addressForm.districtCode}
-                        onChange={onDistrictSelect}
-                        placeholder={addressForm.apiVersion === 'v2' ? "Chọn Xã / Phường" : "Chọn Quận / Huyện"}
-                        searchPlaceholder={addressForm.apiVersion === 'v2' ? "Tìm kiếm xã/phường..." : "Tìm kiếm quận/huyện..."}
-                        disabled={!addressForm.provinceCode}
-                        accentColor="primary"
+                {/* Phone */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                    Số điện thoại <span className="text-slate-900">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={addressForm.phoneNumber}
+                    onChange={(e) => setAddressForm({ ...addressForm, phoneNumber: e.target.value })}
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-[#824f5a] focus:border-[#824f5a] outline-none"
+                    placeholder="0987654321"
+                  />
+                </div>
+
+                {/* District */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                    {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'} <span className="text-slate-900">*</span>
+                  </label>
+                  <SearchableSelect
+                    options={districts}
+                    value={addressForm.districtCode}
+                    onChange={onDistrictSelect}
+                    placeholder={addressForm.apiVersion === 'v2' ? "Chọn Xã / Phường" : "Chọn Quận / Huyện"}
+                    searchPlaceholder={addressForm.apiVersion === 'v2' ? "Tìm kiếm xã/phường..." : "Tìm kiếm quận/huyện..."}
+                    disabled={!addressForm.provinceCode}
+                    accentColor="primary"
+                  />
+                </div>
+
+                {/* Version Toggle */}
+                <div className="space-y-2 pt-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                    Nguồn dữ liệu địa chỉ <span className="text-slate-400 font-normal normal-case">(Tùy chọn)</span>
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="apiVersion"
+                        value="v2"
+                        checked={addressForm.apiVersion === "v2"}
+                        onChange={async (e) => {
+                          const newVer = e.target.value;
+                          setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                          setDistricts([]);
+                          setWards([]);
+                          const provList = await getProvinces(newVer);
+                          if (provList) setProvinces(provList);
+                        }}
+                        className="text-[#824f5a] focus:ring-[#824f5a] w-4 h-4"
                       />
-                    </div>
-                  )}
-
-                  {/* Ward */}
-                  {addressForm.apiVersion !== 'v2' && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
-                        Phường / Xã <span className="text-slate-900">*</span>
-                      </label>
-                    <SearchableSelect
-                      options={wards}
-                      value={addressForm.wardCode}
-                      onChange={onWardSelect}
-                      placeholder="Chọn Phường / Xã"
-                      searchPlaceholder="Tìm kiếm phường/xã..."
-                      disabled={!addressForm.districtCode}
-                      accentColor="primary"
-                    />
-                    </div>
-                  )}
+                      <span className="text-sm font-medium text-slate-700">Phiên bản mới (V2)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="apiVersion"
+                        value="v1"
+                        checked={addressForm.apiVersion === "v1"}
+                        onChange={async (e) => {
+                          const newVer = e.target.value;
+                          setAddressForm(prev => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                          setDistricts([]);
+                          setWards([]);
+                          const provList = await getProvinces(newVer);
+                          if (provList) setProvinces(provList);
+                        }}
+                        className="text-[#824f5a] focus:ring-[#824f5a] w-4 h-4"
+                      />
+                      <span className="text-sm font-medium text-slate-700">Phiên bản cũ (V1)</span>
+                    </label>
+                  </div>
                 </div>
+
+                {/* Ward */}
+                {addressForm.apiVersion !== 'v2' && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Phường / Xã <span className="text-slate-900">*</span>
+                    </label>
+                  <SearchableSelect
+                    options={wards}
+                    value={addressForm.wardCode}
+                    onChange={onWardSelect}
+                    placeholder="Chọn Phường / Xã"
+                    searchPlaceholder="Tìm kiếm phường/xã..."
+                    disabled={!addressForm.districtCode}
+                    accentColor="primary"
+                  />
+                  </div>
+                )}
 
                 {/* Bottom Row: Detail Address & Actions */}
                 <div className="md:col-span-2 space-y-4 pt-1">

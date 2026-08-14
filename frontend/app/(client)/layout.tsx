@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import HeaderV2 from "@/components/client/layout/HeaderV2";
 import { Footer } from "@/components/client/layout/Footer";
@@ -13,6 +13,7 @@ import ScrollToTopButton from "@/components/client/layout/ScrollToTopButton";
 import { useBanners } from "@/hooks/useBanners";
 import { BannerRenderer } from "@/components/shared/banner/BannerRenderer";
 import { CartReminder } from "@/components/cart/CartReminder";
+import { AffiliateRefTracker } from "@/components/client/AffiliateRefTracker";
 
 function GlobalPromoBanner() {
   const { banners } = useBanners("promo");
@@ -50,6 +51,9 @@ export default function ClientLayout({
     <WishlistProvider>
       <CartProvider>
         <CompareProvider>
+          <Suspense fallback={null}>
+            <AffiliateRefTracker />
+          </Suspense>
           <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
             {!isAuthPage && <GlobalPromoBanner />}
             <HeaderV2 />

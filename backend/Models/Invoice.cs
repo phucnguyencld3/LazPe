@@ -76,6 +76,12 @@ namespace PolyBabyAPI.Models
 
         public string? UserID { get; set; }
 
+        public string? AffiliateUserId { get; set; }
+
+        public int? AffiliateLinkId { get; set; }
+
+        public bool IsAffiliateProcessed { get; set; } = false;
+
         public int? VoucherID { get; set; }
 
         public int? ShippingVoucherID { get; set; }

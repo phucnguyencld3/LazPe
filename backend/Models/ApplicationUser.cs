@@ -26,6 +26,20 @@ namespace PolyBabyAPI.Models
         [ConcurrencyCheck]
         public decimal WalletBalance { get; set; } = 0;
 
+        // Affiliate Properties
+        public bool IsAffiliate { get; set; } = false;
+
+        [MaxLength(20)]
+        public string? AffiliateCode { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal MonthlyAffiliateRevenue { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal LifetimeAffiliateRevenue { get; set; } = 0;
+
+        public int AffiliatePoint { get; set; } = 0;
+
         [MaxLength(256)]
         public string? WalletSignature { get; set; }
 
