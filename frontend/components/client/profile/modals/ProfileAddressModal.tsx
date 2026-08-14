@@ -114,124 +114,118 @@ export function ProfileAddressModal({
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-3.5">
-            {/* Left Column: Contact Information */}
-            <div className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="font-bold text-xs text-slate-700 ml-1">Tên người nhận</label>
-                <input
-                  type="text"
-                  required
-                  value={addressForm.recipientName}
-                  onChange={(e) => setAddressForm({ ...addressForm, recipientName: e.target.value })}
-                  placeholder="Họ tên người nhận hàng"
-                  className="w-full px-4 py-2 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-xs font-semibold"
-                />
-              </div>
+            {/* Row 1 */}
+            <div className="space-y-1">
+              <label className="font-bold text-xs text-slate-700 ml-1">Tên người nhận</label>
+              <input
+                type="text"
+                required
+                value={addressForm.recipientName}
+                onChange={(e) => setAddressForm({ ...addressForm, recipientName: e.target.value })}
+                placeholder="Họ tên người nhận hàng"
+                className="w-full px-4 py-2 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-xs font-semibold"
+              />
+            </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-xs text-slate-700 ml-1">Số điện thoại nhận hàng</label>
-                <input
-                  type="tel"
-                  required
-                  value={addressForm.phoneNumber}
-                  onChange={(e) => setAddressForm({ ...addressForm, phoneNumber: e.target.value })}
-                  placeholder="Số điện thoại nhận cuộc gọi giao hàng"
-                  className="w-full px-4 py-2 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-xs font-semibold"
-                />
-              </div>
+            <div className="space-y-1">
+              <label className="font-bold text-xs text-slate-700 ml-1">Tỉnh / Thành phố</label>
+              <SearchableSelect
+                options={provinces}
+                value={addressForm.provinceCode}
+                onChange={onProvinceSelect}
+                placeholder="-- Chọn Tỉnh/Thành --"
+                searchPlaceholder="Tìm kiếm tỉnh/thành..."
+                accentColor="primary"
+              />
+            </div>
 
-              {/* Version Toggle */}
-              <div className="space-y-2 pt-1">
-                <label className="font-bold text-xs text-slate-700 ml-1">
-                  Nguồn dữ liệu địa chỉ <span className="text-slate-400 font-normal text-[10px]">(Tùy chọn)</span>
+            {/* Row 2 */}
+            <div className="space-y-1">
+              <label className="font-bold text-xs text-slate-700 ml-1">Số điện thoại nhận hàng</label>
+              <input
+                type="tel"
+                required
+                value={addressForm.phoneNumber}
+                onChange={(e) => setAddressForm({ ...addressForm, phoneNumber: e.target.value })}
+                placeholder="Số điện thoại nhận cuộc gọi giao hàng"
+                className="w-full px-4 py-2 rounded-xl bg-slate-50 border-slate-200 text-slate-800 focus:ring-primary focus:border-primary border focus:outline-none text-xs font-semibold"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold text-xs text-slate-700 ml-1">
+                {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'}
+              </label>
+              <SearchableSelect
+                options={districts}
+                value={addressForm.districtCode}
+                onChange={onDistrictSelect}
+                placeholder={addressForm.apiVersion === 'v2' ? "-- Chọn Xã/Phường --" : "-- Chọn Quận/Huyện --"}
+                searchPlaceholder={addressForm.apiVersion === 'v2' ? "Tìm kiếm xã/phường..." : "Tìm kiếm quận/huyện..."}
+                disabled={!addressForm.provinceCode}
+                accentColor="primary"
+              />
+            </div>
+
+            {/* Row 3 */}
+            <div className="space-y-2 pt-1">
+              <label className="font-bold text-xs text-slate-700 ml-1">
+                Nguồn dữ liệu địa chỉ <span className="text-slate-400 font-normal text-[10px]">(Tùy chọn)</span>
+              </label>
+              <div className="flex flex-col gap-2 px-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="apiVersionProfile"
+                    value="v2"
+                    checked={addressForm.apiVersion === "v2"}
+                    onChange={async (e) => {
+                      const newVer = e.target.value;
+                      setAddressForm((prev: any) => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                      setDistricts([]);
+                      setWards([]);
+                      const provList = await getProvinces(newVer);
+                      if (provList) setProvinces(provList);
+                    }}
+                    className="text-primary focus:ring-primary w-4 h-4"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">Địa chỉ hành chính mới (V2)</span>
                 </label>
-                <div className="flex flex-col gap-2 px-1">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="apiVersionProfile"
-                      value="v2"
-                      checked={addressForm.apiVersion === "v2"}
-                      onChange={async (e) => {
-                        const newVer = e.target.value;
-                        setAddressForm((prev: any) => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
-                        setDistricts([]);
-                        setWards([]);
-                        const provList = await getProvinces(newVer);
-                        if (provList) setProvinces(provList);
-                      }}
-                      className="text-primary focus:ring-primary w-4 h-4"
-                    />
-                    <span className="text-xs font-semibold text-slate-700">Địa chỉ hành chính mới (V2)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="apiVersionProfile"
-                      value="v1"
-                      checked={addressForm.apiVersion === "v1"}
-                      onChange={async (e) => {
-                        const newVer = e.target.value;
-                        setAddressForm((prev: any) => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
-                        setDistricts([]);
-                        setWards([]);
-                        const provList = await getProvinces(newVer);
-                        if (provList) setProvinces(provList);
-                      }}
-                      className="text-primary focus:ring-primary w-4 h-4"
-                    />
-                    <span className="text-xs font-semibold text-slate-700">Địa chỉ hành chính cũ (V1)</span>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="apiVersionProfile"
+                    value="v1"
+                    checked={addressForm.apiVersion === "v1"}
+                    onChange={async (e) => {
+                      const newVer = e.target.value;
+                      setAddressForm((prev: any) => ({ ...prev, apiVersion: newVer, provinceCode: "", districtCode: "", wardCode: "" }));
+                      setDistricts([]);
+                      setWards([]);
+                      const provList = await getProvinces(newVer);
+                      if (provList) setProvinces(provList);
+                    }}
+                    className="text-primary focus:ring-primary w-4 h-4"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">Địa chỉ hành chính cũ (V1)</span>
+                </label>
               </div>
             </div>
 
-            {/* Right Column: Address Selectors */}
-            <div className="space-y-3.5">
+            {addressForm.apiVersion !== 'v2' && (
               <div className="space-y-1">
-                <label className="font-bold text-xs text-slate-700 ml-1">Tỉnh / Thành phố</label>
+                <label className="font-bold text-xs text-slate-700 ml-1">Phường / Xã</label>
                 <SearchableSelect
-                  options={provinces}
-                  value={addressForm.provinceCode}
-                  onChange={onProvinceSelect}
-                  placeholder="-- Chọn Tỉnh/Thành --"
-                  searchPlaceholder="Tìm kiếm tỉnh/thành..."
+                  options={wards}
+                  value={addressForm.wardCode}
+                  onChange={onWardSelect}
+                  placeholder="-- Chọn Phường/Xã --"
+                  searchPlaceholder="Tìm kiếm phường/xã..."
+                  disabled={!addressForm.districtCode}
                   accentColor="primary"
                 />
               </div>
-
-              {districts.length > 0 && (
-                <div className="space-y-1">
-                  <label className="font-bold text-xs text-slate-700 ml-1">
-                    {addressForm.apiVersion === 'v2' ? 'Xã / Phường' : 'Quận / Huyện'}
-                  </label>
-                  <SearchableSelect
-                    options={districts}
-                    value={addressForm.districtCode}
-                    onChange={onDistrictSelect}
-                    placeholder={addressForm.apiVersion === 'v2' ? "-- Chọn Xã/Phường --" : "-- Chọn Quận/Huyện --"}
-                    searchPlaceholder={addressForm.apiVersion === 'v2' ? "Tìm kiếm xã/phường..." : "Tìm kiếm quận/huyện..."}
-                    disabled={!addressForm.provinceCode}
-                    accentColor="primary"
-                  />
-                </div>
-              )}
-
-              {wards.length > 0 && addressForm.apiVersion !== 'v2' && (
-                <div className="space-y-1">
-                  <label className="font-bold text-xs text-slate-700 ml-1">Phường / Xã</label>
-                  <SearchableSelect
-                    options={wards}
-                    value={addressForm.wardCode}
-                    onChange={onWardSelect}
-                    placeholder="-- Chọn Phường/Xã --"
-                    searchPlaceholder="Tìm kiếm phường/xã..."
-                    disabled={!addressForm.districtCode}
-                    accentColor="primary"
-                  />
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Span both columns: Detail Address & default checkbox */}
             <div className="md:col-span-2 space-y-3.5 pt-1">
