@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=LazPeSecurePwd@2026!
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
     ports:
       - "127.0.0.1:14330:1433"
     volumes:
@@ -24,7 +24,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - Meilisearch__Url=http://meilisearch:7700
-      - Meilisearch__ApiKey=LazPeProdMasterKey@2026!
+      - Meilisearch__ApiKey=${MEILI_MASTER_KEY}
     env_file:
       - .env
     depends_on:
@@ -56,7 +56,7 @@ services:
     ports:
       - "127.0.0.1:7700:7700"
     environment:
-      - MEILI_MASTER_KEY=LazPeProdMasterKey@2026!
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - MEILI_ENV=production
     volumes:
       - meili_data_prod:/meili_data
