@@ -20,6 +20,7 @@ namespace PolyBabyAPI.Interfaces
         Task<CategoryDetailDto?> GetCategoryDetailAsync(int id);
         Task<bool> HasProductsAsync(int categoryId);
         Task<List<Categories>> GetSubCategoriesAsync(int parentId);
+        Task<Dictionary<int, int>> GetTotalProductCountsAsync(bool activeOnly = false);
         Task<byte[]> ExportExcelAsync(string searchTerm, bool? status);
     }
 }
