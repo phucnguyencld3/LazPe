@@ -252,15 +252,44 @@ export const uploadPrintTicketPdf = async (token: string, id: string, file: File
   return res.json();
 };
 
-export const updateOrderStatus = async (token: string, id: string, actionUrl: string): Promise<any> => {
-  // actionUrl e.g. "confirm", "mark-shipped", "mark-completed"
+export const updateOrderStatus = async (token: string, id: string, actionUrl: string, body?: any): Promise<any> => {
+  // actionUrl e.g. "confirm", "mark-shipped", "mark-delivered", "mark-completed"
   const res = await fetch(`${API_BASE_URL}/Invoice/${id}/${actionUrl}`, {
     method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
-    }
+    },
+    body: body ? JSON.stringify(body) : undefined
   });
   return res.json();
+};
+
+export const uploadPodImage = async (
+  file: File,
+  token: string
+): Promise<{ success: boolean; url?: string; message?: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/Invoice/upload-pod-image`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (response.ok && result.success) {
+      return { success: true, url: result.url };
+    }
+    return { success: false, message: result.message || "Upload ảnh thất bại." };
+  } catch (error) {
+    console.error("Error uploading POD image:", error);
+    return { success: false, message: "Lỗi kết nối máy chủ." };
+  }
 };
 
 export const bulkConfirmOrders = async (token: string, invoiceIds: number[]): Promise<any> => {

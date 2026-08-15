@@ -123,6 +123,137 @@ namespace PolyBabyAPI.Services
             return result == 1;
         }
 
+        public async Task<bool> EarnPendingPointsAsync(string userId, int invoiceId, decimal totalPrice, int holdDays = 7)
+        {
+            int pointsToEarn = await CalculatePointsToEarnAsync(totalPrice);
+            if (pointsToEarn <= 0) return true;
+
+            var profile = await GetProfileAsync(userId);
+            if (profile == null) return false;
+
+            var existingHistory = await _context.LoyaltyPointHistories
+                .AnyAsync(h => h.InvoiceID == invoiceId && (h.TransactionType == "PENDING_EARN" || h.TransactionType == "EARN"));
+            if (existingHistory) return true;
+
+            profile.PendingPoints += pointsToEarn;
+            profile.LastUpdated = DateTime.Now;
+
+            var unlockDate = DateTime.Now.AddDays(holdDays);
+
+            var history = new LoyaltyPointHistory
+            {
+                UserID = userId,
+                TransactionType = "PENDING_EARN",
+                Amount = pointsToEarn,
+                InvoiceID = invoiceId,
+                Description = $"Xu thưởng +{pointsToEarn:N0} xu đang tạm giữ (chờ {holdDays} ngày đổi trả) từ đơn hàng #{invoiceId}",
+                CreatedAt = DateTime.Now,
+                UnlockAt = unlockDate,
+                IsUnlocked = false
+            };
+
+            _context.LoyaltyPointHistories.Add(history);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> CancelPendingPointsAsync(string userId, int invoiceId)
+        {
+            var pendingHistory = await _context.LoyaltyPointHistories
+                .FirstOrDefaultAsync(h => h.InvoiceID == invoiceId && h.TransactionType == "PENDING_EARN" && !h.IsUnlocked);
+
+            if (pendingHistory != null)
+            {
+                var profile = await GetProfileAsync(userId);
+                if (profile != null)
+                {
+                    profile.PendingPoints = Math.Max(0, profile.PendingPoints - pendingHistory.Amount);
+                    profile.LastUpdated = DateTime.Now;
+                }
+
+                pendingHistory.IsUnlocked = true;
+                pendingHistory.TransactionType = "CANCELLED_PENDING";
+                pendingHistory.Description = $"Hủy +{pendingHistory.Amount:N0} xu tạm giữ do đơn hàng #{invoiceId} bị trả/hủy";
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> UnlockExpiredPendingPointsAsync()
+        {
+            var now = DateTime.Now;
+
+            var expiredPending = await _context.LoyaltyPointHistories
+                .Include(h => h.Invoice)
+                .Where(h => h.TransactionType == "PENDING_EARN" 
+                            && !h.IsUnlocked 
+                            && h.UnlockAt.HasValue 
+                            && h.UnlockAt.Value <= now)
+                .ToListAsync();
+
+            if (expiredPending.Count == 0) return true;
+
+            foreach (var item in expiredPending)
+            {
+                if (item.Invoice != null && item.Invoice.Status == OrderStatus.Completed)
+                {
+                    var profile = await GetProfileAsync(item.UserID);
+                    if (profile != null)
+                    {
+                        profile.PendingPoints = Math.Max(0, profile.PendingPoints - item.Amount);
+                    }
+
+                    await EarnPointsAsync(item.UserID, item.InvoiceID ?? 0, item.Invoice.SubTotal);
+
+                    item.IsUnlocked = true;
+                    item.Description = $"[Đã mở khóa] Xu thưởng +{item.Amount:N0} xu từ đơn hàng #{item.InvoiceID}";
+                }
+                else if (item.Invoice != null && (item.Invoice.Status == OrderStatus.Cancelled || item.Invoice.Status == OrderStatus.ReturnedRefunded))
+                {
+                    var profile = await GetProfileAsync(item.UserID);
+                    if (profile != null)
+                    {
+                        profile.PendingPoints = Math.Max(0, profile.PendingPoints - item.Amount);
+                    }
+
+                    item.IsUnlocked = true;
+                    item.TransactionType = "CANCELLED_PENDING";
+                    item.Description = $"Hủy xu tạm giữ do đơn hàng #{item.InvoiceID} bị trả/hủy";
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<int> CalculatePointsToEarnAsync(decimal totalPrice)
+        {
+            var policy = await _context.LoyaltyEarnPolicies
+                .Where(p => p.IsActive && p.IsCampaign && (p.StartDate == null || p.StartDate <= DateTime.Now) && (p.EndDate == null || p.EndDate >= DateTime.Now))
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (policy == null)
+            {
+                policy = await _context.LoyaltyEarnPolicies
+                    .Where(p => p.IsActive && !p.IsCampaign)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .FirstOrDefaultAsync();
+            }
+
+            decimal vndAmount = policy?.VndAmount ?? 1000m;
+            int pointsEarned = policy?.PointsEarned ?? 10;
+            decimal multiplier = policy?.Multiplier ?? 1.00m;
+
+            if (vndAmount <= 0) vndAmount = 1000m;
+
+            int earned = (int)(Math.Floor(totalPrice / vndAmount) * (decimal)pointsEarned * multiplier);
+            return Math.Max(0, earned);
+        }
+
         public async Task<bool> RevokePointsAsync(string userId, int invoiceId)
         {
             var userIdParam = new SqlParameter("@UserID", SqlDbType.NVarChar, 450) { Value = userId };

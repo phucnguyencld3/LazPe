@@ -1928,6 +1928,7 @@ namespace PolyBabyAPI.Controllers
                 invoice.CreatedAt,
                 invoice.ConfirmedAt,
                 invoice.ShippedAt,
+                invoice.DeliveredAt,
                 invoice.CompletedAt,
                 invoice.CancelledAt,
                 invoice.CancelReason,
@@ -1936,6 +1937,8 @@ namespace PolyBabyAPI.Controllers
                 invoice.ReturnReason,
                 invoice.ReturnDescription,
                 invoice.ReturnImageUrls,
+                invoice.ReturnRequestedAt,
+                invoice.ProofOfDeliveryImageUrl,
                 invoice.RefundMethod,
 
                 InvoiceDetails = invoice.InvoiceDetails?.Select(d => new
@@ -2044,5 +2047,10 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+    }
+
+    public class MarkDeliveredDto
+    {
+        public string? ProofOfDeliveryImageUrl { get; set; }
     }
 }

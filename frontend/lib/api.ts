@@ -2014,6 +2014,7 @@ export interface LoyaltyProfileResponse {
   userID: string;
   fullName: string;
   availablePoints: number;
+  pendingPoints?: number;
   totalPoints: number;
   pointsToNextTier: number;
   currentTierID: number;

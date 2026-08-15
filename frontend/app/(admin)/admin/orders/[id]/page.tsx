@@ -186,17 +186,30 @@ export default function OrderDetailsPage() {
     }
   };
 
-  const handleUpdateStatus = async (actionUrl: string) => {
+  const handleUpdateStatus = async (actionUrl: string, body?: any) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) return;
-      await updateOrderStatus(token, id as string, actionUrl);
+
+      await updateOrderStatus(token, id as string, actionUrl, body);
       toast.success("Cập nhật trạng thái thành công.");
       loadOrder();
     } catch (err) {
       console.error(err);
       toast.error("Lỗi khi cập nhật trạng thái.");
     }
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "--/--";
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
   };
 
   if (loading) {
@@ -217,18 +230,6 @@ export default function OrderDetailsPage() {
       </div>
     );
   }
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "--/--/----";
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
-  };
 
   return (
     <main className="w-full pb-20">
@@ -333,6 +334,19 @@ export default function OrderDetailsPage() {
                       <p className="text-[10px] text-slate-400 font-semibold">
                         {order.shippedAt ? formatDate(order.shippedAt).split(" ")[0] : "--/--"}
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Step 3.5: Delivered */}
+                  <div className="flex flex-col items-center gap-2 relative z-10 bg-white px-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${(order.statusCode === 11 || order.statusCode === 3 || [6,7,9,10].includes(order.statusCode))
+                      ? "bg-teal-50 text-teal-600 border-teal-500 font-bold shadow-sm"
+                      : "bg-white text-slate-300 border-slate-200"
+                      }`}>
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>mark_chat_read</span>
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-xs font-bold ${(order.statusCode === 11 || order.statusCode === 3 || [6,7,9,10].includes(order.statusCode)) ? "text-teal-600" : "text-slate-400"}`}>Đã giao</p>
                     </div>
                   </div>
 

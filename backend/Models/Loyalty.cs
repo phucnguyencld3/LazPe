@@ -30,6 +30,8 @@ namespace PolyBabyAPI.Models
 
         public DateTime? LastCheckInDate { get; set; }
 
+        public int PendingPoints { get; set; } = 0;
+
         public DateTime LastUpdated { get; set; } = DateTime.Now;
 
         [ValidateNever]
@@ -189,6 +191,10 @@ namespace PolyBabyAPI.Models
         public string Description { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public DateTime? UnlockAt { get; set; }
+
+        public bool IsUnlocked { get; set; } = false;
 
         [ForeignKey(nameof(UserID))]
         [ValidateNever]

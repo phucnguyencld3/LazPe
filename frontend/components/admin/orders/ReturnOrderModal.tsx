@@ -27,56 +27,75 @@ export const ReturnOrderModal: React.FC<ReturnOrderModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-        <div className="bg-white w-[calc(100vw-2rem)] md:w-[600px] shrink-0 rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-white w-[calc(100vw-2rem)] md:w-[780px] max-w-4xl shrink-0 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[90vh]">
           {/* Header */}
-          <div className="p-6 flex items-center justify-between border-b border-slate-100">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <span className="material-symbols-outlined text-orange-500">assignment_return</span>
+          <div className="p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-bold shadow-md shadow-orange-500/20">
+                <span className="material-symbols-outlined text-2xl">assignment_return</span>
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Xử lý yêu cầu hoàn trả</h2>
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Xử lý yêu cầu hoàn trả & Đối soát đơn hàng</h2>
+                <p className="text-xs text-slate-500 font-medium">Mã đơn: #{order.invoiceCode || order.invoiceID}</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-full hover:bg-slate-200/60 flex items-center justify-center transition-colors text-slate-400 hover:text-slate-600 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-slate-400">close</span>
+              <span className="material-symbols-outlined text-xl">close</span>
             </button>
           </div>
           
           {/* Body */}
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-y-auto">
             <div className="space-y-4">
-              <h3 className="font-bold text-slate-800 text-sm">Thông tin yêu cầu:</h3>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm space-y-2 text-slate-700">
-                <p><strong>Lý do:</strong> {order.returnReason || "Không rõ"}</p>
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Thông tin yêu cầu từ Khách hàng:</h3>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 text-sm space-y-2 text-slate-700">
+                <p><strong>Lý do:</strong> <span className="text-amber-900 font-semibold">{order.returnReason || "Không rõ"}</span></p>
                 <p><strong>Mô tả chi tiết:</strong> {order.returnDescription || "Không có"}</p>
                 <p>
                   <strong>Khách yêu cầu hoàn vào:</strong>{" "}
                   {order.refundMethod === 2 ? (
-                    <span className="text-amber-600 font-bold">Xu LazPe</span>
+                    <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">Xu LazPe</span>
                   ) : (
-                    <span className="text-blue-600 font-bold">Ví LazPe</span>
+                    <span className="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">Ví LazPe</span>
                   )}
                 </p>
               </div>
 
-              {order.returnImageUrls && (
-                <div>
-                  <p className="font-bold text-slate-800 text-sm mb-2">Hình ảnh minh chứng (Nhấn để xem lớn):</p>
-                  <div className="flex flex-wrap gap-2">
+              {/* Customer Return Proof */}
+              <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl space-y-2.5">
+                <div className="pb-1 border-b border-slate-200/60">
+                  <span className="font-bold text-slate-800 text-xs uppercase tracking-wider block">
+                    Hình ảnh minh chứng từ Khách hàng:
+                  </span>
+                </div>
+                {order.returnImageUrls ? (
+                  <div className="flex flex-wrap gap-2.5 pt-1">
                     {order.returnImageUrls.split(",").map((url: string, idx: number) => (
-                      <img 
-                        key={idx} 
-                        src={url} 
-                        alt={`Minh chứng ${idx+1}`} 
-                        className="w-20 h-20 object-cover rounded-lg border border-slate-200 cursor-pointer hover:scale-105 transition-transform" 
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 bg-white w-24 h-24 cursor-pointer shadow-sm"
                         onClick={() => setSelectedImage(url)}
-                      />
+                      >
+                        <img
+                          src={url}
+                          alt={`Minh chứng ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">
+                          Xem lớn
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="p-4 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 text-xs font-medium">
+                    Khách hàng không gửi ảnh minh chứng
+                  </div>
+                )}
+              </div>
 
               {isRejecting && (
                 <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100 animate-in fade-in zoom-in-95 duration-200">

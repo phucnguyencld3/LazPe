@@ -2025,6 +2025,7 @@ export default function AdminLoyaltyPage() {
                   className="px-4 py-3 bg-white border border-slate-200 rounded-[8px] font-bold text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-w-[180px] cursor-pointer"
                 >
                   <option value="ALL">Tất cả giao dịch</option>
+                  <option value="PENDING_EARN">Chờ tích điểm (PENDING_EARN)</option>
                   <option value="EARN">Tích điểm (EARN)</option>
                   <option value="SPEND">Đổi điểm (SPEND)</option>
                   <option value="REFUND">Hoàn điểm (REFUND)</option>
@@ -2087,11 +2088,19 @@ export default function AdminLoyaltyPage() {
                               </td>
                               <td className="px-6 py-4 text-center">
                                 <span className={`px-2 py-0.5 rounded-[8px] text-[9px] font-bold ${h.transactionType === "EARN" ? "bg-emerald-100 text-emerald-700" :
-                                  h.transactionType === "SPEND" ? "bg-amber-100 text-amber-700" :
-                                    h.transactionType === "REVOKE" ? "bg-error/10 text-error" :
-                                      "bg-slate-100 text-slate-600"
+                                  h.transactionType === "PENDING_EARN" ? "bg-amber-100 text-amber-700" :
+                                    h.transactionType === "SPEND" ? "bg-orange-100 text-orange-700" :
+                                      h.transactionType === "REVOKE" ? "bg-error/10 text-error" :
+                                        "bg-slate-100 text-slate-600"
                                   }`}>
-                                  {h.transactionType}
+                                  {h.transactionType === "PENDING_EARN" ? "Chờ tích điểm" :
+                                   h.transactionType === "CANCELLED_PENDING" ? "Hủy xu tạm giữ" :
+                                   h.transactionType === "EARN" ? "Tích điểm" :
+                                   h.transactionType === "SPEND" ? "Tiêu điểm" :
+                                   h.transactionType === "REFUND" ? "Hoàn điểm" :
+                                   h.transactionType === "REVOKE" ? "Thu hồi" :
+                                   h.transactionType === "BONUS" ? "Thưởng" :
+                                   h.transactionType}
                                 </span>
                               </td>
                               <td className="px-8 py-4 max-w-[220px]">

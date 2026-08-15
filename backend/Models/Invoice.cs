@@ -195,6 +195,9 @@ namespace PolyBabyAPI.Models
         [Display(Name = "Ngày giao hàng")]
         public DateTime? ShippedAt { get; set; }
 
+        [Display(Name = "Ngày giao thành công")]
+        public DateTime? DeliveredAt { get; set; }
+
         [Display(Name = "Ngày hoàn tất")]
         public DateTime? CompletedAt { get; set; }
 
@@ -215,6 +218,11 @@ namespace PolyBabyAPI.Models
         public string? ReturnImageUrls { get; set; }
         public RefundMethod? RefundMethod { get; set; }
         public bool IsReturnReceived { get; set; }
+
+        public DateTime? ReturnRequestedAt { get; set; }
+
+        [MaxLength(1000)]
+        public string? ProofOfDeliveryImageUrl { get; set; }
 
         public ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
 

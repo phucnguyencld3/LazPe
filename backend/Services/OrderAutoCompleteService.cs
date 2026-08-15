@@ -41,8 +41,11 @@ namespace PolyBabyAPI.Services
             {
                 using var scope = _scopeFactory.CreateScope();
                 var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
+                var loyaltyService = scope.ServiceProvider.GetRequiredService<ILoyaltyService>();
+
                 await invoiceService.AutoCompleteShippedOrdersAsync(cancellationToken);
                 await invoiceService.AutoCancelStaleOrdersAsync(cancellationToken);
+                await loyaltyService.UnlockExpiredPendingPointsAsync();
             }
             catch (Exception ex)
             {

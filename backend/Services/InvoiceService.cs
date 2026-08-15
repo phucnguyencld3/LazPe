@@ -953,7 +953,7 @@ namespace PolyBabyAPI.Services
             {
                 if (!string.IsNullOrEmpty(invoice.UserID))
                 {
-                    await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
+                    await _loyaltyService.EarnPendingPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
                     await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
                 }
 
@@ -1068,6 +1068,7 @@ namespace PolyBabyAPI.Services
 
             invoice.Status = OrderStatus.Completed;
             invoice.ReturnReason = null;
+            invoice.ReturnDescription = null;
             invoice.ReturnImageUrls = null;
             invoice.RefundMethod = null;
             await _context.SaveChangesAsync();
@@ -1419,7 +1420,10 @@ namespace PolyBabyAPI.Services
  
             try
             {
-                // 1. Thu hồi điểm đã tích lũy (nếu có)
+                // 1. Hủy xu tạm giữ (nếu đơn hàng bị hủy/trả trước khi đủ 7 ngày)
+                await _loyaltyService.CancelPendingPointsAsync(invoice.UserID, invoice.InvoiceID);
+
+                // 2. Thu hồi điểm đã tích lũy (nếu điểm đã mở khóa trước đó)
                 await _loyaltyService.RevokePointsAsync(invoice.UserID, invoice.InvoiceID);
  
                 // 2. Tìm kiếm xem đơn hàng này có dùng điểm để thanh toán không và hoàn lại
@@ -1678,7 +1682,7 @@ namespace PolyBabyAPI.Services
                     {
                         try
                         {
-                            await _loyaltyService.EarnPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
+                            await _loyaltyService.EarnPendingPointsAsync(invoice.UserID, invoice.InvoiceID, invoice.SubTotal);
                             await HandleReferralOnOrderCompletedAsync(invoice.UserID, invoice.TotalPrice, invoice.InvoiceID);
                         }
                         catch (Exception lEx)

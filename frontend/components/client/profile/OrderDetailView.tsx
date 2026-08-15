@@ -332,7 +332,7 @@ export function OrderDetailView({
   // Conditions: statusCode === 2 (Shipped)
   const canCompleteOrder = order?.statusCode === 2;
 
-  // Hoàn hàng: chỉ cho phép khi đơn Hoàn tất (3) và trong vòng 7 ngày
+  // Hoàn hàng: cho phép khi đơn ở trạng thái Hoàn tất (3) trong vòng 7 ngày
   const canRequestReturn = React.useMemo(() => {
     if (order?.statusCode !== 3 || !order?.completedAt) return false;
     const completedDate = new Date(order.completedAt);
@@ -432,15 +432,6 @@ export function OrderDetailView({
               Yêu cầu hoàn hàng
             </button>
           )}
-          {canCancelReturnRequest && (
-            <button
-              onClick={handleCancelReturnSubmit}
-              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all"
-              disabled={actionLoading}
-            >
-              Hủy yêu cầu hoàn hàng
-            </button>
-          )}
           <button
             onClick={() => onSupportOrder?.(order)}
             className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all flex items-center justify-center gap-1"
@@ -450,6 +441,29 @@ export function OrderDetailView({
           </button>
         </div>
       </div>
+
+      {/* POD Image Banner */}
+      {order.proofOfDeliveryImageUrl && (
+        <div className="bg-teal-50 border-y border-teal-200/80 px-5 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+              <span className="material-symbols-outlined text-lg">fact_check</span>
+            </div>
+            <div>
+              <h4 className="font-bold text-xs md:text-sm text-teal-900">Bằng chứng giao hàng của Shipper (POD)</h4>
+              <p className="text-[11px] text-teal-700/80 font-medium">Ảnh chụp trực tiếp khi bàn giao sản phẩm thành công</p>
+            </div>
+          </div>
+          <a
+            href={order.proofOfDeliveryImageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 cursor-pointer"
+          >
+            Xem ảnh POD <span className="material-symbols-outlined text-xs">open_in_new</span>
+          </a>
+        </div>
+      )}
 
       {/* Expiration Countdown/Expired Warning Banners */}
       {baseCanRetryPayment && !isExpired && (
@@ -635,43 +649,60 @@ export function OrderDetailView({
 
           {/* Return Request Details */}
           {order?.returnReason && ([6,7,9,10].includes(order.statusCode)) && (
-            <div className="bg-orange-50/30 border-b border-slate-100 p-4 md:px-8">
-              <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="text-orange-500 shrink-0" size={20} />
-            <h3 className="font-bold text-orange-800 text-sm md:text-base">
-              Yêu cầu hoàn trả {
-                order.statusCode === 7 ? "đã được xử lý thành công" :
-                order.statusCode === 9 ? "đã được duyệt (Chờ nhận hàng hoàn)" :
-                order.statusCode === 10 ? "đã bị từ chối" : "đang được xem xét"
-              }
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <div className="space-y-2 text-sm text-slate-700 bg-white p-3 rounded-xl border border-slate-100">
-              <p className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Thông tin yêu cầu</p>
-              <p><strong>Lý do:</strong> {order.returnReason}</p>
-              {order.returnDescription && <p><strong>Mô tả chi tiết:</strong> {order.returnDescription}</p>}
-              {order.refundMethod !== undefined && (
-                <p><strong>Phương thức nhận tiền hoàn:</strong> {order.refundMethod === 1 ? 'Ví LazPe' : 'Xu LazPe'}</p>
-              )}
-            </div>
-            
-            {order.returnImageUrls && (
-              <div className="bg-white p-3 rounded-xl border border-slate-100">
-                <p className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 text-sm">Hình ảnh minh chứng</p>
-                <div className="flex flex-wrap gap-3">
-                  {order.returnImageUrls.split(",").map((url: string, idx: number) => (
-                    <img 
-                      key={idx} 
-                      src={url} 
-                      alt={`Minh chứng ${idx+1}`} 
-                      className="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-105 hover:opacity-80 transition-all duration-200" 
-                      onClick={() => setSelectedImage(url)}
-                    />
-                  ))}
+            <div className="bg-amber-50/20 border-b border-amber-100/80 p-4 md:px-8 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-amber-100/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold shrink-0 border border-amber-200/60">
+                    <span className="material-symbols-outlined text-lg">shield_with_heart</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2">
+                      Yêu cầu hoàn trả {
+                        order.statusCode === 7 ? "đã được xử lý thành công" :
+                        order.statusCode === 9 ? "đã được duyệt (Chờ nhận hàng hoàn)" :
+                        order.statusCode === 10 ? "đã bị từ chối" : "đang được xem xét"
+                      }
+                    </h3>
+                  </div>
                 </div>
+
+                {canCancelReturnRequest && (
+                  <button
+                    onClick={handleCancelReturnSubmit}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <CheckCircle size={15} /> Tôi đã nhận được hàng (Hủy khiếu nại)
+                  </button>
+                )}
               </div>
-            )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div className="space-y-2 text-xs md:text-sm text-slate-700 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-1 border-b border-slate-100 pb-2">Thông tin khiếu nại</p>
+                  <p><strong>Lý do:</strong> <span className="text-amber-900 font-semibold">{order.returnReason}</span></p>
+                  {order.returnDescription && <p><strong>Mô tả chi tiết:</strong> {order.returnDescription}</p>}
+                  {order.refundMethod !== undefined && (
+                    <p><strong>Phương thức nhận tiền hoàn:</strong> {order.refundMethod === 1 ? 'Ví LazPe' : 'Xu LazPe'}</p>
+                  )}
+                </div>
+                
+                {order.returnImageUrls && (
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <p className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2 border-b border-slate-100 pb-2">Hình ảnh minh chứng từ khách hàng</p>
+                    <div className="flex flex-wrap gap-2.5">
+                      {order.returnImageUrls.split(",").map((url: string, idx: number) => (
+                        <img 
+                          key={idx} 
+                          src={url} 
+                          alt={`Minh chứng ${idx+1}`} 
+                          className="w-16 h-16 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:scale-105 transition-transform" 
+                          onClick={() => setSelectedImage(url)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

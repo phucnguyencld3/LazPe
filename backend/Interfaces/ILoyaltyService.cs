@@ -15,6 +15,9 @@ namespace PolyBabyAPI.Interface
             int pageSize);
         
         Task<bool> EarnPointsAsync(string userId, int invoiceId, decimal totalPrice);
+        Task<bool> EarnPendingPointsAsync(string userId, int invoiceId, decimal totalPrice, int holdDays = 7);
+        Task<bool> UnlockExpiredPendingPointsAsync();
+        Task<bool> CancelPendingPointsAsync(string userId, int invoiceId);
         Task<bool> RevokePointsAsync(string userId, int invoiceId);
         
         Task<bool> ValidatePointsRedemptionAsync(string userId, int pointsToUse, decimal cartSubtotal);
