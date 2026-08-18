@@ -108,7 +108,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[20px] w-[95vw] max-w-3xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-100">
+      <div className="bg-white rounded-[5px] w-[95vw] max-w-3xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-100">
         
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80">
@@ -121,7 +121,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 hover:bg-slate-200/70 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+            className="p-2 hover:bg-slate-200/70 rounded-[5px] text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -137,7 +137,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
               placeholder="Tìm kiếm sản phẩm..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-[5px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
             />
           </div>
 
@@ -146,7 +146,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
             <select
               value={selectedCategoryId ?? ""}
               onChange={handleCategoryChange}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all bg-white text-slate-700"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-[5px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all bg-white text-slate-700"
             >
               <option value="">Tất cả danh mục</option>
               {categories.map((cat) => (
@@ -161,7 +161,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
           <div>
             <select
               onChange={handleSortChange}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all bg-white text-slate-700"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-[5px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all bg-white text-slate-700"
             >
               <option value="newest">Mới nhất</option>
               <option value="price_asc">Giá: Thấp đến Cao</option>
@@ -193,16 +193,19 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
                 return (
                   <div
                     key={product.id}
-                    className="flex gap-3 p-3 rounded-[12px] border border-slate-100 bg-slate-50/50 hover:bg-orange-50/40 hover:border-orange-200 transition-all group cursor-pointer"
+                    className="flex gap-3 p-3 rounded-[5px] border border-slate-100 bg-slate-50/50 hover:bg-orange-50/40 hover:border-orange-200 transition-all group cursor-pointer"
                     onClick={() => {
                       onSelectProduct(product);
                       onClose();
                     }}
                   >
                     <img
-                      src={product.image || "/placeholder.png"}
+                      src={product.image && product.image.trim() !== "" ? product.image : "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&auto=format&fit=crop&q=80"}
                       alt={product.name}
-                      className="w-16 h-16 rounded-[8px] object-cover bg-white border border-slate-100 flex-shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&auto=format&fit=crop&q=80";
+                      }}
+                      className="w-16 h-16 rounded-[5px] object-cover bg-white border border-slate-100 flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
@@ -230,7 +233,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
 
                         <button
                           type="button"
-                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-bold py-1 px-2.5 rounded-[6px] transition-all flex items-center gap-1"
+                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-bold py-1 px-2.5 rounded-[5px] transition-all flex items-center gap-1 cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[14px]">add_link</span>
                           Chọn
@@ -254,7 +257,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={page <= 1 || loading}
-              className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-[8px] text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-[5px] text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               Trang trước
             </button>
@@ -264,7 +267,7 @@ export function ProductSelectModal({ isOpen, onClose, onSelectProduct }: Product
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={page >= totalPages || loading}
-              className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-[8px] text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-[8px] text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               Trang sau
             </button>

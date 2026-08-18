@@ -57,6 +57,7 @@ namespace PolyBabyAPI.Services
 
             var product = await _context.Products
                 .Include(p => p.Images)
+                .Include(p => p.Variants)
                 .FirstOrDefaultAsync(p => p.ProductID == productId);
             if (product == null)
                 throw new InvalidOperationException("Product not found.");
@@ -87,6 +88,10 @@ namespace PolyBabyAPI.Services
             string baseUrl = GetFrontendBaseUrl();
             string productIdentifier = !string.IsNullOrWhiteSpace(product.Slug) ? product.Slug : productId.ToString();
 
+            string productImage = product.Images?.FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.ImageUrl))?.ImageUrl
+                ?? product.Variants?.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v.ImageUrl))?.ImageUrl
+                ?? "";
+
             return new AffiliateLinkResponseDto
             {
                 AffiliateLinkCode = existingLink.AffiliateLinkCode,
@@ -94,7 +99,7 @@ namespace PolyBabyAPI.Services
                 ProductId = productId,
                 ProductSlug = product.Slug,
                 ProductName = product.ProductName,
-                ProductImage = product.Images?.FirstOrDefault()?.ImageUrl ?? "",
+                ProductImage = productImage,
                 ClickCount = existingLink.ClickCount,
                 ConversionCount = existingLink.ConversionCount,
                 Revenue = existingLink.Revenue,
@@ -105,8 +110,11 @@ namespace PolyBabyAPI.Services
         public async Task<List<AffiliateLinkResponseDto>> GetUserAffiliateLinksAsync(string userId)
         {
             var links = await _context.AffiliateLinks
+                .AsNoTracking()
                 .Include(l => l.Product)
-                .ThenInclude(p => p.Images)
+                    .ThenInclude(p => p.Images)
+                .Include(l => l.Product)
+                    .ThenInclude(p => p.Variants)
                 .Where(l => l.UserId == userId && l.IsActive)
                 .ToListAsync();
 
@@ -115,6 +123,10 @@ namespace PolyBabyAPI.Services
             return links.Select(l =>
             {
                 string productIdentifier = !string.IsNullOrWhiteSpace(l.Product?.Slug) ? l.Product.Slug : l.ProductId.ToString();
+                string productImage = l.Product?.Images?.FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.ImageUrl))?.ImageUrl
+                    ?? l.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v.ImageUrl))?.ImageUrl
+                    ?? "";
+
                 return new AffiliateLinkResponseDto
                 {
                     AffiliateLinkCode = l.AffiliateLinkCode,
@@ -122,7 +134,7 @@ namespace PolyBabyAPI.Services
                     ProductId = l.ProductId,
                     ProductSlug = l.Product?.Slug,
                     ProductName = l.Product?.ProductName ?? "",
-                    ProductImage = l.Product?.Images?.FirstOrDefault()?.ImageUrl ?? "",
+                    ProductImage = productImage,
                     ClickCount = l.ClickCount,
                     ConversionCount = l.ConversionCount,
                     Revenue = l.Revenue,
@@ -162,17 +174,19 @@ namespace PolyBabyAPI.Services
 
             await EnsureMonthlyRevenueResetAsync(user);
 
-            var links = await _context.AffiliateLinks.Where(l => l.UserId == userId).ToListAsync();
+            var links = await _context.AffiliateLinks.AsNoTracking().Where(l => l.UserId == userId).ToListAsync();
             
             int currentMonth = DateTime.UtcNow.Month;
             int currentYear = DateTime.UtcNow.Year;
 
             var userMilestones = await _context.UserAffiliateMilestones
+                .AsNoTracking()
                 .Where(uam => uam.UserId == userId && uam.Month == currentMonth && uam.Year == currentYear)
                 .Select(uam => uam.MilestoneId)
                 .ToListAsync();
 
             var allMilestones = await _context.AffiliateMilestones
+                .AsNoTracking()
                 .Where(m => m.IsActive)
                 .OrderBy(m => m.RequiredRevenue)
                 .ToListAsync();
