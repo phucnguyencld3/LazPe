@@ -3849,3 +3849,31 @@ export async function trackAffiliateClick(code: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function calculateShippingFee(addressId: number, weight: number, length: number, width: number, height: number): Promise<{ fee: number; expectedDelivery: string | null } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Shipping/calculate-fee`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ addressId, weight, length, width, height }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return {
+        fee: result.fee,
+        expectedDelivery: result.expectedDelivery,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error calculating shipping fee:", error);
+    return null;
+  }
+}

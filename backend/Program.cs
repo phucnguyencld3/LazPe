@@ -279,11 +279,15 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
     builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
     // Address service
-    builder.Services.AddHttpClient<AddressApiService>(client =>
+    builder.Services.AddHttpClient<PolyBabyAPI.Services.AddressApiService>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(5);
     });
-    builder.Services.AddScoped<AddressApiService>();
+    builder.Services.AddScoped<PolyBabyAPI.Services.AddressApiService>();
+
+    // Shipping Service
+    builder.Services.AddHttpClient<PolyBabyAPI.Services.Shipping.GHNShippingService>();
+    builder.Services.AddScoped<PolyBabyAPI.Services.Shipping.IShippingProvider, PolyBabyAPI.Services.Shipping.GHNShippingService>();
 
     builder.Services.AddHttpClient();
     builder.Services.AddMemoryCache();
