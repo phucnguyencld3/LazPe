@@ -375,8 +375,8 @@ namespace PolyBabyAPI.Controllers
                 if (!allowedTypes.Contains(file.ContentType.ToLower()))
                     return BadRequest(new { success = false, message = "Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)" });
 
-                if (file.Length > 5 * 1024 * 1024)
-                    return BadRequest(new { success = false, message = "File ảnh không được vượt quá 5MB" });
+                if (file.Length > 10 * 1024 * 1024)
+                    return BadRequest(new { success = false, message = "File ảnh không được vượt quá 10MB" });
 
                 var imageUrl = await _cloudinaryService.ReplaceImageAsync(oldImageUrl, file, "polystation/Bundles");
 

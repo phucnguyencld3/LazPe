@@ -5,6 +5,8 @@ interface OrderActionBarProps {
   order: OrderInfo;
   onUpdateStatus: (action: string) => void;
   onShowCancelModal: () => void;
+  onApproveCancel?: () => void;
+  onRejectCancel?: () => void;
   onShowReturnModal?: () => void;
   onShowConfirmReturnModal?: () => void;
   onPrintOrder: () => void;
@@ -14,6 +16,8 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
   order,
   onUpdateStatus,
   onShowCancelModal,
+  onApproveCancel,
+  onRejectCancel,
   onShowReturnModal,
   onShowConfirmReturnModal,
   onPrintOrder,
@@ -62,13 +66,26 @@ export const OrderActionBar: React.FC<OrderActionBarProps> = ({
         )}
 
         {order.statusCode === 4 && (
-          <button 
-            onClick={onShowCancelModal}
-            className="flex items-center gap-2 px-6 py-2.5 bg-rose-500 text-white hover:bg-rose-600 font-bold rounded-xl shadow-md shadow-rose-500/20 transition-colors cursor-pointer active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[18px]">gavel</span>
-            Duyệt hủy đơn
-          </button>
+          <>
+            {onRejectCancel && (
+              <button 
+                onClick={onRejectCancel}
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded-xl transition-colors cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+                Từ chối hủy
+              </button>
+            )}
+            {onApproveCancel && (
+              <button 
+                onClick={onApproveCancel}
+                className="flex items-center gap-2 px-6 py-2.5 bg-rose-500 text-white hover:bg-rose-600 font-bold rounded-xl shadow-md shadow-rose-500/20 transition-colors cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                Duyệt hủy đơn
+              </button>
+            )}
+          </>
         )}
 
         {order.statusCode === 6 && onShowReturnModal && (

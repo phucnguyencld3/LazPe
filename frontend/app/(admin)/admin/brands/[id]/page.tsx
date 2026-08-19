@@ -215,7 +215,7 @@ export default function BrandDetailPage() {
           {brand && (
             <>
               <div className="h-6 w-px bg-outline-variant/30"></div>
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Thương hiệu: {brand.supplierName}</h2>
+              <h2 className="font-headline-md text-headline-md text-primary font-bold">Thương hiệu: {brand.supplierName}</h2>
             </>
           )}
         </div>

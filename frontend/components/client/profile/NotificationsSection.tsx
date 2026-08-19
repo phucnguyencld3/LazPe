@@ -223,8 +223,9 @@ export function NotificationsSection({ token, initialSelectedId, onClearInitialI
     }
   };
 
-  const getNotifIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
+  const getNotifIcon = (type?: string) => {
+    if (!type) return "notifications";
+    switch (type.toLowerCase()) {
       case "system": return "settings";
       case "promotion": return "campaign";
       case "order": return "local_shipping";

@@ -15,6 +15,12 @@ interface TiptapEditorProps {
 }
 
 export default function TiptapEditor({ value, onChange, token }: TiptapEditorProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -28,16 +34,10 @@ export default function TiptapEditor({ value, onChange, token }: TiptapEditorPro
         HTMLAttributes: {
           style: "max-width: 100%; border-radius: 12px; margin: 10px 0; display: block;",
         },
-        resize: {
-          enabled: true,
-          directions: ["top-left", "top-right", "bottom-left", "bottom-right"],
-          minWidth: 50,
-          minHeight: 50,
-          alwaysPreserveAspectRatio: true,
-        },
       }),
     ],
     content: value,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -50,8 +50,12 @@ export default function TiptapEditor({ value, onChange, token }: TiptapEditorPro
     }
   }, [value, editor]);
 
-  if (!editor) {
-    return null;
+  if (!mounted || !editor) {
+    return (
+      <div className="h-48 border border-slate-200 rounded-xl bg-slate-50 animate-pulse flex items-center justify-center text-xs text-slate-400 font-medium">
+        Đang tải trình soạn thảo...
+      </div>
+    );
   }
 
   const setLink = () => {

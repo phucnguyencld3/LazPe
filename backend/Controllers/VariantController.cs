@@ -623,8 +623,8 @@ namespace PolyBabyAPI.Controllers
                     return BadRequest(new { message = "Chỉ chấp nhận file ảnh (JPEG, PNG, WebP, GIF)" });
 
                 // Validate file size (max 5MB)
-                if (image.Length > 5 * 1024 * 1024)
-                    return BadRequest(new { message = "Kích thước ảnh tối đa 5MB" });
+                if (image.Length > 10 * 1024 * 1024)
+                    return BadRequest(new { success = false, message = "Kích thước ảnh không được vượt quá 10MB" });
 
                 var variant = await _context.Variants.FindAsync(id);
                 if (variant == null)

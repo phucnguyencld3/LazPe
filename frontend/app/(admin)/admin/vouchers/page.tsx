@@ -264,11 +264,11 @@ export default function AdminVouchersPage() {
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="font-headline-md text-headline-md text-primary font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">local_activity</span>
             Quản lý Voucher
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">
             Thiết lập các chương trình khuyến mãi, phân phối voucher công khai hoặc chỉ định cho người dùng cụ thể.
           </p>
         </div>

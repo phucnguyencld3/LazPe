@@ -293,7 +293,7 @@ export default function UserDetailsPage() {
           </div>
           
           <div className="flex-1 text-center md:text-left">
-            <h2 className="font-headline-lg text-headline-lg text-on-surface mb-xs">
+            <h2 className="font-headline-md text-headline-md text-primary font-bold mb-xs">
               {user.fullName || user.userName}
             </h2>
             <p className="font-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-2">

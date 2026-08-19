@@ -32,7 +32,7 @@ export default function SidebarMenuV2() {
     return () => { isMounted = false; };
   }, []);
 
-  const parentCats = allCategories.filter(c => c.parentId === null || c.level === 0 || c.level === 1).slice(0, 12);
+  const parentCats = allCategories.filter(c => c.parentId === null || c.level === 0).slice(0, 12);
   const displayCats = parentCats.length > 0 ? parentCats : [
     { id: 1, name: 'Sữa bột cao cấp' },
     { id: 2, name: 'Bỉm Tã khuyến mãi' },

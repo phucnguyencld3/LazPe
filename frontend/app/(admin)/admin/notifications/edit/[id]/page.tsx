@@ -5,8 +5,17 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save, Calendar, Upload, Loader, Image as ImageIcon, Sparkles } from "lucide-react";
 import { toast } from "@/lib/toast";
+import dynamic from "next/dynamic";
 import { adminGetNotifications, adminUpdateNotification, adminGetTemplates } from "@/lib/api";
-import TiptapEditor from "@/components/admin/shared/TiptapEditor";
+
+const TiptapEditor = dynamic(() => import("@/components/admin/shared/TiptapEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 border border-slate-200 rounded-xl bg-slate-50 animate-pulse flex items-center justify-center text-xs text-slate-400 font-medium">
+      Đang tải trình soạn thảo...
+    </div>
+  ),
+});
 
 const BUILT_IN_TEMPLATES = [
   {
@@ -334,8 +343,8 @@ export default function EditCampaignPage() {
 
       <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-800">Chỉnh sửa Chiến dịch Thông báo</h2>
-          <p className="text-xs text-slate-400 font-semibold mt-1">Cập nhật nội dung hoặc thay đổi lịch gửi của thông báo</p>
+          <h2 className="font-headline-md text-headline-md text-primary font-bold">Chỉnh sửa Chiến dịch Thông báo</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">Cập nhật nội dung hoặc thay đổi lịch gửi của thông báo</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

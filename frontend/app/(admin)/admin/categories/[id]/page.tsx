@@ -244,7 +244,7 @@ export default function CategoryDetailPage() {
           {category && (
             <>
               <div className="h-6 w-px bg-outline-variant/30"></div>
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Danh mục: {category.categoryName}</h2>
+              <h2 className="font-headline-md text-headline-md text-primary font-bold">Danh mục: {category.categoryName}</h2>
             </>
           )}
         </div>

@@ -36,16 +36,17 @@ namespace PolyBabyAPI.Services
 
         private async Task ProcessAutoCompleteOrdersAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Bắt đầu tiến trình kiểm tra và tự động hoàn tất đơn hàng đang giao...");
+            _logger.LogInformation("Bắt đầu tiến trình kiểm tra tự động hoàn tất đơn hàng giao quá hạn & tự động hủy đơn quá hạn 2 ngày...");
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var invoiceService = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
                 await invoiceService.AutoCompleteShippedOrdersAsync(cancellationToken);
+                await invoiceService.AutoCancelStaleOrdersAsync(cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi xảy ra trong quá trình tự động hoàn tất đơn hàng giao quá hạn.");
+                _logger.LogError(ex, "Lỗi xảy ra trong quá trình tự động xử lý đơn hàng quá hạn.");
             }
         }
     }

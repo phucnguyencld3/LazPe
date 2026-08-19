@@ -284,10 +284,10 @@ export default function UserPermissionsPage() {
             )}
           </div>
           <div className="space-y-1 min-w-0">
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight truncate">
+            <h1 className="font-headline-md text-headline-md text-primary font-bold truncate">
               {user.fullName || user.userName}
             </h1>
-            <p className="text-slate-500 text-sm font-medium truncate">
+            <p className="font-body-md text-body-md text-on-surface-variant/70 truncate">
               {user.email || "Chưa cập nhật email"}
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-1">

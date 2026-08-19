@@ -1371,6 +1371,25 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Kích hoạt quét và tự động hủy các đơn hàng quá 2 ngày ở trạng thái Chờ xác nhận hoặc Chờ xử lý
+        /// </summary>
+        [HttpPost("trigger-auto-cancel")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> TriggerAutoCancel()
+        {
+            try
+            {
+                await _invoiceService.AutoCancelStaleOrdersAsync(CancellationToken.None);
+                return Ok(new { message = "Đã thực hiện quét và tự động hủy các đơn hàng quá 2 ngày chưa được xử lý/giao hàng." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi kích hoạt tự động hủy đơn quá hạn");
+                return StatusCode(500, new { message = "Lỗi khi kích hoạt tự động hủy đơn", error = ex.Message });
+            }
+        }
+
         // ======================== DELETE ENDPOINT ============================
 
         /// <summary>

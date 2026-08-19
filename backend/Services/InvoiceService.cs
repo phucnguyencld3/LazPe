@@ -2,6 +2,7 @@ using System.IO;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using PolyBabyAPI.Data;
+using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
 using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
@@ -18,6 +19,7 @@ namespace PolyBabyAPI.Services
         private readonly IAuditLogService _auditLogService;
         private readonly ICartService _cartService;
         private readonly IWalletSecurityService _walletSecurityService;
+        private readonly INotificationService _notificationService;
         private readonly IAffiliateService _affiliateService;
 
         public InvoiceService(
@@ -29,6 +31,7 @@ namespace PolyBabyAPI.Services
             IAuditLogService auditLogService, 
             ICartService cartService,
             IWalletSecurityService walletSecurityService,
+            INotificationService notificationService,
             IAffiliateService affiliateService)
         {
             _context = context;
@@ -39,6 +42,7 @@ namespace PolyBabyAPI.Services
             _auditLogService = auditLogService;
             _cartService = cartService;
             _walletSecurityService = walletSecurityService;
+            _notificationService = notificationService;
             _affiliateService = affiliateService;
         }
 
@@ -1703,6 +1707,115 @@ namespace PolyBabyAPI.Services
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        // ======== TỰ ĐỘNG HỦY ĐƠN HÀNG QUÁ HẠN 2 NGÀY (CHỜ XÁC NHẬN HOẶC CHỜ XỬ LÝ) ========
+        public async Task AutoCancelStaleOrdersAsync(CancellationToken cancellationToken)
+        {
+            var twoDaysAgo = DateTime.Now.AddDays(-2);
+
+            // 1. Lấy danh sách các đơn hàng "Chờ xác nhận" (Pending) quá 2 ngày
+            var pendingStaleOrders = await _context.Invoices
+                .Where(i => i.Status == OrderStatus.Pending 
+                            && i.CreatedAt.HasValue 
+                            && i.CreatedAt.Value <= twoDaysAgo 
+                            && !i.IsDeleted)
+                .Select(i => new { i.InvoiceID, i.InvoiceCode, i.UserID })
+                .ToListAsync(cancellationToken);
+
+            // 2. Lấy danh sách các đơn hàng "Chờ xử lý / Đã xác nhận" (Confirmed) quá 2 ngày chưa giao
+            var confirmedStaleOrders = await _context.Invoices
+                .Where(i => i.Status == OrderStatus.Confirmed 
+                            && ((i.ConfirmedAt.HasValue && i.ConfirmedAt.Value <= twoDaysAgo) || (!i.ConfirmedAt.HasValue && i.CreatedAt.HasValue && i.CreatedAt.Value <= twoDaysAgo))
+                            && !i.IsDeleted)
+                .Select(i => new { i.InvoiceID, i.InvoiceCode, i.UserID })
+                .ToListAsync(cancellationToken);
+
+            if (pendingStaleOrders.Count == 0 && confirmedStaleOrders.Count == 0) return;
+
+            _logger.LogInformation("Tìm thấy {PendingCount} đơn hàng chờ xác nhận quá 2 ngày và {ConfirmedCount} đơn hàng chờ xử lý quá 2 ngày cần tự động hủy.", 
+                pendingStaleOrders.Count, confirmedStaleOrders.Count);
+
+            // Xử lý hủy đơn chờ xác nhận
+            foreach (var item in pendingStaleOrders)
+            {
+                try
+                {
+                    var reason = "Hệ thống tự động hủy: Đơn hàng quá 2 ngày chưa được cửa hàng xác nhận";
+                    bool success = await AdminCancelAsync(item.InvoiceID, reason);
+                    if (success && !string.IsNullOrEmpty(item.UserID))
+                    {
+                        await SendAutoCancelNotificationAsync(item.InvoiceID, item.InvoiceCode, item.UserID, reason);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi khi tự động hủy đơn hàng chờ xác nhận quá 2 ngày {InvoiceId}", item.InvoiceID);
+                }
+            }
+
+            // Xử lý hủy đơn chờ xử lý
+            foreach (var item in confirmedStaleOrders)
+            {
+                try
+                {
+                    var reason = "Hệ thống tự động hủy: Đơn hàng quá 2 ngày chưa được bàn giao vận chuyển";
+                    bool success = await AdminCancelAsync(item.InvoiceID, reason);
+                    if (success && !string.IsNullOrEmpty(item.UserID))
+                    {
+                        await SendAutoCancelNotificationAsync(item.InvoiceID, item.InvoiceCode, item.UserID, reason);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi khi tự động hủy đơn hàng chờ xử lý quá 2 ngày {InvoiceId}", item.InvoiceID);
+                }
+            }
+        }
+
+        private async Task SendAutoCancelNotificationAsync(int invoiceId, string? invoiceCode, string userId, string reason)
+        {
+            try
+            {
+                var displayCode = !string.IsNullOrEmpty(invoiceCode) ? invoiceCode : invoiceId.ToString();
+                var notifDto = new CreateNotificationDto
+                {
+                    Title = "Đơn hàng đã tự động bị hủy",
+                    ShortDescription = $"Đơn hàng #{displayCode} đã bị hệ thống tự động hủy do quá hạn 2 ngày.",
+                    Content = $@"<div class=""space-y-4"">
+    <div class=""p-4 bg-red-50 rounded-lg border border-red-100"">
+        <div class=""flex items-start gap-3"">
+            <span class=""material-symbols-outlined text-red-500 mt-0.5"">error</span>
+            <div>
+                <h4 class=""font-bold text-red-800 text-sm mb-2"">Đơn hàng #{displayCode} bị hủy hệ thống</h4>
+                <p class=""text-xs text-red-700 leading-relaxed mb-3"">Đơn hàng đã quá hạn 2 ngày chưa được xử lý/giao hàng. Lý do: <strong>{reason}</strong>.</p>
+                <div class=""bg-white/60 p-3 rounded-md"">
+                    <p class=""text-[11px] font-bold text-slate-700 mb-1"">Các mục sau đã được hoàn trả tự động:</p>
+                    <ul class=""list-disc list-inside text-[11px] text-slate-600 space-y-1"">
+                        <li>Số tiền thanh toán vào ví LazPe</li>
+                        <li>Xu LazPe đã sử dụng</li>
+                        <li>Điểm thưởng (LazRewards)</li>
+                        <li>Voucher khuyến mãi</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>",
+                    Type = NotificationType.Order,
+                    Priority = NotificationPriority.High,
+                    ActionType = ActionType.CustomUrl,
+                    ActionUrl = $"/profile?tab=orders&id={invoiceId}",
+                    TargetType = TargetType.SpecificUsers,
+                    TargetValue = userId,
+                    PublishedAt = DateTime.Now
+                };
+                await _notificationService.CreateNotificationAsync(notifDto, "System");
+            }
+            catch (Exception nEx)
+            {
+                _logger.LogError(nEx, "Lỗi khi gửi thông báo tự động hủy đơn {InvoiceId}", invoiceId);
+            }
         }
 
         // ======== HOÀN TIỀN VÀO VÍ/XU (HELPER) ========
