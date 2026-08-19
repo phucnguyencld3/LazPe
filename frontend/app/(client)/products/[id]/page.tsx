@@ -420,15 +420,45 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Auto-execute pending action (Add to Cart / Buy Now) after login redirect
+  useEffect(() => {
+    if (!product) return;
+    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!hasToken) return;
+
+    const pendingStr = sessionStorage.getItem("pending_cart_action");
+    if (pendingStr) {
+      sessionStorage.removeItem("pending_cart_action");
+      try {
+        const { action, payload } = JSON.parse(pendingStr);
+        if (payload && payload.variantID) {
+          addToCart(payload).then((res) => {
+            if (res.success) {
+              if (action === "buy_now") {
+                toast.success("Đã tự động thêm sản phẩm vào giỏ hàng! Đang chuyển hướng...");
+                router.push("/cart");
+              } else {
+                toast.success("Đã tự động thêm sản phẩm vào giỏ hàng cho bạn!");
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error processing pending cart action:", e);
+      }
+    }
+  }, [product, router, addToCart]);
+
+  const redirectToLoginWithIntent = (actionType: "add_to_cart" | "buy_now", payload: any) => {
+    const currentUrl = window.location.pathname + window.location.search;
+    sessionStorage.setItem("pending_cart_action", JSON.stringify({ action: actionType, payload }));
+    sessionStorage.setItem("returnUrl", currentUrl);
+    toast.error("Vui lòng đăng nhập để tiếp tục!");
+    router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+  };
+
   const handleAddToCart = async () => {
     const finalQuantity = quantity === 0 ? 1 : quantity;
-    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!hasToken) {
-      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
-      router.push("/login");
-      return;
-    }
-
     const fallbackVariantId = product?.variants?.[0]?.variantID || (product?.variants?.[0] as any)?.variantId;
     const finalVariantId = activeVariant?.variantID || (activeVariant as any)?.variantId || fallbackVariantId;
 
@@ -441,6 +471,12 @@ export default function ProductDetailPage() {
     if (!payload.variantID) {
         toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
         return;
+    }
+
+    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!hasToken) {
+      redirectToLoginWithIntent("add_to_cart", payload);
+      return;
     }
 
     try {
@@ -462,13 +498,6 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = async () => {
     const finalQuantity = quantity === 0 ? 1 : quantity;
-    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!hasToken) {
-      toast.error("Vui lòng đăng nhập để tiếp tục!");
-      router.push("/login");
-      return;
-    }
-
     const fallbackVariantId = product?.variants?.[0]?.variantID || (product?.variants?.[0] as any)?.variantId;
     const finalVariantId = activeVariant?.variantID || (activeVariant as any)?.variantId || fallbackVariantId;
 
@@ -481,6 +510,12 @@ export default function ProductDetailPage() {
     if (!payload.variantID) {
         toast.error("Sản phẩm này hiện chưa có phân loại bán hàng!");
         return;
+    }
+
+    const hasToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!hasToken) {
+      redirectToLoginWithIntent("buy_now", payload);
+      return;
     }
 
     try {

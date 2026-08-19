@@ -65,6 +65,16 @@ export default function LoginPage() {
     }
   };
 
+  const getRedirectTarget = () => {
+    if (typeof window === "undefined") return "/";
+    const params = new URLSearchParams(window.location.search);
+    const redirectParam = params.get("redirect");
+    const returnUrl = sessionStorage.getItem("returnUrl");
+    const target = redirectParam || returnUrl;
+    if (returnUrl) sessionStorage.removeItem("returnUrl");
+    return target && target.startsWith("/") ? target : "/";
+  };
+
   const handleTwoFactorVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tempUserId || !twoFactorCode) return;
@@ -102,7 +112,7 @@ export default function LoginPage() {
         } else if (!result.user?.isOnboarded) {
           window.location.href = "/onboarding";
         } else {
-          window.location.href = "/";
+          window.location.href = getRedirectTarget();
         }
       } else {
         setError(result.message || "Xác thực 2FA thất bại");
@@ -131,7 +141,7 @@ export default function LoginPage() {
           } else if (!user?.isOnboarded) {
             window.location.replace("/onboarding");
           } else {
-            window.location.replace("/");
+            window.location.replace(getRedirectTarget());
           }
         } catch (e) {
           console.error(e);
@@ -178,7 +188,7 @@ export default function LoginPage() {
         } else if (!data.user?.isOnboarded) {
           window.location.href = "/onboarding";
         } else {
-          window.location.href = "/";
+          window.location.href = getRedirectTarget();
         }
       } else {
         setError(data.message || "Đăng nhập Google thất bại");
@@ -240,7 +250,7 @@ export default function LoginPage() {
           sessionStorage.setItem("user", JSON.stringify(data.user));
         }
 
-        // Chuyển hướng: Admin hoặc User có các quyền được gán về trang quản trị, còn lại về trang chủ
+        // Chuyển hướng: Admin hoặc User có các quyền được gán về trang quản trị, còn lại về trang gốc hoặc trang chủ
         let hasDashboardAccess = false;
         try {
           const user = data.user;
@@ -263,7 +273,7 @@ export default function LoginPage() {
         } else if (!data.user?.isOnboarded) {
           window.location.href = "/onboarding";
         } else {
-          window.location.href = "/";
+          window.location.href = getRedirectTarget();
         }
       } else {
         setError(data.message || "Đăng nhập thất bại");

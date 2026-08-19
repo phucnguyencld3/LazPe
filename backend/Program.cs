@@ -257,6 +257,7 @@ try
     builder.Services.AddScoped<IStatisticsService, StatisticsService>();
     builder.Services.AddScoped<ITrendForecastingService, TrendForecastingService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
+builder.Services.AddScoped<IAffiliateService, AffiliateService>();
     builder.Services.AddScoped<IBannerService, BannerService>();
     builder.Services.AddScoped<ILoyaltyVoucherRedemptionService, LoyaltyVoucherRedemptionService>();
     // builder.Services.AddScoped<IReferralService, ReferralService>();
