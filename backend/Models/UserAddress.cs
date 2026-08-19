@@ -34,6 +34,11 @@ namespace PolyBabyAPI.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        [StringLength(10)]
+        public string ApiVersion { get; set; } = "v1";
+
+        public int? MappedDistrictID { get; set; }
+
         // Navigation
         [ForeignKey(nameof(UserID))]
         public virtual ApplicationUser User { get; set; }
