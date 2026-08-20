@@ -23,6 +23,7 @@ namespace PolyBabyAPI.Controllers
         private readonly ILogger<InvoiceController> _logger;
         private readonly ApplicationDbContext _context;
         private readonly IVnPayService _vnPayService;
+        private readonly IZaloPayService _zaloPayService;
         private readonly INotificationService _notificationService;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IIpBlockService _ipBlockService;
@@ -34,6 +35,7 @@ namespace PolyBabyAPI.Controllers
             ILogger<InvoiceController> logger,
             ApplicationDbContext context,
             IVnPayService vnPayService,
+            IZaloPayService zaloPayService,
             INotificationService notificationService,
             ICloudinaryService cloudinaryService,
             IIpBlockService ipBlockService,
@@ -44,6 +46,7 @@ namespace PolyBabyAPI.Controllers
             _logger = logger;
             _context = context;
             _vnPayService = vnPayService;
+            _zaloPayService = zaloPayService;
             _notificationService = notificationService;
             _cloudinaryService = cloudinaryService;
             _ipBlockService = ipBlockService;
@@ -745,6 +748,34 @@ namespace PolyBabyAPI.Controllers
                         amountToPay,
                         $"ThanhToanDonHang_{txnRef}",
                         "");
+                }
+                else if (invoice.PayMethod == PayMethod.ZaloPay)
+                {
+                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
+                    var appTransId = $"{DateTime.Now:yyMMdd}_{invoice.InvoiceID}_{Guid.NewGuid().ToString("N")[..6]}";
+                    var zaloResult = await _zaloPayService.CreatePaymentUrlAsync(
+                        appTransId,
+                        amountToPay,
+                        $"Thanh toan don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
+                    if (zaloResult.Success)
+                    {
+                        paymentUrl = zaloResult.PaymentUrl;
+                        
+                        _context.PaymentTransactions.Add(new PaymentTransaction
+                        {
+                            InvoiceID = invoice.InvoiceID,
+                            TxnRef = appTransId,
+                            Provider = "ZaloPay",
+                            Amount = amountToPay,
+                            Status = PaymentTransactionStatus.Pending
+                        });
+                        await _context.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        _logger.LogError("ZaloPay CreatePaymentUrl failed for invoice {InvoiceId}: {Message}", invoice.InvoiceID, zaloResult.Message);
+                        return BadRequest(new { success = false, message = $"Lỗi từ cổng thanh toán ZaloPay: {zaloResult.Message}" });
+                    }
                 }
  
                 try

@@ -598,9 +598,10 @@ export default function CheckoutPage() {
         // Clear selected item IDs from localStorage
         localStorage.removeItem("selectedCartDetailIds");
 
-        // Redirect VNPay if mobile payment
-        if (payMethod === 3 && res.paymentUrl) {
-          toast.success("Đang chuyển hướng sang cổng thanh toán VNPay...");
+        // Redirect VNPay or ZaloPay
+        if ((payMethod === 3 || payMethod === 5) && res.paymentUrl) {
+          const providerName = payMethod === 5 ? "ZaloPay" : "VNPay";
+          toast.success(`Đang chuyển hướng sang cổng thanh toán ${providerName}...`);
           window.location.href = res.paymentUrl;
         } else {
           // COD or Bank Transfer redirect

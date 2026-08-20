@@ -72,6 +72,34 @@ export const PaymentMethodSection: React.FC<PaymentMethodSectionProps> = ({
           </div>
         </div>
 
+        {/* Method 5: E-wallet ZaloPay */}
+        <div
+          onClick={() => setPayMethod(5)}
+          className={`border rounded-[8px] p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${
+            payMethod === 5
+              ? "border-blue-500 bg-blue-50/50"
+              : "border-slate-200 hover:border-blue-500/20"
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+            payMethod === 5 ? "bg-white text-blue-600 shadow-sm" : "bg-slate-100 text-slate-500"
+          }`}>
+            <CreditCard className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+              Thanh toán qua ZaloPay
+              <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">Khuyên dùng</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">Ví ZaloPay, Thẻ ATM/Visa/MasterCard hoặc quét mã QR ZaloPay</p>
+          </div>
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+            payMethod === 5 ? "border-blue-500" : "border-slate-300"
+          }`}>
+            {payMethod === 5 && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
+          </div>
+        </div>
+
       </div>
 
       {/* Sub-text depending on method */}
@@ -82,6 +110,10 @@ export const PaymentMethodSection: React.FC<PaymentMethodSectionProps> = ({
 
         {payMethod === 3 && (
           <p>Hệ thống sẽ chuyển hướng bạn đến cổng thanh toán bảo mật VNPay để thực hiện giao dịch bằng thẻ ATM, thẻ quốc tế hoặc quét mã QR.</p>
+        )}
+
+        {payMethod === 5 && (
+          <p>Hệ thống sẽ chuyển hướng bạn đến ứng dụng hoặc cổng thanh toán bảo mật ZaloPay để hoàn tất thanh toán.</p>
         )}
       </div>
     </section>
