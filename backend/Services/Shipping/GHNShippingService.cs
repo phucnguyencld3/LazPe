@@ -129,11 +129,12 @@ namespace PolyBabyAPI.Services.Shipping
                 int? ghnProvinceId = null;
                 
                 // Extremely simple fuzzy match
-                string cleanProv = provinceName.Replace("Tỉnh ", "").Replace("Thành phố ", "").Replace("TP ", "").Trim().ToLower();
+                string cleanProv = provinceName.Replace("Tỉnh ", "").Replace("Thành phố ", "").Replace("TP. ", "").Replace("TP ", "").Trim().ToLower();
                 foreach (var p in provDoc.RootElement.GetProperty("data").EnumerateArray())
                 {
                     string pName = p.GetProperty("ProvinceName").GetString().ToLower();
-                    if (pName.Contains(cleanProv) || cleanProv.Contains(pName))
+                    string cleanPName = pName.Replace("tỉnh ", "").Replace("thành phố ", "").Replace("tp. ", "").Replace("tp ", "").Trim();
+                    if (cleanPName.Contains(cleanProv) || cleanProv.Contains(cleanPName))
                     {
                         ghnProvinceId = p.GetProperty("ProvinceID").GetInt32();
                         break;
@@ -150,19 +151,56 @@ namespace PolyBabyAPI.Services.Shipping
                 using var distDoc = JsonDocument.Parse(distJson);
                 int? ghnDistrictId = null;
                 
-                string cleanDist = (districtName ?? wardName).Replace("Quận ", "").Replace("Huyện ", "").Replace("Thị xã ", "").Replace("Thành phố ", "").Trim().ToLower();
+                string cleanDist = (districtName ?? wardName).Replace("Quận ", "").Replace("Huyện ", "").Replace("Thị xã ", "").Replace("Thành phố ", "").Replace("Phường ", "").Trim().ToLower();
                 
-                foreach (var d in distDoc.RootElement.GetProperty("data").EnumerateArray())
+                var districtArray = distDoc.RootElement.GetProperty("data").EnumerateArray().ToList();
+                foreach (var d in districtArray)
                 {
                     string dName = d.GetProperty("DistrictName").GetString().ToLower();
-                    if (dName.Contains(cleanDist) || cleanDist.Contains(dName))
+                    string cleanDName = dName.Replace("quận ", "").Replace("huyện ", "").Replace("thị xã ", "").Replace("thành phố ", "").Trim();
+                    if (cleanDName.Contains(cleanDist) || cleanDist.Contains(cleanDName))
                     {
                         ghnDistrictId = d.GetProperty("DistrictID").GetInt32();
                         break;
                     }
                 }
                 
-                if (ghnDistrictId == null) return null;
+                string ghnWardCode = "";
+
+                if (ghnDistrictId == null) 
+                {
+                    // Fallback for V2: The provided 'districtName' might actually be a Ward name.
+                    // Search across ALL districts in this province in parallel.
+                    var wardSearchTasks = districtArray.Select(async d => 
+                    {
+                        int dId = d.GetProperty("DistrictID").GetInt32();
+                        var wRes = await _http.GetAsync($"{_apiUrl}master-data/ward?district_id={dId}");
+                        if (!wRes.IsSuccessStatusCode) return ((int?)null, (string)null);
+
+                        var wJson = await wRes.Content.ReadAsStringAsync();
+                        using var wDoc = JsonDocument.Parse(wJson);
+                        foreach (var w in wDoc.RootElement.GetProperty("data").EnumerateArray())
+                        {
+                            string wName = w.GetProperty("WardName").GetString().ToLower();
+                            string cleanWName = wName.Replace("phường ", "").Replace("xã ", "").Replace("thị trấn ", "").Trim();
+                            if (cleanWName.Contains(cleanDist) || cleanDist.Contains(cleanWName))
+                            {
+                                return ((int?)dId, w.GetProperty("WardCode").GetString());
+                            }
+                        }
+                        return ((int?)null, (string)null);
+                    });
+
+                    var results = await Task.WhenAll(wardSearchTasks);
+                    var match = results.FirstOrDefault(r => r.Item1 != null);
+                    
+                    if (match.Item1 != null)
+                    {
+                        return (match.Item1.Value, match.Item2 ?? "");
+                    }
+                    
+                    return null;
+                }
 
                 // If V2, we might not have a distinct ward name, or wardName is the district name
                 if (string.IsNullOrEmpty(wardName) || wardName == districtName) 
@@ -177,13 +215,13 @@ namespace PolyBabyAPI.Services.Shipping
 
                 var wardJson = await wardRes.Content.ReadAsStringAsync();
                 using var wardDoc = JsonDocument.Parse(wardJson);
-                string ghnWardCode = "";
-
+                
                 string cleanWard = wardName.Replace("Phường ", "").Replace("Xã ", "").Replace("Thị trấn ", "").Trim().ToLower();
                 foreach (var w in wardDoc.RootElement.GetProperty("data").EnumerateArray())
                 {
                     string wName = w.GetProperty("WardName").GetString().ToLower();
-                    if (wName.Contains(cleanWard) || cleanWard.Contains(wName))
+                    string cleanWName = wName.Replace("phường ", "").Replace("xã ", "").Replace("thị trấn ", "").Trim();
+                    if (cleanWName.Contains(cleanWard) || cleanWard.Contains(cleanWName))
                     {
                         ghnWardCode = w.GetProperty("WardCode").GetString();
                         break;

@@ -118,4 +118,6 @@ MyUnitTestLazPe/bin/
 MyUnitTestLazPe/obj/
 /test_output.txt
 /.config
-/docs
+/docsGHNTestProj/
+GHNTest.cs
+test.cs
