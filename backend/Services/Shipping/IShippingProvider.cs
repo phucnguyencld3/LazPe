@@ -14,5 +14,14 @@ namespace PolyBabyAPI.Services.Shipping
         /// Lấy thời gian giao hàng dự kiến
         /// </summary>
         Task<DateTime?> GetExpectedDeliveryTimeAsync(int toDistrictId, string toWardCode);
+        /// <summary>
+        /// Tạo mã đơn hàng
+        /// </summary>
+        // Task<string> CreateOrderAsync(...);
+
+        /// <summary>
+        /// Maps system address strings to GHN District ID and Ward Code.
+        /// </summary>
+        Task<(int districtId, string wardCode)?> MapAddressToGHNAsync(string provinceName, string districtName, string wardName);
     }
 }
