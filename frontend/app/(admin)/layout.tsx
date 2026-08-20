@@ -29,7 +29,12 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  
+
+  // Chat Notifications states
+  const [chatSessions, setChatSessions] = useState<any[]>([]);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [isChatDropdownOpen, setIsChatDropdownOpen] = useState(false);
+
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     orders: false,
     products: false,
@@ -87,11 +92,13 @@ export default function AdminLayout({
     };
   }, []);
 
-  // Load notifications and setup SignalR connection reactively when token changes
+  // Load notifications and setup SignalR connections reactively when token changes
   useEffect(() => {
     if (!token) {
       setNotifications([]);
       setUnreadCount(0);
+      setChatSessions([]);
+      setUnreadChatCount(0);
       return;
     }
 
@@ -108,13 +115,33 @@ export default function AdminLayout({
       }
     };
 
+    const loadChatSessions = async (authToken: string) => {
+      try {
+        const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api").replace(/\/api$/, "");
+        const res = await fetch(`${apiBase}/api/chat/admin/sessions`, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (data.success && data.sessions) {
+          setChatSessions(data.sessions);
+          const totalUnread = data.sessions.reduce((acc: number, s: any) => acc + (s.unreadByAdmin || 0), 0);
+          setUnreadChatCount(totalUnread);
+        }
+      } catch (err) {
+        console.error("Error loading admin chat sessions:", err);
+      }
+    };
+
     loadNotifications(token);
+    loadChatSessions(token);
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
-    const hubUrl = apiBase.replace(/\/api$/, "") + "/notificationHub";
+    const baseUrl = apiBase.replace(/\/api$/, "");
+    const notifHubUrl = baseUrl + "/notificationHub";
+    const chatHubUrl = baseUrl + "/chatHub";
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl, {
+      .withUrl(notifHubUrl, {
         accessTokenFactory: () => token,
         transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
       })
@@ -129,16 +156,42 @@ export default function AdminLayout({
       try {
         const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
         audio.volume = 0.4;
-        audio.play().catch(e => { console.warn("Audio play blocked/failed:", e); });
-      } catch (e) {
-        // blocked by browser
-      }
+        audio.play().catch(e => {});
+      } catch (e) {}
     });
 
-    connection.start().catch((err) => console.error("Admin SignalR error:", err));
+    const chatConnection = new signalR.HubConnectionBuilder()
+      .withUrl(chatHubUrl, {
+        accessTokenFactory: () => token,
+        transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    chatConnection.on("UpdateAdminSessions", () => {
+      loadChatSessions(token);
+    });
+
+    chatConnection.on("ReceiveMessage", (msg: any) => {
+      if (msg && (!msg.isFromAdmin && !msg.IsFromAdmin)) {
+        const sender = msg.senderName || msg.SenderName || "Khách hàng";
+        const content = msg.messageText || msg.MessageText || "Đã gửi tin nhắn";
+        toast.info(`💬 CSKH: ${sender} vừa nhắn "${content}"`);
+        try {
+          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
+          audio.volume = 0.5;
+          audio.play().catch(e => {});
+        } catch (e) {}
+      }
+      loadChatSessions(token);
+    });
+
+    connection.start().catch((err) => console.error("Admin Notif SignalR error:", err));
+    chatConnection.start().catch((err) => console.error("Admin Chat SignalR error:", err));
 
     return () => {
       connection.stop();
+      chatConnection.stop();
     };
   }, [token]);
 
@@ -467,6 +520,99 @@ export default function AdminLayout({
               </div>
             )}
           </div>
+
+          {/* Chat Support Notifications Icon & Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setIsChatDropdownOpen(!isChatDropdownOpen);
+                setIsNotifDropdownOpen(false);
+              }}
+              className={`p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-[8px] transition-colors relative focus:outline-none ${unreadChatCount > 0 ? "animate-pulse" : ""}`}
+              title="Tin nhắn Hỗ trợ khách hàng"
+            >
+              <span className="material-symbols-outlined text-[24px]">chat</span>
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[9px] w-4.5 h-4.5 rounded-[6px] flex items-center justify-center font-bold shadow-sm">
+                  {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                </span>
+              )}
+            </button>
+
+            {/* Chat Dropdown Panel */}
+            {isChatDropdownOpen && (
+              <div className="absolute right-0 mt-3 w-80 bg-white rounded-[8px] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 py-3 z-50 text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-primary text-lg">support_agent</span>
+                    <span className="font-bold text-slate-800 text-sm">Tin nhắn CSKH</span>
+                  </div>
+                  {unreadChatCount > 0 && (
+                    <span className="px-2 py-0.5 bg-rose-100 text-rose-600 text-[10px] font-bold rounded-full">
+                      {unreadChatCount} tin chưa đọc
+                    </span>
+                  )}
+                </div>
+                
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                  {chatSessions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                      <span className="material-symbols-outlined text-3xl mb-1 text-slate-300">chat_bubble_outline</span>
+                      <span className="text-[11px] font-medium">Chưa có cuộc trò chuyện nào</span>
+                    </div>
+                  ) : (
+                    chatSessions.slice(0, 6).map((session) => (
+                      <div
+                        key={session.id}
+                        onClick={() => {
+                          setIsChatDropdownOpen(false);
+                          router.push(`/admin/chats?session=${session.id}`);
+                        }}
+                        className={`flex items-start gap-3 p-3 hover:bg-slate-50 transition-colors cursor-pointer relative ${session.unreadByAdmin > 0 ? "bg-primary/5" : ""}`}
+                      >
+                        {session.unreadByAdmin > 0 && (
+                          <span className="absolute top-4 right-3 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                        )}
+
+                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex-shrink-0 flex items-center justify-center text-xs overflow-hidden border border-primary/20">
+                          {session.customerAvatar ? (
+                            <img src={session.customerAvatar} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            session.customerName ? session.customerName.charAt(0).toUpperCase() : "K"
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 pr-2">
+                          <div className="flex items-center justify-between">
+                            <p className={`text-xs text-slate-800 line-clamp-1 leading-snug ${session.unreadByAdmin > 0 ? "font-bold" : "font-semibold"}`}>
+                              {session.customerName || "Khách hàng"}
+                            </p>
+                          </div>
+                          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 leading-snug">
+                            {session.lastMessageText || "Bắt đầu cuộc trò chuyện"}
+                          </p>
+                          <span className="text-[9px] text-slate-400 font-medium block mt-1">
+                            {new Date(session.updatedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="px-3 pt-2 mt-2 border-t border-slate-100">
+                  <Link
+                    href="/admin/chats"
+                    className="block text-center w-full py-2 bg-primary/10 hover:bg-primary/20 rounded-[8px] text-xs font-bold text-primary transition-colors"
+                    onClick={() => setIsChatDropdownOpen(false)}
+                  >
+                    Vào Quản lý Chat CSKH
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <button className="p-1.5 sm:p-2 text-slate-600 hover:text-primary rounded-[8px] transition-colors" title="Cài đặt">
             <span className="material-symbols-outlined text-[24px]">settings</span>
           </button>
@@ -867,10 +1013,17 @@ export default function AdminLayout({
                   {hasPermission("Chat.Manage") && (
                     <Link
                       href="/admin/chats"
-                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                      className={`flex items-center justify-between py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 pl-8" : "px-0 justify-center hidden"}`}
                     >
-                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">chat</span>
-                      <span className="text-[16.5px] font-medium whitespace-nowrap">Tin nhắn Hỗ trợ</span>
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[26px] flex-shrink-0">chat</span>
+                        <span className="text-[16.5px] font-medium whitespace-nowrap">Tin nhắn Hỗ trợ</span>
+                      </div>
+                      {unreadChatCount > 0 && (
+                        <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                          {unreadChatCount}
+                        </span>
+                      )}
                     </Link>
                   )}
                   {hasPermission("Notification.Read") && (

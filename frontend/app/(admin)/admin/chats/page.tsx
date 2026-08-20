@@ -1,7 +1,8 @@
 /* eslint-disable */
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
@@ -115,7 +116,11 @@ const STICKERS = [
   { name: "Vỗ tay", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaG96cTVpZ3ZidW5pOWg3ZnY5YjNmYmF5azg4MHgyaXAwZmZ6ZWt3ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/C9x8gX02SnMIoAClQt/giphy.gif" }
 ];
 
-export default function AdminChatsPage() {
+function AdminChatsContent() {
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
+  const userParam = searchParams.get("user");
+
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -190,8 +195,18 @@ export default function AdminChatsPage() {
         },
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.sessions) {
         setSessions(data.sessions);
+
+        // Tự động mở phiên chat nếu có query parameter ?session=xxx hoặc ?user=xxx
+        const targetId = sessionParam || (userParam ? `DM_${userParam}` : null);
+        if (targetId) {
+          const target = data.sessions.find((s: ChatSession) => s.id === targetId || s.userId === userParam);
+          if (target) {
+            setSelectedSession(target);
+            loadMessages(target.id);
+          }
+        }
       }
     } catch (e) {
       toast.error("Không thể tải danh sách cuộc trò chuyện.");
@@ -1088,5 +1103,13 @@ export default function AdminChatsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminChatsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Đang tải Trung tâm CSKH...</div>}>
+      <AdminChatsContent />
+    </Suspense>
   );
 }

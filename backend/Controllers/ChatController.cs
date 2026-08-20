@@ -442,13 +442,15 @@ namespace PolyBabyAPI.Controllers
                 }
 
                 var sessions = await _context.ChatSessions
-                    .Where(s => (s.Messages.Any() || !string.IsNullOrEmpty(s.LastMessageText)) && !s.Id.StartsWith("DM_"))
+                    .Where(s => s.Messages.Any() || !string.IsNullOrEmpty(s.LastMessageText))
                     .OrderByDescending(s => s.UpdatedAt)
                     .Select(s => new
                     {
                         s.Id,
                         s.UserId,
-                        CustomerName = s.User != null ? s.User.FullName : s.CustomerName,
+                        CustomerName = s.User != null ? (s.User.FullName ?? s.CustomerName) : s.CustomerName,
+                        CustomerAvatar = s.User != null ? s.User.Avatar : null,
+                        CustomerEmail = s.User != null ? s.User.Email : null,
                         s.AdminId,
                         AdminName = s.Admin != null ? s.Admin.FullName : s.AdminName,
                         s.CreatedAt,

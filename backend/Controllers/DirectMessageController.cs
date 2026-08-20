@@ -21,15 +21,18 @@ namespace PolyBabyAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<DirectMessageHub> _hubContext;
+        private readonly IHubContext<ChatHub> _chatHubContext;
         private readonly ILogger<DirectMessageController> _logger;
 
         public DirectMessageController(
             ApplicationDbContext context,
             IHubContext<DirectMessageHub> hubContext,
+            IHubContext<ChatHub> chatHubContext,
             ILogger<DirectMessageController> logger)
         {
             _context = context;
             _hubContext = hubContext;
+            _chatHubContext = chatHubContext;
             _logger = logger;
         }
 
@@ -199,6 +202,10 @@ namespace PolyBabyAPI.Controllers
 
                 // Gửi qua SignalR tới room (roomId = DM_{sessionUserId})
                 await _hubContext.Clients.Group(session.Id).SendAsync("ReceiveMessage", messageDto);
+
+                // Đồng thời phát tín hiệu realtime cho toàn bộ Admin qua ChatHub để nhảy thông báo & badge
+                await _chatHubContext.Clients.All.SendAsync("ReceiveMessage", messageDto);
+                await _chatHubContext.Clients.All.SendAsync("UpdateAdminSessions");
 
                 return Ok(new { success = true, message = messageDto });
             }
