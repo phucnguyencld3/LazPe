@@ -32,6 +32,7 @@ export function OrderDetailView({
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showCancelReturnModal, setShowCancelReturnModal] = useState(false);
   const [showRefundPolicyModal, setShowRefundPolicyModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -219,9 +220,6 @@ export function OrderDetailView({
   };
 
   const handleCancelReturnSubmit = async () => {
-    if (!confirm("Bạn có chắc chắn muốn hủy yêu cầu hoàn hàng không? Hành động này không thể hoàn tác.")) {
-      return;
-    }
     setActionLoading(true);
     try {
       const res = await cancelReturnRequest(orderId, token);
@@ -668,11 +666,11 @@ export function OrderDetailView({
 
                 {canCancelReturnRequest && (
                   <button
-                    onClick={handleCancelReturnSubmit}
+                    onClick={() => setShowCancelReturnModal(true)}
                     disabled={actionLoading}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                   >
-                    <CheckCircle size={15} /> Tôi đã nhận được hàng (Hủy khiếu nại)
+                    <XCircle size={15} /> Hủy yêu cầu hoàn hàng
                   </button>
                 )}
               </div>
@@ -1295,6 +1293,60 @@ export function OrderDetailView({
                 {actionLoading ? <Loader size={12} className="animate-spin" /> : null}
                 Đồng ý hoàn tất
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Return Request Confirmation Modal */}
+      {showCancelReturnModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-[450px] max-w-[95vw] shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <AlertTriangle className="text-rose-500" size={20} />
+                Xác nhận hủy yêu cầu hoàn hàng
+              </h3>
+              <button
+                onClick={() => setShowCancelReturnModal(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100"
+                disabled={actionLoading}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Bạn có chắc chắn muốn <span className="font-bold text-slate-900">hủy yêu cầu hoàn hàng</span> đối với đơn hàng <span className="font-bold text-primary">#{order?.invoiceCode}</span> không?
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
+                <Info size={16} className="shrink-0 mt-0.5 text-amber-600" />
+                <span>Sau khi hủy, yêu cầu trả hàng sẽ bị đóng và không thể hoàn tác.</span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelReturnModal(false)}
+                  className="px-5 py-2 rounded-xl border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                  disabled={actionLoading}
+                >
+                  Bỏ qua
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setShowCancelReturnModal(false);
+                    await handleCancelReturnSubmit();
+                  }}
+                  className="px-6 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md shadow-rose-600/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? <Loader size={16} className="animate-spin" /> : null}
+                  Xác nhận hủy yêu cầu
+                </button>
+              </div>
             </div>
           </div>
         </div>
