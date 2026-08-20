@@ -1795,7 +1795,7 @@ export async function uploadReturnImage(
     });
     
     const result = await response.json();
-    if (response.ok && result.success) {
+    if (response.ok && (result.success !== false) && result.url) {
       return { success: true, url: result.url };
     }
     return { success: false, message: result.message || "Upload ảnh thất bại." };

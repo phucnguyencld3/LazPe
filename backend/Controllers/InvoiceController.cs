@@ -1965,22 +1965,59 @@ namespace PolyBabyAPI.Controllers
         // ======== Return Workflow ========
         [Authorize]
         [HttpPost("upload-return-image")]
-        public async Task<IActionResult> UploadReturnImage(IFormFile file)
+        public async Task<IActionResult> UploadReturnImage([FromForm] IFormFile file)
         {
             try
             {
                 if (file == null || file.Length == 0)
-                    return BadRequest(new { message = "Không có file được chọn." });
+                    return BadRequest(new { success = false, message = "Không có file được chọn." });
 
-                var url = await _cloudinaryService.UploadImageAsync(file, "returns");
+                string? url = null;
+                try
+                {
+                    url = await _cloudinaryService.UploadImageAsync(file, "returns");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Cloudinary upload failed for return image, attempting local storage fallback.");
+                }
+
                 if (string.IsNullOrEmpty(url))
-                    return BadRequest(new { message = "Upload ảnh thất bại." });
+                {
+                    // Fallback sang lưu file cục bộ (wwwroot/uploads/returns)
+                    var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    var uploadsFolder = Path.Combine(webRootPath, "uploads", "returns");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        return BadRequest(new { success = false, message = "Chỉ hỗ trợ file ảnh (JPG, PNG, GIF, WebP)." });
+                    }
+
+                    var fileName = $"return_{Guid.NewGuid()}{fileExtension}";
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    var scheme = Request.Scheme ?? "https";
+                    var host = Request.Host.Value;
+                    url = $"{scheme}://{host}/uploads/returns/{fileName}";
+                    _logger.LogInformation("Return image uploaded locally: {Url}", url);
+                }
 
                 return Ok(new { success = true, url = url });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi hệ thống.", error = ex.Message });
+                _logger.LogError(ex, "Lỗi khi upload ảnh hoàn hàng.");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống khi upload ảnh.", error = ex.Message });
             }
         }
 
