@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/utils/formatters";
 interface ProductSelectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProductSelect: (productId: number) => void;
+  onProductSelect: (productId: number, productSlug?: string) => void;
   token: string;
 }
 
@@ -97,7 +97,20 @@ export const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
             products.map((product) => (
               <div 
                 key={product.productID}
-                onClick={() => onProductSelect(product.productID)}
+                onClick={() => {
+                  const slugify = (str: string) => {
+                    return str
+                      .toLowerCase()
+                      .normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')
+                      .replace(/đ/g, 'd')
+                      .replace(/[^a-z0-9 -]/g, '')
+                      .replace(/\s+/g, '-')
+                      .replace(/-+/g, '-');
+                  };
+                  const finalSlug = product.slug || slugify(product.productName);
+                  onProductSelect(product.productID, finalSlug);
+                }}
                 className="flex items-center gap-4 p-3 border border-slate-100 rounded-2xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
               >
                 {/* Product Thumbnail */}

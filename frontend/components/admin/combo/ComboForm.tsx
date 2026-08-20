@@ -200,7 +200,7 @@ export const ComboForm: React.FC<ComboFormProps> = ({
   };
 
   // Double modal callbacks
-  const handleProductSelect = (productId: number) => {
+  const handleProductSelect = (productId: number, productSlug?: string) => {
     setSelectedProductId(productId);
     setIsSelectModalOpen(false);
     setIsOptionsModalOpen(true);

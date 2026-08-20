@@ -524,7 +524,7 @@ export function BannerForm({
                 <div className="flex gap-2 relative">
                   <input 
                     type="text" 
-                    placeholder={item.redirect?.type === 'product' ? 'ID Sản phẩm...' : 'Đường dẫn đích... (vd: Product, /flash-sale)'} 
+                    placeholder={item.redirect?.type === 'product' ? 'Slug / ID Sản phẩm...' : 'Đường dẫn đích... (vd: Product, /flash-sale)'} 
                     className="w-full px-3 py-2 rounded-[8px] border border-slate-200 text-xs bg-slate-50 focus:bg-white transition-colors outline-none focus:border-primary font-semibold"
                     value={item.redirect?.value || ''}
                     onChange={(e) => handleRedirectChange(idx, 'value', e.target.value)}

@@ -3,6 +3,7 @@
 export interface AdminProductInfo {
   productID: number;
   code: string;
+  slug?: string;
   productName: string;
   description: string;
   specifications?: string;

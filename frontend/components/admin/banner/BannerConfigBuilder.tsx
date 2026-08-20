@@ -104,18 +104,21 @@ export function BannerConfigBuilder({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const handleProductSelect = (productId: number) => {
+  const handleProductSelect = (productId: number, productSlug?: string) => {
     if (activeItemIndex !== null) {
       const newItems = [...(formData.layoutConfig?.items || [])];
       const redirect = newItems[activeItemIndex].redirect || { enabled: true, type: 'product' };
-      const resolvedUrl = `/products/${productId}`;
+      
+      const targetIdentifier = productSlug || productId.toString();
+      const resolvedUrl = `/products/${targetIdentifier}`;
+      
       newItems[activeItemIndex] = {
         ...newItems[activeItemIndex],
         redirect: {
           ...redirect,
           type: 'product',
-          value: productId,
-          resolved_url: resolvedUrl // usually single product uses /products/123
+          value: targetIdentifier,
+          resolved_url: resolvedUrl // usually single product uses /products/slug
         },
         redirectUrl: resolvedUrl
       };
