@@ -12,13 +12,17 @@ interface UpdateWeightModalProps {
 
 export function UpdateWeightModal({ isOpen, onClose, babyId, onSuccess }: UpdateWeightModalProps) {
   const [predictedWeight, setPredictedWeight] = useState<number | null>(null);
+  const [predictedHeight, setPredictedHeight] = useState<number | null>(null);
   const [customWeight, setCustomWeight] = useState("");
+  const [customHeight, setCustomHeight] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (isOpen && babyId) {
       setPredictedWeight(null);
+      setPredictedHeight(null);
       setCustomWeight("");
+      setCustomHeight("");
       fetchPrediction(babyId);
     }
   }, [isOpen, babyId]);
@@ -36,14 +40,25 @@ export function UpdateWeightModal({ isOpen, onClose, babyId, onSuccess }: Update
       if (res.ok) {
         const json = await res.json();
         setPredictedWeight(json.predictedWeight);
+        setPredictedHeight(json.predictedHeight);
+        
+        // Pre-fill fields with prediction
+        setCustomWeight(json.predictedWeight ? json.predictedWeight.toString() : "");
+        setCustomHeight(json.predictedHeight ? json.predictedHeight.toString() : "");
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleUpdateWeight = async (weightValue: string) => {
+  const handleUpdate = async () => {
     if (!babyId) return;
+    
+    if (!customWeight || !customHeight) {
+      toast.error("Vui lòng nhập đầy đủ cân nặng và chiều cao.");
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -57,14 +72,17 @@ export function UpdateWeightModal({ isOpen, onClose, babyId, onSuccess }: Update
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ weightKg: parseFloat(weightValue), heightCm: 50 })
+        body: JSON.stringify({ 
+          weightKg: parseFloat(customWeight), 
+          heightCm: parseFloat(customHeight) 
+        })
       });
       if (res.ok) {
-        toast.success("Cập nhật thành công! Mẹ được tặng 50 Xu!");
+        toast.success("Cập nhật chỉ số thành công! Mẹ được tặng 50 Xu!");
         onSuccess();
         onClose();
       } else {
-        toast.error("Cập nhật thất bại, vui lòng thử lại.");
+        toast.error("Cập nhật thất bại, vui lòng kiểm tra lại số liệu.");
       }
     } catch (err) {
       toast.error("Lỗi khi kết nối đến máy chủ.");
@@ -103,45 +121,44 @@ export function UpdateWeightModal({ isOpen, onClose, babyId, onSuccess }: Update
           </div>
           <h3 className="text-xl font-black text-slate-800 mb-2 whitespace-nowrap">Bé đã lớn thêm rồi!</h3>
           
-          {predictedWeight ? (
-            <>
-              <p className="text-slate-600 font-medium mb-6">
-                Theo đà phát triển, tháng này bé khoảng <strong className="text-primary text-lg">{predictedWeight}kg</strong> đúng không mẹ?
-              </p>
-              <button 
-                disabled={isUpdating}
-                onClick={() => handleUpdateWeight(predictedWeight.toString())}
-                className="w-full bg-primary hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-full shadow-[0_8px_20px_rgba(244,63,94,0.3)] transition-transform hover:-translate-y-1 mb-4 flex items-center justify-center gap-2"
-              >
-                {isUpdating ? <Loader className="animate-spin" size={20} /> : "Đúng vậy, lưu ngay (+50 Xu)"}
-              </button>
-              
-              <div className="w-full relative py-2 mb-4">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-                <div className="relative flex justify-center"><span className="bg-white px-2 text-sm text-slate-400 whitespace-nowrap">Hoặc nhập số khác</span></div>
-              </div>
-            </>
-          ) : (
-            <p className="text-slate-600 font-medium mb-6">Mẹ hãy cập nhật cân nặng mới cho bé nhé.</p>
-          )}
+          <p className="text-slate-600 font-medium text-sm mb-6 px-2 leading-relaxed">
+            Hệ thống gợi ý chỉ số dựa trên đà phát triển của bé.<br/>
+            Mẹ hãy kiểm tra và chỉnh sửa lại theo <span className="font-bold text-primary">số đo thực tế</span> nhé!
+          </p>
 
-          <div className="flex gap-2 w-full">
-            <input 
-              type="number" 
-              step="0.1"
-              placeholder="VD: 8.5"
-              className="flex-1 min-w-[120px] bg-slate-50 border border-slate-200 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-primary text-slate-700 font-medium"
-              value={customWeight}
-              onChange={(e) => setCustomWeight(e.target.value)}
-            />
-            <button 
-              disabled={isUpdating || !customWeight}
-              onClick={() => handleUpdateWeight(customWeight)}
-              className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-full font-bold transition-colors disabled:opacity-50 whitespace-nowrap"
-            >
-              Lưu
-            </button>
+          <div className="flex flex-col gap-4 w-full mb-6 text-left">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1 ml-2">Cân nặng (kg)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                placeholder="VD: 8.5"
+                className="w-full bg-slate-50 border border-slate-200 rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-primary text-slate-700 font-bold"
+                value={customWeight}
+                onChange={(e) => setCustomWeight(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1 ml-2">Chiều cao (cm)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                placeholder="VD: 75"
+                className="w-full bg-slate-50 border border-slate-200 rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-primary text-slate-700 font-bold"
+                value={customHeight}
+                onChange={(e) => setCustomHeight(e.target.value)}
+              />
+            </div>
           </div>
+
+          <button 
+            disabled={isUpdating || !customWeight || !customHeight}
+            onClick={handleUpdate}
+            className="w-full bg-primary hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-full shadow-[0_8px_20px_rgba(244,63,94,0.3)] transition-transform hover:-translate-y-1 mb-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:translate-y-0"
+          >
+            {isUpdating ? <Loader className="animate-spin" size={20} /> : "Lưu chỉ số (+50 Xu)"}
+          </button>
         </div>
       </div>
     </div>,
