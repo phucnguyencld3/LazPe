@@ -37,6 +37,8 @@ namespace PolyBabyAPI.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        public DateTime? LastReminderEmailSentAt { get; set; }
+
         public List<BabyGrowthRecord> GrowthRecords { get; set; } = new();
         public List<VaccinationRecord> VaccinationRecords { get; set; } = new();
 

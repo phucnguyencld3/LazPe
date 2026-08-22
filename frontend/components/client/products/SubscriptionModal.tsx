@@ -122,6 +122,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       const data = await res.json();
       if (res.ok && data.success) {
         window.dispatchEvent(new CustomEvent("subscription_success"));
+        toast.success("Đăng ký mua định kỳ thành công! 🎉");
         onClose();
         // Option: redirect to profile/subscriptions
         // router.push("/profile?tab=subscriptions");

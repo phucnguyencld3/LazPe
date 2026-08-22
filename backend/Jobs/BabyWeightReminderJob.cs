@@ -9,6 +9,7 @@ using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Hubs;
 using PolyBabyAPI.Models;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Hangfire;
 
 namespace PolyBabyAPI.Jobs
 {
@@ -31,6 +32,7 @@ namespace PolyBabyAPI.Jobs
             _emailSender = emailSender;
         }
 
+        [DisableConcurrentExecution(timeoutInSeconds: 600)]
         public async Task ExecuteAsync()
         {
             _logger.LogInformation("Bắt đầu chạy BabyWeightReminderJob...");
@@ -41,7 +43,10 @@ namespace PolyBabyAPI.Jobs
                 .ToListAsync();
 
             int notificationCount = 0;
-            var now = DateTime.Now;
+            
+            // Lấy giờ VN chuẩn
+            var vnZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnZone);
 
             foreach (var baby in babies)
             {
@@ -49,38 +54,55 @@ namespace PolyBabyAPI.Jobs
 
                 var lastRecord = baby.GrowthRecords.OrderByDescending(r => r.RecordedDate).FirstOrDefault();
                 
-                bool needsUpdate = false;
-
-                if (lastRecord == null) {
-                    needsUpdate = true;
-                } else {
-                    var monthsSinceLast = (now.Year - lastRecord.RecordedDate.Year) * 12 + now.Month - lastRecord.RecordedDate.Month;
-                    if (now.Day < lastRecord.RecordedDate.Day) {
-                        monthsSinceLast--;
+                DateTime refDate;
+                if (lastRecord != null)
+                {
+                    refDate = lastRecord.RecordedDate;
+                    if (refDate.Kind == DateTimeKind.Utc) {
+                        refDate = TimeZoneInfo.ConvertTimeFromUtc(refDate, vnZone);
                     }
-                    if (monthsSinceLast >= 1) needsUpdate = true;
+                }
+                else
+                {
+                    refDate = baby.CreatedAt;
+                    if (refDate.Kind == DateTimeKind.Utc) {
+                        refDate = TimeZoneInfo.ConvertTimeFromUtc(refDate, vnZone);
+                    }
                 }
 
-                if (needsUpdate)
-                {
-                    string title = "Nhắc nhở cập nhật cân nặng";
-                    string message = $"Đã đến lúc cập nhật chỉ số phát triển tháng này cho bé {baby.Name}. Cập nhật ngay để LazPe đưa ra những phân tích và gợi ý dinh dưỡng chính xác nhất nhé!";
-                    string actionUrl = "/profile?tab=profile";
+                // Tính ngày đến hạn (3 tháng lịch)
+                var dueDate = refDate.AddMonths(3).Date;
+                
+                bool isDue = nowVn.Date >= dueDate;
 
-                    // Check if we already sent this specific notification today to avoid spamming in testing mode
+                if (isDue)
+                {
+                    string title = "Nhắc nhở cập nhật chỉ số phát triển";
+                    string message = $"Đã đến lúc cập nhật chỉ số phát triển tháng này cho bé {baby.Name}. Cập nhật ngay để LazPe đưa ra những phân tích và gợi ý dinh dưỡng chính xác nhất nhé!";
+                    string actionUrl = $"/profile?tab=babytracker&id={baby.BabyProfileID}";
+
+                    // Tránh gửi nhiều chuông cùng một ngày
                     var alreadySentToday = await _context.UserNotifications
                         .Include(un => un.Notification)
                         .AnyAsync(un => un.UserId == baby.UserID 
                             && un.Notification!.ActionUrl == actionUrl 
                             && un.Notification.Title == title 
-                            && un.CreatedAt.Date == now.Date);
+                            && un.CreatedAt.Date == nowVn.Date);
 
                     if (alreadySentToday) continue;
 
-                    // Gửi Email nếu là mùng 1 đầu tháng
-                    if (now.Day == 1 && !string.IsNullOrEmpty(baby.User.Email))
+                    // Idempotency: Kiểm tra Email đã gửi trong chu kỳ này chưa
+                    bool emailAlreadySentThisCycle = baby.LastReminderEmailSentAt.HasValue 
+                                                     && baby.LastReminderEmailSentAt.Value.Date >= dueDate;
+
+                    if (!emailAlreadySentThisCycle && !string.IsNullOrEmpty(baby.User.Email))
                     {
-                        string emailSubject = $"Nhắc nhở: Cập nhật cân nặng cho bé {baby.Name}";
+                        // Khóa trạng thái Email (Guarantee At-Most-Once)
+                        baby.LastReminderEmailSentAt = nowVn;
+                        _context.Update(baby);
+                        await _context.SaveChangesAsync();
+
+                        string emailSubject = $"Nhắc nhở: Cập nhật chỉ số phát triển cho bé {baby.Name}";
                         string htmlBody = $@"
                             <html>
                             <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
@@ -92,7 +114,7 @@ namespace PolyBabyAPI.Jobs
                                         <p>Chào ba mẹ bé <strong>{baby.Name}</strong>,</p>
                                         <p>Đã đến lúc cập nhật chỉ số phát triển tháng này cho bé {baby.Name}. Cập nhật ngay để LazPe đưa ra những phân tích và gợi ý dinh dưỡng chính xác nhất nhé!</p>
                                         <div style='text-align: center; margin: 30px 0;'>
-                                            <a href='https://lazpe.com{actionUrl}' style='background-color: #ff914d; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;'>Cập Nhật Cân Nặng Ngay</a>
+                                            <a href='https://lazpe.com{actionUrl}' style='background-color: #ff914d; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;'>Cập Nhật Chỉ Số Ngay</a>
                                         </div>
                                     </div>
                                     <div style='background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #888;'>
@@ -105,7 +127,7 @@ namespace PolyBabyAPI.Jobs
                         try
                         {
                             await _emailSender.SendEmailAsync(baby.User.Email, emailSubject, htmlBody);
-                            _logger.LogInformation($"Đã gửi email nhắc nhở cập nhật cân nặng cho user {baby.UserID} (bé {baby.Name})");
+                            _logger.LogInformation($"Đã gửi yêu cầu email nhắc nhở cập nhật chỉ số phát triển cho user {baby.UserID} (bé {baby.Name})");
                         }
                         catch (Exception ex)
                         {
@@ -126,8 +148,8 @@ namespace PolyBabyAPI.Jobs
                         ActionType = ActionType.CustomUrl,
                         ActionUrl = actionUrl,
                         CreatedBy = "System",
-                        CreatedAt = now,
-                        PublishedAt = now,
+                        CreatedAt = nowVn,
+                        PublishedAt = nowVn,
                         Status = NotificationStatus.Sent
                     };
 
@@ -140,7 +162,7 @@ namespace PolyBabyAPI.Jobs
                         UserId = baby.UserID,
                         NotificationId = notif.Id,
                         IsRead = false,
-                        CreatedAt = now
+                        CreatedAt = nowVn
                     };
                     
                     _context.UserNotifications.Add(userNotif);

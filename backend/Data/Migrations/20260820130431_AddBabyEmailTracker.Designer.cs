@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
 #nullable disable
 
-namespace PolyBabyAPI.Migrations
+namespace PolyBabyAPI.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820130431_AddBabyEmailTracker")]
+    partial class AddBabyEmailTracker
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -210,126 +213,12 @@ namespace PolyBabyAPI.Migrations
                     b.ToTable("Address");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.AffiliateLink", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AffiliateLinkCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("ClickCount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ConversionCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastClickedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Revenue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AffiliateLinkCode")
-                        .IsUnique();
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UserId", "ProductId")
-                        .IsUnique();
-
-                    b.ToTable("AffiliateLinks");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.AffiliateMilestone", b =>
-                {
-                    b.Property<int>("MilestoneId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MilestoneId"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("RequiredRevenue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("VoucherId")
-                        .HasColumnType("int");
-
-                    b.HasKey("MilestoneId");
-
-                    b.HasIndex("VoucherId");
-
-                    b.ToTable("AffiliateMilestones");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.AffiliateRevenueHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Revenue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "Month", "Year")
-                        .IsUnique();
-
-                    b.ToTable("AffiliateRevenueHistories");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AffiliateCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("AffiliatePoint")
                         .HasColumnType("int");
 
                     b.Property<string>("Avatar")
@@ -363,26 +252,17 @@ namespace PolyBabyAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool>("IsAffiliate")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsOnboarded")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsWishlistPublic")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("LifetimeAffiliateRevenue")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<decimal>("MonthlyAffiliateRevenue")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -1131,12 +1011,6 @@ namespace PolyBabyAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InvoiceID"));
 
-                    b.Property<int?>("AffiliateLinkId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AffiliateUserId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("AmountToPay")
                         .HasColumnType("decimal(18,2)");
 
@@ -1168,9 +1042,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<string>("InvoiceCode")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsAffiliateProcessed")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -3012,40 +2883,6 @@ namespace PolyBabyAPI.Migrations
                     b.ToTable("UserAddresses");
                 });
 
-            modelBuilder.Entity("PolyBabyAPI.Models.UserAffiliateMilestone", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AchievedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MilestoneId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MilestoneId");
-
-                    b.HasIndex("UserId", "MilestoneId", "Month", "Year")
-                        .IsUnique();
-
-                    b.ToTable("UserAffiliateMilestones");
-                });
-
             modelBuilder.Entity("PolyBabyAPI.Models.UserNotification", b =>
                 {
                     b.Property<int>("Id")
@@ -3515,47 +3352,6 @@ namespace PolyBabyAPI.Migrations
                     b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
                         .WithMany("Addresses")
                         .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.AffiliateLink", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.AffiliateMilestone", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.Voucher", "RewardVoucher")
-                        .WithMany()
-                        .HasForeignKey("VoucherId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RewardVoucher");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.AffiliateRevenueHistory", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -4984,25 +4780,6 @@ namespace PolyBabyAPI.Migrations
                     b.Navigation("User");
 
                     b.Navigation("Ward");
-                });
-
-            modelBuilder.Entity("PolyBabyAPI.Models.UserAffiliateMilestone", b =>
-                {
-                    b.HasOne("PolyBabyAPI.Models.AffiliateMilestone", "Milestone")
-                        .WithMany()
-                        .HasForeignKey("MilestoneId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PolyBabyAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Milestone");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PolyBabyAPI.Models.UserNotification", b =>

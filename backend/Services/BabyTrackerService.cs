@@ -78,6 +78,22 @@ namespace PolyBabyAPI.Services
                 _context.Add(history);
             }
 
+            // Clear unread reminder notifications for this baby to clean up UI
+            var actionUrl = $"/profile?tab=babytracker&id={profile.BabyProfileID}";
+            var oldNotifications = await _context.UserNotifications
+                .Include(un => un.Notification)
+                .Where(un => un.UserId == profile.UserID 
+                    && un.IsRead == false 
+                    && un.Notification != null 
+                    && un.Notification.CustomTypeName == "BabyReminder"
+                    && un.Notification.ActionUrl == actionUrl)
+                .ToListAsync();
+
+            if (oldNotifications.Any())
+            {
+                _context.UserNotifications.RemoveRange(oldNotifications);
+            }
+
             await _context.SaveChangesAsync();
             return true;
         }
