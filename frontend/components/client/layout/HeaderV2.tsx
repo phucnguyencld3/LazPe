@@ -42,6 +42,9 @@ export default function HeaderV2() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const notifTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Tracks notification IDs received via SignalR to prevent duplicate processing.
+  // useRef is used (not state) so the check is synchronous and doesn't trigger re-renders.
+  const seenNotifIds = useRef(new Set<number>());
 
   const startNotifTimer = () => {
     if (notifTimeoutRef.current) clearTimeout(notifTimeoutRef.current);
@@ -190,11 +193,19 @@ export default function HeaderV2() {
       return;
     }
 
+    // Clear the seen-IDs set on each new connection so we don't carry over IDs
+    // from a previous session (e.g. after login/logout or token refresh).
+    seenNotifIds.current.clear();
+
     const loadNotifications = async (authToken: string) => {
       try {
         const data = await getNotifications(authToken, undefined, undefined, 1, 5);
         if (data) {
           setNotifications(data);
+          // Seed the seen-IDs set from the HTTP-fetched list so that a SignalR event
+          // for an already-known notification does not fire toast/count/audio.
+          // This is the single source of truth: any ID here is "already processed".
+          data.forEach((n) => seenNotifIds.current.add(n.id));
         }
         const count = await getUnreadNotificationCount(authToken);
         setUnreadCount(count);
@@ -218,9 +229,28 @@ export default function HeaderV2() {
       .build();
 
     connection.on("ReceiveNotification", (notif: UserNotificationItem) => {
-      setNotifications((prev) => [notif, ...prev.slice(0, 4)]);
+      // Primary deduplication: synchronous ref check before any state update.
+      // This is React-safe because it runs outside the state updater (no side effects
+      // inside updater functions), and is correct under Strict Mode double-invocation
+      // and concurrent rendering — the ref mutation happens exactly once per event.
+      if (seenNotifIds.current.has(notif.id)) {
+        return;
+      }
+      seenNotifIds.current.add(notif.id);
+
+      // Secondary guard inside updater: catches notifications already loaded via the
+      // initial HTTP fetch (loadNotifications). State updaters remain pure — no
+      // external mutations here.
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === notif.id)) {
+          return prev;
+        }
+        return [notif, ...prev.slice(0, 4)];
+      });
+
+      // These only run when the ref check passed (genuinely new notification).
       setUnreadCount((prev) => prev + 1);
-      
+
       // Hiển thị toast popup thông báo mới nhận
       toast.success(`Thông báo mới: ${notif.title}`);
 

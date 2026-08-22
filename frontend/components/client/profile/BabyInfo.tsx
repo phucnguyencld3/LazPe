@@ -213,9 +213,9 @@ export function BabyInfo({ userProfile, onEditClick, onOpenTracker, onUpdateWeig
                             ? "text-slate-400 bg-slate-100 cursor-not-allowed border border-slate-200" 
                             : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200"
                           }`}
-                          title={hasUpdatedThisMonth ? "Tháng này mẹ đã cập nhật cân nặng rồi!" : "Cập nhật cân nặng mới nhất của bé"}
+                          title={hasUpdatedThisMonth ? "Tháng này mẹ đã cập nhật chỉ số rồi!" : "Cập nhật chỉ số mới nhất của bé"}
                         >
-                          <Activity size={14} /> {hasUpdatedThisMonth ? "Đã cập nhật" : "Cập nhật cân nặng"}
+                          <Activity size={14} /> {hasUpdatedThisMonth ? "Đã cập nhật" : "Cập nhật chỉ số"}
                         </button>
                       );
                     })()}
