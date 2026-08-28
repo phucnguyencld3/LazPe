@@ -597,13 +597,17 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
     app.MapMethods("/", new[] { "GET", "HEAD" }, healthCheck);
     app.MapMethods("/api", new[] { "GET", "HEAD" }, healthCheck);
 
-    // Auto-Ensure Affiliate Redeem Columns in AspNetUsers
+    // Auto-Ensure Affiliate Redeem Columns & BabyProfile Columns
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<PolyBabyAPI.Data.ApplicationDbContext>();
         try
         {
             db.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT * FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20260820114217_FixMissingInvoiceColumns')
+                BEGIN
+                    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('20260820114217_FixMissingInvoiceColumns', '8.0.0');
+                END
                 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[AspNetUsers]') AND name = 'MonthlyAffiliateRedeemCount')
                 BEGIN
                     ALTER TABLE [AspNetUsers] ADD [MonthlyAffiliateRedeemCount] int NOT NULL DEFAULT 0;
@@ -611,6 +615,10 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
                 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[AspNetUsers]') AND name = 'LastAffiliateRedeemMonth')
                 BEGIN
                     ALTER TABLE [AspNetUsers] ADD [LastAffiliateRedeemMonth] int NOT NULL DEFAULT 0;
+                END
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[BabyProfiles]') AND name = 'LastReminderEmailSentAt')
+                BEGIN
+                    ALTER TABLE [BabyProfiles] ADD [LastReminderEmailSentAt] datetime2 NULL;
                 END
             ");
         }
