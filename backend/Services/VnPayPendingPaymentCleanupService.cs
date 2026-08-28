@@ -47,7 +47,7 @@ namespace PolyBabyAPI.Services
                                  && pt.CreatedAt <= expiredBefore
                                  && pt.Invoice != null
                                  && !pt.Invoice.IsDeleted
-                                 && pt.Invoice.PayMethod == PayMethod.MobilePayment
+                                 && (pt.Invoice.PayMethod == PayMethod.MobilePayment || pt.Invoice.PayMethod == PayMethod.ZaloPay)
                                  && pt.Invoice.Status == OrderStatus.Pending)
                     .Select(pt => pt.InvoiceID)
                     .Distinct()
@@ -68,7 +68,7 @@ namespace PolyBabyAPI.Services
                         continue;
                     }
 
-                    var cancelled = await invoiceService.AdminCancelAsync(invoiceId, "Qu· 24 gi? ch?a ho‡n t?t thanh to·n VNPay.");
+                    var cancelled = await invoiceService.AdminCancelAsync(invoiceId, "Qu√° 24 gi? ch?a ho√†n t?t thanh to√°n VNPay.");
                     if (!cancelled)
                     {
                         continue;
@@ -101,3 +101,4 @@ namespace PolyBabyAPI.Services
         }
     }
 }
+

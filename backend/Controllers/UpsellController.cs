@@ -19,18 +19,11 @@ namespace PolyBabyAPI.Controllers
         }
 
         [HttpGet("checkout-suggestions")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetCheckoutUpsell()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { Message = "User not found." });
-            }
-
-            var recommendations = await _upsellService.GetCheckoutUpsellAsync(userId);
-            
-            // Giả sử dự án chưa có một standard ApiResponse thống nhất hoàn toàn, ta trả về dạng JSON trực tiếp 
-            // Nếu có ApiResponse<T>, có thể bọc lại. Ở đây dùng chuẩn Ok với dữ liệu mảng DTOs.
+            var recommendations = await _upsellService.GetCheckoutUpsellAsync(userId ?? string.Empty);
             return Ok(recommendations);
         }
     }

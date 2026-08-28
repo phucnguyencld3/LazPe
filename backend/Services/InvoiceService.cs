@@ -502,19 +502,18 @@ namespace PolyBabyAPI.Services
                     });
                 }
 
-                if (payMethod == PayMethod.MobilePayment || payMethod == PayMethod.ZaloPay || invoice.AmountToPay == 0)
+                if (invoice.AmountToPay == 0)
                 {
-                    string provider = invoice.AmountToPay == 0 ? "SystemWallet" : (payMethod == PayMethod.ZaloPay ? "ZaloPay" : "VNPay");
                     _context.PaymentTransactions.Add(new PaymentTransaction
                     {
                         InvoiceID = invoice.InvoiceID,
                         TxnRef = invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
-                        Status = invoice.AmountToPay == 0 ? PaymentTransactionStatus.Success : PaymentTransactionStatus.Pending,
-                        Amount = invoice.AmountToPay,
-                        Provider = provider,
+                        Status = PaymentTransactionStatus.Success,
+                        Amount = 0,
+                        Provider = "SystemWallet",
                         CreatedAt = DateTime.Now,
-                        PaidAt = invoice.AmountToPay == 0 ? DateTime.Now : null,
-                        CompletedAt = invoice.AmountToPay == 0 ? DateTime.Now : null
+                        PaidAt = DateTime.Now,
+                        CompletedAt = DateTime.Now
                     });
                 }
 

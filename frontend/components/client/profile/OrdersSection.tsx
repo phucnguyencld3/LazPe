@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getUserOrders, retryVnPayPayment, markOrderCompleted, addToCart } from "@/lib/api";
+import { getUserOrders, retryVnPayPayment, retryZaloPayPayment, markOrderCompleted, addToCart } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { Loader, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { OrderDetailView } from "./OrderDetailView";
@@ -247,11 +247,15 @@ export function OrdersSection({
     }
   };
 
-  const handleRetryPayment = async (orderId: number) => {
+  const handleRetryPayment = async (orderId: number, payMethodCode?: number, payMethodName?: string) => {
     setActionLoading(true);
-    toast.loading("Đang kết nối lại cổng thanh toán VNPay...");
+    const isZaloPay = payMethodCode === 5 || payMethodName?.includes("ZaloPay");
+    const providerName = isZaloPay ? "ZaloPay" : "VNPay";
+    toast.loading(`Đang kết nối lại cổng thanh toán ${providerName}...`);
     try {
-      const res = await retryVnPayPayment(orderId, token);
+      const res = isZaloPay
+        ? await retryZaloPayPayment(orderId, token)
+        : await retryVnPayPayment(orderId, token);
       toast.dismiss();
       if (res.success && res.paymentUrl) {
         toast.success("Kết nối thành công! Đang chuyển hướng...");
@@ -367,8 +371,9 @@ export function OrdersSection({
             return (
               <>
                 {paginatedOrders.map((order) => {
+                  const isZaloPay = order.payMethodCode === 5 || order.payMethod?.includes("ZaloPay");
                   const isVnPay = order.payMethodCode === 3 || order.payMethodCode === 2 || order.payMethod?.includes("VNPay") || order.payMethod?.includes("Ví điện tử");
-                  const canRetry = order.statusCode === 0 && isVnPay;
+                  const canRetry = order.statusCode === 0 && (isVnPay || isZaloPay);
 
                   return (
                     <div
@@ -502,7 +507,7 @@ export function OrdersSection({
                             )}
                             {canRetry && (
                               <button
-                                onClick={() => handleRetryPayment(order.invoiceID)}
+                                onClick={() => handleRetryPayment(order.invoiceID, order.payMethodCode, order.payMethod)}
                                 className="bg-primary hover:bg-primary/90 text-white px-3.5 py-1.5 rounded-[6px] font-bold text-[11px] active:scale-95 transition-all shadow-sm"
                                 disabled={actionLoading}
                               >

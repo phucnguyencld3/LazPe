@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FileText, Sparkles, ShieldCheck, Loader, ChevronDown, ChevronUp } from "lucide-react";
 import { CartInfo, CartDetailInfo, LoyaltyEarnPolicySummary, LoyaltyRedeemPolicySummary } from "@/lib/api";
-import { CheckoutUpsellInline } from "@/components/client/checkout/CheckoutUpsellInline";
 
 interface OrderSummarySidebarProps {
   cart: CartInfo | null;
@@ -38,7 +37,6 @@ interface OrderSummarySidebarProps {
   walletDiscount: number;
   coinsDiscount: number;
   isWalletLocked?: boolean;
-  onUpsellAdded: () => void;
 }
 
 export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
@@ -75,7 +73,6 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
   walletDiscount,
   coinsDiscount,
   isWalletLocked = false,
-  onUpsellAdded,
 }) => {
   const [inputPoints, setInputPoints] = useState<number>(pointsToUse);
   const [isWalletExpanded, setIsWalletExpanded] = useState<boolean>(false);
@@ -172,9 +169,6 @@ export const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
             })}
           </div>
         </div>
-
-        {/* Upsell Inline Section */}
-        <CheckoutUpsellInline onUpsellAdded={onUpsellAdded} />
 
         {/* Vouchers Section */}
         <div className="px-6 py-4 space-y-3 border-t border-slate-100">

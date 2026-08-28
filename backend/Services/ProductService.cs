@@ -138,17 +138,48 @@ namespace PolyBabyAPI.Services
                 // Apply sorting
                 if (!useRelevanceSort)
                 {
-                    query = sortBy.ToLower() switch
+                    var sortKey = sortBy.ToLower();
+                    if (sortKey == "bestseller")
                     {
-                        "productname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.ProductName) : query.OrderByDescending(p => p.ProductName),
-                        "price" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
-                        "code" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Code) : query.OrderByDescending(p => p.Code),
-                        "categoryname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Category!.CategoryName) : query.OrderByDescending(p => p.Category!.CategoryName),
-                        "ratingcount" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => _context.Reviews.Count(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == p.ProductID)) : query.OrderByDescending(p => _context.Reviews.Count(r => !r.IsHidden && r.Variant != null && r.Variant.ProductID == p.ProductID)),
-                        "topwishlist" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => _context.Wishlists.Count(w => w.ProductID == p.ProductID)) : query.OrderByDescending(p => _context.Wishlists.Count(w => w.ProductID == p.ProductID)),
-                        "bestseller" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Variants.SelectMany(v => v.InvoiceDetails.Where(id => id.Invoice.Status == OrderStatus.Completed)).Sum(id => (int?)id.Quantity) ?? 0) : query.OrderByDescending(p => p.Variants.SelectMany(v => v.InvoiceDetails.Where(id => id.Invoice.Status == OrderStatus.Completed)).Sum(id => (int?)id.Quantity) ?? 0),
-                        _ => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt)
-                    };
+                        var topSellerIds = await _context.InvoiceDetails
+                            .AsNoTracking()
+                            .Where(id => id.Invoice != null && id.Invoice.Status == OrderStatus.Completed && id.Variant != null)
+                            .GroupBy(id => id.Variant!.ProductID)
+                            .OrderByDescending(g => g.Sum(id => id.Quantity))
+                            .Select(g => g.Key)
+                            .Take(200)
+                            .ToListAsync();
+
+                        query = sortDirection.ToLower() == "asc"
+                            ? query.OrderByDescending(p => topSellerIds.Contains(p.ProductID) ? topSellerIds.IndexOf(p.ProductID) : -1)
+                            : query.OrderBy(p => topSellerIds.Contains(p.ProductID) ? topSellerIds.IndexOf(p.ProductID) : 999999);
+                    }
+                    else if (sortKey == "topwishlist")
+                    {
+                        var topWishIds = await _context.Wishlists
+                            .AsNoTracking()
+                            .GroupBy(w => w.ProductID)
+                            .OrderByDescending(g => g.Count())
+                            .Select(g => g.Key)
+                            .Take(200)
+                            .ToListAsync();
+
+                        query = sortDirection.ToLower() == "asc"
+                            ? query.OrderByDescending(p => topWishIds.Contains(p.ProductID) ? topWishIds.IndexOf(p.ProductID) : -1)
+                            : query.OrderBy(p => topWishIds.Contains(p.ProductID) ? topWishIds.IndexOf(p.ProductID) : 999999);
+                    }
+                    else
+                    {
+                        query = sortKey switch
+                        {
+                            "productname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.ProductName) : query.OrderByDescending(p => p.ProductName),
+                            "price" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
+                            "code" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Code) : query.OrderByDescending(p => p.Code),
+                            "categoryname" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.Category!.CategoryName) : query.OrderByDescending(p => p.Category!.CategoryName),
+                            "ratingcount" => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.ReviewCount) : query.OrderByDescending(p => p.ReviewCount),
+                            _ => sortDirection.ToLower() == "asc" ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt)
+                        };
+                    }
                 }
 
                 List<Product> productsBase;

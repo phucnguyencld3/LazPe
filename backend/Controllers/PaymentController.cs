@@ -121,6 +121,15 @@ namespace PolyBabyAPI.Controllers
                         {
                             tx.Status = PaymentTransactionStatus.Success;
                             tx.PaidAt = DateTime.Now;
+
+                            var otherPending = await _context.PaymentTransactions
+                                .Where(x => x.InvoiceID == invoice.InvoiceID && x.PaymentTransactionId != tx.PaymentTransactionId && x.Status == PaymentTransactionStatus.Pending)
+                                .ToListAsync();
+
+                            foreach (var pt in otherPending)
+                            {
+                                pt.Status = PaymentTransactionStatus.Failed;
+                            }
                         }
                         else if (responseCode == "24")
                         {
@@ -295,6 +304,15 @@ namespace PolyBabyAPI.Controllers
                             tx.PaidAt = DateTime.Now;
                             tx.VnPayTransactionNo = zpTransId;
                             tx.RawQuery = data;
+
+                            var otherPending = await _context.PaymentTransactions
+                                .Where(x => x.InvoiceID == invoice.InvoiceID && x.PaymentTransactionId != tx.PaymentTransactionId && x.Status == PaymentTransactionStatus.Pending)
+                                .ToListAsync();
+
+                            foreach (var pt in otherPending)
+                            {
+                                pt.Status = PaymentTransactionStatus.Failed;
+                            }
                         }
 
                         if (invoice.Status == OrderStatus.Pending)
@@ -336,10 +354,37 @@ namespace PolyBabyAPI.Controllers
                 if (int.TryParse(invoiceRef, out var invoiceId))
                 {
                     var invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceID == invoiceId && !x.IsDeleted);
-                    if (invoice != null && isSuccess && invoice.Status == OrderStatus.Pending)
+                    if (invoice != null)
                     {
-                        invoice.Status = OrderStatus.Confirmed;
-                        invoice.ConfirmedAt = DateTime.Now;
+                        var tx = await _context.PaymentTransactions
+                            .Where(x => x.InvoiceID == invoice.InvoiceID && (x.TxnRef == appTransId || x.Provider == "ZaloPay"))
+                            .OrderByDescending(x => x.PaymentTransactionId)
+                            .FirstOrDefaultAsync();
+
+                        if (tx != null)
+                        {
+                            tx.Status = isSuccess ? PaymentTransactionStatus.Success : PaymentTransactionStatus.Failed;
+                            if (isSuccess)
+                            {
+                                tx.PaidAt = DateTime.Now;
+
+                                var otherPending = await _context.PaymentTransactions
+                                    .Where(x => x.InvoiceID == invoice.InvoiceID && x.PaymentTransactionId != tx.PaymentTransactionId && x.Status == PaymentTransactionStatus.Pending)
+                                    .ToListAsync();
+
+                                foreach (var pt in otherPending)
+                                {
+                                    pt.Status = PaymentTransactionStatus.Failed;
+                                }
+                            }
+                        }
+
+                        if (isSuccess && invoice.Status == OrderStatus.Pending)
+                        {
+                            invoice.Status = OrderStatus.Confirmed;
+                            invoice.ConfirmedAt = DateTime.Now;
+                        }
+
                         await _context.SaveChangesAsync();
                     }
                 }

@@ -1725,6 +1725,33 @@ export async function retryVnPayPayment(
   }
 }
 
+export async function retryZaloPayPayment(
+  id: number,
+  token: string
+): Promise<{ success: boolean; paymentUrl?: string; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/retry-zalopay`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    if (response.ok && result.success) {
+      return { success: true, paymentUrl: result.paymentUrl };
+    }
+    return {
+      success: false,
+      message: result.message || "Tạo lại liên kết thanh toán ZaloPay thất bại.",
+    };
+  } catch (error) {
+    console.error("Error retrying ZaloPay payment:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
 // ===== Return / Refund Workflow =====
 
 export async function requestReturn(
