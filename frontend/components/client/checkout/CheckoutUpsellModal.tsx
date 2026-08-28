@@ -54,11 +54,14 @@ export const CheckoutUpsellModal: React.FC<Props> = ({ isOpen, onClose, onAddToC
               <div key={p.variantID} className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col hover:shadow-lg transition-shadow duration-300 group">
                 <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden bg-gray-50">
                   <Image 
-                    src={p.imageUrl || "/images/placeholder.jpg"} 
+                    src={p.imageUrl && p.imageUrl.trim() !== "" ? p.imageUrl : "/images/placeholder.jpg"} 
                     alt={p.productName} 
                     fill 
                     className="object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/images/placeholder.jpg";
+                    }}
                   />
                   {p.discountPercent > 0 && (
                     <div className="absolute top-2 right-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">

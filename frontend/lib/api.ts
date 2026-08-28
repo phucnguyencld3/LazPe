@@ -1725,6 +1725,33 @@ export async function retryVnPayPayment(
   }
 }
 
+export async function retryZaloPayPayment(
+  id: number,
+  token: string
+): Promise<{ success: boolean; paymentUrl?: string; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Invoice/${id}/retry-zalopay`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    if (response.ok && result.success) {
+      return { success: true, paymentUrl: result.paymentUrl };
+    }
+    return {
+      success: false,
+      message: result.message || "Tạo lại liên kết thanh toán ZaloPay thất bại.",
+    };
+  } catch (error) {
+    console.error("Error retrying ZaloPay payment:", error);
+    return { success: false, message: "Lỗi kết nối mạng." };
+  }
+}
+
 // ===== Return / Refund Workflow =====
 
 export async function requestReturn(
@@ -3729,6 +3756,8 @@ export interface AffiliateDashboardStats {
   affiliatePoint: number;
   totalClicks: number;
   totalConversions: number;
+  remainingRedeemCountThisMonth?: number;
+  hasPaymentPin?: boolean;
   milestones: {
     milestoneId: number;
     requiredRevenue: number;
@@ -3848,5 +3877,74 @@ export async function trackAffiliateClick(code: string): Promise<boolean> {
   } catch (error) {
     console.error("Error tracking affiliate click:", error);
     return false;
+  }
+}
+
+export async function calculateShippingFee(addressId: number, weight: number, length: number, width: number, height: number): Promise<{ fee: number; expectedDelivery: string | null } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Shipping/calculate-fee`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ addressId, weight, length, width, height }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return {
+        fee: result.fee,
+        expectedDelivery: result.expectedDelivery,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error calculating shipping fee:", error);
+    return null;
+  }
+}
+
+export async function redeemAffiliatePoints(
+  token: string,
+  pointsToRedeem: number,
+  paymentPin: string
+): Promise<{
+  success: boolean;
+  message: string;
+  newWalletBalance?: number;
+  remainingPoints?: number;
+  remainingRedeemCountThisMonth?: number;
+  requiresPinSetup?: boolean;
+  isLocked?: boolean;
+  failedCount?: number;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/redeem-points`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pointsToRedeem, paymentPin }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && result.success) {
+      return result;
+    }
+    return {
+      success: false,
+      message: result.message || "Quy đổi thất bại.",
+      requiresPinSetup: result.requiresPinSetup || false,
+      isLocked: result.isLocked || false,
+      failedCount: result.failedCount || 0,
+    };
+  } catch (error) {
+    console.error("Error redeeming affiliate points:", error);
+    return { success: false, message: "Lỗi kết nối máy chủ" };
   }
 }

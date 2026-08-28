@@ -21,6 +21,7 @@ namespace PolyBabyAPI.Services
         private readonly IWalletSecurityService _walletSecurityService;
         private readonly INotificationService _notificationService;
         private readonly IAffiliateService _affiliateService;
+        private readonly PolyBabyAPI.Services.Shipping.IShippingProvider _shippingProvider;
 
         public InvoiceService(
             ApplicationDbContext context, 
@@ -32,7 +33,8 @@ namespace PolyBabyAPI.Services
             ICartService cartService,
             IWalletSecurityService walletSecurityService,
             INotificationService notificationService,
-            IAffiliateService affiliateService)
+            IAffiliateService affiliateService,
+            PolyBabyAPI.Services.Shipping.IShippingProvider shippingProvider)
         {
             _context = context;
             _logger = logger;
@@ -44,6 +46,7 @@ namespace PolyBabyAPI.Services
             _walletSecurityService = walletSecurityService;
             _notificationService = notificationService;
             _affiliateService = affiliateService;
+            _shippingProvider = shippingProvider;
         }
 
         // ======== Lấy danh sách hóa đơn ========
@@ -309,12 +312,13 @@ namespace PolyBabyAPI.Services
 
             decimal totalDiscount = discountAmount + pointsDiscountAmount + coinsDiscountAmount + walletDiscountAmount;
 
-            // ✅ Tính phí ship gốc dựa trên tổng tiền sau khi trừ giảm giá sản phẩm & điểm loyalty
+            // Tính phí ship gốc dựa trên tổng tiền sau khi trừ giảm giá sản phẩm & điểm loyalty
             decimal netTotalPrice = subTotal - totalDiscount;
             if (netTotalPrice < 0) netTotalPrice = 0;
-            decimal originalShippingFee = CalculateShippingFee(netTotalPrice);
+            int totalWeight = itemsToCheckout.Count * 500;
+            decimal originalShippingFee = await CalculateShippingFeeAsync(userAddress, shippingAddress, totalWeight);
 
-            // ✅ Tính ShippingDiscountAmount từ shipping voucher của Cart
+            // Tính ShippingDiscountAmount từ shipping voucher của Cart
             decimal shippingDiscountAmount = 0;
             Voucher? appliedShippingVoucher = null;
 
@@ -498,18 +502,18 @@ namespace PolyBabyAPI.Services
                     });
                 }
 
-                if (payMethod == PayMethod.MobilePayment || invoice.AmountToPay == 0)
+                if (invoice.AmountToPay == 0)
                 {
                     _context.PaymentTransactions.Add(new PaymentTransaction
                     {
                         InvoiceID = invoice.InvoiceID,
                         TxnRef = invoice.InvoiceCode ?? invoice.InvoiceID.ToString(),
-                        Status = invoice.AmountToPay == 0 ? PaymentTransactionStatus.Success : PaymentTransactionStatus.Pending,
-                        Amount = invoice.AmountToPay,
-                        Provider = invoice.AmountToPay == 0 ? "SystemWallet" : "VNPay",
+                        Status = PaymentTransactionStatus.Success,
+                        Amount = 0,
+                        Provider = "SystemWallet",
                         CreatedAt = DateTime.Now,
-                        PaidAt = invoice.AmountToPay == 0 ? DateTime.Now : null,
-                        CompletedAt = invoice.AmountToPay == 0 ? DateTime.Now : null
+                        PaidAt = DateTime.Now,
+                        CompletedAt = DateTime.Now
                     });
                 }
 
@@ -681,7 +685,7 @@ namespace PolyBabyAPI.Services
             invoice.TotalPrice = invoice.SubTotal - invoice.DiscountAmount;
             if (invoice.TotalPrice < 0) invoice.TotalPrice = 0;
             
-            invoice.ShippingFee = CalculateShippingFee(invoice.TotalPrice);
+            invoice.ShippingFee = await CalculateShippingFeeAsync(null, invoice.ShippingAddress, invoice.InvoiceDetails.Count * 500);
 
             if (invoice.ShippingVoucherID.HasValue)
             {
@@ -1387,14 +1391,65 @@ namespace PolyBabyAPI.Services
 
             // Tính lại TotalPrice
             invoice.TotalPrice = invoice.SubTotal;
-            invoice.ShippingFee = CalculateShippingFee(invoice.TotalPrice);
+            invoice.ShippingFee = await CalculateShippingFeeAsync(null, invoice.ShippingAddress, 500); // Need to await
 
             await _context.SaveChangesAsync();
         }
 
         // ======== Helper tính phí ship ========
-        private static decimal CalculateShippingFee(decimal total)
+        private async Task<decimal> CalculateShippingFeeAsync(UserAddress? userAddress, string? shippingAddress, int totalWeight)
         {
+            try
+            {
+                int ghnDistrictId = 0;
+                string ghnWardCode = "";
+
+                if (userAddress != null)
+                {
+                    if (userAddress.ApiVersion == "v1")
+                    {
+                        var map = await _shippingProvider.MapAddressToGHNAsync(userAddress.Province?.Name ?? "", userAddress.District?.Name ?? "", userAddress.Ward?.Name ?? "");
+                        if (map != null)
+                        {
+                            ghnDistrictId = map.Value.districtId;
+                            ghnWardCode = map.Value.wardCode;
+                        }
+                    }
+                    else
+                    {
+                        int.TryParse(userAddress.District?.Code, out ghnDistrictId);
+                        ghnWardCode = userAddress.Ward?.Code ?? "";
+                    }
+                }
+                else if (!string.IsNullOrEmpty(shippingAddress))
+                {
+                    // Fallback to text matching if we only have the raw string
+                    var parts = shippingAddress.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (parts.Length >= 3)
+                    {
+                        string wardStr = parts[parts.Length - 3];
+                        string districtStr = parts[parts.Length - 2];
+                        string provinceStr = parts[parts.Length - 1];
+                        var map = await _shippingProvider.MapAddressToGHNAsync(provinceStr, districtStr, wardStr);
+                        if (map != null)
+                        {
+                            ghnDistrictId = map.Value.districtId;
+                            ghnWardCode = map.Value.wardCode;
+                        }
+                    }
+                }
+                
+                if (ghnDistrictId > 0 && !string.IsNullOrEmpty(ghnWardCode))
+                {
+                    var fee = await _shippingProvider.CalculateFeeAsync(ghnDistrictId, ghnWardCode, totalWeight, 10, 10, 10);
+                    if (fee > 0) return fee;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CalculateShippingFeeAsync failed");
+            }
+            
             return 25000;
         }
 

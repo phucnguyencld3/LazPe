@@ -17,7 +17,10 @@ namespace PolyBabyAPI.Models
         MobilePayment = 3,
 
         [Display(Name = "Ví nội bộ / Hệ thống")]
-        SystemWallet = 4
+        SystemWallet = 4,
+
+        [Display(Name = "Ví ZaloPay")]
+        ZaloPay = 5
     }
 
     public enum OrderStatus

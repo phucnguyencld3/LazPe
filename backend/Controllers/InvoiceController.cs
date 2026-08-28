@@ -23,6 +23,7 @@ namespace PolyBabyAPI.Controllers
         private readonly ILogger<InvoiceController> _logger;
         private readonly ApplicationDbContext _context;
         private readonly IVnPayService _vnPayService;
+        private readonly IZaloPayService _zaloPayService;
         private readonly INotificationService _notificationService;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IIpBlockService _ipBlockService;
@@ -34,6 +35,7 @@ namespace PolyBabyAPI.Controllers
             ILogger<InvoiceController> logger,
             ApplicationDbContext context,
             IVnPayService vnPayService,
+            IZaloPayService zaloPayService,
             INotificationService notificationService,
             ICloudinaryService cloudinaryService,
             IIpBlockService ipBlockService,
@@ -44,6 +46,7 @@ namespace PolyBabyAPI.Controllers
             _logger = logger;
             _context = context;
             _vnPayService = vnPayService;
+            _zaloPayService = zaloPayService;
             _notificationService = notificationService;
             _cloudinaryService = cloudinaryService;
             _ipBlockService = ipBlockService;
@@ -746,6 +749,34 @@ namespace PolyBabyAPI.Controllers
                         $"ThanhToanDonHang_{txnRef}",
                         "");
                 }
+                else if (invoice.PayMethod == PayMethod.ZaloPay)
+                {
+                    var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
+                    var appTransId = $"{DateTime.Now:yyMMdd}_{invoice.InvoiceID}_{Guid.NewGuid().ToString("N")[..6]}";
+                    var zaloResult = await _zaloPayService.CreatePaymentUrlAsync(
+                        appTransId,
+                        amountToPay,
+                        $"Thanh toan don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}");
+                    if (zaloResult.Success)
+                    {
+                        paymentUrl = zaloResult.PaymentUrl;
+                        
+                        _context.PaymentTransactions.Add(new PaymentTransaction
+                        {
+                            InvoiceID = invoice.InvoiceID,
+                            TxnRef = appTransId,
+                            Provider = "ZaloPay",
+                            Amount = amountToPay,
+                            Status = PaymentTransactionStatus.Pending
+                        });
+                        await _context.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        _logger.LogError("ZaloPay CreatePaymentUrl failed for invoice {InvoiceId}: {Message}", invoice.InvoiceID, zaloResult.Message);
+                        return BadRequest(new { success = false, message = $"Lỗi từ cổng thanh toán ZaloPay: {zaloResult.Message}" });
+                    }
+                }
  
                 try
                 {
@@ -999,10 +1030,8 @@ namespace PolyBabyAPI.Controllers
                     .OrderByDescending(pt => pt.CreatedAt)
                     .FirstOrDefault();
 
-                if (latestPending == null)
-                    return BadRequest(new { message = "Không có giao dịch chờ thanh toán để thực hiện lại." });
-
-                if (latestPending.CreatedAt.AddHours(24) < DateTime.Now)
+                var referenceTime = latestPending?.CreatedAt ?? invoice.CreatedAt ?? DateTime.Now;
+                if (referenceTime.AddHours(24) < DateTime.Now)
                     return BadRequest(new { message = "Đã quá hạn 24 giờ thanh toán. Vui lòng tạo đơn hàng mới." });
 
                 var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
@@ -1017,6 +1046,7 @@ namespace PolyBabyAPI.Controllers
                 {
                     InvoiceID = invoice.InvoiceID,
                     TxnRef = txnRef,
+                    Provider = "VNPay",
                     Status = PaymentTransactionStatus.Pending,
                     CreatedAt = DateTime.Now
                 });
@@ -1033,6 +1063,78 @@ namespace PolyBabyAPI.Controllers
             {
                 _logger.LogError(ex, "Error retrying VNPay for invoice {InvoiceId}", id);
                 return StatusCode(500, new { message = "Lỗi khi tạo lại giao dịch VNPay", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Thanh toán lại đơn hàng qua ZaloPay (chỉ áp dụng cho đơn hàng sử dụng phương thức ZaloPay và đang ở trạng thái Pending)
+        /// </summary>
+        [HttpPost("{id}/retry-zalopay")]
+        //[Authorize]
+        public async Task<IActionResult> RetryZaloPay(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id);
+                if (invoice == null)
+                    return NotFound(new { message = "Không tìm thấy hóa đơn" });
+
+                if (invoice.PayMethod != PayMethod.ZaloPay)
+                    return BadRequest(new { message = "Đơn hàng không sử dụng phương thức thanh toán ZaloPay." });
+
+                if (invoice.Status != OrderStatus.Pending)
+                    return BadRequest(new { message = "Chỉ có thể thanh toán lại khi đơn hàng đang chờ xác nhận." });
+
+                var hasSuccessPayment = invoice.PaymentTransactions.Any(pt => pt.Status == PaymentTransactionStatus.Success);
+                if (hasSuccessPayment)
+                    return BadRequest(new { message = "Đơn hàng đã được thanh toán thành công." });
+
+                var latestPending = invoice.PaymentTransactions
+                    .Where(pt => pt.Status == PaymentTransactionStatus.Pending)
+                    .OrderByDescending(pt => pt.CreatedAt)
+                    .FirstOrDefault();
+
+                var referenceTime = latestPending?.CreatedAt ?? invoice.CreatedAt ?? DateTime.Now;
+                if (referenceTime.AddHours(24) < DateTime.Now)
+                    return BadRequest(new { message = "Đã quá hạn 24 giờ thanh toán. Vui lòng tạo đơn hàng mới." });
+
+                var amountToPay = invoice.TotalPrice + invoice.ShippingFee - invoice.ShippingDiscountAmount;
+                var datePrefix = DateTime.Now.ToString("yyMMdd");
+                var appTransId = $"{datePrefix}_{invoice.InvoiceID}_{DateTime.Now.Ticks % 100000}";
+                var description = $"Thanh toan lai don hang #{invoice.InvoiceCode ?? invoice.InvoiceID.ToString()}";
+
+                var result = await _zaloPayService.CreatePaymentUrlAsync(
+                    appTransId,
+                    amountToPay,
+                    description);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                _context.PaymentTransactions.Add(new PaymentTransaction
+                {
+                    InvoiceID = invoice.InvoiceID,
+                    TxnRef = appTransId,
+                    Provider = "ZaloPay",
+                    Amount = amountToPay,
+                    Status = PaymentTransactionStatus.Pending,
+                    CreatedAt = DateTime.Now
+                });
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    paymentUrl = result.PaymentUrl
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrying ZaloPay for invoice {InvoiceId}", id);
+                return StatusCode(500, new { message = "Lỗi khi tạo lại giao dịch ZaloPay", error = ex.Message });
             }
         }
 
@@ -1542,24 +1644,30 @@ namespace PolyBabyAPI.Controllers
                 }).ToList(),
                 PaymentTransactions = invoice.PaymentTransactions?
                     .OrderByDescending(pt => pt.CreatedAt)
-                    .Select(pt => new
-                    {
-                        pt.PaymentTransactionId,
-                        pt.InvoiceID,
-                        pt.TxnRef,
-                        pt.VnPayTransactionNo,
-                        pt.ResponseCode,
-                        Status = pt.Status.ToString(),
-                        StatusCode = (int)pt.Status,
-                        StatusLabel = pt.Status switch
+                    .Select(pt => {
+                        var hasSuccess = invoice.PaymentTransactions.Any(other => other.Status == PaymentTransactionStatus.Success);
+                        var isSupersededPending = hasSuccess && pt.Status == PaymentTransactionStatus.Pending;
+                        var effectiveStatus = isSupersededPending ? PaymentTransactionStatus.Failed : pt.Status;
+
+                        return new
                         {
-                            PaymentTransactionStatus.Pending => "Đang chờ",
-                            PaymentTransactionStatus.Success => "Thành công",
-                            PaymentTransactionStatus.Failed => "Thất bại",
-                            _ => "Không xác định"
-                        },
-                        pt.CreatedAt,
-                        pt.PaidAt
+                            pt.PaymentTransactionId,
+                            pt.InvoiceID,
+                            pt.TxnRef,
+                            pt.VnPayTransactionNo,
+                            pt.ResponseCode,
+                            Status = effectiveStatus.ToString(),
+                            StatusCode = (int)effectiveStatus,
+                            StatusLabel = effectiveStatus switch
+                            {
+                                PaymentTransactionStatus.Pending => "Đang chờ",
+                                PaymentTransactionStatus.Success => "Thành công",
+                                PaymentTransactionStatus.Failed => "Thất bại",
+                                _ => "Không xác định"
+                            },
+                            pt.CreatedAt,
+                            pt.PaidAt
+                        };
                     })
                     .ToList()
             };
@@ -1603,7 +1711,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy dữ liệu thống kê chi tiêu cá nhân của khách hàng hiện tại
         /// </summary>
         [HttpGet("spending-dashboard")]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> GetSpendingDashboard()
         {
             try
@@ -1616,11 +1724,16 @@ namespace PolyBabyAPI.Controllers
 
                 // Lấy tất cả hóa đơn hoàn thành và không bị xóa mềm
                 var invoices = await _context.Invoices
+                    .AsNoTracking()
                     .Where(i => i.UserID == userId && !i.IsDeleted && i.Status == OrderStatus.Completed)
                     .Include(i => i.InvoiceDetails)
                         .ThenInclude(d => d.Variant)
                             .ThenInclude(v => v.Product)
                                 .ThenInclude(p => p.Category)
+                    .Include(i => i.InvoiceDetails)
+                        .ThenInclude(d => d.Variant)
+                            .ThenInclude(v => v.Product)
+                                .ThenInclude(p => p.Images)
                     .Include(i => i.InvoiceDetails)
                         .ThenInclude(d => d.Bundle)
                     .ToListAsync();

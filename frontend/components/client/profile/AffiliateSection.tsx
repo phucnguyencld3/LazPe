@@ -1,19 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { getAffiliateDashboard, getAffiliateLinks, registerAffiliate, generateAffiliateLink, deleteAffiliateLink, AffiliateDashboardStats, AffiliateLink } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { ProductSelectModal } from "./modals/ProductSelectModal";
+import { RedeemPointsModal } from "./modals/RedeemPointsModal";
 import { Product } from "@/types";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
 
 interface Props {
   token: string;
@@ -27,17 +19,17 @@ export default function AffiliateSection({ token }: Props) {
   const [agreed, setAgreed] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // Time Range Filter for Chart
-  const [chartTimeRange, setChartTimeRange] = useState<"7d" | "30d" | "12m">("7d");
+  // View Mode: 'grid' (dạng thẻ Card gọn nhẹ) vs 'list' (dạng danh sách chi tiết)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Custom Delete Confirmation Modal State
-  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<{ code: string; productName: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // Pagination State - 10 links per page
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  // Pagination, Search & Time Filter state for affiliate links
+  const [linksPage, setLinksPage] = useState<number>(1);
+  const [linksSearch, setLinksSearch] = useState<string>("");
+  const [timeFilter, setTimeFilter] = useState<string>("newest");
+  const LINKS_PER_PAGE = viewMode === "grid" ? 10 : 5;
 
   useEffect(() => {
     fetchData();
@@ -46,14 +38,12 @@ export default function AffiliateSection({ token }: Props) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [dashData, myLinks] = await Promise.all([
-        getAffiliateDashboard(token),
-        getAffiliateLinks(token)
-      ]);
-
-      if (dashData && dashData.monthlyRevenue !== undefined) {
+      const data = await getAffiliateDashboard(token);
+      if (data && data.monthlyRevenue !== undefined) {
         setIsRegistered(true);
-        setStats(dashData);
+        setStats(data);
+        
+        const myLinks = await getAffiliateLinks(token);
         setLinks(myLinks || []);
       } else {
         setIsRegistered(false);
@@ -68,32 +58,45 @@ export default function AffiliateSection({ token }: Props) {
 
   const handleRegister = async () => {
     if (!agreed) {
-      toast.error("Vui lòng đồng ý với điều khoản");
+      toast.error("Vui lòng đồng ý với điều khoản dịch vụ");
       return;
     }
     const res = await registerAffiliate(token);
     if (res.success) {
-      toast.success("Đăng ký thành công!");
+      toast.success("Đăng ký chương trình Tiếp thị liên kết thành công!");
       fetchData();
     } else {
       toast.error(res.message || "Đăng ký thất bại");
     }
   };
 
-  const handleSelectProductFromModal = async (product: Product) => {
+  const handleSelectProductsFromModal = async (selectedProducts: Product[]) => {
+    if (!selectedProducts || selectedProducts.length === 0) return;
     setGenerating(true);
     try {
-      const res = await generateAffiliateLink(token, product.id);
-      if (res.success) {
-        toast.success(`Đã tạo link giới thiệu cho "${product.name}"!`);
+      const results = await Promise.all(
+        selectedProducts.map((product) =>
+          generateAffiliateLink(token, product.id)
+            .then((res) => (res.success ? 1 : 0))
+            .catch(() => 0)
+        )
+      );
+
+      const successCount = results.reduce((acc, curr) => acc + curr, 0);
+      const failCount = selectedProducts.length - successCount;
+
+      if (successCount > 0) {
+        toast.success(`Đã tạo thành công ${successCount} link tiếp thị mới!`);
         const myLinks = await getAffiliateLinks(token);
-        setLinks(myLinks);
-      } else {
-        toast.error(res.message || "Tạo link thất bại");
+        setLinks(myLinks || []);
+        setLinksPage(1);
+      }
+      if (failCount > 0) {
+        toast.error(`Có ${failCount} sản phẩm không tạo được link`);
       }
     } catch (e) {
       console.error(e);
-      toast.error("Lỗi kết nối khi tạo link");
+      toast.error("Lỗi kết nối khi tạo link hàng loạt");
     } finally {
       setGenerating(false);
     }
@@ -107,716 +110,679 @@ export default function AffiliateSection({ token }: Props) {
     return link.fullUrl || `/products/${identifier}?ref=${link.affiliateLinkCode}`;
   };
 
-  const handlePromptDeleteLink = (code: string, productName: string) => {
-    setDeleteConfirmTarget({ code, productName });
+  const handleCopyLink = (link: AffiliateLink) => {
+    const url = getLinkUrl(link);
+    navigator.clipboard.writeText(url);
+    setCopiedCode(link.affiliateLinkCode);
+    toast.success("Đã sao chép link tiếp thị!");
+    setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  const confirmDeleteLink = async () => {
-    if (!deleteConfirmTarget) return;
-    setDeleting(true);
+  const handleDeleteLink = async (code: string, productName: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa link tiếp thị cho sản phẩm "${productName}" không?`)) return;
     try {
-      const res = await deleteAffiliateLink(token, deleteConfirmTarget.code);
+      const res = await deleteAffiliateLink(token, code);
       if (res.success) {
         toast.success("Đã xóa link tiếp thị thành công!");
         const myLinks = await getAffiliateLinks(token);
-        setLinks(myLinks);
+        setLinks(myLinks || []);
+        setLinksPage(1);
       } else {
         toast.error(res.message || "Xóa link thất bại");
       }
     } catch (e) {
       console.error(e);
       toast.error("Lỗi kết nối khi xóa link");
-    } finally {
-      setDeleting(false);
-      setDeleteConfirmTarget(null);
     }
   };
 
-  // Generate chart data based on 100% real user affiliate link data & stats
-  const chartData = useMemo(() => {
-    const now = new Date();
-    const list: { date: string; revenue: number; clicks: number; conversions: number }[] = [];
+  // Point rate tier calculation:
+  // < 10,000,000đ: 1%
+  // 10,000,000đ - 30,000,000đ: 2%
+  // >= 30,000,000đ: 3%
+  const getPointRate = (lifetimeRevenue: number = 0) => {
+    if (lifetimeRevenue >= 30000000) return 0.03;
+    if (lifetimeRevenue >= 10000000) return 0.02;
+    return 0.01;
+  };
 
-    if (chartTimeRange === "7d") {
-      // 7 days ending today
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - i);
-        const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+  const getTierBadge = (lifetimeRevenue: number = 0) => {
+    if (lifetimeRevenue >= 30000000) return { label: "Hạng Vàng • 3% Xu", bg: "bg-primary text-white border-primary shadow-sm" };
+    if (lifetimeRevenue >= 10000000) return { label: "Hạng Bạc • 2% Xu", bg: "bg-slate-800 text-white border-slate-800 shadow-sm" };
+    return { label: "Hạng Đồng • 1% Xu", bg: "bg-primary/10 text-primary border-primary/20" };
+  };
 
-        let dayRev = 0;
-        let dayClicks = 0;
-        let dayConv = 0;
+  const currentRate = getPointRate(stats?.lifetimeRevenue);
+  const tierInfo = getTierBadge(stats?.lifetimeRevenue);
 
-        links.forEach((l) => {
-          if (!l.createdAt) return;
-          const linkDate = new Date(l.createdAt);
-          if (
-            linkDate.getDate() === d.getDate() &&
-            linkDate.getMonth() === d.getMonth() &&
-            linkDate.getFullYear() === d.getFullYear()
-          ) {
-            dayRev += l.revenue || 0;
-            dayClicks += l.clickCount || 0;
-            dayConv += l.conversionCount || 0;
-          }
-        });
+  // Filter, Time Sort & Paginate Links
+  let filteredLinks = links.filter((l) =>
+    l.productName.toLowerCase().includes(linksSearch.toLowerCase())
+  );
 
-        // Current day fallback to total stats if link dates aren't backdated
-        if (i === 0 && dayRev === 0 && dayClicks === 0 && dayConv === 0) {
-          dayRev = stats?.monthlyRevenue || links.reduce((acc, l) => acc + (l.revenue || 0), 0);
-          dayClicks = stats?.totalClicks || links.reduce((acc, l) => acc + (l.clickCount || 0), 0);
-          dayConv = stats?.totalConversions || links.reduce((acc, l) => acc + (l.conversionCount || 0), 0);
-        }
+  // Apply Time Filter
+  const now = new Date();
+  if (timeFilter === "today") {
+    filteredLinks = filteredLinks.filter((l) => {
+      const d = new Date(l.createdAt);
+      return d.toDateString() === now.toDateString();
+    });
+  } else if (timeFilter === "7days") {
+    const past7 = new Date();
+    past7.setDate(now.getDate() - 7);
+    filteredLinks = filteredLinks.filter((l) => new Date(l.createdAt) >= past7);
+  } else if (timeFilter === "30days") {
+    const past30 = new Date();
+    past30.setDate(now.getDate() - 30);
+    filteredLinks = filteredLinks.filter((l) => new Date(l.createdAt) >= past30);
+  }
 
-        list.push({
-          date: dateStr,
-          revenue: dayRev,
-          clicks: dayClicks,
-          conversions: dayConv,
-        });
-      }
-    } else if (chartTimeRange === "30d") {
-      // 30 days ending today
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - i);
-        const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+  // Sort Order
+  if (timeFilter === "oldest") {
+    filteredLinks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  } else {
+    // Default newest first
+    filteredLinks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
 
-        let dayRev = 0;
-        let dayClicks = 0;
-        let dayConv = 0;
+  const totalLinksPages = Math.ceil(filteredLinks.length / LINKS_PER_PAGE) || 1;
+  const paginatedLinks = filteredLinks.slice(
+    (linksPage - 1) * LINKS_PER_PAGE,
+    linksPage * LINKS_PER_PAGE
+  );
 
-        links.forEach((l) => {
-          if (!l.createdAt) return;
-          const linkDate = new Date(l.createdAt);
-          if (
-            linkDate.getDate() === d.getDate() &&
-            linkDate.getMonth() === d.getMonth() &&
-            linkDate.getFullYear() === d.getFullYear()
-          ) {
-            dayRev += l.revenue || 0;
-            dayClicks += l.clickCount || 0;
-            dayConv += l.conversionCount || 0;
-          }
-        });
+  // Standard Default Milestones Fallback
+  const defaultMilestones = [
+    { milestoneId: 1, requiredRevenue: 500000, voucherName: "Voucher 20.000đ", isAchieved: (stats?.monthlyRevenue || 0) >= 500000 },
+    { milestoneId: 2, requiredRevenue: 1000000, voucherName: "Voucher 50.000đ", isAchieved: (stats?.monthlyRevenue || 0) >= 1000000 },
+    { milestoneId: 3, requiredRevenue: 2000000, voucherName: "Voucher 120.000đ", isAchieved: (stats?.monthlyRevenue || 0) >= 2000000 },
+    { milestoneId: 4, requiredRevenue: 5000000, voucherName: "Voucher 300.000đ", isAchieved: (stats?.monthlyRevenue || 0) >= 5000000 },
+    { milestoneId: 5, requiredRevenue: 10000000, voucherName: "Voucher 700.000đ", isAchieved: (stats?.monthlyRevenue || 0) >= 10000000 },
+  ];
 
-        if (i === 0 && dayRev === 0 && dayClicks === 0 && dayConv === 0) {
-          dayRev = stats?.monthlyRevenue || links.reduce((acc, l) => acc + (l.revenue || 0), 0);
-          dayClicks = stats?.totalClicks || links.reduce((acc, l) => acc + (l.clickCount || 0), 0);
-          dayConv = stats?.totalConversions || links.reduce((acc, l) => acc + (l.conversionCount || 0), 0);
-        }
-
-        list.push({
-          date: dateStr,
-          revenue: dayRev,
-          clicks: dayClicks,
-          conversions: dayConv,
-        });
-      }
-    } else {
-      // 12 months
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now);
-        d.setMonth(now.getMonth() - i);
-        const label = `T${d.getMonth() + 1}`;
-
-        let monthRev = 0;
-        let monthClicks = 0;
-        let monthConv = 0;
-
-        links.forEach((l) => {
-          if (!l.createdAt) return;
-          const linkDate = new Date(l.createdAt);
-          if (
-            linkDate.getMonth() === d.getMonth() &&
-            linkDate.getFullYear() === d.getFullYear()
-          ) {
-            monthRev += l.revenue || 0;
-            monthClicks += l.clickCount || 0;
-            monthConv += l.conversionCount || 0;
-          }
-        });
-
-        if (i === 0 && monthRev === 0 && monthClicks === 0 && monthConv === 0) {
-          monthRev = stats?.monthlyRevenue || links.reduce((acc, l) => acc + (l.revenue || 0), 0);
-          monthClicks = stats?.totalClicks || links.reduce((acc, l) => acc + (l.clickCount || 0), 0);
-          monthConv = stats?.totalConversions || links.reduce((acc, l) => acc + (l.conversionCount || 0), 0);
-        }
-
-        list.push({
-          date: label,
-          revenue: monthRev,
-          clicks: monthClicks,
-          conversions: monthConv,
-        });
-      }
-    }
-
-    return list;
-  }, [chartTimeRange, links, stats]);
-
-  // Pagination calculation
-  const totalPages = Math.max(1, Math.ceil(links.length / pageSize));
-  const startIndex = (currentPage - 1) * pageSize;
-  const currentLinks = links.slice(startIndex, startIndex + pageSize);
-
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1);
-    }
-  }, [links.length, totalPages, currentPage]);
+  const displayMilestones = (stats?.milestones && stats.milestones.length > 0)
+    ? stats.milestones
+    : defaultMilestones;
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[10px] p-8 shadow-sm border border-slate-100/80 flex flex-col items-center justify-center min-h-[260px] w-full">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-          <span className="material-symbols-outlined animate-spin text-primary text-xl">progress_activity</span>
-        </div>
-        <p className="text-xs text-slate-500 font-medium">Đang tải dữ liệu Tiếp thị liên kết...</p>
+      <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 p-8 flex flex-col items-center justify-center min-h-[250px]">
+        <span className="material-symbols-outlined animate-spin text-primary text-3xl mb-2">progress_activity</span>
+        <p className="text-xs font-medium text-slate-500">Đang tải thông tin tiếp thị...</p>
       </div>
     );
   }
 
   if (!isRegistered) {
     return (
-      <section className="bg-white rounded-[10px] p-4.5 shadow-sm border border-slate-100/80 w-full space-y-4">
-        {/* Header Hero Banner */}
-        <div className="text-center space-y-2 p-4 rounded-[8px] bg-slate-50 border border-slate-100 relative overflow-hidden">
-          <div className="w-11 h-11 bg-gradient-to-tr from-primary to-[#703d46] text-white rounded-[6px] shadow-sm flex items-center justify-center mx-auto mb-1">
-            <span className="material-symbols-outlined text-2xl">campaign</span>
-          </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-primary/10 text-primary text-[11px] font-bold rounded-full">
-            📢 Tiếp thị liên kết LazPe
-          </span>
-          <h2 className="text-base font-bold text-slate-800 tracking-tight">Đăng ký trở thành Đối tác Affiliate</h2>
-          <p className="text-slate-600 text-xs max-w-md mx-auto leading-relaxed">
-            Chia sẻ sản phẩm LazPe yêu thích đến bạn bè & cộng đồng để nhận phần thưởng hấp dẫn khi giới thiệu sản phẩm!
-          </p>
+      <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
+        <div className="flex items-center gap-2 p-5 border-b border-slate-100">
+          <span className="material-symbols-outlined text-primary text-xl">campaign</span>
+          <h1 className="text-xl font-bold text-slate-800">Tiếp thị liên kết LazPe</h1>
         </div>
 
-        {/* Benefits Grid */}
-        <div className="space-y-2">
-          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Quyền lợi đặc quyền:</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-slate-50/80 p-3 rounded-[8px] border border-slate-100 space-y-1">
-              <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-base">confirmation_number</span>
-              </div>
-              <h4 className="font-bold text-slate-800 text-xs">Voucher Độc Quyền</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed">Nhận voucher mua sắm cực hot khi hoàn thành mốc doanh số.</p>
+        <div className="p-6 max-w-2xl mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+              <span className="material-symbols-outlined text-2xl">campaign</span>
             </div>
-
-            <div className="bg-slate-50/80 p-3 rounded-[8px] border border-slate-100 space-y-1">
-              <div className="w-7 h-7 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-base">stars</span>
-              </div>
-              <h4 className="font-bold text-slate-800 text-xs">Tích Điểm Đổi Quà</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed">Tích lũy Affiliate Point từ mỗi đơn hàng thành công.</p>
-            </div>
-
-            <div className="bg-slate-50/80 p-3 rounded-[8px] border border-slate-100 space-y-1">
-              <div className="w-7 h-7 rounded-md bg-sky-100 text-sky-600 flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-base">insights</span>
-              </div>
-              <h4 className="font-bold text-slate-800 text-xs">Báo Cáo Minh Bạch</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed">Theo dõi chi tiết lượt click & đơn hàng theo thời gian thực.</p>
-            </div>
+            <h2 className="text-xl font-bold text-slate-800">Đăng ký Tiếp thị liên kết LazPe</h2>
+            <p className="text-slate-500 text-xs md:text-sm max-w-md mx-auto">
+              Chia sẻ sản phẩm LazPe đến mọi người để tích lũy doanh thu và đổi những phần quà hấp dẫn.
+            </p>
           </div>
+
+          <div className="bg-slate-50 rounded-[5px] p-4 border border-slate-100 space-y-2.5">
+            <h3 className="font-bold text-slate-700 text-xs md:text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-primary text-base">verified</span>
+              Quyền lợi của bạn:
+            </h3>
+            <ul className="space-y-2 text-xs md:text-sm text-slate-600">
+              <li className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500 text-base shrink-0">check_circle</span>
+                <span>Nhận Voucher thưởng khi đạt mốc doanh số hàng tháng</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500 text-base shrink-0">check_circle</span>
+                <span>Tích lũy điểm Affiliate Point để quy đổi quà tặng</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500 text-base shrink-0">check_circle</span>
+                <span>Theo dõi hiệu quả tiếp thị bằng bảng thống kê trực quan</span>
+              </li>
+            </ul>
+          </div>
+
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input 
+              type="checkbox" 
+              className="mt-0.5 w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <span className="text-xs md:text-sm text-slate-600">
+              Tôi đồng ý với <a href="#" className="text-primary font-bold hover:underline">Điều khoản & Điều kiện</a> của chương trình Tiếp thị liên kết.
+            </span>
+          </label>
+
+          <button 
+            onClick={handleRegister}
+            disabled={!agreed}
+            className={`w-full py-3 rounded-[5px] font-bold text-sm text-white transition-all ${
+              agreed 
+                ? "bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md hover:shadow-primary/20" 
+                : "bg-slate-300 cursor-not-allowed"
+            }`}
+          >
+            Trở thành đối tác Affiliate
+          </button>
         </div>
-
-        {/* Terms Agreement Checkbox */}
-        <label className="flex items-start gap-2.5 p-3 rounded-[8px] border border-slate-100 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
-          <input 
-            type="checkbox" 
-            className="mt-0.5 w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary cursor-pointer accent-primary"
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-          />
-          <span className="text-xs text-slate-600 leading-relaxed">
-            Tôi đồng ý với <a href="#" className="text-primary font-bold hover:underline">Điều khoản & Điều kiện</a> của chương trình Tiếp thị liên kết LazPe.
-          </span>
-        </label>
-
-        {/* Submit Button */}
-        <button 
-          onClick={handleRegister}
-          disabled={!agreed}
-          className={`w-full py-2.5 rounded-[8px] font-bold text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98 text-xs ${
-            agreed 
-              ? "bg-primary hover:opacity-90 shadow-primary/20" 
-              : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-          }`}
-        >
-          <span className="material-symbols-outlined text-base">handshake</span>
-          Trở thành đối tác Affiliate
-        </button>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="bg-white rounded-[10px] p-4.5 shadow-sm border border-slate-100/80 w-full space-y-4">
-      {/* Top Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2.5">
+    <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
+      {/* Header */}
+      <div className="flex items-center justify-between p-5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center font-bold">
-            <span className="material-symbols-outlined text-base">campaign</span>
-          </div>
-          <div>
-            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Tiếp thị liên kết</h2>
-            <p className="text-[10px] text-slate-400 font-medium">Tổng quan kết quả & quản lý link tiếp thị</p>
-          </div>
+          <span className="material-symbols-outlined text-primary text-xl">campaign</span>
+          <h1 className="text-xl font-bold text-slate-800">Tiếp thị liên kết LazPe</h1>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-primary hover:opacity-90 text-white text-[11px] font-bold py-1.5 px-3 rounded-[6px] flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer self-start sm:self-auto"
-        >
-          <span className="material-symbols-outlined text-sm">add_link</span>
-          Tạo link tiếp thị mới
-        </button>
+
+        {/* Tier Status Badge */}
+        <span className={`text-xs font-bold px-3 py-1 rounded-[5px] border ${tierInfo.bg}`}>
+          {tierInfo.label}
+        </span>
       </div>
 
-      {/* KPI Overview Cards (Compact 3 Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* Card 1: Doanh thu tháng này */}
-        <div className="bg-gradient-to-br from-primary via-[#965561] to-[#6d3c45] rounded-[8px] p-3.5 text-white shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] uppercase tracking-wider font-bold text-white/90">Doanh thu tháng này</span>
-            <div className="w-7 h-7 rounded-md bg-white/15 backdrop-blur-xs flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-sm">payments</span>
+      {/* Overview Stat Cards Section */}
+      <div className="p-5 space-y-3">
+        {/* Row 1: 3 Main Revenue & Point Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Stat 1: Doanh thu tháng */}
+          <div className="bg-primary text-white rounded-[5px] p-4 shadow-sm relative overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-white/80 text-lg">payments</span>
+                <span className="font-semibold text-xs text-white/90">Doanh thu tháng này</span>
+              </div>
+              <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-medium">
+                Tháng {new Date().getMonth() + 1}
+              </span>
+            </div>
+            <div className="text-2xl font-bold">
+              {stats?.monthlyRevenue?.toLocaleString('vi-VN')}đ
             </div>
           </div>
-          <div className="text-lg font-extrabold tracking-tight text-white">
-            {stats?.monthlyRevenue?.toLocaleString('vi-VN')}đ
-          </div>
-        </div>
 
-        {/* Card 2: Tổng doanh thu trọn đời */}
-        <div className="bg-slate-50/90 border border-slate-200/80 rounded-[8px] p-3.5 flex items-center justify-between">
-          <div className="space-y-0.5">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Tổng doanh thu trọn đời</p>
-            <p className="text-base font-extrabold text-slate-800">
+          {/* Stat 2: Doanh thu trọn đời */}
+          <div className="bg-slate-50 border border-slate-100 rounded-[5px] p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-slate-400 text-lg">history</span>
+                <span className="font-semibold text-xs text-slate-500">Doanh thu trọn đời</span>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-[5px] bg-primary/10 text-primary border border-primary/20">
+                {(currentRate * 100).toFixed(0)}% Xu
+              </span>
+            </div>
+            <div className="text-xl font-bold text-slate-800">
               {stats?.lifetimeRevenue?.toLocaleString('vi-VN')}đ
-            </p>
-          </div>
-          <div className="w-7 h-7 rounded-md bg-white border border-slate-100 flex items-center justify-center text-slate-400">
-            <span className="material-symbols-outlined text-sm">history</span>
-          </div>
-        </div>
-
-        {/* Card 3: Điểm Affiliate */}
-        <div className="bg-slate-50/90 border border-slate-200/80 rounded-[8px] p-3.5 flex items-center justify-between">
-          <div className="space-y-0.5">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Điểm Affiliate</p>
-            <p className="text-base font-extrabold text-slate-800">
-              {stats?.affiliatePoint?.toLocaleString('vi-VN')} <span className="text-[10px] font-bold text-slate-400">điểm</span>
-            </p>
-          </div>
-          <div className="w-7 h-7 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500">
-            <span className="material-symbols-outlined text-sm">stars</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Analytics Chart Section (Replaced simple 2 cards with interactive chart) */}
-      <div className="bg-slate-50/60 rounded-[8px] border border-slate-200/70 p-4 space-y-3">
-        {/* Chart Header & Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="space-y-0.5">
-            <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-              <span className="material-symbols-outlined text-primary text-base">monitoring</span>
-              Biểu đồ tăng trưởng Doanh thu & Tương tác
-            </h3>
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span>
-                Doanh thu: <strong className="text-slate-800">{stats?.monthlyRevenue?.toLocaleString('vi-VN')}đ</strong>
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span>
-                Click: <strong className="text-slate-800">{stats?.totalClicks || 0}</strong>
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                Đơn hàng: <strong className="text-slate-800">{stats?.totalConversions || 0}</strong>
-              </span>
             </div>
           </div>
 
-          {/* Time Range Filter Buttons */}
-          <div className="flex items-center gap-1 bg-white p-1 rounded-[6px] border border-slate-200/80 shadow-xs self-start sm:self-auto">
+          {/* Stat 3: Điểm Affiliate & Rút về Ví */}
+          <div className="bg-slate-50 border border-slate-100 rounded-[5px] p-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-amber-500 text-lg">stars</span>
+                  <span className="font-semibold text-xs text-slate-500">Điểm Affiliate (Xu)</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-1.5 py-0.5 rounded-[5px]">
+                  Rút {stats?.remainingRedeemCountThisMonth ?? 3}/3 lần
+                </span>
+              </div>
+              <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">
+                {stats?.affiliatePoint?.toLocaleString('vi-VN')}
+                <span className="text-xs text-slate-400 font-medium">xu</span>
+              </div>
+            </div>
+
             <button
-              onClick={() => setChartTimeRange("7d")}
-              className={`px-2.5 py-1 text-[10px] font-bold rounded-[4px] transition-all cursor-pointer ${
-                chartTimeRange === "7d" 
-                  ? "bg-primary text-white shadow-xs" 
-                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
+              onClick={() => setIsRedeemModalOpen(true)}
+              className="mt-3 w-full py-1.5 px-3 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-[5px] flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-primary/20"
             >
-              7 ngày
-            </button>
-            <button
-              onClick={() => setChartTimeRange("30d")}
-              className={`px-2.5 py-1 text-[10px] font-bold rounded-[4px] transition-all cursor-pointer ${
-                chartTimeRange === "30d" 
-                  ? "bg-primary text-white shadow-xs" 
-                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
-            >
-              30 ngày
-            </button>
-            <button
-              onClick={() => setChartTimeRange("12m")}
-              className={`px-2.5 py-1 text-[10px] font-bold rounded-[4px] transition-all cursor-pointer ${
-                chartTimeRange === "12m" 
-                  ? "bg-primary text-white shadow-xs" 
-                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
-            >
-              12 tháng
+              <span className="material-symbols-outlined text-base">account_balance_wallet</span>
+              Rút về Ví LazPe
             </button>
           </div>
         </div>
 
-        {/* Recharts Area Chart */}
-        <div className="w-full h-52 pt-1 bg-white rounded-[8px] p-2 border border-slate-100 shadow-xs">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-              <defs>
-                <linearGradient id="affiliateRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#874e58" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#874e58" stopOpacity={0.0} />
-                </linearGradient>
-                <linearGradient id="affiliateClicksGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0284c7" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
+        {/* Row 2: 2 Traffic & Sales Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-slate-50 border border-slate-100 rounded-[5px] p-4 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="text-xs text-slate-500 font-medium">Lượt click link</p>
+              <p className="text-xl font-bold text-slate-800">{stats?.totalClicks || 0}</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-slate-100 shadow-sm text-blue-500">
+              <span className="material-symbols-outlined text-xl">touch_app</span>
+            </div>
+          </div>
 
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 10, fill: "#64748b" }} 
-                axisLine={{ stroke: "#e2e8f0" }}
-                tickLine={false}
-              />
-              
-              <YAxis 
-                yAxisId="left" 
-                tick={{ fontSize: 10, fill: "#64748b" }} 
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(val) => val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
-              />
-
-              <YAxis 
-                yAxisId="right" 
-                orientation="right" 
-                tick={{ fontSize: 10, fill: "#0284c7" }} 
-                axisLine={false}
-                tickLine={false}
-              />
-
-              <Tooltip 
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-white/95 backdrop-blur-md text-slate-800 rounded-xl p-3 shadow-xl text-xs space-y-1.5 border border-slate-100">
-                        <p className="text-[10px] text-slate-400 font-bold border-b border-slate-100 pb-1">{label}</p>
-                        <div className="space-y-1">
-                          <p className="text-primary font-extrabold flex items-center justify-between gap-4">
-                            <span>Doanh thu:</span>
-                            <span>{Number(payload[0]?.value || 0).toLocaleString("vi-VN")}đ</span>
-                          </p>
-                          <p className="text-sky-600 font-bold flex items-center justify-between gap-4 text-[11px]">
-                            <span>Lượt click:</span>
-                            <span>{payload[1]?.value || 0}</span>
-                          </p>
-                          <p className="text-emerald-600 font-bold flex items-center justify-between gap-4 text-[11px]">
-                            <span>Đơn hàng:</span>
-                            <span>{payload[2]?.value || 0}</span>
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-
-              <Area 
-                yAxisId="left"
-                type="monotone" 
-                dataKey="revenue" 
-                name="Doanh thu" 
-                stroke="#874e58" 
-                strokeWidth={2} 
-                fillOpacity={1} 
-                fill="url(#affiliateRevenueGradient)" 
-              />
-
-              <Area 
-                yAxisId="right"
-                type="monotone" 
-                dataKey="clicks" 
-                name="Lượt click" 
-                stroke="#0284c7" 
-                strokeWidth={1.5} 
-                strokeDasharray="3 3"
-                fillOpacity={1} 
-                fill="url(#affiliateClicksGradient)" 
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="bg-slate-50 border border-slate-100 rounded-[5px] p-4 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="text-xs text-slate-500 font-medium">Đơn hàng thành công</p>
+              <p className="text-xl font-bold text-slate-800">{stats?.totalConversions || 0}</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-slate-100 shadow-sm text-emerald-500">
+              <span className="material-symbols-outlined text-xl">shopping_bag</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Milestones Progress */}
-      {stats?.milestones && stats.milestones.length > 0 && (
-        <div className="bg-slate-50/50 rounded-[8px] p-3.5 border border-slate-200/60 space-y-2.5">
-          <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
-            <span className="material-symbols-outlined text-amber-500 text-base">emoji_events</span>
-            Tiến trình đạt Voucher tháng
+      {/* Tier Revenue Policy Banner - Single Horizontal Line, Uniform Colors */}
+      <div className="px-5 py-3 bg-slate-50/80 border-y border-slate-100 flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap">
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="material-symbols-outlined text-primary text-base">workspace_premium</span>
+          <span className="font-bold text-slate-800 text-xs">Tỷ lệ tích xu theo Doanh thu trọn đời:</span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Tier 1: Đồng */}
+          <div className={`px-2.5 py-1 rounded-[5px] border text-xs flex items-center gap-1 bg-white whitespace-nowrap ${
+            stats?.lifetimeRevenue && stats.lifetimeRevenue < 10000000
+              ? "border-primary text-primary font-bold shadow-sm"
+              : "border-slate-200 text-slate-700"
+          }`}>
+            <span>Hạng Đồng (&lt;10M):</span>
+            <span className="font-extrabold text-primary">1% Xu</span>
+          </div>
+
+          <span className="text-slate-300 font-bold text-xs">→</span>
+
+          {/* Tier 2: Bạc */}
+          <div className={`px-2.5 py-1 rounded-[5px] border text-xs flex items-center gap-1 bg-white whitespace-nowrap ${
+            stats?.lifetimeRevenue && stats.lifetimeRevenue >= 10000000 && stats.lifetimeRevenue < 30000000
+              ? "border-primary text-primary font-bold shadow-sm"
+              : "border-slate-200 text-slate-700"
+          }`}>
+            <span>Hạng Bạc (10M - 30M):</span>
+            <span className="font-extrabold text-primary">2% Xu</span>
+          </div>
+
+          <span className="text-slate-300 font-bold text-xs">→</span>
+
+          {/* Tier 3: Vàng */}
+          <div className={`px-2.5 py-1 rounded-[5px] border text-xs flex items-center gap-1 bg-white whitespace-nowrap ${
+            stats?.lifetimeRevenue && stats.lifetimeRevenue >= 30000000
+              ? "border-primary text-primary font-bold shadow-sm"
+              : "border-slate-200 text-slate-700"
+          }`}>
+            <span>Hạng Vàng (&ge;30M):</span>
+            <span className="font-extrabold text-primary">3% Xu</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Milestones Progress & Standard Reward Tiers */}
+      <div className="p-5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <h3 className="font-bold text-slate-800 text-xs md:text-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-500 text-lg">emoji_events</span>
+            Các mốc thưởng tiêu chuẩn theo doanh thu tháng
           </h3>
-          <div className="space-y-2.5">
-            {stats.milestones.map((ms) => {
-              const progress = Math.min((stats.monthlyRevenue / ms.requiredRevenue) * 100, 100);
-              return (
-                <div key={ms.milestoneId} className="space-y-1">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-700">{ms.voucherName}</p>
-                      <p className="text-[10px] text-slate-400 font-medium">Mốc: {ms.requiredRevenue.toLocaleString('vi-VN')}đ</p>
-                    </div>
-                    {ms.isAchieved ? (
-                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Đã nhận thưởng</span>
-                    ) : (
-                      <span className="text-[9px] font-bold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">{progress.toFixed(1)}%</span>
-                    )}
+          <span className="text-[11px] text-slate-500 font-medium">
+            Tự động nhận Voucher đặc quyền khi cán mốc
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {displayMilestones.map((ms) => {
+            const currentRev = stats?.monthlyRevenue || 0;
+            const progress = Math.min((currentRev / ms.requiredRevenue) * 100, 100);
+
+            return (
+              <div
+                key={ms.milestoneId || ms.requiredRevenue}
+                className={`p-3 rounded-[5px] border transition-all ${
+                  ms.isAchieved
+                    ? "bg-emerald-50/70 border-emerald-200"
+                    : "bg-slate-50 border-slate-100"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-1.5">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Mốc doanh thu</span>
+                    <p className="font-extrabold text-slate-800 text-xs md:text-sm">
+                      {ms.requiredRevenue.toLocaleString('vi-VN')}đ
+                    </p>
                   </div>
-                  <div className="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${ms.isAchieved ? "bg-emerald-500" : "bg-primary"}`}
+                  {ms.isAchieved ? (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-[5px] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">verified</span> Đã đạt
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded-[5px]">
+                      {progress.toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 pt-1.5 border-t border-slate-200/60 text-xs">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-primary text-xs">confirmation_number</span>
+                      Phần thưởng:
+                    </span>
+                    <span className="font-bold text-primary">{ms.voucherName}</span>
+                  </div>
+
+                  <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        ms.isAchieved ? "bg-emerald-500" : "bg-primary"
+                      }`}
                       style={{ width: `${progress}%` }}
                     />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Affiliate Links List with Search & Grid/List View */}
+      <div className="p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">link</span>
+            <h3 className="font-bold text-slate-800 text-sm">
+              Link giới thiệu của bạn ({links.length})
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Quick Search - Wider */}
+            {links.length > 0 && (
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-2.5 top-1.5 text-slate-400 text-base">search</span>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm tiếp thị..."
+                  value={linksSearch}
+                  onChange={(e) => {
+                    setLinksSearch(e.target.value);
+                    setLinksPage(1);
+                  }}
+                  className="pl-8 pr-2.5 py-1 text-xs border border-slate-200 rounded-[5px] focus:outline-none focus:border-primary bg-white text-slate-700 w-44 sm:w-60 md:w-72 transition-all"
+                />
+              </div>
+            )}
+
+            {/* Time Filter Select Dropdown */}
+            {links.length > 0 && (
+              <div className="relative">
+                <select
+                  value={timeFilter}
+                  onChange={(e) => {
+                    setTimeFilter(e.target.value);
+                    setLinksPage(1);
+                  }}
+                  className="px-2.5 py-1 text-xs border border-slate-200 rounded-[5px] bg-white text-slate-700 focus:outline-none focus:border-primary cursor-pointer font-medium"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="today">Hôm nay</option>
+                  <option value="7days">7 ngày qua</option>
+                  <option value="30days">30 ngày qua</option>
+                </select>
+              </div>
+            )}
+
+            {/* View Mode Toggle (Grid vs List) */}
+            {links.length > 0 && (
+              <div className="flex items-center border border-slate-200 rounded-[5px] bg-slate-50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("grid");
+                    setLinksPage(1);
+                  }}
+                  title="Hiển thị dạng thẻ Card"
+                  className={`p-1 rounded-[5px] transition-all ${
+                    viewMode === "grid"
+                      ? "bg-white text-primary shadow-sm font-bold"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base">grid_view</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("list");
+                    setLinksPage(1);
+                  }}
+                  title="Hiển thị dạng danh sách chi tiết"
+                  className={`p-1 rounded-[5px] transition-all ${
+                    viewMode === "list"
+                      ? "bg-white text-primary shadow-sm font-bold"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base">view_list</span>
+                </button>
+              </div>
+            )}
+
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-primary hover:bg-primary/90 text-white text-xs font-bold py-1.5 px-3 rounded-[5px] flex items-center justify-center gap-1 transition-all shadow-sm whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-base">add_link</span>
+              Tạo link mới
+            </button>
+          </div>
+        </div>
+
+        {filteredLinks.length === 0 ? (
+          <div className="text-center py-8 bg-slate-50 rounded-[5px] border border-dashed border-slate-200 space-y-1">
+            <span className="material-symbols-outlined text-3xl text-slate-300">link_off</span>
+            <p className="text-xs text-slate-500 font-medium">
+              {links.length === 0 ? "Bạn chưa tạo link tiếp thị nào." : "Không tìm thấy link tiếp thị phù hợp với điều kiện lọc."}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {links.length === 0 ? "Hãy bấm nút \"Tạo link mới\" ở trên để tạo link sản phẩm nhé!" : "Thử thay đổi từ khóa hoặc bộ lọc thời gian xem sao."}
+            </p>
+          </div>
+        ) : viewMode === "grid" ? (
+          /* CARD GRID VIEW (Dạng thẻ Card gọn gàng chỉ gồm Ảnh, Tên, Giá & Nút Copy) */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {paginatedLinks.map((link) => {
+              const isCopied = copiedCode === link.affiliateLinkCode;
+              const maxCap = 10000 * (currentRate / 0.01);
+              const calculatedXu = Math.min(Math.floor(link.revenue * currentRate), maxCap);
+
+              return (
+                <div
+                  key={link.affiliateLinkCode}
+                  className="bg-slate-50/70 border border-slate-100 rounded-[5px] p-2.5 flex flex-col justify-between hover:bg-white hover:border-slate-200 hover:shadow-md transition-all group relative"
+                >
+                  {/* Delete Icon Button */}
+                  <button
+                    onClick={() => handleDeleteLink(link.affiliateLinkCode, link.productName)}
+                    className="absolute top-3 right-3 z-10 w-6 h-6 bg-white/90 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-full border border-slate-200 shadow-sm flex items-center justify-center transition-all opacity-80 group-hover:opacity-100"
+                    title="Xóa link tiếp thị"
+                  >
+                    <span className="material-symbols-outlined text-xs">delete</span>
+                  </button>
+
+                  <div className="space-y-1.5">
+                    {/* Product Image */}
+                    <div className="w-full h-32 bg-white rounded-[5px] border border-slate-100 flex items-center justify-center p-1 overflow-hidden">
+                      <img
+                        src={link.productImage || "/placeholder.png"}
+                        alt={link.productName}
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.png";
+                        }}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    {/* Product Name */}
+                    <h4 className="text-xs font-bold text-slate-800 line-clamp-2 min-h-[32px] group-hover:text-primary transition-colors">
+                      {link.productName}
+                    </h4>
+
+                    {/* Tích Xu */}
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                      <span className="text-[11px] text-slate-400 font-medium">Tích xu ({(currentRate * 100).toFixed(0)}%):</span>
+                      <span className="font-extrabold text-amber-600">
+                        {link.revenue > 0 ? `${calculatedXu.toLocaleString('vi-VN')} xu` : "0 xu"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Copy Link Button */}
+                  <button
+                    onClick={() => handleCopyLink(link)}
+                    className={`mt-2 w-full py-1 px-2 text-[11px] font-bold rounded-[5px] flex items-center justify-center gap-1 transition-all shadow-sm ${
+                      isCopied
+                        ? "bg-emerald-600 text-white"
+                        : "bg-primary hover:bg-primary/90 text-white shadow-primary/20"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[13px]">
+                      {isCopied ? "check" : "content_copy"}
+                    </span>
+                    {isCopied ? "Đã copy link" : "Sao chép link"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* DETAILED LIST VIEW (Dạng danh sách) */
+          <div className="space-y-3">
+            {paginatedLinks.map((link) => {
+              const url = getLinkUrl(link);
+              const isCopied = copiedCode === link.affiliateLinkCode;
+              const maxCap = 10000 * (currentRate / 0.01);
+              const calculatedXu = Math.min(Math.floor(link.revenue * currentRate), maxCap);
+
+              return (
+                <div key={link.affiliateLinkCode} className="flex gap-3 p-3 rounded-[5px] border border-slate-100 bg-slate-50 hover:bg-slate-100/80 transition-colors">
+                  <img
+                    src={link.productImage || "/placeholder.png"}
+                    alt={link.productName}
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.png";
+                    }}
+                    className="w-16 h-16 rounded-[5px] object-contain p-0.5 bg-white shrink-0 border border-slate-100"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1">{link.productName}</h4>
+                      <span className="text-xs font-bold text-amber-600 shrink-0">
+                        {link.revenue > 0 ? `${calculatedXu.toLocaleString('vi-VN')} xu (${(currentRate * 100).toFixed(0)}%)` : `0 xu (${(currentRate * 100).toFixed(0)}%)`}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">touch_app</span> 
+                        {link.clickCount} click
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">shopping_bag</span> 
+                        {link.conversionCount} đơn
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2 items-center">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={url} 
+                        className="flex-1 text-[11px] px-2.5 py-1 bg-white border border-slate-200 rounded-[5px] text-slate-600 outline-none select-all font-mono"
+                      />
+                      <button 
+                        onClick={() => handleCopyLink(link)}
+                        className={`text-xs px-3 py-1 rounded-[5px] font-medium transition-colors whitespace-nowrap ${
+                          isCopied ? "bg-emerald-600 text-white" : "bg-slate-200 hover:bg-slate-300 text-slate-700"
+                        }`}
+                      >
+                        {isCopied ? "Đã copy" : "Copy"}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteLink(link.affiliateLinkCode, link.productName)}
+                        className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 p-1 rounded-[5px] font-medium transition-colors flex items-center justify-center"
+                        title="Xóa link tiếp thị"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Affiliate Links Table with 10 Items Pagination */}
-      <div className="space-y-2.5 pt-0.5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-            <span className="material-symbols-outlined text-primary text-base">link</span>
-            Danh sách Link tiếp thị ({links.length})
-          </h3>
-        </div>
+        {/* Pagination Bar */}
+        {filteredLinks.length > LINKS_PER_PAGE && (
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+            <span className="text-slate-500 text-[11px]">
+              Hiển thị <strong>{(linksPage - 1) * LINKS_PER_PAGE + 1} - {Math.min(linksPage * LINKS_PER_PAGE, filteredLinks.length)}</strong> trên <strong>{filteredLinks.length}</strong> link
+            </span>
 
-        {links.length === 0 ? (
-          <div className="text-center py-8 bg-slate-50/80 rounded-[8px] border border-dashed border-slate-200">
-            <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mx-auto mb-1.5 shadow-xs border border-slate-100">
-              <span className="material-symbols-outlined text-xl text-slate-300">link_off</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setLinksPage((prev) => Math.max(prev - 1, 1))}
+                disabled={linksPage <= 1}
+                className="px-2.5 py-1 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-[5px] text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Trước
+              </button>
+              <span className="text-xs font-medium text-slate-600 px-1">
+                Trang {linksPage} / {totalLinksPages}
+              </span>
+              <button
+                onClick={() => setLinksPage((prev) => Math.min(prev + 1, totalLinksPages))}
+                disabled={linksPage >= totalLinksPages}
+                className="px-2.5 py-1 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-[5px] text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Sau
+              </button>
             </div>
-            <p className="text-xs font-bold text-slate-600">Bạn chưa tạo link tiếp thị nào</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Bấm nút "Tạo link tiếp thị mới" ở góc trên để tạo ngay nhé!</p>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {/* Table Container */}
-            <div className="overflow-x-auto rounded-[8px] border border-slate-200/80 bg-white">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-3.5">Sản phẩm</th>
-                    <th className="py-3 px-3.5">Link tiếp thị</th>
-                    <th className="py-3 px-3 text-center">Click</th>
-                    <th className="py-3 px-3 text-center">Đơn hàng</th>
-                    <th className="py-3 px-3.5 text-right">Doanh thu</th>
-                    <th className="py-3 px-3.5 text-center">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {currentLinks.map((link) => (
-                    <tr key={link.affiliateLinkCode} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Product column */}
-                      <td className="py-3 px-3.5">
-                        <div className="flex items-center gap-3 min-w-[200px]">
-                          <img 
-                            src={link.productImage && link.productImage.trim() !== "" ? link.productImage : "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&auto=format&fit=crop&q=80"} 
-                            alt={link.productName} 
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&auto=format&fit=crop&q=80";
-                            }}
-                            className="w-11 h-11 rounded-md object-cover bg-slate-50 border border-slate-100 shrink-0 shadow-xs" 
-                          />
-                          <div className="min-w-0">
-                            <p className="font-bold text-slate-800 text-xs hover:text-primary transition-colors line-clamp-2" title={link.productName}>{link.productName}</p>
-                            <span className="text-[10px] text-slate-400 font-mono">Code: {link.affiliateLinkCode}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Link URL Column */}
-                      <td className="py-3 px-3.5">
-                        <div className="min-w-[220px]">
-                          <input 
-                            type="text" 
-                            readOnly 
-                            value={getLinkUrl(link)} 
-                            className="w-full text-[11px] px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-[6px] text-slate-600 focus:outline-none font-mono"
-                          />
-                        </div>
-                      </td>
-
-                      {/* Click Column */}
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <span className="font-bold text-slate-700 text-xs">{link.clickCount}</span>
-                      </td>
-
-                      {/* Conversion Column */}
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <span className="font-bold text-slate-700 text-xs">{link.conversionCount}</span>
-                      </td>
-
-                      {/* Revenue Column */}
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                        <span className="font-extrabold text-xs text-primary">{link.revenue.toLocaleString('vi-VN')}đ</span>
-                      </td>
-
-                      {/* Actions Column */}
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button 
-                            onClick={() => {
-                              const url = getLinkUrl(link);
-                              navigator.clipboard.writeText(url);
-                              toast.success("Đã copy link!");
-                            }}
-                            className="text-[11px] bg-primary hover:opacity-90 text-white font-bold px-3 py-1 rounded-[6px] transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
-                            title="Copy link tiếp thị"
-                          >
-                            <span className="material-symbols-outlined text-[13px]">content_copy</span>
-                            Copy
-                          </button>
-                          <button 
-                            onClick={() => handlePromptDeleteLink(link.affiliateLinkCode, link.productName)}
-                            className="text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 p-1 rounded-[6px] transition-all flex items-center justify-center cursor-pointer active:scale-95"
-                            title="Xóa link tiếp thị"
-                          >
-                            <span className="material-symbols-outlined text-[15px]">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {links.length > pageSize && (
-              <div className="flex flex-col sm:flex-row items-center justify-between pt-3 border-t border-slate-100 gap-2 text-xs">
-                <p className="text-slate-500 text-[11px] font-medium">
-                  Hiển thị <span className="font-bold text-slate-700">{startIndex + 1}</span> - <span className="font-bold text-slate-700">{Math.min(startIndex + pageSize, links.length)}</span> trên <span className="font-bold text-slate-700">{links.length}</span> link
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="px-2.5 py-1 rounded-[6px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold transition-colors flex items-center gap-0.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">chevron_left</span>
-                    Trước
-                  </button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
-                      <button
-                        key={pNum}
-                        onClick={() => setCurrentPage(pNum)}
-                        className={`w-6 h-6 rounded-[5px] text-[11px] font-bold flex items-center justify-center transition-colors cursor-pointer ${
-                          pNum === currentPage
-                            ? "bg-primary text-white shadow-xs"
-                            : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
-                        }`}
-                      >
-                        {pNum}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="px-2.5 py-1 rounded-[6px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold transition-colors flex items-center gap-0.5 cursor-pointer"
-                  >
-                    Sau
-                    <span className="material-symbols-outlined text-xs">chevron_right</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      {/* Product Selection Modal */}
+      {/* Modal chọn sản phẩm */}
       <ProductSelectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSelectProduct={handleSelectProductFromModal}
+        onSelectProducts={handleSelectProductsFromModal}
+        existingProductIds={links.map((l) => l.productId)}
       />
 
-      {/* Custom Delete Confirmation Modal */}
-      {deleteConfirmTarget && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-in zoom-in-95 duration-200">
-            {/* Icon Badge */}
-            <div className="w-13 h-13 rounded-full bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center mx-auto shadow-xs">
-              <span className="material-symbols-outlined text-2xl">delete_forever</span>
-            </div>
-
-            {/* Content Text */}
-            <div className="space-y-1">
-              <h3 className="text-base font-extrabold text-slate-800">Xác nhận xóa link</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Bạn có chắc chắn muốn xóa link tiếp thị cho sản phẩm <span className="font-bold text-slate-700">"{deleteConfirmTarget.productName}"</span> không?
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2.5 pt-1">
-              <button
-                onClick={() => setDeleteConfirmTarget(null)}
-                disabled={deleting}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={confirmDeleteLink}
-                disabled={deleting}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-all shadow-md shadow-rose-500/20 cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                {deleting ? (
-                  <>
-                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                    Đang xóa...
-                  </>
-                ) : (
-                  "Xác nhận xóa"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
+      {/* Modal Rút xu về Ví LazPe */}
+      <RedeemPointsModal
+        isOpen={isRedeemModalOpen}
+        onClose={() => setIsRedeemModalOpen(false)}
+        token={token}
+        currentPoints={stats?.affiliatePoint || 0}
+        remainingRedeemCount={stats?.remainingRedeemCountThisMonth ?? 3}
+        hasPaymentPin={stats?.hasPaymentPin ?? false}
+        onSuccess={fetchData}
+      />
+    </div>
   );
 }

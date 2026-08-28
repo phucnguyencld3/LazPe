@@ -126,7 +126,7 @@ export const OrderCustomerInfo: React.FC<OrderCustomerInfoProps> = ({ order }) =
               <p className="text-sm font-medium text-slate-500 italic">Chưa có mã vận đơn</p>
             )}
           </div>
-          {(order.payMethod === "Ví điện tử" || order.payMethodCode === 2) && (
+          {(order.payMethod === "Ví điện tử" || order.payMethod?.includes("ZaloPay") || order.payMethodCode === 2 || order.payMethodCode === 3 || order.payMethodCode === 5) && (
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">MÃ THAM CHIẾU (THANH TOÁN)</p>
               <p className="text-sm font-bold text-slate-800 overflow-hidden text-ellipsis whitespace-nowrap" title={refCode}>

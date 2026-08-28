@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PolyBabyAPI.Data;
 
@@ -11,9 +12,11 @@ using PolyBabyAPI.Data;
 namespace PolyBabyAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819114919_AddApiVersionToUserAddress")]
+    partial class AddApiVersionToUserAddress
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -506,9 +509,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<double?>("HeightCm")
                         .HasColumnType("float");
-
-                    b.Property<DateTime?>("LastReminderEmailSentAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1162,9 +1162,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -1197,10 +1194,6 @@ namespace PolyBabyAPI.Migrations
                     b.Property<string>("PrintTicketUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ProofOfDeliveryImageUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
                     b.Property<int?>("RefundMethod")
                         .HasColumnType("int");
 
@@ -1216,9 +1209,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<string>("ReturnReason")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ReturnRequestedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ShippedAt")
                         .HasColumnType("datetime2");
@@ -1574,16 +1564,10 @@ namespace PolyBabyAPI.Migrations
                     b.Property<int?>("InvoiceID")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsUnlocked")
-                        .HasColumnType("bit");
-
                     b.Property<string>("TransactionType")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("UnlockAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("UserID")
                         .IsRequired()
@@ -1617,9 +1601,6 @@ namespace PolyBabyAPI.Migrations
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("PendingPoints")
-                        .HasColumnType("int");
 
                     b.Property<int>("PointsToNextTier")
                         .HasColumnType("int");

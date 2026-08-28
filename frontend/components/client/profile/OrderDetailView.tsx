@@ -4,6 +4,7 @@ import {
   requestCancelOrder,
   markOrderCompleted,
   retryVnPayPayment,
+  retryZaloPayPayment,
   requestReturn,
   cancelReturnRequest,
   uploadReturnImage
@@ -108,8 +109,18 @@ export function OrderDetailView({
       return;
     }
 
-    // Determine if order is prepaid or VNPay and needs a refund option
-    const isPrepaid = order?.paymentStatus === 'Paid' || (order?.payMethodCode !== 1 && order?.statusCode > 0) || order?.payMethod?.toLowerCase().includes("ví lazpe") || order?.payMethodCode === 3;
+    // Determine if order is prepaid or online payment (VNPay/ZaloPay/Ví/Thẻ) and needs a refund option
+    const isPrepaid = order?.paymentStatus === 'Paid' || 
+                      order?.payMethodCode === 2 || 
+                      order?.payMethodCode === 3 || 
+                      order?.payMethodCode === 4 || 
+                      order?.payMethodCode === 5 ||
+                      ((order?.payMethodCode ?? 0) !== 1 && (order?.statusCode ?? 0) > 0) ||
+                      order?.payMethod?.toLowerCase().includes("ví") || 
+                      order?.payMethod?.toLowerCase().includes("vnpay") ||
+                      order?.payMethod?.toLowerCase().includes("zalopay") ||
+                      order?.payMethod?.toLowerCase().includes("thẻ");
+
     const reasonPayload = isPrepaid ? `[Hoàn tiền về: ${refundMethod === 'wallet' ? 'Ví LazPe' : 'Xu LazPe'}] ${finalReason}` : finalReason;
 
     setActionLoading(true);
@@ -240,9 +251,12 @@ export function OrderDetailView({
 
   const handleRetryPayment = async () => {
     setActionLoading(true);
-    toast.loading("Đang khởi tạo lại cổng thanh toán VNPay...");
+    const providerName = isZaloPay ? "ZaloPay" : "VNPay";
+    toast.loading(`Đang khởi tạo lại cổng thanh toán ${providerName}...`);
     try {
-      const res = await retryVnPayPayment(orderId, token);
+      const res = isZaloPay
+        ? await retryZaloPayPayment(orderId, token)
+        : await retryVnPayPayment(orderId, token);
       toast.dismiss();
       if (res.success && res.paymentUrl) {
         toast.success("Kết nối thành công! Đang chuyển hướng...");
@@ -252,21 +266,34 @@ export function OrderDetailView({
       }
     } catch (err) {
       toast.dismiss();
-      console.error("Error retrying VNPay payment:", err);
+      console.error("Error retrying payment:", err);
       toast.error("Lỗi kết nối mạng.");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Check if VNPay Payment can be retried
-  // Conditions: statusCode === 0 (Pending) AND payMethodCode === 3 (MobilePayment/Ví điện tử)
-  const isVnPay = order?.payMethodCode === 3 || order?.payMethodCode === 2 || order?.payMethod?.includes("VNPay") || order?.payMethod?.includes("Ví điện tử");
-  const baseCanRetryPayment = order?.statusCode === 0 && isVnPay;
+  // Check if Online Payment (VNPay / ZaloPay) can be retried
+  const isZaloPay = order?.payMethodCode === 5 || order?.payMethod?.includes("ZaloPay");
+  const isVnPay = (order?.payMethodCode === 3 || order?.payMethodCode === 2 || order?.payMethod?.includes("VNPay") || order?.payMethod?.includes("Ví điện tử")) && !isZaloPay;
+  const isOnlinePayment = isVnPay || isZaloPay;
+  const baseCanRetryPayment = order?.statusCode === 0 && isOnlinePayment;
 
-  // Countdown Timer logic for VNPay pending payment (24 hours expiration)
+  // Helper check for prepaid order (to show refund options in cancel modal)
+  const isPrepaidOrder = order?.paymentStatus === 'Paid' || 
+                        order?.payMethodCode === 2 || 
+                        order?.payMethodCode === 3 || 
+                        order?.payMethodCode === 4 || 
+                        order?.payMethodCode === 5 ||
+                        ((order?.payMethodCode ?? 0) !== 1 && (order?.statusCode ?? 0) > 0) ||
+                        order?.payMethod?.toLowerCase().includes("ví") || 
+                        order?.payMethod?.toLowerCase().includes("vnpay") ||
+                        order?.payMethod?.toLowerCase().includes("zalopay") ||
+                        order?.payMethod?.toLowerCase().includes("thẻ");
+
+  // Countdown Timer logic for pending online payment (24 hours expiration)
   useEffect(() => {
-    if (!order || order.statusCode !== 0 || !isVnPay) return;
+    if (!order || order.statusCode !== 0 || !isOnlinePayment) return;
 
     const calculateTimeLeft = () => {
       const createdTime = new Date(order.createdAt).getTime();
@@ -292,7 +319,7 @@ export function OrderDetailView({
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [order?.invoiceID, order?.statusCode, isVnPay]);
+  }, [order?.invoiceID, order?.statusCode, isOnlinePayment]);
 
   // Auto approve countdown effect
   useEffect(() => {
@@ -406,10 +433,10 @@ export function OrderDetailView({
           {canRetryPayment && (
             <button
               onClick={handleRetryPayment}
-              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all flex items-center justify-center gap-1"
+              className="flex-1 sm:flex-initial px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-primary/90 border border-primary rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm"
               disabled={actionLoading}
             >
-              Thanh toán lại VNPay
+              Thanh toán lại {isZaloPay ? "ZaloPay" : "VNPay"}
             </button>
           )}
           {canCompleteOrder && (
@@ -468,7 +495,7 @@ export function OrderDetailView({
         <div className="bg-amber-50/40 border-b border-slate-100 px-5 py-3 flex items-center gap-3">
           <AlertTriangle className="text-amber-500 shrink-0" size={20} />
           <p className="text-xs md:text-sm text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-            Vui lòng thanh toán VNPay trong <span className="font-bold text-rose-600">{formatTimeLeft(timeLeft)}</span> để tránh hủy đơn.
+            Vui lòng thanh toán {isZaloPay ? "ZaloPay" : "VNPay"} trong <span className="font-bold text-rose-600">{formatTimeLeft(timeLeft)}</span> để tránh hủy đơn.
           </p>
         </div>
       )}
@@ -477,7 +504,7 @@ export function OrderDetailView({
         <div className="bg-rose-50/40 border-b border-slate-100 px-5 py-3 flex items-center gap-3">
           <XCircle className="text-rose-500 shrink-0" size={20} />
           <p className="text-xs md:text-sm text-rose-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-            Đơn hàng đã bị hủy tự động do quá hạn thanh toán VNPay.
+            Đơn hàng đã bị hủy tự động do quá hạn thanh toán {isZaloPay ? "ZaloPay" : "VNPay"}.
           </p>
         </div>
       )}
@@ -870,32 +897,37 @@ export function OrderDetailView({
                 <span className="material-symbols-outlined text-primary text-sm">account_balance_wallet</span>
                 Lịch sử giao dịch thanh toán
               </h4>
-              <div className="space-y-3 divide-y divide-slate-55 max-h-[250px] overflow-y-auto pr-1">
-                {order.paymentTransactions.map((tx: any, idx: number) => (
-                  <div key={idx} className="pt-3 first:pt-0 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-slate-600">Mã giao dịch: #{order.invoiceCode}</span>
-                        {tx.vnPayTransactionNo && (
-                          <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-semibold font-mono">
-                            Mã VNPay: {tx.vnPayTransactionNo}
+              <div className="space-y-3 divide-y divide-slate-50 max-h-[250px] overflow-y-auto pr-1">
+                {order.paymentTransactions.map((tx: any, idx: number) => {
+                  const displayTxCode = tx.txnRef || order.invoiceCode;
+                  return (
+                    <div key={idx} className="pt-3 first:pt-0 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs font-bold text-slate-600">
+                            Mã giao dịch: #{displayTxCode}
                           </span>
-                        )}
+                          {tx.vnPayTransactionNo && (
+                            <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-semibold font-mono">
+                              Mã Cổng: {tx.vnPayTransactionNo}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-medium">Thời gian: {formatDate(tx.createdAt)}</p>
                       </div>
-                      <p className="text-[10px] text-slate-400 font-medium">Thời gian: {formatDate(tx.createdAt)}</p>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${tx.statusCode === 1
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : tx.statusCode === 2
+                            ? "bg-rose-50 text-rose-600 border-rose-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}>
+                          {tx.statusLabel}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${tx.statusCode === 1
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : tx.statusCode === 2
-                          ? "bg-rose-50 text-rose-600 border-rose-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                        }`}>
-                        {tx.statusLabel}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -991,7 +1023,7 @@ export function OrderDetailView({
                   className="w-full py-2.5 rounded-xl bg-primary text-white font-bold transition-all hover:bg-primary/95 shadow-sm hover:shadow hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-1.5 text-xs md:text-sm"
                   disabled={actionLoading}
                 >
-                  <span className="material-symbols-outlined text-sm">payment</span> Thanh toán ngay qua VNPay
+                  <span className="material-symbols-outlined text-sm">payment</span> Thanh toán ngay qua {isZaloPay ? "ZaloPay" : "VNPay"}
                 </button>
               )}
               <button
@@ -1011,7 +1043,7 @@ export function OrderDetailView({
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div
             className={`bg-white rounded-[12px] shadow-xl border border-slate-100 overflow-hidden flex flex-col w-full min-w-[320px] md:min-w-[500px] relative animate-in zoom-in-95 duration-200 ${
-              order?.payMethodCode === 2
+              isPrepaidOrder
                 ? "max-w-4xl md:min-w-[800px]"
                 : "max-w-xl"
             }`}
@@ -1031,10 +1063,10 @@ export function OrderDetailView({
             </div>
 
             <form onSubmit={handleCancelSubmit} className="p-5">
-              <div className={`grid gap-4 ${order?.payMethodCode === 2 ? "md:grid-cols-2" : "grid-cols-1"}`}>
+              <div className={`grid gap-4 ${isPrepaidOrder ? "md:grid-cols-2" : "grid-cols-1"}`}>
                 
                 {/* Left Column: Refund Method (Only for prepaid orders) */}
-                {order?.payMethodCode === 2 && (
+                {isPrepaidOrder && (
                   <div className="space-y-3">
                     <div>
                       <h4 className="text-[13px] font-bold text-slate-800 mb-1">Hình thức hoàn tiền</h4>

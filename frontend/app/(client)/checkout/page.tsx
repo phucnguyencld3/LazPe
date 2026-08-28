@@ -16,7 +16,8 @@ import {
   CartDetailInfo,
   LoyaltyPolicySummaryResponse,
   normalizeName,
-  getUserProfile
+  getUserProfile,
+  calculateShippingFee
 } from "@/lib/api";
 import { getCurrentFlashSale } from "@/lib/features/flash-sales/flashSaleApi";
 
@@ -137,9 +138,10 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (selectedItems.length === 0) return;
 
-    // Calculate subtotal
-    const sum = selectedItems.reduce((acc, item) => acc + item.totalPrice, 0);
-    setSubTotal(sum);
+    const calculateCartTotals = async () => {
+      // Calculate subtotal
+      const sum = selectedItems.reduce((acc, item) => acc + item.totalPrice, 0);
+      setSubTotal(sum);
 
     // Calculate voucher discount
     let discount = 0;
@@ -173,8 +175,17 @@ export default function CheckoutPage() {
       setLoyaltyError("Cấu trúc giá thay đổi, điểm tích lũy được gỡ bỏ.");
     }
 
-    // Calculate shipping fee
-    let ship = 25000;
+    // Calculate shipping fee via API if address is selected
+    let ship = 25000; // default/fallback
+    if (selectedAddress?.addressID) {
+      // Approximate weight, length, width, height for the cart
+      // For a real app, this should sum up the weight of all items
+      const totalWeight = selectedItems.length * 500; // 500g per item approx
+      const shipResult = await calculateShippingFee(selectedAddress.addressID, totalWeight, 10, 10, 10);
+      if (shipResult && shipResult.fee > 0) {
+        ship = shipResult.fee;
+      }
+    }
     setShippingFee(ship);
 
     // Calculate shipping voucher discount
@@ -216,7 +227,10 @@ export default function CheckoutPage() {
     setWalletDiscount(wDiscount);
 
     setTotalPrice(totalAfterLoyalty);
-  }, [selectedItems, cart, loyaltyDiscount, useCoins, useWallet, coinsBalance, walletBalance]);
+    };
+
+    calculateCartTotals();
+  }, [selectedItems, cart, loyaltyDiscount, useCoins, useWallet, coinsBalance, walletBalance, selectedAddress]);
 
   useEffect(() => {
     const policy = loyaltyPolicySummary?.earnPolicy;
@@ -584,9 +598,10 @@ export default function CheckoutPage() {
         // Clear selected item IDs from localStorage
         localStorage.removeItem("selectedCartDetailIds");
 
-        // Redirect VNPay if mobile payment
-        if (payMethod === 3 && res.paymentUrl) {
-          toast.success("Đang chuyển hướng sang cổng thanh toán VNPay...");
+        // Redirect VNPay or ZaloPay
+        if ((payMethod === 3 || payMethod === 5) && res.paymentUrl) {
+          const providerName = payMethod === 5 ? "ZaloPay" : "VNPay";
+          toast.success(`Đang chuyển hướng sang cổng thanh toán ${providerName}...`);
           window.location.href = res.paymentUrl;
         } else {
           // COD or Bank Transfer redirect
@@ -680,9 +695,6 @@ export default function CheckoutPage() {
             walletDiscount={walletDiscount}
             coinsDiscount={coinsDiscount}
             isWalletLocked={isWalletLocked}
-            onUpsellAdded={() => {
-              if (userId && token) initializeData(userId, token);
-            }}
           />
         </div>
 

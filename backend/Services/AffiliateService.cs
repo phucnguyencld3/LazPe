@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using PolyBabyAPI.Data;
 using PolyBabyAPI.DTOs;
 using PolyBabyAPI.Interface;
+using PolyBabyAPI.Interfaces;
 using PolyBabyAPI.Models;
 using System;
 using System.Collections.Generic;
@@ -17,12 +18,18 @@ namespace PolyBabyAPI.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AffiliateService> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IWalletSecurityService _walletSecurityService;
 
-        public AffiliateService(ApplicationDbContext context, ILogger<AffiliateService> logger, IConfiguration configuration)
+        public AffiliateService(
+            ApplicationDbContext context,
+            ILogger<AffiliateService> logger,
+            IConfiguration configuration,
+            IWalletSecurityService walletSecurityService)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
+            _walletSecurityService = walletSecurityService;
         }
 
         private string GetFrontendBaseUrl()
@@ -56,6 +63,7 @@ namespace PolyBabyAPI.Services
                 throw new InvalidOperationException("User is not a registered affiliate.");
 
             var product = await _context.Products
+                .AsSplitQuery()
                 .Include(p => p.Images)
                 .Include(p => p.Variants)
                 .FirstOrDefaultAsync(p => p.ProductID == productId);
@@ -88,9 +96,9 @@ namespace PolyBabyAPI.Services
             string baseUrl = GetFrontendBaseUrl();
             string productIdentifier = !string.IsNullOrWhiteSpace(product.Slug) ? product.Slug : productId.ToString();
 
-            string productImage = product.Images?.FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.ImageUrl))?.ImageUrl
+            string productImage = product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.ImageUrl))?.ImageUrl
                 ?? product.Variants?.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v.ImageUrl))?.ImageUrl
-                ?? "";
+                ?? string.Empty;
 
             return new AffiliateLinkResponseDto
             {
@@ -110,7 +118,7 @@ namespace PolyBabyAPI.Services
         public async Task<List<AffiliateLinkResponseDto>> GetUserAffiliateLinksAsync(string userId)
         {
             var links = await _context.AffiliateLinks
-                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(l => l.Product)
                     .ThenInclude(p => p.Images)
                 .Include(l => l.Product)
@@ -123,9 +131,9 @@ namespace PolyBabyAPI.Services
             return links.Select(l =>
             {
                 string productIdentifier = !string.IsNullOrWhiteSpace(l.Product?.Slug) ? l.Product.Slug : l.ProductId.ToString();
-                string productImage = l.Product?.Images?.FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.ImageUrl))?.ImageUrl
+                string productImage = l.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.ImageUrl))?.ImageUrl
                     ?? l.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v.ImageUrl))?.ImageUrl
-                    ?? "";
+                    ?? string.Empty;
 
                 return new AffiliateLinkResponseDto
                 {
@@ -174,30 +182,94 @@ namespace PolyBabyAPI.Services
 
             await EnsureMonthlyRevenueResetAsync(user);
 
-            var links = await _context.AffiliateLinks.AsNoTracking().Where(l => l.UserId == userId).ToListAsync();
+            var links = await _context.AffiliateLinks.Where(l => l.UserId == userId).ToListAsync();
             
             int currentMonth = DateTime.UtcNow.Month;
             int currentYear = DateTime.UtcNow.Year;
 
-            var userMilestones = await _context.UserAffiliateMilestones
-                .AsNoTracking()
-                .Where(uam => uam.UserId == userId && uam.Month == currentMonth && uam.Year == currentYear)
-                .Select(uam => uam.MilestoneId)
-                .ToListAsync();
+            await EnsureAffiliateMilestonesSeededAsync();
 
             var allMilestones = await _context.AffiliateMilestones
-                .AsNoTracking()
+                .Include(m => m.RewardVoucher)
                 .Where(m => m.IsActive)
                 .OrderBy(m => m.RequiredRevenue)
+                .ToListAsync();
+
+            // Auto-grant achieved milestone vouchers if not already granted
+            bool milestoneChanged = false;
+            foreach (var milestone in allMilestones)
+            {
+                if (user.MonthlyAffiliateRevenue >= milestone.RequiredRevenue)
+                {
+                    var userM = await _context.UserAffiliateMilestones
+                        .FirstOrDefaultAsync(uam => uam.UserId == userId && uam.MilestoneId == milestone.MilestoneId && uam.Month == currentMonth && uam.Year == currentYear);
+
+                    if (userM == null)
+                    {
+                        _context.UserAffiliateMilestones.Add(new UserAffiliateMilestone
+                        {
+                            UserId = userId,
+                            MilestoneId = milestone.MilestoneId,
+                            Month = currentMonth,
+                            Year = currentYear,
+                            AchievedAt = DateTime.Now
+                        });
+                        milestoneChanged = true;
+                    }
+
+                    // Check if UserVoucher exists for this milestone voucher
+                    var existingVoucher = await _context.UserVouchers
+                        .FirstOrDefaultAsync(uv => uv.UserID == userId && uv.VoucherID == milestone.VoucherId && uv.Status == UserVoucherStatus.Unused);
+
+                    if (existingVoucher == null)
+                    {
+                        string uniqueCode = $"AFF-{(int)(milestone.RequiredRevenue / 1000)}K-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+                        _context.UserVouchers.Add(new UserVoucher
+                        {
+                            UserID = userId,
+                            VoucherID = milestone.VoucherId,
+                            IssuedCode = uniqueCode,
+                            Status = UserVoucherStatus.Unused,
+                            SourceType = UserVoucherSource.DirectAssigned,
+                            CollectedAt = DateTime.Now
+                        });
+                        milestoneChanged = true;
+                    }
+                    else if (string.IsNullOrEmpty(existingVoucher.IssuedCode))
+                    {
+                        existingVoucher.IssuedCode = $"AFF-{(int)(milestone.RequiredRevenue / 1000)}K-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+                        milestoneChanged = true;
+                    }
+                }
+            }
+
+            if (milestoneChanged)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            var userMilestoneIds = await _context.UserAffiliateMilestones
+                .Where(uam => uam.UserId == userId && uam.Month == currentMonth && uam.Year == currentYear)
+                .Select(uam => uam.MilestoneId)
                 .ToListAsync();
 
             var milestoneProgress = allMilestones.Select(m => new AffiliateMilestoneProgressDto
             {
                 MilestoneId = m.MilestoneId,
                 RequiredRevenue = m.RequiredRevenue,
-                IsAchieved = userMilestones.Contains(m.MilestoneId),
-                VoucherName = $"Voucher mốc {m.RequiredRevenue:N0}đ"
+                IsAchieved = userMilestoneIds.Contains(m.MilestoneId),
+                VoucherName = m.RewardVoucher?.Name ?? $"Voucher mốc {m.RequiredRevenue:N0}đ"
             }).ToList();
+
+            if (user.LastAffiliateRedeemMonth != currentMonth)
+            {
+                user.MonthlyAffiliateRedeemCount = 0;
+                user.LastAffiliateRedeemMonth = currentMonth;
+                await _context.SaveChangesAsync();
+            }
+
+            int remainingRedeemCount = Math.Max(0, 3 - user.MonthlyAffiliateRedeemCount);
+            bool hasPaymentPin = !string.IsNullOrEmpty(user.PaymentPinHash);
 
             return new AffiliateDashboardStatsDto
             {
@@ -206,8 +278,64 @@ namespace PolyBabyAPI.Services
                 AffiliatePoint = user.AffiliatePoint,
                 TotalClicks = links.Sum(l => l.ClickCount),
                 TotalConversions = links.Sum(l => l.ConversionCount),
+                RemainingRedeemCountThisMonth = remainingRedeemCount,
+                HasPaymentPin = hasPaymentPin,
                 Milestones = milestoneProgress
             };
+        }
+
+        private async Task EnsureAffiliateMilestonesSeededAsync()
+        {
+            if (await _context.AffiliateMilestones.AnyAsync())
+            {
+                return;
+            }
+
+            var voucherConfigs = new[]
+            {
+                new { Code = "AFF500K", Name = "Voucher 20.000đ (Thưởng mốc Affiliate 500k)", Value = 20000m, MinOrder = 100000m, Rev = 500000m },
+                new { Code = "AFF1M", Name = "Voucher 50.000đ (Thưởng mốc Affiliate 1M)", Value = 50000m, MinOrder = 200000m, Rev = 1000000m },
+                new { Code = "AFF2M", Name = "Voucher 120.000đ (Thưởng mốc Affiliate 2M)", Value = 120000m, MinOrder = 500000m, Rev = 2000000m },
+                new { Code = "AFF5M", Name = "Voucher 300.000đ (Thưởng mốc Affiliate 5M)", Value = 300000m, MinOrder = 1000000m, Rev = 5000000m },
+                new { Code = "AFF10M", Name = "Voucher 700.000đ (Thưởng mốc Affiliate 10M)", Value = 700000m, MinOrder = 2000000m, Rev = 10000000m }
+            };
+
+            foreach (var cfg in voucherConfigs)
+            {
+                var existingVoucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == cfg.Code);
+                if (existingVoucher == null)
+                {
+                    existingVoucher = new Voucher
+                    {
+                        Code = cfg.Code,
+                        Name = cfg.Name,
+                        DiscountType = 2,
+                        DiscountValue = cfg.Value,
+                        MinOrderValue = cfg.MinOrder,
+                        MaxDiscount = cfg.Value,
+                        StartDate = DateTime.UtcNow.AddDays(-30),
+                        EndDate = DateTime.UtcNow.AddYears(10),
+                        TotalQuantity = 999999,
+                        UsedQuantity = 0,
+                        Status = true,
+                        VisibilityType = VoucherVisibilityType.Exclusive,
+                        ExclusiveType = ExclusiveDistributionType.DirectAssign,
+                        UsageLimitPerUser = 100
+                    };
+                    _context.Vouchers.Add(existingVoucher);
+                    await _context.SaveChangesAsync();
+                }
+
+                var milestone = new AffiliateMilestone
+                {
+                    RequiredRevenue = cfg.Rev,
+                    VoucherId = existingVoucher.VoucherID,
+                    IsActive = true
+                };
+                _context.AffiliateMilestones.Add(milestone);
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> ProcessAffiliateRevenueAsync(string affiliateUserId, int invoiceId, decimal revenue)
@@ -240,10 +368,22 @@ namespace PolyBabyAPI.Services
                     return false;
                 }
 
-                latestInvoice.IsAffiliateProcessed = true;
+                // Determine point tier rate based on Lifetime Affiliate Revenue:
+                // < 10,000,000đ: 1%
+                // 10,000,000đ - 30,000,000đ: 2%
+                // >= 30,000,000đ: 3%
+                decimal pointRate = 0.01m;
+                if (user.LifetimeAffiliateRevenue >= 30000000m)
+                {
+                    pointRate = 0.03m;
+                }
+                else if (user.LifetimeAffiliateRevenue >= 10000000m)
+                {
+                    pointRate = 0.02m;
+                }
 
-                // 1% point cap at 10000
-                int pointsEarned = Math.Min((int)(revenue * 0.01m), 10000);
+                int maxPointCap = (int)(10000 * (pointRate / 0.01m));
+                int pointsEarned = Math.Min((int)(revenue * pointRate), maxPointCap);
                 
                 user.AffiliatePoint += pointsEarned;
                 user.MonthlyAffiliateRevenue += revenue;
@@ -314,13 +454,16 @@ namespace PolyBabyAPI.Services
                         };
                         _context.UserAffiliateMilestones.Add(userMilestone);
 
-                        // Reward Voucher
+                        // Reward Voucher with unique IssuedCode
+                        string uniqueCode = $"AFF-{(int)(milestone.RequiredRevenue / 1000)}K-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
                         var userVoucher = new UserVoucher
                         {
                             UserID = affiliateUserId,
                             VoucherID = milestone.VoucherId,
+                            IssuedCode = uniqueCode,
                             Status = UserVoucherStatus.Unused,
-                            CollectedAt = DateTime.UtcNow
+                            SourceType = UserVoucherSource.DirectAssigned,
+                            CollectedAt = DateTime.Now
                         };
                         _context.UserVouchers.Add(userVoucher);
                         
@@ -405,6 +548,139 @@ namespace PolyBabyAPI.Services
         private string GenerateUniqueAffiliateCode()
         {
             return "REF_" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+        }
+
+        public async Task<RedeemAffiliatePointResponseDto> RedeemPointsToWalletAsync(string userId, int pointsToRedeem, string pin)
+        {
+            if (pointsToRedeem < 1000)
+            {
+                return new RedeemAffiliatePointResponseDto
+                {
+                    Success = false,
+                    Message = "Số xu rút tối thiểu mỗi lần là 1.000 xu"
+                };
+            }
+
+            if (pointsToRedeem > 9999999)
+            {
+                return new RedeemAffiliatePointResponseDto
+                {
+                    Success = false,
+                    Message = "Số xu rút tối đa cho 1 lần giao dịch là 9.999.999 xu"
+                };
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    return new RedeemAffiliatePointResponseDto { Success = false, Message = "Không tìm thấy tài khoản" };
+                }
+
+                // 1. PIN Check
+                if (string.IsNullOrEmpty(user.PaymentPinHash))
+                {
+                    return new RedeemAffiliatePointResponseDto
+                    {
+                        Success = false,
+                        Message = "Bạn chưa tạo mã PIN thanh toán cho ví. Vui lòng thiết lập mã PIN để bảo mật tài khoản trước khi rút xu.",
+                        RequiresPinSetup = true
+                    };
+                }
+
+                var pinResult = await _walletSecurityService.ValidatePaymentPinWithLockoutAsync(user, pin);
+                if (!pinResult.Success)
+                {
+                    return new RedeemAffiliatePointResponseDto
+                    {
+                        Success = false,
+                        Message = pinResult.Message,
+                        IsLocked = pinResult.IsLocked,
+                        FailedCount = pinResult.FailedCount
+                    };
+                }
+
+                // 2. Validate Wallet Signature Integrity (Auto-sync if outdated after valid PIN authentication)
+                if (!_walletSecurityService.ValidateSignature(user))
+                {
+                    _logger.LogWarning($"User {userId} WalletSignature mismatch. Auto-syncing WalletSignature after valid 6-digit PIN check.");
+                    user.WalletSignature = _walletSecurityService.GenerateSignature(user.Id, user.WalletBalance, user.CoinsBalance);
+                }
+
+                // 3. Monthly Redeem Count Limit (3 times per month)
+                int currentMonth = DateTime.UtcNow.Month;
+                if (user.LastAffiliateRedeemMonth != currentMonth)
+                {
+                    user.MonthlyAffiliateRedeemCount = 0;
+                    user.LastAffiliateRedeemMonth = currentMonth;
+                }
+
+                if (user.MonthlyAffiliateRedeemCount >= 3)
+                {
+                    return new RedeemAffiliatePointResponseDto
+                    {
+                        Success = false,
+                        Message = "Bạn đã dùng hết 3 lượt rút xu thủ công trong tháng này. Số xu còn lại sẽ được hệ thống tự động quét chuyển vào ví vào đêm cuối tháng.",
+                        RemainingRedeemCountThisMonth = 0
+                    };
+                }
+
+                // 4. Points Balance Check
+                if (user.AffiliatePoint < pointsToRedeem)
+                {
+                    return new RedeemAffiliatePointResponseDto
+                    {
+                        Success = false,
+                        Message = $"Số xu tiếp thị hiện có ({user.AffiliatePoint:N0} xu) không đủ để rút {pointsToRedeem:N0} xu."
+                    };
+                }
+
+                // Perform Redemption: 1 Xu = 1 VNĐ
+                user.AffiliatePoint -= pointsToRedeem;
+                user.WalletBalance += pointsToRedeem;
+                user.MonthlyAffiliateRedeemCount += 1;
+
+                // Update Wallet Signature
+                user.WalletSignature = _walletSecurityService.GenerateSignature(user.Id, user.WalletBalance, user.CoinsBalance);
+
+                // Add Financial Transaction Record
+                var balanceTx = new BalanceTransaction
+                {
+                    UserID = user.Id,
+                    Amount = pointsToRedeem,
+                    Direction = BalanceTransactionDirection.Credit,
+                    SourceType = BalanceSourceType.Wallet,
+                    Reason = $"Quy đổi {pointsToRedeem:N0} xu tiếp thị sang số dư Ví LazPe",
+                    CreatedAt = DateTime.Now
+                };
+                _context.BalanceTransactions.Add(balanceTx);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                int remainingRedeemCount = Math.Max(0, 3 - user.MonthlyAffiliateRedeemCount);
+
+                return new RedeemAffiliatePointResponseDto
+                {
+                    Success = true,
+                    Message = $"Quy đổi thành công {pointsToRedeem:N0} xu thành +{pointsToRedeem:N0}đ vào Ví LazPe!",
+                    NewWalletBalance = user.WalletBalance,
+                    RemainingPoints = user.AffiliatePoint,
+                    RemainingRedeemCountThisMonth = remainingRedeemCount
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, $"Error executing Affiliate RedeemPointsToWalletAsync for user {userId}");
+                return new RedeemAffiliatePointResponseDto
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra trong quá trình quy đổi xu. Vui lòng thử lại sau."
+                };
+            }
         }
     }
 }

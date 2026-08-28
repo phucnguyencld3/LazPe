@@ -82,6 +82,34 @@ namespace PolyBabyAPI.Controllers
                     .ToListAsync();
             }
 
+            var allItems = activeSales.SelectMany(s => s.FlashSaleItems).ToList();
+            
+            var productRefIds = allItems.Where(i => i.ItemType == FlashSaleItemType.Product).Select(i => i.ReferenceId).Distinct().ToList();
+            var variantRefIds = allItems.Where(i => i.ItemType == FlashSaleItemType.Variant).Select(i => i.ReferenceId).Distinct().ToList();
+            var bundleRefIds = allItems.Where(i => i.ItemType == FlashSaleItemType.Bundle).Select(i => i.ReferenceId).Distinct().ToList();
+
+            var allGiftIds = allItems
+                .Where(i => !string.IsNullOrEmpty(i.GiftVariantIds))
+                .SelectMany(i => i.GiftVariantIds!.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse))
+                .Distinct()
+                .ToList();
+
+            var productsDict = productRefIds.Any()
+                ? await _context.Products.AsNoTracking().Include(p => p.Variants).Include(p => p.Images).Where(p => productRefIds.Contains(p.ProductID)).ToDictionaryAsync(p => p.ProductID)
+                : new Dictionary<int, Product>();
+
+            var variantsDict = variantRefIds.Any()
+                ? await _context.Variants.AsNoTracking().Include(v => v.Product).Where(v => variantRefIds.Contains(v.VariantID)).ToDictionaryAsync(v => v.VariantID)
+                : new Dictionary<int, Variant>();
+
+            var bundlesDict = bundleRefIds.Any()
+                ? await _context.Bundles.AsNoTracking().Where(b => bundleRefIds.Contains(b.BundleID)).ToDictionaryAsync(b => b.BundleID)
+                : new Dictionary<int, Bundle>();
+
+            var giftVariantsDict = allGiftIds.Any()
+                ? await _context.Variants.AsNoTracking().Include(v => v.Product).Where(v => allGiftIds.Contains(v.VariantID)).ToDictionaryAsync(v => v.VariantID)
+                : new Dictionary<int, Variant>();
+
             foreach (var sale in activeSales)
             {
                 var response = new FlashSaleResponseDto
@@ -134,11 +162,7 @@ namespace PolyBabyAPI.Controllers
 
                     if (item.ItemType == FlashSaleItemType.Product)
                     {
-                        var product = await _context.Products
-                            .Include(p => p.Variants)
-                            .Include(p => p.Images)
-                            .FirstOrDefaultAsync(p => p.ProductID == item.ReferenceId);
-                        if (product != null)
+                        if (productsDict.TryGetValue(item.ReferenceId, out var product))
                         {
                             itemDto.ItemName = product.ProductName;
                             itemDto.OriginalPrice = product.Price;
@@ -148,10 +172,7 @@ namespace PolyBabyAPI.Controllers
                     }
                     else if (item.ItemType == FlashSaleItemType.Variant)
                     {
-                        var variant = await _context.Variants
-                            .Include(v => v.Product)
-                            .FirstOrDefaultAsync(v => v.VariantID == item.ReferenceId);
-                        if (variant != null)
+                        if (variantsDict.TryGetValue(item.ReferenceId, out var variant))
                         {
                             itemDto.ItemName = $"{variant.Product?.ProductName} ({variant.VariantName})";
                             itemDto.OriginalPrice = variant.UnitPrice;
@@ -162,9 +183,7 @@ namespace PolyBabyAPI.Controllers
                     }
                     else if (item.ItemType == FlashSaleItemType.Bundle)
                     {
-                        var bundle = await _context.Bundles
-                            .FirstOrDefaultAsync(b => b.BundleID == item.ReferenceId);
-                        if (bundle != null)
+                        if (bundlesDict.TryGetValue(item.ReferenceId, out var bundle))
                         {
                             itemDto.ItemName = bundle.Name;
                             itemDto.OriginalPrice = bundle.OriginalPrice ?? 0;
@@ -177,18 +196,16 @@ namespace PolyBabyAPI.Controllers
                         var giftIds = item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
                         if (giftIds.Any())
                         {
-                            var giftVariants = await _context.Variants
-                                .Include(v => v.Product)
-                                .Where(v => giftIds.Contains(v.VariantID))
-                                .ToListAsync();
-
                             itemDto.GiftNames = new List<string>();
                             itemDto.GiftImageUrls = new List<string>();
 
-                            foreach (var giftVariant in giftVariants)
+                            foreach (var giftId in giftIds)
                             {
-                                itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
-                                itemDto.GiftImageUrls.Add(giftVariant.ImageUrl);
+                                if (giftVariantsDict.TryGetValue(giftId, out var giftVariant))
+                                {
+                                    itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
+                                    itemDto.GiftImageUrls.Add(giftVariant.ImageUrl);
+                                }
                             }
                         }
                     }

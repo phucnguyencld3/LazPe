@@ -279,11 +279,15 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
     builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
     // Address service
-    builder.Services.AddHttpClient<AddressApiService>(client =>
+    builder.Services.AddHttpClient<PolyBabyAPI.Services.AddressApiService>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(5);
     });
-    builder.Services.AddScoped<AddressApiService>();
+    builder.Services.AddScoped<PolyBabyAPI.Services.AddressApiService>();
+
+    // Shipping Service
+    builder.Services.AddHttpClient<PolyBabyAPI.Services.Shipping.GHNShippingService>();
+    builder.Services.AddScoped<PolyBabyAPI.Services.Shipping.IShippingProvider, PolyBabyAPI.Services.Shipping.GHNShippingService>();
 
     builder.Services.AddHttpClient();
     builder.Services.AddMemoryCache();
@@ -310,6 +314,10 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
     builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection(VnPayOptions.SectionName));
     builder.Services.AddScoped<IVnPayService, VnPayService>();
     builder.Services.AddHostedService<VnPayPendingPaymentCleanupService>();
+
+    builder.Services.Configure<ZaloPayOptions>(builder.Configuration.GetSection(ZaloPayOptions.SectionName));
+    builder.Services.AddHttpClient<IZaloPayService, ZaloPayService>();
+
     builder.Services.AddHostedService<OrderAutoCompleteService>();
 
     // Cấu hình Hangfire
@@ -479,6 +487,14 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
             new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
         );
 
+        // Job tự động quy đổi xu tiếp thị còn dư vào Ví LazPe đêm cuối tháng (23:59 ngày cuối tháng)
+        recurringJobManager.AddOrUpdate<PolyBabyAPI.Services.AffiliateMonthlySweepJob>(
+            "affiliate-points-monthly-sweep-to-wallet",
+            job => job.ExecuteAsync(),
+            "59 23 L * *",
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time") }
+        );
+
         // 3. Job phát quà sinh nhật hàng ngày (Chạy 00:05 hàng ngày)
         recurringJobManager.AddOrUpdate<LoyaltyBirthdayGiftJob>(
             "loyalty-daily-birthday-gift-issuance",
@@ -580,6 +596,29 @@ builder.Services.AddScoped<IAffiliateService, AffiliateService>();
     var healthCheck = () => Results.Ok(new { status = "UP", message = "Backend API is running!" });
     app.MapMethods("/", new[] { "GET", "HEAD" }, healthCheck);
     app.MapMethods("/api", new[] { "GET", "HEAD" }, healthCheck);
+
+    // Auto-Ensure Affiliate Redeem Columns in AspNetUsers
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<PolyBabyAPI.Data.ApplicationDbContext>();
+        try
+        {
+            db.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[AspNetUsers]') AND name = 'MonthlyAffiliateRedeemCount')
+                BEGIN
+                    ALTER TABLE [AspNetUsers] ADD [MonthlyAffiliateRedeemCount] int NOT NULL DEFAULT 0;
+                END
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[AspNetUsers]') AND name = 'LastAffiliateRedeemMonth')
+                BEGIN
+                    ALTER TABLE [AspNetUsers] ADD [LastAffiliateRedeemMonth] int NOT NULL DEFAULT 0;
+                END
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Auto column check error: " + ex.Message);
+        }
+    }
 
     Console.WriteLine("PolyBaby API starting...");
     app.Run();

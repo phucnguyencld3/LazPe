@@ -14,5 +14,6 @@ namespace PolyBabyAPI.Interface
         Task<List<AffiliateLinkResponseDto>> GetUserAffiliateLinksAsync(string userId);
         Task<bool> DeleteAffiliateLinkAsync(string userId, string affiliateLinkCode);
         Task<bool> ProcessAffiliateRevenueAsync(string affiliateUserId, int invoiceId, decimal revenue);
+        Task<RedeemAffiliatePointResponseDto> RedeemPointsToWalletAsync(string userId, int pointsToRedeem, string pin);
     }
 }
