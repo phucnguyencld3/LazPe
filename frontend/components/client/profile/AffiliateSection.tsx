@@ -118,21 +118,33 @@ export default function AffiliateSection({ token }: Props) {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  const handleDeleteLink = async (code: string, productName: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa link tiếp thị cho sản phẩm "${productName}" không?`)) return;
+  // Delete Link Confirm Modal state
+  const [deleteTarget, setDeleteTarget] = useState<{ code: string; productName: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const openDeleteModal = (code: string, productName: string) => {
+    setDeleteTarget({ code, productName });
+  };
+
+  const confirmDeleteLink = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      const res = await deleteAffiliateLink(token, code);
+      const res = await deleteAffiliateLink(token, deleteTarget.code);
       if (res.success) {
         toast.success("Đã xóa link tiếp thị thành công!");
         const myLinks = await getAffiliateLinks(token);
         setLinks(myLinks || []);
         setLinksPage(1);
+        setDeleteTarget(null);
       } else {
         toast.error(res.message || "Xóa link thất bại");
       }
     } catch (e) {
       console.error(e);
       toast.error("Lỗi kết nối khi xóa link");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -615,7 +627,7 @@ export default function AffiliateSection({ token }: Props) {
                 >
                   {/* Delete Icon Button */}
                   <button
-                    onClick={() => handleDeleteLink(link.affiliateLinkCode, link.productName)}
+                    onClick={() => openDeleteModal(link.affiliateLinkCode, link.productName)}
                     className="absolute top-3 right-3 z-10 w-6 h-6 bg-white/90 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-full border border-slate-200 shadow-sm flex items-center justify-center transition-all opacity-80 group-hover:opacity-100"
                     title="Xóa link tiếp thị"
                   >
@@ -721,7 +733,7 @@ export default function AffiliateSection({ token }: Props) {
                         {isCopied ? "Đã copy" : "Copy"}
                       </button>
                       <button 
-                        onClick={() => handleDeleteLink(link.affiliateLinkCode, link.productName)}
+                        onClick={() => openDeleteModal(link.affiliateLinkCode, link.productName)}
                         className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 p-1 rounded-[5px] font-medium transition-colors flex items-center justify-center"
                         title="Xóa link tiếp thị"
                       >
@@ -783,6 +795,65 @@ export default function AffiliateSection({ token }: Props) {
         hasPaymentPin={stats?.hasPaymentPin ?? false}
         onSuccess={fetchData}
       />
+
+      {/* Modal xác nhận xóa link tiếp thị */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+          <div className="bg-white rounded-[16px] max-w-md w-full p-6 shadow-xl border border-slate-100 space-y-4 relative">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-xl">delete</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Xác nhận xóa link tiếp thị</h3>
+                <p className="text-xs text-slate-500">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Bạn có chắc chắn muốn xóa link tiếp thị cho sản phẩm{" "}
+              <strong className="text-slate-800">"{deleteTarget.productName}"</strong> không? 
+              Sau khi xóa, link giới thiệu này sẽ không thể sử dụng để tích lũy doanh thu nữa.
+            </p>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="w-1/3 py-2.5 border border-slate-300 text-slate-700 text-xs font-bold rounded-[5px] hover:bg-slate-50 transition-colors"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDeleteLink}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[5px] flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-60"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-base">delete</span>
+                    <span>Xóa link tiếp thị</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
