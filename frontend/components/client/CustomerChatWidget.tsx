@@ -91,9 +91,83 @@ const ChatProductList = ({ products, onClickProduct }: { products: any[], onClic
   );
 };
 
+const CustomerOrderCard = ({ msgText }: { msgText: string }) => {
+  try {
+    const jsonStr = msgText.replace(/^(__ORDER_CARD__|ORDER_CARD)::/, "");
+    const order = JSON.parse(jsonStr);
+    const statusColor = order.status === "Đã hủy" ? "text-rose-500" : order.status === "Đã giao" ? "text-emerald-500" : "text-amber-500";
+
+    return (
+      <div 
+        className="w-[220px] sm:w-[260px] bg-white text-slate-800 rounded-xl border border-slate-200 p-2.5 shadow-sm my-1 cursor-pointer hover:border-primary/50 transition-all"
+        onClick={() => window.location.href = `/profile?tab=orders&id=${order.invoiceID}`}
+      >
+        <div className="flex gap-2.5">
+          <img src={order.imageUrl || '/placeholder.png'} alt="Product" className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0 bg-slate-50" />
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <div className="text-[12px] font-semibold text-slate-800 truncate" title={order.productName}>
+              {order.productName}
+            </div>
+            <div className="text-[11px] text-slate-500 truncate mt-0.5">
+              {order.itemsCount || 1} Sản phẩm • {order.totalPrice?.toLocaleString('vi-VN')}đ
+            </div>
+            <div className="text-[11px] font-medium mt-1 flex justify-between items-center">
+              <span className={`font-semibold ${statusColor}`}>{order.status}</span>
+              <span className="text-primary font-bold hover:underline">Chi tiết</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  } catch (e) {
+    return <div className="text-xs text-rose-500 font-medium">Tin nhắn thẻ đơn hàng bị lỗi</div>;
+  }
+};
+
+const CustomerCompensationCard = ({ msgText }: { msgText: string }) => {
+  try {
+    const jsonStr = msgText.replace(/^(__COMPENSATION__|COMPENSATION)::/, "");
+    const comp = JSON.parse(jsonStr);
+
+    return (
+      <div className="w-[220px] sm:w-[260px] bg-gradient-to-br from-amber-50 to-orange-50 text-slate-800 border border-amber-200/80 rounded-xl p-3 shadow-sm my-1">
+        <div className="flex items-center gap-2 mb-2 border-b border-amber-200/50 pb-2">
+          <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-base">
+              {comp.type === 'voucher' ? 'local_activity' : 'stars'}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-amber-900 truncate">Bồi thường sự cố</div>
+            <div className="text-[10px] text-amber-700">Mã đơn: #{comp.invoiceCode || comp.invoiceId}</div>
+          </div>
+        </div>
+        <div className="bg-white/80 backdrop-blur rounded-lg p-2 text-center border border-amber-200/60 shadow-inner">
+          <div className="text-xs font-extrabold text-amber-600">
+            {comp.type === 'voucher' 
+              ? `Voucher giảm ${comp.discountType === 1 ? comp.amount + '%' : comp.amount?.toLocaleString('vi-VN') + 'đ'}` 
+              : `+${(comp.amount || 0).toLocaleString('vi-VN')} Điểm`}
+          </div>
+          {comp.type === 'voucher' && comp.voucherCode && (
+            <div className="text-[10px] text-slate-500 mt-0.5 font-mono font-bold tracking-wider">{comp.voucherCode}</div>
+          )}
+        </div>
+        {comp.reason && (
+          <div className="text-[10px] text-slate-600 mt-2 italic line-clamp-2 bg-amber-100/40 p-1 rounded text-center">
+            "{comp.reason}"
+          </div>
+        )}
+      </div>
+    );
+  } catch (e) {
+    return <div className="text-xs text-rose-500 font-medium">Tin nhắn bồi thường bị lỗi</div>;
+  }
+};
+
 const normalizeMessage = (msg: any): Message => {
   if (!msg) return msg;
   const rawText = msg.messageText !== undefined ? msg.messageText : msg.MessageText;
+  const rawImg = msg.imageUrl !== undefined ? msg.imageUrl : (msg.ImageUrl !== undefined ? msg.ImageUrl : null);
 
   return {
     id: msg.id !== undefined ? msg.id : msg.Id,
@@ -102,7 +176,7 @@ const normalizeMessage = (msg: any): Message => {
     senderName: msg.senderName !== undefined ? msg.senderName : msg.SenderName,
     isFromAdmin: msg.isFromAdmin !== undefined ? msg.isFromAdmin : msg.IsFromAdmin,
     messageText: rawText || null,
-    imageUrl: null,
+    imageUrl: rawImg || null,
     createdAt: msg.createdAt !== undefined ? msg.createdAt : msg.CreatedAt
   };
 };
@@ -1008,6 +1082,17 @@ export default function CustomerChatWidget() {
                             : "bg-primary text-white rounded-tr-sm"
                             } ${msg.id < 0 ? "opacity-70" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                         >
+                          {msg.imageUrl && (
+                            <div className="mb-2">
+                              <img 
+                                src={msg.imageUrl} 
+                                alt="Hình ảnh" 
+                                className="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 shadow-sm"
+                                onClick={() => setZoomedImage(msg.imageUrl)}
+                              />
+                            </div>
+                          )}
+
                           {isMediaUrl(msg.messageText) ? (
                             <img
                               src={msg.messageText?.trim()}
@@ -1017,6 +1102,10 @@ export default function CustomerChatWidget() {
                                 (e.target as HTMLElement).style.display = "none";
                               }}
                             />
+                          ) : msg.messageText?.startsWith("ORDER_CARD::") || msg.messageText?.startsWith("__ORDER_CARD__::") ? (
+                            <CustomerOrderCard msgText={msg.messageText} />
+                          ) : msg.messageText?.startsWith("COMPENSATION::") || msg.messageText?.startsWith("__COMPENSATION__::") ? (
+                            <CustomerCompensationCard msgText={msg.messageText} />
                           ) : (
                             msg.messageText && (
                               <div className={`prose prose-sm max-w-none break-words leading-relaxed ${!msg.isFromAdmin ? 'prose-invert' : 'prose-slate'}`}>

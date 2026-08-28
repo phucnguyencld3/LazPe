@@ -73,9 +73,104 @@ interface Message {
   createdAt: string;
 }
 
+const AdminChatOrderCard = ({ msgText, onZoomImage }: { msgText: string, onZoomImage?: (url: string) => void }) => {
+  try {
+    const jsonStr = msgText.replace(/^(__ORDER_CARD__|ORDER_CARD)::/, "");
+    const order = JSON.parse(jsonStr);
+    const statusColor = order.status === "Đã hủy" ? "bg-rose-50 text-rose-600 border-rose-200" : order.status === "Đã giao" ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-amber-50 text-amber-600 border-amber-200";
+
+    return (
+      <div 
+        className="w-full max-w-[340px] bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-all my-1 cursor-pointer hover:border-primary/50 group"
+        onClick={() => window.open(`/admin/orders/${order.invoiceID}`, '_blank')}
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm text-primary">receipt_long</span>
+            Mã đơn: #{order.invoiceCode || order.invoiceID}
+          </span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
+            {order.status || "Đang xử lý"}
+          </span>
+        </div>
+        
+        <div className="flex gap-3 items-center">
+          <img 
+            src={order.imageUrl || '/assets/img/products/default-product.jpg'} 
+            alt="Product" 
+            className="w-14 h-14 object-cover rounded-lg border border-slate-100 shrink-0 bg-slate-50" 
+            onClick={(e) => {
+              if (onZoomImage && order.imageUrl) {
+                e.stopPropagation();
+                onZoomImage(order.imageUrl);
+              }
+            }}
+          />
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <h5 className="text-xs font-semibold text-slate-800 line-clamp-2 leading-snug group-hover:text-primary transition-colors" title={order.productName}>
+              {order.productName}
+            </h5>
+            <div className="text-[11px] text-slate-500 mt-1 flex justify-between items-center">
+              <span>{order.itemsCount || 1} sản phẩm</span>
+              <span className="font-bold text-rose-600">
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalPrice || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  } catch (e) {
+    return <div className="text-xs text-rose-500 font-medium">Tin nhắn thẻ đơn hàng bị lỗi</div>;
+  }
+};
+
+const AdminChatCompensationCard = ({ msgText }: { msgText: string }) => {
+  try {
+    const jsonStr = msgText.replace(/^(__COMPENSATION__|COMPENSATION)::/, "");
+    const comp = JSON.parse(jsonStr);
+
+    return (
+      <div className="w-full max-w-[300px] bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl p-3 shadow-sm my-1">
+        <div className="flex items-center gap-2 mb-2 border-b border-amber-200/50 pb-2">
+          <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-lg">
+              {comp.type === 'voucher' ? 'local_activity' : 'stars'}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-amber-900 truncate">Bồi thường sự cố</div>
+            <div className="text-[10px] text-amber-700">Mã đơn: #{comp.invoiceCode || comp.invoiceId}</div>
+          </div>
+        </div>
+        <div className="bg-white/80 backdrop-blur rounded-lg p-2 text-center border border-amber-200/60 shadow-inner">
+          <div className="text-sm font-extrabold text-amber-600">
+            {comp.type === 'voucher' 
+              ? `Voucher giảm ${comp.discountType === 1 ? comp.amount + '%' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(comp.amount || 0)}` 
+              : `+${(comp.amount || 0).toLocaleString('vi-VN')} Điểm thưởng`}
+          </div>
+          {comp.type === 'voucher' && comp.voucherCode && (
+            <div className="text-[10px] text-slate-500 mt-0.5 font-mono font-bold tracking-wider">
+              {comp.voucherCode}
+            </div>
+          )}
+        </div>
+        {comp.reason && (
+          <div className="text-[11px] text-slate-600 mt-2 italic line-clamp-2 bg-amber-100/40 p-1.5 rounded text-center">
+            "{comp.reason}"
+          </div>
+        )}
+      </div>
+    );
+  } catch (e) {
+    return <div className="text-xs text-rose-500 font-medium">Tin nhắn thẻ bồi thường bị lỗi</div>;
+  }
+};
+
 const normalizeMessage = (msg: any): Message => {
   if (!msg) return msg;
   const rawText = msg.messageText !== undefined ? msg.messageText : msg.MessageText;
+  const rawImg = msg.imageUrl !== undefined ? msg.imageUrl : (msg.ImageUrl !== undefined ? msg.ImageUrl : null);
   
   return {
     id: msg.id !== undefined ? msg.id : msg.Id,
@@ -84,7 +179,7 @@ const normalizeMessage = (msg: any): Message => {
     senderName: msg.senderName !== undefined ? msg.senderName : msg.SenderName,
     isFromAdmin: msg.isFromAdmin !== undefined ? msg.isFromAdmin : msg.IsFromAdmin,
     messageText: rawText || null,
-    imageUrl: null,
+    imageUrl: rawImg || null,
     createdAt: msg.createdAt !== undefined ? msg.createdAt : msg.CreatedAt
   };
 };
@@ -709,9 +804,15 @@ function AdminChatsContent() {
                         </span>
                       </div>
                       <div className="text-xs text-slate-500 truncate mb-1">
-                        {isMediaUrl(group.latestSession.lastMessageText) 
-                          ? <span className="flex items-center gap-1 italic"><span className="material-symbols-outlined text-[14px]">image</span> Hình ảnh/Sticker</span> 
-                          : group.latestSession.lastMessageText || "Chưa có tin nhắn"}
+                        {isMediaUrl(group.latestSession.lastMessageText) ? (
+                          <span className="flex items-center gap-1 italic"><span className="material-symbols-outlined text-[14px]">image</span> Hình ảnh/Sticker</span>
+                        ) : group.latestSession.lastMessageText?.startsWith("ORDER_CARD::") || group.latestSession.lastMessageText?.startsWith("__ORDER_CARD__::") ? (
+                          <span className="flex items-center gap-1 font-medium text-slate-700"><span className="material-symbols-outlined text-[14px] text-amber-600">receipt_long</span> Thẻ đơn hàng</span>
+                        ) : group.latestSession.lastMessageText?.startsWith("COMPENSATION::") || group.latestSession.lastMessageText?.startsWith("__COMPENSATION__::") ? (
+                          <span className="flex items-center gap-1 font-medium text-amber-600"><span className="material-symbols-outlined text-[14px]">stars</span> Thẻ bồi thường</span>
+                        ) : (
+                          group.latestSession.lastMessageText || "Chưa có tin nhắn"
+                        )}
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
@@ -870,6 +971,17 @@ function AdminChatsContent() {
                             : "bg-white text-slate-700 rounded-tl-sm border border-slate-100/50"
                         } ${msg.id < 0 ? "opacity-75" : ""} ${isMediaUrl(msg.messageText) ? "!bg-transparent !border-none !shadow-none !p-0" : ""}`}
                       >
+                        {msg.imageUrl && (
+                          <div className="mb-2">
+                            <img 
+                              src={msg.imageUrl} 
+                              alt="Hình ảnh gửi" 
+                              className="max-w-[220px] max-h-[220px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 shadow-sm"
+                              onClick={() => setZoomedImage(msg.imageUrl)}
+                            />
+                          </div>
+                        )}
+
                         {isMediaUrl(msg.messageText) ? (
                           <img
                             src={msg.messageText?.trim()}
@@ -879,6 +991,10 @@ function AdminChatsContent() {
                               (e.target as HTMLElement).style.display = "none";
                             }}
                           />
+                        ) : msg.messageText?.startsWith("ORDER_CARD::") || msg.messageText?.startsWith("__ORDER_CARD__::") ? (
+                          <AdminChatOrderCard msgText={msg.messageText} onZoomImage={setZoomedImage} />
+                        ) : msg.messageText?.startsWith("COMPENSATION::") || msg.messageText?.startsWith("__COMPENSATION__::") ? (
+                          <AdminChatCompensationCard msgText={msg.messageText} />
                         ) : (
                           msg.messageText && (
                             <div className={`prose prose-sm max-w-none break-words leading-relaxed [&>p]:mb-0`}>
