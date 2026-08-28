@@ -150,9 +150,8 @@ namespace PolyBabyAPI.Services
                             .Take(200)
                             .ToListAsync();
 
-                        query = sortDirection.ToLower() == "asc"
-                            ? query.OrderByDescending(p => topSellerIds.Contains(p.ProductID) ? topSellerIds.IndexOf(p.ProductID) : -1)
-                            : query.OrderBy(p => topSellerIds.Contains(p.ProductID) ? topSellerIds.IndexOf(p.ProductID) : 999999);
+                        useRelevanceSort = true;
+                        meiliSortedIds = topSellerIds;
                     }
                     else if (sortKey == "topwishlist")
                     {
@@ -164,9 +163,8 @@ namespace PolyBabyAPI.Services
                             .Take(200)
                             .ToListAsync();
 
-                        query = sortDirection.ToLower() == "asc"
-                            ? query.OrderByDescending(p => topWishIds.Contains(p.ProductID) ? topWishIds.IndexOf(p.ProductID) : -1)
-                            : query.OrderBy(p => topWishIds.Contains(p.ProductID) ? topWishIds.IndexOf(p.ProductID) : 999999);
+                        useRelevanceSort = true;
+                        meiliSortedIds = topWishIds;
                     }
                     else
                     {

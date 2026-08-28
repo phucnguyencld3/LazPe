@@ -3755,6 +3755,8 @@ export interface AffiliateDashboardStats {
   affiliatePoint: number;
   totalClicks: number;
   totalConversions: number;
+  remainingRedeemCountThisMonth?: number;
+  hasPaymentPin?: boolean;
   milestones: {
     milestoneId: number;
     requiredRevenue: number;
@@ -3902,5 +3904,46 @@ export async function calculateShippingFee(addressId: number, weight: number, le
   } catch (error) {
     console.error("Error calculating shipping fee:", error);
     return null;
+  }
+}
+
+export async function redeemAffiliatePoints(
+  token: string,
+  pointsToRedeem: number,
+  paymentPin: string
+): Promise<{
+  success: boolean;
+  message: string;
+  newWalletBalance?: number;
+  remainingPoints?: number;
+  remainingRedeemCountThisMonth?: number;
+  requiresPinSetup?: boolean;
+  isLocked?: boolean;
+  failedCount?: number;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Affiliate/redeem-points`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pointsToRedeem, paymentPin }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && result.success) {
+      return result;
+    }
+    return {
+      success: false,
+      message: result.message || "Quy đổi thất bại.",
+      requiresPinSetup: result.requiresPinSetup || false,
+      isLocked: result.isLocked || false,
+      failedCount: result.failedCount || 0,
+    };
+  } catch (error) {
+    console.error("Error redeeming affiliate points:", error);
+    return { success: false, message: "Lỗi kết nối máy chủ" };
   }
 }

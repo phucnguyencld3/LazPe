@@ -96,6 +96,28 @@ namespace PolyBabyAPI.Controllers
             var success = await _affiliateService.RecordClickAsync(dto.Code);
             return Ok(new { success });
         }
+
+        [HttpPost("redeem-points")]
+        [Authorize]
+        public async Task<IActionResult> RedeemPoints([FromBody] RedeemAffiliatePointDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                return BadRequest(new RedeemAffiliatePointResponseDto { Success = false, Message = error ?? "Dữ liệu không hợp lệ." });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _affiliateService.RedeemPointsToWalletAsync(userId, dto.PointsToRedeem, dto.PaymentPin);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
     }
 
     public class TrackClickDto

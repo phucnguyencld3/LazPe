@@ -31,6 +31,8 @@ namespace PolyBabyAPI.DTOs
         public int AffiliatePoint { get; set; }
         public int TotalClicks { get; set; }
         public int TotalConversions { get; set; }
+        public int RemainingRedeemCountThisMonth { get; set; } = 3;
+        public bool HasPaymentPin { get; set; } = false;
         
         public List<AffiliateMilestoneProgressDto> Milestones { get; set; } = new();
     }
@@ -51,5 +53,28 @@ namespace PolyBabyAPI.DTOs
         public decimal Revenue { get; set; }
         public int PointsEarned { get; set; }
         public string ProductName { get; set; } = string.Empty;
+    }
+
+    public class RedeemAffiliatePointDto
+    {
+        [Required(ErrorMessage = "Số xu quy đổi không được để trống")]
+        [Range(1000, 9999999, ErrorMessage = "Số xu rút từ 1.000 đến 9.999.999 xu")]
+        public int PointsToRedeem { get; set; }
+
+        [Required(ErrorMessage = "Mã PIN thanh toán không được để trống")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Mã PIN ví phải gồm đúng 6 chữ số")]
+        public string PaymentPin { get; set; } = string.Empty;
+    }
+
+    public class RedeemAffiliatePointResponseDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public decimal NewWalletBalance { get; set; }
+        public int RemainingPoints { get; set; }
+        public int RemainingRedeemCountThisMonth { get; set; }
+        public bool RequiresPinSetup { get; set; } = false;
+        public bool IsLocked { get; set; } = false;
+        public int FailedCount { get; set; } = 0;
     }
 }

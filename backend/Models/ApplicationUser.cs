@@ -40,6 +40,9 @@ namespace PolyBabyAPI.Models
 
         public int AffiliatePoint { get; set; } = 0;
 
+        public int MonthlyAffiliateRedeemCount { get; set; } = 0;
+        public int LastAffiliateRedeemMonth { get; set; } = 0;
+
         [MaxLength(256)]
         public string? WalletSignature { get; set; }
 

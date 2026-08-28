@@ -1711,7 +1711,7 @@ namespace PolyBabyAPI.Controllers
         /// Lấy dữ liệu thống kê chi tiêu cá nhân của khách hàng hiện tại
         /// </summary>
         [HttpGet("spending-dashboard")]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> GetSpendingDashboard()
         {
             try
@@ -1724,11 +1724,16 @@ namespace PolyBabyAPI.Controllers
 
                 // Lấy tất cả hóa đơn hoàn thành và không bị xóa mềm
                 var invoices = await _context.Invoices
+                    .AsNoTracking()
                     .Where(i => i.UserID == userId && !i.IsDeleted && i.Status == OrderStatus.Completed)
                     .Include(i => i.InvoiceDetails)
                         .ThenInclude(d => d.Variant)
                             .ThenInclude(v => v.Product)
                                 .ThenInclude(p => p.Category)
+                    .Include(i => i.InvoiceDetails)
+                        .ThenInclude(d => d.Variant)
+                            .ThenInclude(v => v.Product)
+                                .ThenInclude(p => p.Images)
                     .Include(i => i.InvoiceDetails)
                         .ThenInclude(d => d.Bundle)
                     .ToListAsync();
