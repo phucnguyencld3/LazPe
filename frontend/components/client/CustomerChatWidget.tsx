@@ -514,6 +514,7 @@ export default function CustomerChatWidget() {
 
     connection.on("ReceiveMessage", (message: Message) => {
       const normalized = normalizeMessage(message);
+      if (normalized.chatSessionId !== sid) return;
       setMessages((prev) => {
         if (prev.some((m) => m.id === normalized.id)) return prev;
         

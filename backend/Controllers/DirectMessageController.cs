@@ -200,11 +200,10 @@ namespace PolyBabyAPI.Controllers
                     chatMessage.CreatedAt
                 };
 
-                // Gửi qua SignalR tới room (roomId = DM_{sessionUserId})
+                // Gửi qua SignalR tới room DirectMessage (roomId = DM_{sessionUserId})
                 await _hubContext.Clients.Group(session.Id).SendAsync("ReceiveMessage", messageDto);
 
-                // Đồng thời phát tín hiệu realtime cho toàn bộ Admin qua ChatHub để nhảy thông báo & badge
-                await _chatHubContext.Clients.All.SendAsync("ReceiveMessage", messageDto);
+                // Chỉ phát tín hiệu UpdateAdminSessions qua ChatHub để nhảy thông báo & badge trên Admin
                 await _chatHubContext.Clients.All.SendAsync("UpdateAdminSessions");
 
                 return Ok(new { success = true, message = messageDto });

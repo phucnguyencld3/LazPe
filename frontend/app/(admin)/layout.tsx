@@ -566,7 +566,12 @@ export default function AdminLayout({
                         key={session.id}
                         onClick={() => {
                           setIsChatDropdownOpen(false);
-                          router.push(`/admin/chats?session=${session.id}`);
+                          const targetUserId = session.userId || (session.id.startsWith("DM_") ? session.id.replace("DM_", "") : null);
+                          if (targetUserId) {
+                            router.push(`/admin/messages?user=${targetUserId}`);
+                          } else {
+                            router.push(`/admin/chats?session=${session.id}`);
+                          }
                         }}
                         className={`flex items-start gap-3 p-3 hover:bg-slate-50 transition-colors cursor-pointer relative ${session.unreadByAdmin > 0 ? "bg-primary/5" : ""}`}
                       >
@@ -600,13 +605,20 @@ export default function AdminLayout({
                   )}
                 </div>
 
-                <div className="px-3 pt-2 mt-2 border-t border-slate-100">
+                <div className="px-3 pt-2 mt-2 border-t border-slate-100 flex gap-2">
                   <Link
                     href="/admin/chats"
-                    className="block text-center w-full py-2 bg-primary/10 hover:bg-primary/20 rounded-[8px] text-xs font-bold text-primary transition-colors"
+                    className="flex-1 text-center py-2 bg-slate-100 hover:bg-slate-200 rounded-[8px] text-[11px] font-bold text-slate-700 transition-colors"
                     onClick={() => setIsChatDropdownOpen(false)}
                   >
-                    Vào Quản lý Chat CSKH
+                    Chat CSKH
+                  </Link>
+                  <Link
+                    href="/admin/messages"
+                    className="flex-1 text-center py-2 bg-primary/10 hover:bg-primary/20 rounded-[8px] text-[11px] font-bold text-primary transition-colors"
+                    onClick={() => setIsChatDropdownOpen(false)}
+                  >
+                    Tin nhắn Trực tiếp
                   </Link>
                 </div>
               </div>
@@ -1016,7 +1028,7 @@ export default function AdminLayout({
                       className={`flex items-center justify-between py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/chats") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 pl-8" : "px-0 justify-center hidden"}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[26px] flex-shrink-0">chat</span>
+                        <span className="material-symbols-outlined text-[26px] flex-shrink-0">support_agent</span>
                         <span className="text-[16.5px] font-medium whitespace-nowrap">Tin nhắn Hỗ trợ</span>
                       </div>
                       {unreadChatCount > 0 && (
@@ -1024,6 +1036,15 @@ export default function AdminLayout({
                           {unreadChatCount}
                         </span>
                       )}
+                    </Link>
+                  )}
+                  {hasPermission("Chat.Manage") && (
+                    <Link
+                      href="/admin/messages"
+                      className={`flex items-center py-2 mx-3 rounded-[8px] transition-all duration-200 ${isActive("/admin/messages") ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-secondary-container/50 hover:text-primary"} ${isSidebarExpanded ? "px-4 gap-3 pl-8" : "px-0 justify-center hidden"}`}
+                    >
+                      <span className="material-symbols-outlined text-[26px] flex-shrink-0">forum</span>
+                      <span className="text-[16.5px] font-medium whitespace-nowrap">Tin nhắn Trực tiếp</span>
                     </Link>
                   )}
                   {hasPermission("Notification.Read") && (
@@ -1045,13 +1066,13 @@ export default function AdminLayout({
         </aside>
         
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${pathname?.includes("/chat") ? "h-[calc(117.647vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${marginLeft} ${(pathname?.includes("/chat") || pathname?.includes("/messages")) ? "h-[calc(117.647vh-4rem)] p-4 pb-2" : "p-4 md:p-margin-desktop min-h-0 w-full overflow-hidden"}`}>
           <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
           
           {/* Footer Shell */}
-          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${pathname?.includes("/chat") ? "py-2 mt-2 text-xs" : "py-md mt-lg"}`}>
+          <footer className={`flex justify-between items-center text-on-surface-variant font-label-sm border-t border-surface-container-high/50 bg-background ${(pathname?.includes("/chat") || pathname?.includes("/messages")) ? "py-2 mt-2 text-xs" : "py-md mt-lg"}`}>
             <p>© 2024 Hệ thống quản lý LazPe. Bảo lưu mọi quyền.</p>
             <div className="flex gap-md">
               <a className="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a>

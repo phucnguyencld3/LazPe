@@ -660,6 +660,7 @@ function AdminChatsContent() {
     const groups: Record<string, CustomerChatGroup> = {};
     
     sessions.forEach(session => {
+      if (session.id.startsWith("DM_")) return; // Khai trừ các phiên DM trực tiếp ra khỏi Chat CSKH
       const customerId = session.userId || session.customerName; // Fallback to name if anonymous
       
       if (!groups[customerId]) {
