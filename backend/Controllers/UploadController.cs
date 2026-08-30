@@ -99,7 +99,7 @@ namespace PolyBabyAPI.Controllers
         /// Upload ảnh thông thường lên Cloudinary
         /// </summary>
         [HttpPost("image")]
-        [Permission("Product.Update")]
+        [Permission("Product.Read")]
         public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string folder = "polystation/variants", [FromForm] string? oldImageUrl = null)
         {
             try

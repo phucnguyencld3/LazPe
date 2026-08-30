@@ -332,7 +332,27 @@ export default function AdminLayout({
   const hasPermission = (permissionName: string) => {
     if (!user) return false;
     if (user.isAdmin || user.roles?.includes("Admin")) return true;
-    return user.permissions?.includes(permissionName) || false;
+    const perms = Array.isArray(user.permissions) ? user.permissions : [];
+    if (perms.includes(permissionName)) return true;
+
+    // Check hierarchy: Delete > Update > Create > Read
+    const parts = permissionName.split(".");
+    if (parts.length !== 2) return false;
+    const [resource, action] = parts;
+    const reqAction = action.toLowerCase();
+
+    return perms.some(p => {
+      const pParts = p.split(".");
+      if (pParts.length !== 2) return false;
+      if (pParts[0].toLowerCase() !== resource.toLowerCase()) return false;
+      const grantedAction = pParts[1].toLowerCase();
+
+      if (reqAction === "read") return ["read", "create", "update", "delete"].includes(grantedAction);
+      if (reqAction === "create") return ["create", "update", "delete"].includes(grantedAction);
+      if (reqAction === "update") return ["update", "delete"].includes(grantedAction);
+      if (reqAction === "delete") return ["delete"].includes(grantedAction);
+      return false;
+    });
   };
 
   // Route Guard checks for subpaths
@@ -340,25 +360,62 @@ export default function AdminLayout({
     if (!isAuth || !user) return;
 
     let requiredPermission: string | null = null;
-    if (pathname.startsWith("/admin/statistics")) requiredPermission = "Analytics.Read";
-    else if (pathname.startsWith("/admin/orders")) requiredPermission = "Order.Read";
-    else if (pathname.startsWith("/admin/tracking")) requiredPermission = "Order.Read";
-    else if (pathname.startsWith("/admin/reviews")) requiredPermission = "Review.Read";
-    else if (pathname.startsWith("/admin/products")) requiredPermission = "Product.Read";
-    else if (pathname.startsWith("/admin/combo")) requiredPermission = "Bundle.Read";
-    else if (pathname.startsWith("/admin/categories")) requiredPermission = "Category.Read";
-    else if (pathname.startsWith("/admin/brands")) requiredPermission = "Supplier.Read";
-    else if (pathname.startsWith("/admin/vouchers")) requiredPermission = "Voucher.Read";
-    else if (pathname.startsWith("/admin/flash-sales")) requiredPermission = "FlashSale.Read";
-    else if (pathname.startsWith("/admin/loyalty")) requiredPermission = "Loyalty.Read";
-    else if (pathname.startsWith("/admin/users")) requiredPermission = "User.Read";
-    else if (pathname.startsWith("/admin/permissions")) requiredPermission = "Permission.Read";
-    else if (pathname.startsWith("/admin/role-templates")) requiredPermission = "Permission.Read";
-    else if (pathname.startsWith("/admin/chats")) requiredPermission = "Chat.Manage";
-    else if (pathname.startsWith("/admin/notifications")) requiredPermission = "Notification.Read";
+    if (pathname === "/admin/products/new" || pathname?.startsWith("/admin/products/import")) {
+      requiredPermission = "Product.Create";
+    } else if (pathname?.startsWith("/admin/products/") && (pathname?.endsWith("/edit") || pathname?.includes("/edit/"))) {
+      requiredPermission = "Product.Update";
+    } else if (pathname?.startsWith("/admin/products")) {
+      requiredPermission = "Product.Read";
+    } else if (pathname === "/admin/categories/new" || pathname?.startsWith("/admin/categories/import")) {
+      requiredPermission = "Category.Create";
+    } else if (pathname?.startsWith("/admin/categories/") && (pathname?.endsWith("/edit") || pathname?.includes("/edit/"))) {
+      requiredPermission = "Category.Update";
+    } else if (pathname?.startsWith("/admin/categories")) {
+      requiredPermission = "Category.Read";
+    } else if (pathname === "/admin/combo/new") {
+      requiredPermission = "Bundle.Create";
+    } else if (pathname?.startsWith("/admin/combo/") && (pathname?.endsWith("/edit") || pathname?.includes("/edit/"))) {
+      requiredPermission = "Bundle.Update";
+    } else if (pathname?.startsWith("/admin/combo")) {
+      requiredPermission = "Bundle.Read";
+    } else if (pathname === "/admin/vouchers/new") {
+      requiredPermission = "Voucher.Create";
+    } else if (pathname?.startsWith("/admin/vouchers/") && (pathname?.endsWith("/edit") || pathname?.includes("/edit/"))) {
+      requiredPermission = "Voucher.Update";
+    } else if (pathname?.startsWith("/admin/vouchers")) {
+      requiredPermission = "Voucher.Read";
+    } else if (pathname === "/admin/flash-sales/new") {
+      requiredPermission = "FlashSale.Create";
+    } else if (pathname?.startsWith("/admin/flash-sales/") && (pathname?.endsWith("/edit") || pathname?.includes("/edit/"))) {
+      requiredPermission = "FlashSale.Update";
+    } else if (pathname?.startsWith("/admin/flash-sales")) {
+      requiredPermission = "FlashSale.Read";
+    } else if (pathname === "/admin/brands/new") {
+      requiredPermission = "Supplier.Create";
+    } else if (pathname?.startsWith("/admin/brands/") && (pathname?.endsWith("/edit") || pathname?.includes("/edit/"))) {
+      requiredPermission = "Supplier.Update";
+    } else if (pathname?.startsWith("/admin/brands")) {
+      requiredPermission = "Supplier.Read";
+    } else if (pathname?.startsWith("/admin/statistics")) {
+      requiredPermission = "Analytics.Read";
+    } else if (pathname?.startsWith("/admin/orders") || pathname?.startsWith("/admin/tracking")) {
+      requiredPermission = "Order.Read";
+    } else if (pathname?.startsWith("/admin/reviews")) {
+      requiredPermission = "Review.Read";
+    } else if (pathname?.startsWith("/admin/loyalty")) {
+      requiredPermission = "Loyalty.Read";
+    } else if (pathname?.startsWith("/admin/users")) {
+      requiredPermission = "User.Read";
+    } else if (pathname?.startsWith("/admin/permissions") || pathname?.startsWith("/admin/role-templates")) {
+      requiredPermission = "Permission.Read";
+    } else if (pathname?.startsWith("/admin/chats")) {
+      requiredPermission = "Chat.Manage";
+    } else if (pathname?.startsWith("/admin/notifications")) {
+      requiredPermission = "Notification.Read";
+    }
 
     if (requiredPermission && !hasPermission(requiredPermission)) {
-      toast.error("Bạn không có quyền truy cập vào chức năng này.");
+      toast.error(`Bạn không có quyền truy cập trang này (${requiredPermission}).`);
       router.replace("/admin");
     }
   }, [pathname, isAuth, user, router]);
