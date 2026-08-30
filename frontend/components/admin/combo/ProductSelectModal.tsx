@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, X, Loader } from "lucide-react";
 import { fetchAdminProducts, AdminProductInfo } from "@/lib/features/products/productApi";
 import { formatCurrency } from "@/lib/utils/formatters";
+import { toast } from "@/lib/toast";
 
 interface ProductSelectModalProps {
   isOpen: boolean;
@@ -36,8 +37,9 @@ export const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     try {
       const data = await fetchAdminProducts(token, 1, 15, searchTerm, null, true);
       setProducts(data.products || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching products for combo select:", err);
+      toast.error(err?.message || "Không thể tải danh sách sản phẩm.");
     } finally {
       setLoading(false);
     }

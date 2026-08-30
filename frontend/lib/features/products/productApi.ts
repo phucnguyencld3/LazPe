@@ -85,7 +85,21 @@ export const fetchAdminProducts = async (
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  if (!res.ok) throw new Error("Failed to fetch admin products");
+  if (res.status === 403) {
+    throw new Error("Bạn không có quyền truy cập danh sách sản phẩm (403 Forbidden).");
+  }
+  if (res.status === 401) {
+    throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const errJson = JSON.parse(text);
+      throw new Error(errJson.message || "Không thể tải danh sách sản phẩm");
+    } catch {
+      throw new Error("Không thể tải danh sách sản phẩm");
+    }
+  }
   const data = await res.json();
   return data.data;
 };
