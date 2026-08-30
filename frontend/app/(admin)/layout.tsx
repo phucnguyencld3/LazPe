@@ -332,7 +332,7 @@ export default function AdminLayout({
   const hasPermission = (permissionName: string) => {
     if (!user) return false;
     if (user.isAdmin || user.roles?.includes("Admin")) return true;
-    const perms = Array.isArray(user.permissions) ? user.permissions : [];
+    const perms: string[] = Array.isArray(user.permissions) ? user.permissions : [];
     if (perms.includes(permissionName)) return true;
 
     // Check hierarchy: Delete > Update > Create > Read
@@ -341,7 +341,7 @@ export default function AdminLayout({
     const [resource, action] = parts;
     const reqAction = action.toLowerCase();
 
-    return perms.some(p => {
+    return perms.some((p: string) => {
       const pParts = p.split(".");
       if (pParts.length !== 2) return false;
       if (pParts[0].toLowerCase() !== resource.toLowerCase()) return false;
