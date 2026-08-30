@@ -73,7 +73,6 @@ namespace PolyBabyAPI.Controllers
         /// Xuất danh sách tài khoản người dùng ra Excel
         /// </summary>
         [HttpGet("export-excel")]
-        [Authorize(Roles = "Admin")]
         [Permission("User.Read")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] string? search = null,

@@ -327,7 +327,6 @@ namespace PolyBabyAPI.Controllers
         /// Xuất danh sách hóa đơn ra Excel
         /// </summary>
         [HttpGet("export")]
-        [Authorize(Roles = "Admin")]
         [Permission("Order.Read")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] string? search,
@@ -1427,7 +1426,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
 
         [HttpPost("{id}/reject-cancel")]
-        [Authorize(Roles = "Admin")]
+        [Permission("Order.Update")]
         public async Task<IActionResult> RejectCancel(int id)
         {
             try
@@ -1477,7 +1476,7 @@ namespace PolyBabyAPI.Controllers
         /// Kích hoạt quét và tự động hủy các đơn hàng quá 2 ngày ở trạng thái Chờ xác nhận hoặc Chờ xử lý
         /// </summary>
         [HttpPost("trigger-auto-cancel")]
-        [Authorize(Roles = "Admin")]
+        [Permission("Order.Update")]
         public async Task<IActionResult> TriggerAutoCancel()
         {
             try
@@ -1499,7 +1498,7 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Permission("Order.Delete")]
         public async Task<IActionResult> Delete(int id)
         {
             try

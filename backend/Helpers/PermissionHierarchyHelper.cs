@@ -22,13 +22,15 @@ namespace PolyBabyAPI.Helpers
             if (!TrySplitPermission(requiredPermission, out var requiredResource, out var requiredAction))
                 return false;
 
-            // Cross-resource implication: Bundle.* implies Product.Read and Category.Read
+            // Cross-resource implications for dropdowns and reference data
             if (string.Equals(requiredAction, "Read", StringComparison.OrdinalIgnoreCase))
             {
                 if (string.Equals(requiredResource, "Product", StringComparison.OrdinalIgnoreCase))
                 {
                     if (grantedSet.Any(p => p.StartsWith("Bundle.", StringComparison.OrdinalIgnoreCase) ||
-                                            p.StartsWith("FlashSale.", StringComparison.OrdinalIgnoreCase)))
+                                            p.StartsWith("FlashSale.", StringComparison.OrdinalIgnoreCase) ||
+                                            p.StartsWith("Voucher.", StringComparison.OrdinalIgnoreCase) ||
+                                            p.StartsWith("Order.", StringComparison.OrdinalIgnoreCase)))
                     {
                         return true;
                     }
@@ -36,7 +38,16 @@ namespace PolyBabyAPI.Helpers
                 else if (string.Equals(requiredResource, "Category", StringComparison.OrdinalIgnoreCase))
                 {
                     if (grantedSet.Any(p => p.StartsWith("Bundle.", StringComparison.OrdinalIgnoreCase) ||
-                                            p.StartsWith("Product.", StringComparison.OrdinalIgnoreCase)))
+                                            p.StartsWith("Product.", StringComparison.OrdinalIgnoreCase) ||
+                                            p.StartsWith("FlashSale.", StringComparison.OrdinalIgnoreCase) ||
+                                            p.StartsWith("Voucher.", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+                else if (string.Equals(requiredResource, "Supplier", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (grantedSet.Any(p => p.StartsWith("Product.", StringComparison.OrdinalIgnoreCase)))
                     {
                         return true;
                     }

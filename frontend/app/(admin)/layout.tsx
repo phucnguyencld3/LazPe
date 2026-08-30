@@ -406,6 +406,8 @@ export default function AdminLayout({
       requiredPermission = "Loyalty.Read";
     } else if (pathname?.startsWith("/admin/users")) {
       requiredPermission = "User.Read";
+    } else if (pathname?.startsWith("/admin/withdraw")) {
+      requiredPermission = "Withdraw.Read";
     } else if (pathname?.startsWith("/admin/permissions") || pathname?.startsWith("/admin/role-templates")) {
       requiredPermission = "Permission.Read";
     } else if (pathname?.startsWith("/admin/chats")) {

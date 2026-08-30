@@ -183,7 +183,6 @@ namespace PolyBabyAPI.Controllers
         /// Lấy toàn bộ danh sách yêu cầu rút tiền (Admin)
         /// </summary>
         [HttpGet("admin/all")]
-        [Authorize(Roles = "Admin")]
         [Permission("Withdraw.Read")]
         public async Task<IActionResult> GetAllRequests([FromQuery] string? status)
         {
@@ -202,7 +201,6 @@ namespace PolyBabyAPI.Controllers
         /// Xử lý (Duyệt/Từ chối) yêu cầu rút tiền (Admin)
         /// </summary>
         [HttpPost("admin/process/{id}")]
-        [Authorize(Roles = "Admin")]
         [Permission("Withdraw.Update")]
         public async Task<IActionResult> ProcessRequest(int id, [FromBody] ProcessWithdrawRequestDto request)
         {

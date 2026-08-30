@@ -60,9 +60,8 @@ namespace PolyBabyAPI.Controllers
             }
         }
 
-        // POST: api/Product/sync-seo
         [HttpPost("sync-seo")]
-        [Authorize(Roles = "Admin")]
+        [Permission("Product.Update")]
         public async Task<IActionResult> SyncSeoFields()
         {
             var result = await _productService.SyncSeoFieldsAsync();
@@ -351,7 +350,7 @@ namespace PolyBabyAPI.Controllers
         /// <param name="dto">Thông tin sản phẩm cần cập nhật</param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Permission("Product.Update")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
         {
             try
@@ -485,7 +484,7 @@ namespace PolyBabyAPI.Controllers
         /// Đồng bộ dữ liệu lên Meilisearch (admin)
         /// </summary>
         [HttpPost("sync-meilisearch")]
-        [Authorize(Roles = "Admin")]
+        [Permission("Product.Update")]
         public async Task<IActionResult> SyncMeilisearch([FromServices] PolyBabyAPI.Data.ApplicationDbContext context, [FromServices] ISearchEngineService searchEngine)
         {
             try

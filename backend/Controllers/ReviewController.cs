@@ -536,7 +536,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Update")]
         [HttpPost("censor")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CensorReview([FromBody] CensorReviewDto dto)
         {
             if (!ModelState.IsValid)
@@ -564,7 +563,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Read")]
         [HttpGet("admin/stats")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReviewAdminStats()
         {
             try
@@ -581,7 +579,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Read")]
         [HttpGet("{reviewId}/logs")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetCensorshipLogs(int reviewId)
         {
             try
@@ -614,7 +611,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Update")]
         [HttpPut("settings")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateReviewLoyaltySettings([FromBody] LoyaltySetting setting)
         {
             if (!ModelState.IsValid)
@@ -640,7 +636,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Read")]
         [HttpGet("keywords")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetKeywords()
         {
             try
@@ -659,7 +654,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Update")]
         [HttpPost("keywords")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateKeyword([FromBody] CreateSensitiveKeywordDto dto)
         {
             if (!ModelState.IsValid)
@@ -691,7 +685,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Update")]
         [HttpPut("keywords/{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateKeyword(int id, [FromBody] CreateSensitiveKeywordDto dto)
         {
             if (!ModelState.IsValid)
@@ -724,7 +717,6 @@ namespace PolyBabyAPI.Controllers
 
         [Permission("Review.Update")]
         [HttpDelete("keywords/{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteKeyword(int id)
         {
             try

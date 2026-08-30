@@ -104,7 +104,6 @@ namespace PolyBabyAPI.Controllers
         /// Xuất danh mục sản phẩm ra Excel
         /// </summary>
         [HttpGet("export-excel")]
-        [Authorize(Roles = "Admin")]
         [Permission("Category.Read")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] string searchTerm = "",

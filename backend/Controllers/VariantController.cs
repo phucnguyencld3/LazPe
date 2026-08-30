@@ -740,7 +740,6 @@ namespace PolyBabyAPI.Controllers
         /// </summary>
 
         [HttpDelete("{id}/force")]
-        [Authorize(Roles = "Admin")]
         [Permission("Product.Delete")]
         public async Task<IActionResult> ForceDeleteVariant(int id, [FromQuery] bool confirmForce = false)
         {
