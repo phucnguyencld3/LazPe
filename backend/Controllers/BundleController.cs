@@ -361,7 +361,7 @@ namespace PolyBabyAPI.Controllers
         /// <returns></returns>
         [HttpPost("upload-image")]
         [Consumes("multipart/form-data")]
-        [Permission("Bundle.Update")]
+        [Permission("Bundle.Read")]
         public async Task<IActionResult> UploadBundleImage([FromForm] IFormFile file, [FromForm] string? oldImageUrl = null)
         {
             try

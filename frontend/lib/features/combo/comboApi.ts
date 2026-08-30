@@ -140,6 +140,15 @@ export async function uploadBundleImage(file: File, token: string, oldImageUrl?:
     headers: { Authorization: `Bearer ${token}` },
     body: formData
   });
+  if (!response.ok) {
+    const errorText = await response.text();
+    try {
+      const errJson = JSON.parse(errorText);
+      return { success: false, message: errJson.message || "Tải ảnh lên thất bại" };
+    } catch {
+      return { success: false, message: `Lỗi khi tải ảnh (Mã HTTP: ${response.status})` };
+    }
+  }
   const result = await response.json();
   return result;
 }
