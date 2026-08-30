@@ -31,12 +31,30 @@ export interface EditCategoryPayload {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5101/api";
 
+async function handleCategoryResponse(res: Response, defaultErrorMsg: string) {
+  if (res.status === 403) {
+    throw new Error("Bạn không có quyền thực hiện thao tác này (403 Forbidden).");
+  }
+  if (res.status === 401) {
+    throw new Error("Phiên làm việc đã hết hạn, vui lòng đăng nhập lại.");
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      throw new Error(json.message || `${defaultErrorMsg} (Mã HTTP: ${res.status})`);
+    } catch {
+      throw new Error(text || `${defaultErrorMsg} (Mã HTTP: ${res.status})`);
+    }
+  }
+  return res.json();
+}
+
 export const fetchAllCategories = async (token: string): Promise<CategoryInfo[]> => {
   const res = await fetch(`${API_BASE_URL}/Category`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!res.ok) throw new Error("Failed to fetch categories");
-  const data = await res.json();
+  const data = await handleCategoryResponse(res, "Không thể tải danh sách danh mục");
   return (data.data || []).map((item: CategoryInfo) => ({
     ...item,
     parentID: item.parentID ?? null
@@ -52,11 +70,7 @@ export const createCategory = async (token: string, payload: CreateCategoryPaylo
     },
     body: JSON.stringify(payload)
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to create category");
-  }
-  return res.json();
+  return await handleCategoryResponse(res, "Không thể tạo mới danh mục");
 };
 
 export const updateCategory = async (token: string, id: number, payload: EditCategoryPayload): Promise<any> => {
@@ -68,11 +82,7 @@ export const updateCategory = async (token: string, id: number, payload: EditCat
     },
     body: JSON.stringify(payload)
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to update category");
-  }
-  return res.json();
+  return await handleCategoryResponse(res, "Không thể cập nhật danh mục");
 };
 
 export const deleteCategory = async (token: string, id: number): Promise<any> => {
@@ -80,11 +90,7 @@ export const deleteCategory = async (token: string, id: number): Promise<any> =>
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to delete category");
-  }
-  return res.json();
+  return await handleCategoryResponse(res, "Không thể xóa danh mục");
 };
 
 export const toggleCategoryStatus = async (token: string, id: number): Promise<any> => {
@@ -92,11 +98,7 @@ export const toggleCategoryStatus = async (token: string, id: number): Promise<a
     method: "POST",
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to toggle category status");
-  }
-  return res.json();
+  return await handleCategoryResponse(res, "Không thể cập nhật trạng thái danh mục");
 };
 
 export interface CategoryDetailInfo {
@@ -119,8 +121,7 @@ export const fetchCategoryById = async (token: string, id: number): Promise<Cate
   const res = await fetch(`${API_BASE_URL}/Category/${id}/detail`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!res.ok) throw new Error("Failed to fetch category details");
-  const result = await res.json();
+  const result = await handleCategoryResponse(res, "Không thể tải thông tin chi tiết danh mục");
   return result.data;
 };
 
@@ -139,13 +140,14 @@ export const exportCategoriesExcel = async (
   const res = await fetch(`${API_BASE_URL}/Category/export-excel?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!res.ok) throw new Error("Failed to export categories Excel");
+  if (res.status === 403) throw new Error("Bạn không có quyền xuất danh sách danh mục ra Excel (403 Forbidden).");
+  if (!res.ok) throw new Error("Không thể xuất file Excel danh mục");
   return res.blob();
 };
 
 export const downloadCategoryTemplate = async (): Promise<Blob> => {
   const res = await fetch(`${API_BASE_URL}/CategoryImport/template`);
-  if (!res.ok) throw new Error("Failed to download category template");
+  if (!res.ok) throw new Error("Không thể tải mẫu file Excel danh mục");
   return res.blob();
 };
 
@@ -158,11 +160,7 @@ export const validateCategoryImport = async (token: string, file: File): Promise
     headers: { Authorization: `Bearer ${token}` },
     body: formData
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to validate categories excel file");
-  }
-  return res.json();
+  return await handleCategoryResponse(res, "Không thể kiểm tra file Excel nhập danh mục");
 };
 
 export const commitCategoryImport = async (token: string, payload: any): Promise<any> => {
@@ -174,10 +172,6 @@ export const commitCategoryImport = async (token: string, payload: any): Promise
     },
     body: JSON.stringify(payload)
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to commit categories import");
-  }
-  return res.json();
+  return await handleCategoryResponse(res, "Không thể nhập danh mục từ file Excel");
 };
 
