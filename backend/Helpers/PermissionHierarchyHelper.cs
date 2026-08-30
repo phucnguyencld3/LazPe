@@ -22,6 +22,27 @@ namespace PolyBabyAPI.Helpers
             if (!TrySplitPermission(requiredPermission, out var requiredResource, out var requiredAction))
                 return false;
 
+            // Cross-resource implication: Bundle.* implies Product.Read and Category.Read
+            if (string.Equals(requiredAction, "Read", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.Equals(requiredResource, "Product", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (grantedSet.Any(p => p.StartsWith("Bundle.", StringComparison.OrdinalIgnoreCase) ||
+                                            p.StartsWith("FlashSale.", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+                else if (string.Equals(requiredResource, "Category", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (grantedSet.Any(p => p.StartsWith("Bundle.", StringComparison.OrdinalIgnoreCase) ||
+                                            p.StartsWith("Product.", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
             foreach (var grantedPermission in grantedSet)
             {
                 if (!TrySplitPermission(grantedPermission, out var grantedResource, out var grantedAction))

@@ -78,6 +78,16 @@ export const computeImpliedPermissionIds = (selectedIds: number[], allPermission
     };
 
     const action = perm.action.toLowerCase();
+    const resource = perm.resource.toLowerCase();
+
+    // If Bundle permission is selected, automatically imply Product.Read and Category.Read
+    if (resource === "bundle") {
+      const productRead = allPermissions.find(p => p.resource.toLowerCase() === "product" && p.action.toLowerCase() === "read");
+      const categoryRead = allPermissions.find(p => p.resource.toLowerCase() === "category" && p.action.toLowerCase() === "read");
+      if (productRead && productRead.id !== id) implied.add(productRead.id);
+      if (categoryRead && categoryRead.id !== id) implied.add(categoryRead.id);
+    }
+
     // Hierarchy: Delete > Update > Create > Read
     if (action === "delete") {
       implyAction("update"); implyAction("create"); implyAction("read");
