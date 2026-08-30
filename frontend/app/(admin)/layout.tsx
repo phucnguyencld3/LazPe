@@ -121,7 +121,10 @@ export default function AdminLayout({
         const res = await fetch(`${apiBase}/api/chat/admin/sessions`, {
           headers: { Authorization: `Bearer ${authToken}` }
         });
-        const data = await res.json();
+        if (!res.ok) return;
+        const text = await res.text();
+        if (!text) return;
+        const data = JSON.parse(text);
         if (data.success && data.sessions) {
           setChatSessions(data.sessions);
           const totalUnread = data.sessions.reduce((acc: number, s: any) => acc + (s.unreadByAdmin || 0), 0);
