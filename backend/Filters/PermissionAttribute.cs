@@ -1,13 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
 using PolyBabyAPI.Helpers;
+using PolyBabyAPI.Interfaces;
 using System.Security.Claims;
 
 namespace PolyBabyAPI.Filters
 {
     /// <summary>
     /// API-level Permission Authorization Attribute
-    /// Kiểm tra permission từ JWT token
+    /// Kiểm tra permission từ JWT token hoặc DB Effective Permissions
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class PermissionAttribute : Attribute, IAsyncAuthorizationFilter
@@ -21,7 +23,7 @@ namespace PolyBabyAPI.Filters
             _allowAdminBypass = allowAdminBypass;
         }
 
-        public Task OnAuthorizationAsync(AuthorizationFilterContext context)
+        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             var user = context.HttpContext.User;
 
@@ -29,17 +31,31 @@ namespace PolyBabyAPI.Filters
             if (!user.Identity?.IsAuthenticated ?? true)
             {
                 context.Result = new UnauthorizedResult();
-                return Task.CompletedTask;
+                return;
             }
 
             // 2. Admin bypass
             if (_allowAdminBypass && user.IsInRole("Admin"))
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            // 3. Kiểm tra permission (có hỗ trợ hierarchy, VD: Delete => Read)
+            // 3. Kiểm tra permission từ JWT Token claims trước
             var hasPermission = PermissionHierarchyHelper.HasPermission(user, _requiredPermission);
+
+            // 4. Nếu JWT claims chưa chứa, tra cứu DB Effective Permissions (RoleTemplate + UserPermissions)
+            if (!hasPermission)
+            {
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var permissionService = context.HttpContext.RequestServices.GetService<IPermissionService>();
+                    if (permissionService != null)
+                    {
+                        hasPermission = await permissionService.HasPermissionAsync(userId, _requiredPermission);
+                    }
+                }
+            }
 
             if (!hasPermission)
             {
@@ -55,8 +71,6 @@ namespace PolyBabyAPI.Filters
 
                 context.Result = new ForbidResult();
             }
-
-            return Task.CompletedTask;
         }
     }
 }
