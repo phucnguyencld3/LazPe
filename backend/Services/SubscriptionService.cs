@@ -80,47 +80,40 @@ namespace PolyBabyAPI.Services
                 {
                     decimal shippingFee = 30000m;
                     decimal totalAmount = (dto.SubscribedPrice * dto.Quantity) + shippingFee;
-                    string htmlBody = $@"
-<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
-  <div style=""background-color: #f43f5e; color: white; padding: 20px; text-align: center;"">
-    <h2 style=""margin: 0; font-size: 24px;"">Xác Nhận Đăng Ký Mua Định Kỳ</h2>
-  </div>
-  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
-    <p>Chào bạn <strong>{user.FullName ?? user.Email}</strong>,</p>
-    <p>Bạn vừa đăng ký mua hàng định kỳ thành công trên hệ thống <strong>LazPe</strong>.</p>
-    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
-      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin đăng ký</h3>
-      <table style=""width: 100%; border-collapse: collapse;"">
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Sản phẩm:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{product.ProductName}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Số lượng:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{dto.Quantity}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Hình thức thanh toán:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">Ví LazPe</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Kỳ thanh toán đầu tiên:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{dto.StartDate:dd/MM/yyyy}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Tổng tiền dự kiến (kèm ship):</strong></td>
-          <td style=""padding: 8px 0; color: #f43f5e; font-weight: bold;"">{totalAmount:N0} đ</td>
-        </tr>
-      </table>
-    </div>
-    <p>Hệ thống sẽ tự động trừ tiền trong Ví LazPe của bạn vào ngày thanh toán hàng kỳ. Vui lòng đảm bảo số dư ví luôn đủ để không bị gián đoạn đơn hàng.</p>
-    <p>Cảm ơn bạn đã đồng hành cùng LazPe!</p>
-  </div>
-  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
-    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
-    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
-  </div>
-</div>";
+
+                    // Lấy product image (variant image ưu tiên, fallback sang product image)
+                    string rawImageUrl = dto.VariantID.HasValue
+                        ? (await _context.Variants.FirstOrDefaultAsync(v => v.VariantID == dto.VariantID.Value))?.ImageUrl ?? ""
+                        : "";
+                    if (string.IsNullOrEmpty(rawImageUrl))
+                        rawImageUrl = product.Images?.FirstOrDefault()?.ImageUrl ?? "";
+                    string productImageUrl = GetEmailImageUrl(rawImageUrl);
+
+                    string frequencyText = GetFrequencyText(dto.FrequencyType, dto.FrequencyValue);
+                    string additionalInfo = $@"<p style=""margin: 0 0 8px 0;"">&#128197; <strong>Ngày bắt đầu:</strong> {dto.StartDate:dd/MM/yyyy}</p>
+<p style=""margin: 0 0 8px 0;"">&#128179; <strong>Tổng tiền dự kiến (kèm ship):</strong> <span style=""color: #16a34a; font-weight: 700;"">{totalAmount:N0} &#273;</span></p>
+<p style=""margin: 0;"">&#9432; Hệ thống sẽ tự động trừ tiền trong Ví LazPe của bạn vào mỗi kỳ thanh toán. Vui lòng đảm bảo số dư ví luôn đủ.</p>";
+
+                    var config = new SubscriptionEmailConfig(
+                        Title: "&#10003; Đăng Ký Mua Định Kỳ Thành Công",
+                        PrimaryColor: "#16a34a",
+                        BannerBgColor: "#16a34a",
+                        CardBgColor: "#f0fdf4",
+                        CardBorderColor: "#bbf7d0",
+                        Message: $"Bạn đã đăng ký mua định kỳ thành công trên <strong>LazPe</strong>. Đơn hàng sẽ được tự động xử lý theo chu kỳ bạn đã chọn.",
+                        AdditionalInfo: additionalInfo
+                    );
+
+                    string htmlBody = BuildSubscriptionEmailHtml(
+                        userName: user.FullName ?? user.Email,
+                        productName: product.ProductName,
+                        productImageUrl: productImageUrl,
+                        price: dto.SubscribedPrice,
+                        quantity: dto.Quantity,
+                        frequencyText: frequencyText,
+                        config: config
+                    );
+
                     await _emailSender.SendEmailAsync(user.Email, "[LazPe] Đăng Ký Mua Định Kỳ Thành Công", htmlBody);
                 }
             }
@@ -207,35 +200,36 @@ namespace PolyBabyAPI.Services
                 
                 if (sub.User != null && !string.IsNullOrEmpty(sub.User.Email))
                 {
-                    string htmlBody = $@"
-<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
-  <div style=""background-color: #f59e0b; color: white; padding: 20px; text-align: center;"">
-    <h2 style=""margin: 0; font-size: 24px;"">Tạm Dừng Mua Định Kỳ</h2>
-  </div>
-  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
-    <p>Chào bạn <strong>{sub.User.FullName ?? sub.User.Email}</strong>,</p>
-    <p>Gói mua định kỳ của bạn đã được <strong>tạm dừng</strong> thành công theo yêu cầu.</p>
-    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
-      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin gói định kỳ</h3>
-      <table style=""width: 100%; border-collapse: collapse;"">
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Sản phẩm:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{sub.Product.ProductName}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Ngày tạm dừng:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{DateTime.Now:dd/MM/yyyy HH:mm}</td>
-        </tr>
-      </table>
-    </div>
-    <p>Trong thời gian tạm dừng, hệ thống sẽ không tự động giao hàng và trừ tiền. Bạn có thể kích hoạt lại gói bất kỳ lúc nào trên ứng dụng LazPe.</p>
-    <p>Cảm ơn bạn đã đồng hành cùng LazPe!</p>
-  </div>
-  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
-    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
-    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
-  </div>
-</div>";
+                    // Lấy product image (variant image ưu tiên, fallback sang product image)
+                    string rawImageUrl = sub.VariantID.HasValue && !string.IsNullOrEmpty(sub.Variant?.ImageUrl)
+                        ? sub.Variant.ImageUrl
+                        : (sub.Product?.Images?.FirstOrDefault()?.ImageUrl ?? "");
+                    string productImageUrl = GetEmailImageUrl(rawImageUrl);
+
+                    string frequencyText = GetFrequencyText(sub.FrequencyType, sub.FrequencyValue);
+                    string additionalInfo = $@"<p style=""margin: 0 0 8px 0;"">&#128336; <strong>Ngày tạm dừng:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</p>
+<p style=""margin: 0;"">&#9432; Trong thời gian tạm dừng, hệ thống sẽ không tự động giao hàng và trừ tiền. Bạn có thể kích hoạt lại gói bất kỳ lúc nào trên ứng dụng LazPe.</p>";
+
+                    var config = new SubscriptionEmailConfig(
+                        Title: "&#9208; Mua Định Kỳ Đã Tạm Dừng",
+                        PrimaryColor: "#d97706",
+                        BannerBgColor: "#d97706",
+                        CardBgColor: "#fffbeb",
+                        CardBorderColor: "#fde68a",
+                        Message: "Gói mua định kỳ của bạn đã được <strong>tạm dừng</strong> thành công theo yêu cầu.",
+                        AdditionalInfo: additionalInfo
+                    );
+
+                    string htmlBody = BuildSubscriptionEmailHtml(
+                        userName: sub.User.FullName ?? sub.User.Email,
+                        productName: sub.Product.ProductName,
+                        productImageUrl: productImageUrl,
+                        price: sub.SubscribedPrice,
+                        quantity: sub.Quantity,
+                        frequencyText: frequencyText,
+                        config: config
+                    );
+
                     await _emailSender.SendEmailAsync(sub.User.Email, "[LazPe] Tạm Dừng Mua Định Kỳ", htmlBody);
                 }
             }
@@ -290,35 +284,36 @@ namespace PolyBabyAPI.Services
                 
                 if (sub.User != null && !string.IsNullOrEmpty(sub.User.Email))
                 {
-                    string htmlBody = $@"
-<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
-  <div style=""background-color: #ef4444; color: white; padding: 20px; text-align: center;"">
-    <h2 style=""margin: 0; font-size: 24px;"">Hủy Mua Định Kỳ</h2>
-  </div>
-  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
-    <p>Chào bạn <strong>{sub.User.FullName ?? sub.User.Email}</strong>,</p>
-    <p>Gói mua định kỳ của bạn đã được <strong>hủy</strong> thành công.</p>
-    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
-      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin gói định kỳ</h3>
-      <table style=""width: 100%; border-collapse: collapse;"">
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Sản phẩm:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{sub.Product.ProductName}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Ngày hủy:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{DateTime.Now:dd/MM/yyyy HH:mm}</td>
-        </tr>
-      </table>
-    </div>
-    <p>Nếu bạn thay đổi ý định, bạn luôn có thể tạo lại gói mua định kỳ mới trên ứng dụng LazPe với nhiều ưu đãi hấp dẫn.</p>
-    <p>Cảm ơn bạn đã đồng hành cùng LazPe!</p>
-  </div>
-  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
-    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
-    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
-  </div>
-</div>";
+                    // Lấy product image (variant image ưu tiên, fallback sang product image)
+                    string rawImageUrl = sub.VariantID.HasValue && !string.IsNullOrEmpty(sub.Variant?.ImageUrl)
+                        ? sub.Variant.ImageUrl
+                        : (sub.Product?.Images?.FirstOrDefault()?.ImageUrl ?? "");
+                    string productImageUrl = GetEmailImageUrl(rawImageUrl);
+
+                    string frequencyText = GetFrequencyText(sub.FrequencyType, sub.FrequencyValue);
+                    string additionalInfo = $@"<p style=""margin: 0 0 8px 0;"">&#128336; <strong>Ngày hủy:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</p>
+<p style=""margin: 0;"">&#9432; Nếu bạn thay đổi ý định, bạn luôn có thể tạo lại gói mua định kỳ mới trên ứng dụng LazPe với nhiều ưu đãi hấp dẫn.</p>";
+
+                    var config = new SubscriptionEmailConfig(
+                        Title: "&#10005; Mua Định Kỳ Đã Hủy",
+                        PrimaryColor: "#dc2626",
+                        BannerBgColor: "#dc2626",
+                        CardBgColor: "#fef2f2",
+                        CardBorderColor: "#fecaca",
+                        Message: "Gói mua định kỳ của bạn đã được <strong>hủy</strong> thành công.",
+                        AdditionalInfo: additionalInfo
+                    );
+
+                    string htmlBody = BuildSubscriptionEmailHtml(
+                        userName: sub.User.FullName ?? sub.User.Email,
+                        productName: sub.Product.ProductName,
+                        productImageUrl: productImageUrl,
+                        price: sub.SubscribedPrice,
+                        quantity: sub.Quantity,
+                        frequencyText: frequencyText,
+                        config: config
+                    );
+
                     await _emailSender.SendEmailAsync(sub.User.Email, "[LazPe] Hủy Mua Định Kỳ", htmlBody);
                 }
             }
@@ -334,7 +329,7 @@ namespace PolyBabyAPI.Services
         {
             var dueSubscriptions = await _context.Subscriptions
                 .Include(s => s.User)
-                .Include(s => s.Product)
+                .Include(s => s.Product).ThenInclude(p => p.Images)
                 .Include(s => s.Variant)
                 .Where(s => s.Status == SubscriptionStatus.Active /* && s.NextBillingDate <= DateTime.Now */)
                 .ToListAsync();
@@ -500,46 +495,38 @@ namespace PolyBabyAPI.Services
 
                     if (user != null && !string.IsNullOrEmpty(user.Email))
                     {
-                        string htmlBody = $@"
-<div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
-  <div style=""background-color: #f43f5e; color: white; padding: 20px; text-align: center;"">
-    <h2 style=""margin: 0; font-size: 24px;"">Thanh Toán Mua Định Kỳ Thành Công</h2>
-  </div>
-  <div style=""padding: 24px; background-color: #ffffff; color: #374151; line-height: 1.6;"">
-    <p>Chào bạn <strong>{user.FullName ?? user.Email}</strong>,</p>
-    <p>Bạn vừa thanh toán định kỳ thành công cho sản phẩm <strong>{sub.Product.ProductName}</strong>.</p>
-    <div style=""background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;"">
-      <h3 style=""margin-top: 0; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;"">Thông tin đơn hàng</h3>
-      <table style=""width: 100%; border-collapse: collapse;"">
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280; width: 45%;""><strong>Mã đơn hàng:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{invoice.InvoiceCode}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Sản phẩm:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{sub.Product.ProductName} (x{sub.Quantity})</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Hình thức thanh toán:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">Ví LazPe</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Ngày thanh toán:</strong></td>
-          <td style=""padding: 8px 0; color: #111827;"">{DateTime.Now:dd/MM/yyyy HH:mm}</td>
-        </tr>
-        <tr>
-          <td style=""padding: 8px 0; color: #6b7280;""><strong>Tổng tiền đã thanh toán:</strong></td>
-          <td style=""padding: 8px 0; color: #f43f5e; font-weight: bold;"">{totalAmount:N0} đ</td>
-        </tr>
-      </table>
-    </div>
-    <p>Hệ thống đang tiến hành đóng gói và giao hàng đến bạn. Cảm ơn bạn đã sử dụng dịch vụ Mua Định Kỳ của LazPe!</p>
-  </div>
-  <div style=""background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;"">
-    <img src=""https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png"" alt=""LazPe Logo"" style=""height: 40px; margin-bottom: 10px;"" />
-    <p style=""margin: 0; font-size: 12px; color: #9ca3af;"">Đây là email tự động, vui lòng không trả lời.</p>
-  </div>
-</div>";
+                        // Lấy product image (variant image ưu tiên, fallback sang product image)
+                        string rawImageUrl = sub.VariantID.HasValue && !string.IsNullOrEmpty(sub.Variant?.ImageUrl)
+                            ? sub.Variant.ImageUrl
+                            : (sub.Product?.Images?.FirstOrDefault()?.ImageUrl ?? "");
+                        string productImageUrl = GetEmailImageUrl(rawImageUrl);
+
+                        string frequencyText = GetFrequencyText(sub.FrequencyType, sub.FrequencyValue);
+                        string additionalInfo = $@"<p style=""margin: 0 0 8px 0;"">&#128179; <strong>Mã đơn hàng:</strong> {System.Net.WebUtility.HtmlEncode(invoice.InvoiceCode)}</p>
+<p style=""margin: 0 0 8px 0;"">&#128179; <strong>Tổng tiền đã thanh toán:</strong> <span style=""color: #16a34a; font-weight: 700;"">{totalAmount:N0} &#273;</span></p>
+<p style=""margin: 0 0 8px 0;"">&#128336; <strong>Ngày thanh toán:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</p>
+<p style=""margin: 0;"">&#128666; Hệ thống đang tiến hành đóng gói và giao hàng đến bạn.</p>";
+
+                        var config = new SubscriptionEmailConfig(
+                            Title: "&#10003; Thanh Toán Định Kỳ Thành Công",
+                            PrimaryColor: "#16a34a",
+                            BannerBgColor: "#16a34a",
+                            CardBgColor: "#f0fdf4",
+                            CardBorderColor: "#bbf7d0",
+                            Message: $"Đơn hàng định kỳ của bạn đã được thanh toán và tạo thành công từ gói mua định kỳ.",
+                            AdditionalInfo: additionalInfo
+                        );
+
+                        string htmlBody = BuildSubscriptionEmailHtml(
+                            userName: user.FullName ?? user.Email,
+                            productName: sub.Product.ProductName,
+                            productImageUrl: productImageUrl,
+                            price: unitPrice,
+                            quantity: sub.Quantity,
+                            frequencyText: frequencyText,
+                            config: config
+                        );
+
                         await _emailSender.SendEmailAsync(user.Email, $"[LazPe] Thanh Toán Định Kỳ Thành Công - {invoice.InvoiceCode}", htmlBody);
                     }
                 }
@@ -577,6 +564,173 @@ namespace PolyBabyAPI.Services
             };
             _context.SubscriptionPaymentHistories.Add(history);
             await _context.SaveChangesAsync();
+        }
+
+        // ─── Email Helpers ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Configuration record for subscription status email styling.
+        /// </summary>
+        private sealed record SubscriptionEmailConfig(
+            string Title,
+            string PrimaryColor,
+            string BannerBgColor,
+            string CardBgColor,
+            string CardBorderColor,
+            string Message,
+            string AdditionalInfo
+        );
+
+        /// <summary>
+        /// Returns a Cloudinary URL optimised for email (200×200, fill, auto quality/format).
+        /// If the URL is not a Cloudinary URL or is empty, returns the original value unchanged.
+        /// </summary>
+        private static string GetEmailImageUrl(string imageUrl)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                return string.Empty;
+
+            // Only transform genuine Cloudinary delivery URLs
+            const string marker = "/image/upload/";
+            int markerIndex = imageUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (markerIndex < 0 || !imageUrl.Contains("res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
+                return imageUrl;
+
+            // Insert transformation segment right after /image/upload/
+            const string transform = "w_200,h_200,c_fill,q_auto,f_auto/";
+            int insertAt = markerIndex + marker.Length;
+
+            // Avoid double-injecting if already transformed
+            if (imageUrl.Length > insertAt && imageUrl[insertAt..].StartsWith("w_", StringComparison.OrdinalIgnoreCase))
+                return imageUrl;
+
+            return imageUrl[..insertAt] + transform + imageUrl[insertAt..];
+        }
+
+        /// <summary>
+        /// Returns a human-readable frequency string for display in emails.
+        /// </summary>
+        private static string GetFrequencyText(FrequencyType type, int value)
+        {
+            return type switch
+            {
+                FrequencyType.Days   => $"Mỗi {value} ngày",
+                FrequencyType.Weeks  => $"Mỗi {value} tuần",
+                FrequencyType.Months => $"Mỗi {value} tháng",
+                _                    => $"Mỗi {value} ngày"
+            };
+        }
+
+        /// <summary>
+        /// Builds the shared HTML body for subscription-related emails.
+        /// All dynamic string values are HTML-encoded to prevent injection.
+        /// </summary>
+        private static string BuildSubscriptionEmailHtml(
+            string userName,
+            string productName,
+            string productImageUrl,
+            decimal price,
+            int quantity,
+            string frequencyText,
+            SubscriptionEmailConfig config)
+        {
+            // HTML-encode dynamic content
+            string safeUserName    = System.Net.WebUtility.HtmlEncode(userName ?? "Quý khách");
+            string safeProductName = System.Net.WebUtility.HtmlEncode(productName ?? "Sản phẩm");
+            string safeFrequency   = System.Net.WebUtility.HtmlEncode(frequencyText ?? "");
+
+            // Build product image cell
+            string imageCell;
+            if (!string.IsNullOrWhiteSpace(productImageUrl))
+            {
+                imageCell =
+                    "<td style=\"width:110px;vertical-align:top;padding-right:16px;\">" +
+                    "<img src=\"" + productImageUrl + "\" alt=\"" + safeProductName + "\"" +
+                    " width=\"110\" height=\"110\"" +
+                    " style=\"display:block;width:110px;height:110px;object-fit:cover;" +
+                    "border-radius:8px;border:1px solid " + config.CardBorderColor + ";\" />" +
+                    "</td>";
+            }
+            else
+            {
+                imageCell =
+                    "<td style=\"width:110px;vertical-align:top;padding-right:16px;\">" +
+                    "<div style=\"width:110px;height:110px;background-color:#f3f4f6;" +
+                    "border-radius:8px;border:1px solid #e5e7eb;display:table;text-align:center;\">" +
+                    "<span style=\"display:table-cell;vertical-align:middle;font-size:12px;color:#9ca3af;\">&#7842;nh SP</span>" +
+                    "</div></td>";
+            }
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<!DOCTYPE html><html lang=\"vi\"><head>");
+            sb.Append("<meta charset=\"UTF-8\" />");
+            sb.Append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />");
+            sb.Append("<title>" + config.Title + "</title></head>");
+            sb.Append("<body style=\"margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,Helvetica,sans-serif;\">");
+
+            // Outer wrapper
+            sb.Append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"background-color:#f3f4f6;padding:24px 0;\">");
+            sb.Append("<tr><td align=\"center\">");
+
+            // Card
+            sb.Append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"600\" style=\"max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);\">");
+
+            // Status banner
+            sb.Append("<tr><td style=\"background-color:" + config.BannerBgColor + ";padding:28px 32px;text-align:center;\">");
+            sb.Append("<p style=\"margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;\">" + config.Title + "</p>");
+            sb.Append("</td></tr>");
+
+            // Body
+            sb.Append("<tr><td style=\"padding:28px 32px;color:#374151;\">");
+
+            // Greeting
+            sb.Append("<p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;\">Ch&#224;o b&#7841;n <strong>" + safeUserName + "</strong>,</p>");
+            sb.Append("<p style=\"margin:0 0 24px 0;font-size:15px;line-height:1.6;\">" + config.Message + "</p>");
+
+            // Product card table
+            sb.Append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"background-color:" + config.CardBgColor + ";border:1px solid " + config.CardBorderColor + ";border-radius:10px;margin-bottom:24px;\">");
+            sb.Append("<tr><td style=\"padding:16px;\">");
+            sb.Append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>");
+            sb.Append(imageCell);
+            sb.Append("<td style=\"vertical-align:top;\">");
+            sb.Append("<p style=\"margin:0 0 8px 0;font-size:15px;font-weight:700;color:#111827;line-height:1.4;\">" + safeProductName + "</p>");
+            sb.Append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">");
+            sb.Append("<tr>");
+            sb.Append("<td style=\"padding:2px 0;font-size:13px;color:#6b7280;white-space:nowrap;\">S&#7889; l&#432;&#7907;ng:&nbsp;</td>");
+            sb.Append("<td style=\"padding:2px 0;font-size:13px;color:#111827;font-weight:600;\">" + quantity + "</td>");
+            sb.Append("</tr><tr>");
+            sb.Append("<td style=\"padding:2px 0;font-size:13px;color:#6b7280;white-space:nowrap;\">&#272;&#417;n gi&#225;:&nbsp;</td>");
+            sb.Append("<td style=\"padding:2px 0;font-size:14px;color:" + config.PrimaryColor + ";font-weight:700;\">" + price.ToString("N0") + "&nbsp;&#273;</td>");
+            sb.Append("</tr><tr>");
+            sb.Append("<td style=\"padding:2px 0;font-size:13px;color:#6b7280;white-space:nowrap;\">Chu k&#7923;:&nbsp;</td>");
+            sb.Append("<td style=\"padding:2px 0;font-size:13px;color:#111827;font-weight:600;\">" + safeFrequency + "</td>");
+            sb.Append("</tr>");
+            sb.Append("</table>");
+            sb.Append("</td>");
+            sb.Append("</tr></table>");
+            sb.Append("</td></tr></table>");
+
+            // Additional info
+            sb.Append("<div style=\"background-color:#f9fafb;border-left:3px solid " + config.PrimaryColor + ";border-radius:4px;padding:14px 16px;margin-bottom:24px;font-size:13px;line-height:1.7;color:#374151;\">");
+            sb.Append(config.AdditionalInfo);
+            sb.Append("</div>");
+
+            // Sign-off
+            sb.Append("<p style=\"margin:0;font-size:14px;line-height:1.6;color:#6b7280;\">C&#7843;m &#417;n b&#7841;n &#273;&#227; &#273;&#7891;ng h&#224;nh c&#249;ng <strong style=\"color:#111827;\">LazPe</strong>!</p>");
+
+            sb.Append("</td></tr>"); // close Body
+
+            // Footer
+            sb.Append("<tr><td style=\"background-color:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center;\">");
+            sb.Append("<img src=\"https://raw.githubusercontent.com/phucnguyencld3/LazPe/main/frontend/public/logo/logo_1.png\" alt=\"LazPe Logo\" width=\"80\" height=\"32\" style=\"display:inline-block;height:32px;width:auto;margin-bottom:8px;\" />");
+            sb.Append("<p style=\"margin:0;font-size:11px;color:#9ca3af;\">&#272;&#226;y l&#224; email t&#7921; &#273;&#7897;ng, vui l&#242;ng kh&#244;ng tr&#7843; l&#7901;i.<br />&copy; " + DateTime.Now.Year + " LazPe. All rights reserved.</p>");
+            sb.Append("</td></tr>");
+
+            sb.Append("</table>"); // close Card
+            sb.Append("</td></tr></table>"); // close Wrapper
+            sb.Append("</body></html>");
+
+            return sb.ToString();
         }
     }
 }
