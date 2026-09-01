@@ -78,6 +78,8 @@ export interface FlashSaleItemResponseDto {
   maxQuantityPerUser: number;
   userPurchasedQuantity?: number;
   productId?: number;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface FlashSaleResponseDto {

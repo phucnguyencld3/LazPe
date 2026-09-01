@@ -6,16 +6,18 @@ import { ProductReviews } from "./ProductReviews";
 interface ProductTabsProps {
   product: Product;
   parsedSpecs: [string, any][] | null;
+  className?: string;
 }
 
 export const ProductTabs: React.FC<ProductTabsProps> = ({
   product,
   parsedSpecs,
+  className = "",
 }) => {
   const [activeTab, setActiveTab] = useState<"description" | "specifications" | "shipping" | "reviews">("description");
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
+    <div className={`bg-white overflow-hidden ${className || "rounded-3xl border border-slate-100 shadow-sm mb-12"}`}>
       {/* Tab Headers */}
       <div className="border-b border-slate-100 bg-slate-50/50 px-6 sm:px-8 py-4 flex gap-6">
         <button

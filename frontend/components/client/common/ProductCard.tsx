@@ -42,13 +42,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Bestseller Badge */}
-          {product.rating && product.rating >= 4.4 && (
-            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm z-10">
-              Bán chạy
-            </div>
-          )}
-
           {/* Discount Badge */}
           {(() => {
             const hasVariants = product.variantCount !== undefined && product.variantCount > 0;
@@ -68,7 +61,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             if (percent <= 0) return null;
 
             return (
-              <div className={`absolute ${product.rating && product.rating >= 4.4 ? 'top-8 sm:top-12' : 'top-2 sm:top-3'} left-2 sm:left-3 bg-rose-600 text-white px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold shadow-sm z-10`}>
+              <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-rose-600 text-white px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold shadow-sm z-10">
                 -{percent}%
               </div>
             );

@@ -114,5 +114,7 @@ namespace PolyBabyAPI.DTOs
         public int MaxQuantityPerUser { get; set; }
         public int UserPurchasedQuantity { get; set; }
         public int? ProductId { get; set; }
+        public double? Rating { get; set; }
+        public int? ReviewCount { get; set; }
     }
 }

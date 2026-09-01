@@ -66,19 +66,19 @@ export default function CountdownTimer({
 
   const sizeClasses = {
     sm: {
-      box: "w-7 h-7 text-xs rounded-md",
+      box: "min-w-[26px] h-[26px] px-1 text-xs font-black rounded-md",
       colon: "text-xs font-bold",
-      label: "text-[9px]"
+      label: "text-[11px] font-bold"
     },
     md: {
-      box: "w-9 h-9 text-sm rounded-lg",
+      box: "min-w-[34px] h-[34px] px-1.5 text-sm font-black rounded-lg",
       colon: "text-sm font-bold",
-      label: "text-[10px]"
+      label: "text-xs font-bold"
     },
     lg: {
-      box: "w-12 h-12 text-lg rounded-xl",
+      box: "min-w-[44px] h-[44px] px-2 text-base sm:text-lg font-black rounded-xl",
       colon: "text-lg font-bold",
-      label: "text-xs"
+      label: "text-xs sm:text-sm font-bold"
     }
   }[size];
 

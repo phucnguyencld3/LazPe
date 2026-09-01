@@ -175,12 +175,19 @@ export const FlashSaleSection: React.FC = () => {
                       src={item.imageUrl} 
                       alt={item.itemName} 
                       className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 mix-blend-multiply"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const fallback = e.currentTarget.parentElement?.querySelector(".flash-sale-fallback-icon") as HTMLElement | null;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 text-xs font-medium">
-                      No Image
-                    </div>
-                  )}
+                  ) : null}
+                  <div 
+                    style={{ display: item.imageUrl ? "none" : "flex" }}
+                    className="flash-sale-fallback-icon w-full h-full flex-col items-center justify-center bg-slate-100 text-slate-300"
+                  >
+                    <span className="material-symbols-outlined text-4xl">inventory_2</span>
+                  </div>
 
                   {/* Discount/Gift Badge */}
                   {isGift ? (
@@ -216,6 +223,21 @@ export const FlashSaleSection: React.FC = () => {
                         {item.itemName}
                       </h3>
                     </Link>
+
+                    {/* Rating & Review Count */}
+                    <div className="flex items-center gap-1 text-[10px]">
+                      {item.rating && item.rating > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-amber-400 font-black text-[11px]">★</span>
+                          <span className="font-bold text-slate-700">{item.rating.toFixed(1)}</span>
+                          {item.reviewCount !== undefined && item.reviewCount > 0 && (
+                            <span className="text-slate-400">({item.reviewCount})</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-[10px]">Chưa có đánh giá</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 mt-0.5">

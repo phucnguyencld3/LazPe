@@ -568,114 +568,117 @@ export default function ProductDetailPage() {
   return (
     <div className="bg-slate-50 min-h-screen py-4 sm:py-6 px-0 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Product Container */}
-        <div className="bg-white sm:rounded-[16px] sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-6 sm:mb-8">
-          {/* Breadcrumb Navigation */}
-          <div className="px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-4 pb-0">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-3 py-1.5 rounded-[8px] border border-slate-200 shadow-sm hover:shadow active:scale-95"
-            >
-              <ArrowLeft size={16} />
-              Quay lại danh sách
-            </button>
-          </div>
+        {/* Unified Product & Details Container */}
+        <div className="bg-white sm:rounded-[16px] sm:border border-slate-100 sm:shadow-sm overflow-hidden mb-4 sm:mb-5 divide-y divide-slate-100">
+          <div>
+            {/* Breadcrumb Navigation */}
+            <div className="px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-4 pb-0">
+              <button
+                onClick={() => router.back()}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-primary transition-colors bg-white px-3 py-1.5 rounded-[8px] border border-slate-200 shadow-sm hover:shadow active:scale-95"
+              >
+                <ArrowLeft size={16} />
+                Quay lại danh sách
+              </button>
+            </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[32%_1fr] gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
-            <ProductImageGallery
-              displayImage={displayImage}
-              productName={product.name}
-              hasDiscount={hasDiscount}
-              displayPrice={displayPrice}
-              displayDiscountPrice={displayDiscountPrice}
-              imageUrls={allImageUrls}
-              isWishlisted={isWishlisted}
-              setIsWishlisted={setIsWishlisted}
-              compareAction={
-                <CompareButton 
-                  product={product} 
-                />
-              }
-              alertAction={
-                <button
-                  onClick={() => setIsAlertModalOpen(true)}
-                  className="group flex items-center h-10 px-2.5 rounded-[8px] border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 ease-out shrink-0 active:scale-90 shadow-sm"
-                >
-                  <Bell size={20} className="shrink-0 transition-all" />
-                  <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
-                    <div className="overflow-hidden">
-                      <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
-                        {displayInStock ? "Theo dõi giá" : "Nhận thông báo"}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              }
-            />
-
-            <ProductDetailInfo
-              product={product}
-              displayInStock={displayInStock}
-              displayStock={displayStock}
-              displaySku={displaySku}
-              displayPrice={displayPrice}
-              displayDiscountPrice={displayDiscountPrice}
-              hasDiscount={hasDiscount}
-              selectedOptions={selectedOptions}
-              handleOptionSelect={handleOptionSelect}
-              isOptionValueOutOfStock={isOptionValueOutOfStock}
-              quantity={quantity}
-              handleDecreaseQuantity={handleDecreaseQuantity}
-              handleIncreaseQuantity={handleIncreaseQuantity}
-              handleQuantityChange={handleQuantityChange}
-              setQuantity={setQuantity}
-              handleAddToCart={handleAddToCart}
-              handleBuyNow={handleBuyNow}
-              isWishlisted={isWishlisted}
-              setIsWishlisted={setIsWishlisted}
-              activeVariant={activeVariant}
-              activeFlashSaleItem={activeFlashSaleItem}
-              flashSaleEndTime={activeFlashSale?.status === 0 ? activeFlashSale?.startTime : activeFlashSale?.endTime}
-              flashSaleStatus={activeFlashSale?.status}
-              selectedGiftId={selectedGiftId}
-              setSelectedGiftId={setSelectedGiftId}
-              isAddingToCart={isAddingToCart}
-              subscriptionAction={
-                product.supportsSubscription ? (
-                  <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 rounded-[8px] bg-white border border-rose-100 shadow-sm w-full gap-2 transition-all hover:border-primary/30 group">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
-                        <span className="material-symbols-outlined text-[15px] text-primary group-hover:text-white transition-colors">autorenew</span>
-                      </div>
-                      <div className="flex flex-col xl:flex-row xl:items-center gap-0 xl:gap-1.5">
-                        <p className="text-[12px] sm:text-[13px] font-bold text-primary whitespace-nowrap">Mua định kỳ</p>
-                        <p className="text-[10px] sm:text-[11px] text-rose-600/90 leading-tight truncate max-w-[130px] sm:max-w-[200px] xl:max-w-none">
-                          (Giảm thêm <span className="font-bold">5%</span> cho đơn đăng ký)
-                        </p>
+            <div className="grid grid-cols-1 lg:grid-cols-[32%_1fr] gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 pt-2 sm:pt-3 lg:pt-3">
+              <ProductImageGallery
+                displayImage={displayImage}
+                productName={product.name}
+                hasDiscount={hasDiscount}
+                displayPrice={displayPrice}
+                displayDiscountPrice={displayDiscountPrice}
+                imageUrls={allImageUrls}
+                isWishlisted={isWishlisted}
+                setIsWishlisted={setIsWishlisted}
+                compareAction={
+                  <CompareButton 
+                    product={product} 
+                  />
+                }
+                alertAction={
+                  <button
+                    onClick={() => setIsAlertModalOpen(true)}
+                    className="group flex items-center h-10 px-2.5 rounded-[8px] border bg-white border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 ease-out shrink-0 active:scale-90 shadow-sm"
+                  >
+                    <Bell size={20} className="shrink-0 transition-all" />
+                    <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out">
+                      <div className="overflow-hidden">
+                        <span className="whitespace-nowrap text-sm font-semibold pl-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                          {displayInStock ? "Theo dõi giá" : "Nhận thông báo"}
+                        </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => window.dispatchEvent(new CustomEvent('open_subscription_modal', { detail: { product, activeVariant, quantity } }))}
-                      disabled={isSubscribed}
-                      className={`px-3 sm:px-4 h-7 sm:h-8 text-[11px] sm:text-[12px] font-bold rounded-[6px] transition-all shrink-0 shadow-sm ${
-                        isSubscribed 
-                          ? "bg-slate-200 text-slate-500 cursor-not-allowed border-transparent shadow-none" 
-                          : "bg-white border border-primary text-primary hover:bg-primary hover:text-white active:scale-95"
-                      }`}
-                    >
-                      {isSubscribed ? "Đã đăng ký" : "Đăng ký ngay"}
-                    </button>
-                  </div>
-                ) : null
-              }
-            />
+                  </button>
+                }
+              />
+
+              <ProductDetailInfo
+                product={product}
+                displayInStock={displayInStock}
+                displayStock={displayStock}
+                displaySku={displaySku}
+                displayPrice={displayPrice}
+                displayDiscountPrice={displayDiscountPrice}
+                hasDiscount={hasDiscount}
+                selectedOptions={selectedOptions}
+                handleOptionSelect={handleOptionSelect}
+                isOptionValueOutOfStock={isOptionValueOutOfStock}
+                quantity={quantity}
+                handleDecreaseQuantity={handleDecreaseQuantity}
+                handleIncreaseQuantity={handleIncreaseQuantity}
+                handleQuantityChange={handleQuantityChange}
+                setQuantity={setQuantity}
+                handleAddToCart={handleAddToCart}
+                handleBuyNow={handleBuyNow}
+                isWishlisted={isWishlisted}
+                setIsWishlisted={setIsWishlisted}
+                activeVariant={activeVariant}
+                activeFlashSaleItem={activeFlashSaleItem}
+                flashSaleEndTime={activeFlashSale?.status === 0 ? activeFlashSale?.startTime : activeFlashSale?.endTime}
+                flashSaleStatus={activeFlashSale?.status}
+                selectedGiftId={selectedGiftId}
+                setSelectedGiftId={setSelectedGiftId}
+                isAddingToCart={isAddingToCart}
+                subscriptionAction={
+                  product.supportsSubscription ? (
+                    <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 rounded-[8px] bg-white border border-rose-100 shadow-sm w-full gap-2 transition-all hover:border-primary/30 group">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
+                          <span className="material-symbols-outlined text-[15px] text-primary group-hover:text-white transition-colors">autorenew</span>
+                        </div>
+                        <div className="flex flex-col xl:flex-row xl:items-center gap-0 xl:gap-1.5">
+                          <p className="text-[12px] sm:text-[13px] font-bold text-primary whitespace-nowrap">Mua định kỳ</p>
+                          <p className="text-[10px] sm:text-[11px] text-rose-600/90 leading-tight truncate max-w-[130px] sm:max-w-[200px] xl:max-w-none">
+                            (Giảm thêm <span className="font-bold">5%</span> cho đơn đăng ký)
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open_subscription_modal', { detail: { product, activeVariant, quantity } }))}
+                        disabled={isSubscribed}
+                        className={`px-3 sm:px-4 h-7 sm:h-8 text-[11px] sm:text-[12px] font-bold rounded-[6px] transition-all shrink-0 shadow-sm ${
+                          isSubscribed 
+                            ? "bg-slate-200 text-slate-500 cursor-not-allowed border-transparent shadow-none" 
+                            : "bg-white border border-primary text-primary hover:bg-primary hover:text-white active:scale-95"
+                        }`}
+                      >
+                        {isSubscribed ? "Đã đăng ký" : "Đăng ký ngay"}
+                      </button>
+                    </div>
+                  ) : null
+                }
+              />
+            </div>
           </div>
+
+          <ProductTabs
+            product={product}
+            parsedSpecs={parsedSpecs}
+            className="border-none shadow-none rounded-none mb-0"
+          />
         </div>
-
-        <ProductTabs
-          product={product}
-          parsedSpecs={parsedSpecs}
-        />
 
         <RelatedProducts
           relatedProducts={relatedProducts}

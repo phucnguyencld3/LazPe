@@ -99,7 +99,9 @@ namespace PolyBabyAPI.Controllers
                 : new Dictionary<int, Product>();
 
             var variantsDict = variantRefIds.Any()
-                ? await _context.Variants.AsNoTracking().Include(v => v.Product).Where(v => variantRefIds.Contains(v.VariantID)).ToDictionaryAsync(v => v.VariantID)
+                ? await _context.Variants.AsNoTracking()
+                    .Include(v => v.Product).ThenInclude(p => p.Images)
+                    .Where(v => variantRefIds.Contains(v.VariantID)).ToDictionaryAsync(v => v.VariantID)
                 : new Dictionary<int, Variant>();
 
             var bundlesDict = bundleRefIds.Any()
@@ -107,7 +109,9 @@ namespace PolyBabyAPI.Controllers
                 : new Dictionary<int, Bundle>();
 
             var giftVariantsDict = allGiftIds.Any()
-                ? await _context.Variants.AsNoTracking().Include(v => v.Product).Where(v => allGiftIds.Contains(v.VariantID)).ToDictionaryAsync(v => v.VariantID)
+                ? await _context.Variants.AsNoTracking()
+                    .Include(v => v.Product).ThenInclude(p => p.Images)
+                    .Where(v => allGiftIds.Contains(v.VariantID)).ToDictionaryAsync(v => v.VariantID)
                 : new Dictionary<int, Variant>();
 
             foreach (var sale in activeSales)
@@ -166,8 +170,11 @@ namespace PolyBabyAPI.Controllers
                         {
                             itemDto.ItemName = product.ProductName;
                             itemDto.OriginalPrice = product.Price;
-                            itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl ?? product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
+                            itemDto.ImageUrl = product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrEmpty(i.ImageUrl))?.ImageUrl 
+                                ?? product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl;
                             itemDto.ProductId = product.ProductID;
+                            itemDto.Rating = product.AverageRating;
+                            itemDto.ReviewCount = product.ReviewCount;
                         }
                     }
                     else if (item.ItemType == FlashSaleItemType.Variant)
@@ -177,8 +184,13 @@ namespace PolyBabyAPI.Controllers
                             itemDto.ItemName = $"{variant.Product?.ProductName} ({variant.VariantName})";
                             itemDto.OriginalPrice = variant.UnitPrice;
                             itemDto.SKU = variant.SKU;
-                            itemDto.ImageUrl = variant.ImageUrl;
+                            itemDto.ImageUrl = !string.IsNullOrEmpty(variant.ImageUrl) 
+                                ? variant.ImageUrl 
+                                : (variant.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrEmpty(i.ImageUrl))?.ImageUrl 
+                                   ?? variant.Product?.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl);
                             itemDto.ProductId = variant.ProductID;
+                            itemDto.Rating = variant.Product?.AverageRating;
+                            itemDto.ReviewCount = variant.Product?.ReviewCount;
                         }
                     }
                     else if (item.ItemType == FlashSaleItemType.Bundle)
@@ -209,7 +221,9 @@ namespace PolyBabyAPI.Controllers
                                 if (giftVariantsDict.TryGetValue(giftId, out var giftVariant))
                                 {
                                     itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
-                                    itemDto.GiftImageUrls.Add(giftVariant.ImageUrl);
+                                    var giftImg = giftVariant.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrEmpty(i.ImageUrl))?.ImageUrl 
+                                        ?? (!string.IsNullOrEmpty(giftVariant.ImageUrl) ? giftVariant.ImageUrl : null);
+                                    itemDto.GiftImageUrls.Add(giftImg);
                                 }
                             }
                         }
@@ -343,20 +357,29 @@ namespace PolyBabyAPI.Controllers
                     {
                         itemDto.ItemName = product.ProductName;
                         itemDto.OriginalPrice = product.Price;
-                        itemDto.ImageUrl = product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl ?? product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl;
+                        itemDto.ImageUrl = product.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrEmpty(i.ImageUrl))?.ImageUrl 
+                            ?? product.Variants?.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl;
                         itemDto.ProductId = product.ProductID;
+                        itemDto.Rating = product.AverageRating;
+                        itemDto.ReviewCount = product.ReviewCount;
                     }
                 }
                 else if (item.ItemType == FlashSaleItemType.Variant)
                 {
-                    var variant = await _context.Variants.Include(v => v.Product).FirstOrDefaultAsync(v => v.VariantID == item.ReferenceId);
+                    var variant = await _context.Variants
+                        .Include(v => v.Product).ThenInclude(p => p.Images)
+                        .FirstOrDefaultAsync(v => v.VariantID == item.ReferenceId);
                     if (variant != null)
                     {
                         itemDto.ItemName = $"{variant.Product?.ProductName} ({variant.VariantName})";
                         itemDto.OriginalPrice = variant.UnitPrice;
                         itemDto.SKU = variant.SKU;
-                        itemDto.ImageUrl = variant.ImageUrl;
+                        itemDto.ImageUrl = !string.IsNullOrEmpty(variant.ImageUrl) 
+                            ? variant.ImageUrl 
+                            : variant.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrEmpty(i.ImageUrl))?.ImageUrl;
                         itemDto.ProductId = variant.ProductID;
+                        itemDto.Rating = variant.Product?.AverageRating;
+                        itemDto.ReviewCount = variant.Product?.ReviewCount;
                     }
                 }
                 else if (item.ItemType == FlashSaleItemType.Bundle)
@@ -381,17 +404,23 @@ namespace PolyBabyAPI.Controllers
                     if (giftIds.Any())
                     {
                         var giftVariants = await _context.Variants
-                            .Include(v => v.Product)
+                            .Include(v => v.Product).ThenInclude(p => p.Images)
                             .Where(v => giftIds.Contains(v.VariantID))
                             .ToListAsync();
 
                         itemDto.GiftNames = new List<string>();
                         itemDto.GiftImageUrls = new List<string>();
 
-                        foreach (var giftVariant in giftVariants)
+                        foreach (var giftId in giftIds)
                         {
-                            itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
-                            itemDto.GiftImageUrls.Add(giftVariant.ImageUrl);
+                            var giftVariant = giftVariants.FirstOrDefault(v => v.VariantID == giftId);
+                            if (giftVariant != null)
+                            {
+                                itemDto.GiftNames.Add($"{giftVariant.Product?.ProductName} ({giftVariant.VariantName})");
+                                var giftImg = giftVariant.Product?.Images?.OrderBy(i => i.DisplayOrder).FirstOrDefault(i => !string.IsNullOrEmpty(i.ImageUrl))?.ImageUrl 
+                                    ?? (!string.IsNullOrEmpty(giftVariant.ImageUrl) ? giftVariant.ImageUrl : null);
+                                itemDto.GiftImageUrls.Add(giftImg);
+                            }
                         }
                     }
                 }

@@ -115,6 +115,8 @@ export interface FlashSaleItem {
   status: number;
   maxQuantityPerUser?: number;
   userPurchasedQuantity?: number;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface FlashSaleCampaign {

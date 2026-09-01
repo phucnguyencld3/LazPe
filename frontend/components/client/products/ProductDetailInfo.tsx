@@ -151,26 +151,26 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
         {/* Price Display / Flash Sale Widget */}
         {/* Price Display / Flash Sale Widget */}
         {activeFlashSaleItem && flashSaleEndTime && (
-          <div className={`rounded-[5px] border overflow-hidden shadow-sm ${flashSaleStatus === 0 ? "border-blue-200 shadow-blue-500/5" : "border-rose-200 shadow-rose-500/5"}`}>
-            <div className={`px-2 py-1 flex flex-wrap items-center justify-between gap-2 text-white ${flashSaleStatus === 0 ? "bg-gradient-to-r from-blue-600 to-indigo-500" : "bg-gradient-to-r from-rose-600 to-orange-500"}`}>
-              <div className="flex items-center gap-1 font-black uppercase text-[10px] sm:text-xs tracking-wider">
+          <div className={`rounded-lg border overflow-hidden shadow-sm ${flashSaleStatus === 0 ? "border-blue-200 shadow-blue-500/5" : "border-rose-200 shadow-rose-500/5"}`}>
+            <div className={`px-3 py-1.5 sm:px-4 sm:py-2 flex flex-wrap items-center justify-between gap-2 text-white ${flashSaleStatus === 0 ? "bg-gradient-to-r from-blue-600 to-indigo-500" : "bg-gradient-to-r from-rose-600 to-orange-500"}`}>
+              <div className="flex items-center gap-1.5 font-black uppercase text-xs sm:text-sm tracking-wider">
                 {flashSaleStatus === 0 ? (
                   <>
-                    <span className="material-symbols-outlined text-[14px] text-yellow-300">event</span>
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-yellow-300">event</span>
                     <span>SẮP DIỄN RA</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[14px] text-yellow-300 animate-bounce">bolt</span>
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-yellow-300 animate-bounce">bolt</span>
                     <span>FLASH SALE</span>
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-[10px]">
-                <span className={`font-semibold ${flashSaleStatus === 0 ? "text-blue-100" : "text-rose-100"}`}>
+              <div className="flex items-center gap-2">
+                <span className={`font-bold text-xs sm:text-sm ${flashSaleStatus === 0 ? "text-blue-100" : "text-white"}`}>
                   {flashSaleStatus === 0 ? "Bắt đầu sau:" : "Kết thúc sau:"}
                 </span>
-                <div className="scale-75 origin-right -my-2 [&_.text-slate-400]:!text-white/90">
+                <div className="flex items-center [&_.text-slate-400]:!text-white [&_.text-slate-500]:!text-white">
                   <CountdownTimer endTime={flashSaleEndTime} variant="light" size="sm" />
                 </div>
               </div>
@@ -327,7 +327,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <div className="flex gap-2.5 overflow-x-auto snap-x" style={{ scrollbarWidth: 'none' }}>
               {activeFlashSaleItem.giftVariantIds.map((giftId: number, index: number) => {
                 const giftName = activeFlashSaleItem.giftNames?.[index] || "Quà tặng bí mật";
-                const giftImage = activeFlashSaleItem.giftImageUrls?.[index] || "/assets/img/products/default-product.jpg";
+                const giftImage = activeFlashSaleItem.giftImageUrls?.[index];
                 const isSelected = selectedGiftId === giftId;
                 const tooltipText = `• Tặng 1 sản phẩm kèm theo (tối đa 1 combo/KH)\n• ${giftName}\n• Số lượng: 1`;
                 
@@ -346,8 +346,25 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
                     }`}
                   >
                     {/* Image */}
-                    <div className="w-full aspect-square relative rounded-md overflow-hidden bg-slate-50 mb-2 border border-slate-100">
-                      <img src={giftImage} alt={giftName} className="w-full h-full object-cover mix-blend-multiply" />
+                    <div className="w-full aspect-square relative rounded-md overflow-hidden bg-slate-50 mb-2 border border-slate-100 flex items-center justify-center">
+                      {giftImage ? (
+                        <img 
+                          src={giftImage} 
+                          alt={giftName} 
+                          className="w-full h-full object-cover mix-blend-multiply" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            const fallback = e.currentTarget.parentElement?.querySelector(".gift-fallback-icon") as HTMLElement | null;
+                            if (fallback) fallback.style.display = "flex";
+                          }}
+                        />
+                      ) : null}
+                      <span 
+                        style={{ display: giftImage ? "none" : "flex" }}
+                        className="gift-fallback-icon material-symbols-outlined text-slate-300 text-3xl select-none items-center justify-center"
+                      >
+                        redeem
+                      </span>
                     </div>
                     
                     {/* Free Badge */}
