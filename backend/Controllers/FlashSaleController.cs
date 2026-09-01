@@ -191,6 +191,11 @@ namespace PolyBabyAPI.Controllers
                         }
                     }
 
+                    if (item.DiscountType == DiscountType.Percentage && itemDto.OriginalPrice > 0)
+                    {
+                        itemDto.DiscountPrice = Math.Round(itemDto.OriginalPrice * (1 - (item.DiscountPrice / 100m)));
+                    }
+
                     if (!string.IsNullOrEmpty(item.GiftVariantIds))
                     {
                         var giftIds = item.GiftVariantIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
@@ -363,6 +368,11 @@ namespace PolyBabyAPI.Controllers
                         itemDto.OriginalPrice = bundle.OriginalPrice ?? 0;
                         itemDto.ImageUrl = bundle.ImageUrl;
                     }
+                }
+
+                if (item.DiscountType == DiscountType.Percentage && itemDto.OriginalPrice > 0)
+                {
+                    itemDto.DiscountPrice = Math.Round(itemDto.OriginalPrice * (1 - (item.DiscountPrice / 100m)));
                 }
 
                 if (!string.IsNullOrEmpty(item.GiftVariantIds))

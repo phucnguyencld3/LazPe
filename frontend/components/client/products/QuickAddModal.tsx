@@ -195,26 +195,31 @@ export default function QuickAddModal({ productId, onClose }: QuickAddModalProps
                         {option.name}: <span className="font-bold text-rose-600">{selectedOptions[option.name]}</span>
                       </span>
                       <div className="flex flex-wrap gap-2">
-                        {option.productOptionValues.map((optVal) => {
-                          const isSelected = selectedOptions[option.name] === optVal.value;
-                          const isOutOfStock = isOptionValueOutOfStock(product, option.name, optVal.value);
-                          return (
-                            <button
-                              key={optVal.productOptionValueID}
-                              onClick={() => handleOptionSelect(option.name, optVal.value)}
-                              disabled={isOutOfStock}
-                              className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-all ${
-                                isOutOfStock
-                                  ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed line-through"
-                                  : isSelected
-                                  ? "bg-rose-50 border-rose-500 text-rose-600 shadow-sm"
-                                  : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-                              }`}
-                            >
-                              {optVal.value}
-                            </button>
+                        {(() => {
+                          const uniqueValues = option.productOptionValues.filter((val, idx, self) =>
+                            idx === self.findIndex((t) => t.value.trim().toLowerCase() === val.value.trim().toLowerCase())
                           );
-                        })}
+                          return uniqueValues.map((optVal) => {
+                            const isSelected = selectedOptions[option.name]?.trim().toLowerCase() === optVal.value.trim().toLowerCase();
+                            const isOutOfStock = isOptionValueOutOfStock(product, option.name, optVal.value);
+                            return (
+                              <button
+                                key={optVal.productOptionValueID}
+                                onClick={() => handleOptionSelect(option.name, optVal.value)}
+                                disabled={isOutOfStock}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-all ${
+                                  isOutOfStock
+                                    ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed line-through"
+                                    : isSelected
+                                    ? "bg-rose-50 border-rose-500 text-rose-600 shadow-sm"
+                                    : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                                }`}
+                              >
+                                {optVal.value}
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   ))}

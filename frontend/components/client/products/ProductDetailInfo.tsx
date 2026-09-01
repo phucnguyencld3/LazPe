@@ -179,9 +179,7 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
             <div className={`p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${flashSaleStatus === 0 ? "bg-blue-50/20" : "bg-rose-50/20"}`}>
               <div className="flex items-baseline gap-2">
                 <span className={`text-xl sm:text-2xl font-black leading-none ${flashSaleStatus === 0 ? "text-blue-500" : "text-rose-500"}`}>
-                  ₫{flashSaleStatus === 0 
-                    ? activeFlashSaleItem.discountPrice.toLocaleString("vi-VN").replace(/^(\d)[^\d]*(\d)/, (m: string) => m.slice(0, -1) + "?") 
-                    : activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
+                  ₫{activeFlashSaleItem.discountPrice.toLocaleString("vi-VN")}
                 </span>
                 {activeFlashSaleItem.discountType !== 2 && activeFlashSaleItem.discountPrice < activeFlashSaleItem.originalPrice && (
                   <span className="text-xs text-slate-400 line-through font-semibold">
@@ -397,26 +395,31 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = ({
                   {option.name}:
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {option.productOptionValues.map((optVal) => {
-                    const isSelected = selectedOptions[option.name] === optVal.value;
-                    const isOutOfStock = isOptionValueOutOfStock(option.name, optVal.value);
-                    return (
-                      <button
-                        key={optVal.productOptionValueID}
-                        onClick={() => handleOptionSelect(option.name, optVal.value)}
-                        disabled={isOutOfStock}
-                        className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-all ${
-                          isOutOfStock
-                            ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed line-through"
-                            : isSelected
-                            ? "bg-rose-50 border-primary text-primary font-bold shadow-sm"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        {optVal.value}
-                      </button>
+                  {(() => {
+                    const uniqueValues = option.productOptionValues.filter((val, idx, self) =>
+                      idx === self.findIndex((t) => t.value.trim().toLowerCase() === val.value.trim().toLowerCase())
                     );
-                  })}
+                    return uniqueValues.map((optVal) => {
+                      const isSelected = selectedOptions[option.name]?.trim().toLowerCase() === optVal.value.trim().toLowerCase();
+                      const isOutOfStock = isOptionValueOutOfStock(option.name, optVal.value);
+                      return (
+                        <button
+                          key={optVal.productOptionValueID}
+                          onClick={() => handleOptionSelect(option.name, optVal.value)}
+                          disabled={isOutOfStock}
+                          className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-all ${
+                            isOutOfStock
+                              ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed line-through"
+                              : isSelected
+                              ? "bg-rose-50 border-primary text-primary font-bold shadow-sm"
+                              : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                          }`}
+                        >
+                          {optVal.value}
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             ))}
