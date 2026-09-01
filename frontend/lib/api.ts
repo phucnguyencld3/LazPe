@@ -236,6 +236,7 @@ export async function getProductDetail(id: number | string): Promise<Product | n
 
       return {
         id: item.productID ?? item.productId ?? item.id,
+        code: item.code,
         slug: item.slug,
         name: item.productName ?? item.name,
         description: item.description ?? "",
