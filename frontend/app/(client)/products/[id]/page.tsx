@@ -354,7 +354,7 @@ export default function ProductDetailPage() {
   }, [activeFlashSaleItem, activeVariant, product, activeFlashSale]);
 
   const displayStock = activeVariant ? activeVariant.stock : product?.quantity ?? 0;
-  const displaySku = activeVariant ? activeVariant.sku : `LP-${product?.id}`;
+  const displaySku = activeVariant?.sku || product?.code || `SP${(product?.id || 0).toString().padStart(6, "0")}`;
   const displayInStock = activeVariant ? activeVariant.stock > 0 : product?.inStock ?? false;
   const hasDiscount = !!displayDiscountPrice && displayDiscountPrice < displayPrice;
 

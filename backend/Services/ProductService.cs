@@ -780,7 +780,7 @@ namespace PolyBabyAPI.Services
                 foreach (var varDto in dto.Variants)
                 {
                     var sku = string.IsNullOrWhiteSpace(varDto.SKU)
-                        ? $"{productCode}-{Guid.NewGuid().ToString("N").Substring(0, 5).ToUpper()}"
+                        ? $"SP{Random.Shared.Next(10000000, 99999999)}"
                         : varDto.SKU.Trim();
 
                     var variant = new Variant
