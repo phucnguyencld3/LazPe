@@ -703,6 +703,10 @@ namespace PolyBabyAPI.Services
 
             if (bundleId.HasValue)
             {
+                var bundle = await _context.Bundles.FindAsync(bundleId.Value);
+                if (bundle == null) return 0;
+                var originalPrice = bundle.Price ?? 0;
+
                 var flashSaleItem = await _context.FlashSaleItems
                     .Include(fsi => fsi.FlashSale)
                     .Where(fsi => fsi.FlashSale.IsActive 
@@ -728,12 +732,11 @@ namespace PolyBabyAPI.Services
                     }
                     if (!limitExceeded)
                     {
-                        return flashSaleItem.DiscountPrice;
+                        return CalculateFlashSaleItemPrice(flashSaleItem, originalPrice, originalPrice);
                     }
                 }
 
-                var bundle = await _context.Bundles.FindAsync(bundleId.Value);
-                return bundle?.Price ?? 0;
+                return originalPrice;
             }
 
             if (variantId.HasValue)
@@ -743,6 +746,9 @@ namespace PolyBabyAPI.Services
                     .FirstOrDefaultAsync(v => v.VariantID == variantId.Value);
                 
                 if (variant == null) return 0;
+
+                var basePrice = CalculateEffectiveVariantPrice(variant);
+                var originalPrice = variant.UnitPrice;
 
                 var fsVariant = await _context.FlashSaleItems
                     .Include(fsi => fsi.FlashSale)
@@ -769,7 +775,7 @@ namespace PolyBabyAPI.Services
                     }
                     if (!limitExceeded)
                     {
-                        return fsVariant.DiscountPrice;
+                        return CalculateFlashSaleItemPrice(fsVariant, originalPrice, basePrice);
                     }
                 }
 
@@ -798,14 +804,28 @@ namespace PolyBabyAPI.Services
                     }
                     if (!limitExceeded)
                     {
-                        return fsProduct.DiscountPrice;
+                        return CalculateFlashSaleItemPrice(fsProduct, originalPrice, basePrice);
                     }
                 }
 
-                return CalculateEffectiveVariantPrice(variant);
+                return basePrice;
             }
 
             return 0;
+        }
+
+        private static decimal CalculateFlashSaleItemPrice(FlashSaleItem fsItem, decimal originalPrice, decimal fallbackPrice)
+        {
+            if (fsItem.DiscountType == DiscountType.Percentage && originalPrice > 0)
+            {
+                var discounted = Math.Round(originalPrice * (1 - (fsItem.DiscountPrice / 100m)));
+                return discounted < 0 ? 0 : discounted;
+            }
+            if (fsItem.DiscountType == DiscountType.FixedPrice)
+            {
+                return fsItem.DiscountPrice < 0 ? 0 : fsItem.DiscountPrice;
+            }
+            return fallbackPrice;
         }
 
         private static decimal CalculateEffectiveVariantPrice(Variant variant)

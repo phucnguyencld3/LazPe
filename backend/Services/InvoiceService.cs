@@ -1506,6 +1506,9 @@ namespace PolyBabyAPI.Services
 
             if (bundleId.HasValue)
             {
+                var bundle = await _context.Bundles.FindAsync(bundleId.Value);
+                if (bundle == null) return;
+
                 var fsItem = await _context.FlashSaleItems
                     .Include(fsi => fsi.FlashSale)
                     .Where(fsi => fsi.FlashSale.IsActive
@@ -1515,23 +1518,31 @@ namespace PolyBabyAPI.Services
                         && fsi.ReferenceId == bundleId.Value)
                     .FirstOrDefaultAsync();
 
-                if (fsItem != null && unitPrice == fsItem.DiscountPrice)
+                if (fsItem != null)
                 {
-                    if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
-                    {
-                        return; // Treat as normal purchase
-                    }
+                    decimal bundlePrice = bundle.Price ?? 0;
+                    decimal expectedPrice = fsItem.DiscountType == DiscountType.Percentage && bundlePrice > 0
+                        ? Math.Round(bundlePrice * (1 - (fsItem.DiscountPrice / 100m)))
+                        : (fsItem.DiscountType == DiscountType.FixedPrice ? fsItem.DiscountPrice : bundlePrice);
 
-                    if (fsItem.MaxQuantityPerUser > 0)
+                    if (unitPrice == expectedPrice || fsItem.DiscountType == DiscountType.FreeGift)
                     {
-                        var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
-                        if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
+                        if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                         {
                             return; // Treat as normal purchase
                         }
-                    }
 
-                    fsItem.SoldQuantity += quantity;
+                        if (fsItem.MaxQuantityPerUser > 0)
+                        {
+                            var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
+                            if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
+                            {
+                                return; // Treat as normal purchase
+                            }
+                        }
+
+                        fsItem.SoldQuantity += quantity;
+                    }
                 }
             }
             else if (variantId.HasValue)
@@ -1562,23 +1573,30 @@ namespace PolyBabyAPI.Services
                         .FirstOrDefaultAsync();
                 }
 
-                if (fsItem != null && unitPrice == fsItem.DiscountPrice)
+                if (fsItem != null)
                 {
-                    if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
-                    {
-                        return; // Treat as normal purchase if flash sale quantity is exhausted
-                    }
+                    decimal expectedPrice = fsItem.DiscountType == DiscountType.Percentage && variant.UnitPrice > 0
+                        ? Math.Round(variant.UnitPrice * (1 - (fsItem.DiscountPrice / 100m)))
+                        : (fsItem.DiscountType == DiscountType.FixedPrice ? fsItem.DiscountPrice : variant.UnitPrice);
 
-                    if (fsItem.MaxQuantityPerUser > 0)
+                    if (unitPrice == expectedPrice || fsItem.DiscountType == DiscountType.FreeGift)
                     {
-                        var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
-                        if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
+                        if (fsItem.SoldQuantity + quantity > fsItem.TotalQuantity)
                         {
-                            return; // Treat as normal purchase if user exceeds their limit
+                            return; // Treat as normal purchase if flash sale quantity is exhausted
                         }
-                    }
 
-                    fsItem.SoldQuantity += quantity;
+                        if (fsItem.MaxQuantityPerUser > 0)
+                        {
+                            var userBoughtCount = await GetUserFlashSaleBoughtCountAsync(userId, fsItem.Id);
+                            if (userBoughtCount + quantity > fsItem.MaxQuantityPerUser)
+                            {
+                                return; // Treat as normal purchase if user exceeds their limit
+                            }
+                        }
+
+                        fsItem.SoldQuantity += quantity;
+                    }
                 }
             }
         }
